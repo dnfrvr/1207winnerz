@@ -233,7 +233,35 @@ const FULL_MONTHS_EN = {1:"January",2:"February",3:"March",4:"April",5:"May",6:"
 const loreDayKey = (timeStr) => { const p = parseLoreTime(timeStr); return p ? p.month*100+p.day : null; };
 const loreDateLabel = (timeStr) => { const p = parseLoreTime(timeStr); return p ? `${FULL_MONTHS_EN[p.month]||""} ${p.day}`.trim() : null; };
 
+// Affichage relatif d'une date lore par rapport à la date de lore courante : "2j" si c'est dans le
+// passé, "dans 2j" si futur, l'heure ("9:58am") si c'est le même jour. Si la string n'est pas dans le
+// format lore (ex: anciennes valeurs codées en dur comme "2m"/"1j"), on l'affiche telle quelle —
+// donc rien ne casse pour les données déjà existantes qui n'ont pas encore été repassées par le sélecteur.
+const loreRelativeLabel = (timeStr, loreDateStr) => {
+  const lore = loreDateStr || LORE_DATE_DEFAULT;
+  const [, lm, ld] = lore.split('-').map(Number);
+  const parsed = parseLoreTime(timeStr);
+  if(!parsed || !parsed.day) return timeStr;
+  const {day, month, hour, min} = parsed;
+  if(day === ld && month === lm) {
+    if(hour !== null) {
+      const period = hour < 12 ? 'am' : 'pm';
+      const h12 = hour % 12 === 0 ? 12 : hour % 12;
+      return `${h12}:${String(min).padStart(2,'0')}${period}`;
+    }
+    return "Aujourd'hui";
+  }
+  const loreMs = new Date(2012, lm-1, ld).getTime();
+  const itemMs = new Date(2012, month-1, day).getTime();
+  const diffDays = Math.round((loreMs - itemMs) / 86400000);
+  if(diffDays > 0) return `${diffDays}j`;
+  if(diffDays < 0) return `dans ${-diffDays}j`;
+  return timeStr;
+};
+
 const LoreDateCtx = React.createContext(LORE_DATE_DEFAULT);
+// Hook pratique : formate directement une string de temps lore par rapport à la date de lore en cours.
+const useLoreRelative = (timeStr) => loreRelativeLabel(timeStr, useContext(LoreDateCtx));
 
 // Isolated in its own component so clock ticks don't re-render the whole phone
 const useClock = () => {
@@ -391,6 +419,7 @@ const IOSLockContent = memo(({bgStyle={}, devOverrides={}, scale=1, onUnlock=nul
   const lsOv = devOverrides?.lockScreen || {};
   const showLinen = (lsOv.showLinen ?? "yes") === "yes";
   const mini = scale < 1;
+  const loreDateStr = useContext(LoreDateCtx);
   return (
     <div style={{width:"100%",height:"100%",position:"relative",overflow:"hidden",display:"flex",flexDirection:"column",...bgStyle}}>
       {showLinen && !mini && <div style={{position:"absolute",inset:0,
@@ -425,7 +454,7 @@ const IOSLockContent = memo(({bgStyle={}, devOverrides={}, scale=1, onUnlock=nul
                     : <span style={{fontSize:12,lineHeight:1}}>{n.emoji||"💬"}</span>}
                 </div>
                 <span style={{color:"#fff",fontSize:12,fontWeight:700,fontFamily:FF_IOS,flex:1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",textShadow:"0 1px 1px rgba(0,0,0,0.4)"}}>{n.title}</span>
-                {n.time&&<span style={{color:"rgba(255,255,255,0.65)",fontSize:10,flexShrink:0,fontFamily:FF_IOS}}>{n.time}</span>}
+                {n.time&&<span style={{color:"rgba(255,255,255,0.65)",fontSize:10,flexShrink:0,fontFamily:FF_IOS}}>{loreRelativeLabel(n.time,loreDateStr)}</span>}
               </div>
               <div style={{color:"rgba(255,255,255,0.9)",fontSize:12,lineHeight:1.35,fontFamily:FF_IOS,overflow:"hidden",textOverflow:"ellipsis",display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical"}}>{n.text}</div>
             </div>
@@ -1226,6 +1255,7 @@ const SNAPCHAT_DEFAULTS = {
 
 const SnapchatScreen = ({data,admin,update}) => {
   const charKey = data.username?.includes("glinda")?"glinda":data.username?.includes("eoghan")?"eoghan":data.username?.includes("drew")?"drew":"elias";
+  const loreDateStr = useContext(LoreDateCtx);
   
   const snaps = (data.snaps && data.snaps.length > 0) ? data.snaps : (SNAPCHAT_DEFAULTS[charKey] || []);
   const SC_GREEN  = "#8ad232";
@@ -1283,7 +1313,7 @@ const SnapchatScreen = ({data,admin,update}) => {
                   {isRecvNew ? `from ${s.contact}` : s.contact}
                 </div>
                 <div style={{fontSize:11,color:"#999"}}>
-                  {s.time}
+                  {loreRelativeLabel(s.time,loreDateStr)}
                   {isRecvNew     && " · Press and hold to view"}
                   {isSentNew     && " · Delivered"}
                   {isRecvOpened  && " · Opened"}
@@ -1651,6 +1681,7 @@ const GrindrScreen = ({data,admin,update}) => {
 const BrowserScreen = ({data,admin,update,accent,isIos,tab,setTab}) => {
   const bk = data.browser?.bookmarks||[];
   const hist = data.browser?.history||[];
+  const loreDateStr = useContext(LoreDateCtx);
   const updBrowser = (key,val) => update("browser",{...data.browser,[key]:val});
   const rowStyle = {padding:"10px 12px",borderBottom:`1px solid ${isIos?"#e0e0e0":"#1e1e1e"}`,display:"flex",alignItems:"center",gap:10,background:isIos?"#fff":"transparent"};
   const tabBtn = t => ({padding:"6px 14px",border:"none",cursor:"pointer",fontSize:12,fontWeight:tab===t?600:400,background:tab===t?(isIos?"#fff":"#2a2a2a"):"transparent",color:tab===t?(isIos?accent:"#fff"):(isIos?"#888":"#666"),borderBottom:tab===t?`2px solid ${accent}`:"2px solid transparent"});
@@ -1719,7 +1750,7 @@ const BrowserScreen = ({data,admin,update,accent,isIos,tab,setTab}) => {
                     <input value={h.url} onChange={e=>{const x=[...hist];x[i]={...x[i],url:e.target.value};updBrowser("history",x);}} style={{background:"rgba(255,200,0,0.15)",border:"1px dashed #ffc107",color:"#888",fontSize:9,width:"90%",display:"block",marginTop:2}}/>
                   </>:<>
                     <div style={{color:"#1a1a1a",fontSize:12,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{h.title}</div>
-                    <div style={{color:"#8e8e93",fontSize:10,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{h.url} · {h.time}</div>
+                    <div style={{color:"#8e8e93",fontSize:10,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{h.url} · {loreRelativeLabel(h.time,loreDateStr)}</div>
                   </>}
                 </div>
                 {admin&&<AdminBadge label="✕" onClick={e=>{e.stopPropagation();updBrowser("history",hist.filter((_,j)=>j!==i));}} color="#f44"/>}
@@ -1912,7 +1943,7 @@ const BrowserScreen = ({data,admin,update,accent,isIos,tab,setTab}) => {
                 <input value={h.url} onChange={e=>{const x=[...hist];x[i]={...x[i],url:e.target.value};updBrowser("history",x);}} style={{background:"rgba(255,200,0,0.15)",border:"1px dashed #ffc107",color:"#444",fontSize:9,width:"90%",display:"block",marginTop:2}}/>
               </>:<>
                 <div style={{color:"#ddd",fontSize:12,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",fontFamily:FF_IOS}}>{h.title}</div>
-                <div style={{color:"#444",fontSize:10,marginTop:1,fontFamily:FF_IOS}}>{h.url} · <span style={{color:"#333"}}>{h.time}</span></div>
+                <div style={{color:"#444",fontSize:10,marginTop:1,fontFamily:FF_IOS}}>{h.url} · <span style={{color:"#333"}}>{loreRelativeLabel(h.time,loreDateStr)}</span></div>
               </>}
             </div>
             {admin&&<AdminBadge label="✕" onClick={()=>updBrowser("history",hist.filter((_,j)=>j!==i))} color="#f44"/>}
@@ -1931,6 +1962,7 @@ const KEYS = [["1","",""],["2","ABC",""],["3","DEF",""],["4","GHI",""],["5","JKL
 const IOSPhoneApp = ({data,admin,update,panel,setPanel}) => {
   const [dialed,setDialed] = useState("");
   const [balloons,setBalloons] = useState([]);
+  const loreDateStr = useContext(LoreDateCtx);
   const calls = data.calls||[];
   const charKey = data.username?.includes("glinda")?"glinda":data.username?.includes("eoghan")?"eoghan":data.username?.includes("drew")?"drew":"elias";
   const callColor = t => t==="missed"?"#ff3b30":t==="incoming"?"#4cd964":"#8e8e93";
@@ -2033,7 +2065,7 @@ const IOSPhoneApp = ({data,admin,update,panel,setPanel}) => {
         {admin
           ?<input value={c.contact} onChange={e=>{const cl=[...calls];cl[i]={...cl[i],contact:e.target.value};update("calls",cl);}} style={{background:"rgba(255,200,0,0.15)",border:"1px dashed #ffc107",color:"#000",fontSize:13,display:"block",width:"95%"}}/>
           :<div style={{color:c.type==="missed"?"#ff3b30":"#000",fontSize:13,fontWeight:600,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{c.contact}</div>}
-        <div style={{color:"#8e8e93",fontSize:10,marginTop:1}}>{c.type==="missed"?"Manqué":c.type==="incoming"?"Entrant":"Sortant"} · {c.time}{c.duration?` · ${c.duration}`:""}</div>
+        <div style={{color:"#8e8e93",fontSize:10,marginTop:1}}>{c.type==="missed"?"Manqué":c.type==="incoming"?"Entrant":"Sortant"} · {loreRelativeLabel(c.time,loreDateStr)}{c.duration?` · ${c.duration}`:""}</div>
       </div>
       <span style={{color:"#007aff",fontSize:16,flexShrink:0}}>ⓘ</span>
     </div>
@@ -2054,22 +2086,26 @@ const IOSPhoneApp = ({data,admin,update,panel,setPanel}) => {
     </div>
   )));
 
+  const voicemailList = (data.voicemails && data.voicemails.length>0)
+    ? data.voicemails
+    : (calls.filter(c=>c.type==="missed")).slice(0,3).map((c,i)=>({id:"mc"+i, contact:c.contact, time:c.time, duration:`0:0${i+3}`, transcript:""}));
   const voicemail = list(
-    (calls.filter(c=>c.type==="missed")).slice(0,3).map((c,i)=>(
-      <div key={i} style={{padding:"10px 12px",borderBottom:"1px solid #d9d8d2",background:"linear-gradient(180deg,#ffffff,#f6f5f0)"}}>
+    voicemailList.map((vm,i)=>(
+      <div key={vm.id??i} style={{padding:"10px 12px",borderBottom:"1px solid #d9d8d2",background:"linear-gradient(180deg,#ffffff,#f6f5f0)"}}>
         <div style={{display:"flex",justifyContent:"space-between"}}>
-          <div style={{color:"#000",fontSize:13,fontWeight:600}}>{c.contact}</div>
-          <div style={{color:"#8e8e93",fontSize:10}}>{c.time}</div>
+          <div style={{color:"#000",fontSize:13,fontWeight:600}}>{vm.contact}</div>
+          <div style={{color:"#8e8e93",fontSize:10}}>{loreRelativeLabel(vm.time,loreDateStr)}</div>
         </div>
         <div style={{display:"flex",alignItems:"center",gap:8,marginTop:6}}>
           <svg width="13" height="13" viewBox="0 0 14 14" fill="#007aff"><path d="M2 1.5v11l10-5.5z"/></svg>
           <div style={{flex:1,height:3,background:"#d0cfca",borderRadius:2}}/>
-          <span style={{color:"#8e8e93",fontSize:10}}>0:0{i+3}</span>
+          <span style={{color:"#8e8e93",fontSize:10}}>{vm.duration||"0:08"}</span>
         </div>
+        {vm.transcript && <div style={{color:"#3a3a3c",fontSize:11,marginTop:6,lineHeight:1.4,fontStyle:"italic"}}>"{vm.transcript}"</div>}
       </div>
     ))
   );
-  const voicemailEmpty = (calls.filter(c=>c.type==="missed").length===0);
+  const voicemailEmpty = voicemailList.length===0;
 
   const ALL_TABS = [["favorites",'<svg width="22" height="20" viewBox="0 0 24 22" fill="none"><path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round"/></svg>',"Favorites"],["recents",'<svg width="22" height="20" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.6"/><path d="M12 7v5l3 3" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/></svg>',"Recents"],["contacts",'<svg width="22" height="20" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="4" stroke="currentColor" strokeWidth="1.6"/><path d="M4 20c0-4.4 3.6-8 8-8s8 3.6 8 8" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/></svg>',"Contacts"],["keypad",'<svg width="22" height="20" viewBox="0 0 24 24" fill="none"><circle cx="6" cy="6" r="2" fill="currentColor"/><circle cx="12" cy="6" r="2" fill="currentColor"/><circle cx="18" cy="6" r="2" fill="currentColor"/><circle cx="6" cy="12" r="2" fill="currentColor"/><circle cx="12" cy="12" r="2" fill="currentColor"/><circle cx="18" cy="12" r="2" fill="currentColor"/><circle cx="6" cy="18" r="2" fill="currentColor"/><circle cx="12" cy="18" r="2" fill="currentColor"/><circle cx="18" cy="18" r="2" fill="currentColor"/></svg>',"Keypad"],["voicemail",'<svg width="22" height="20" viewBox="0 0 24 18" fill="none"><circle cx="6" cy="9" r="5" stroke="currentColor" strokeWidth="1.6"/><circle cx="18" cy="9" r="5" stroke="currentColor" strokeWidth="1.6"/><path d="M6 14h12" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/></svg>',"Voicemail"]];
   const TABS = charKey==="glinda" ? ALL_TABS.filter(([p])=>p!=="contacts") : ALL_TABS;
@@ -2105,6 +2141,7 @@ const IOSPhoneApp = ({data,admin,update,panel,setPanel}) => {
 const AndroidDialer = ({data,admin,update,panel,setPanel}) => {
   const [dialed,setDialed] = useState("");
   const [balloons,setBalloons] = useState([]);
+  const loreDateStr = useContext(LoreDateCtx);
   const calls = data.calls||[];
   const HOLO = "#33b5e5";
   const NUMC = "#7fb2dd";
@@ -2201,7 +2238,7 @@ const AndroidDialer = ({data,admin,update,panel,setPanel}) => {
         {admin
           ?<input value={c.contact} onChange={e=>{const cl=[...calls];cl[i]={...cl[i],contact:e.target.value};update("calls",cl);}} style={{background:"rgba(255,200,0,0.12)",border:"1px dashed #ffc107",color:"#fff",fontSize:13,display:"block",width:"95%"}}/>
           :<div style={{color:c.type==="missed"?"#ff5252":"#eceff1",fontSize:13,fontWeight:500,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{c.contact}</div>}
-        <div style={{color:"#78848c",fontSize:10,marginTop:1}}>{c.time}{c.duration?` · ${c.duration}`:""}</div>
+        <div style={{color:"#78848c",fontSize:10,marginTop:1}}>{loreRelativeLabel(c.time,loreDateStr)}{c.duration?` · ${c.duration}`:""}</div>
       </div>
       <span style={{color:HOLO,lineHeight:1,flexShrink:0}}><svg width="16" height="16" viewBox="0 0 18 18" fill="none"><path d="M3.5 2h3l1.5 4-2 1.5A12 12 0 009.5 11l1.5-2 4 1.5v3A2 2 0 0113 16 12 12 0 012 5a2 2 0 011.5-3z" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/></svg></span>
     </div>
@@ -2814,16 +2851,26 @@ const AppSkeleton = ({icon, name, color="#333", accent="#555", isIos=true, lines
 
 // YouTube
 
-const ContactsScreen = ({data, isIos, accent}) => (
-  <AppSkeleton icon="👥" name="Contacts" color={isIos?"#4CAF50":"#4a90c0"} isIos={isIos}>
-    {(data.calls||[]).filter((c,i,a)=>a.findIndex(x=>x.contact===c.contact)===i).map((c,i)=>(
-      <div key={i} style={{background:isIos?"linear-gradient(180deg,#ffffff,#f5f4ef)":"#1e1e1e",padding:"10px 12px",borderBottom:isIos?"1px solid #b2b2a8":"1px solid #2a2a2a",display:"flex",gap:10,alignItems:"center"}}>
-        <div style={{width:36,height:36,borderRadius:"50%",background:accent,display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontWeight:700,fontSize:15}}>{c.contact[0]}</div>
-        <div style={{color:isIos?"#000":"#fff",fontSize:13}}>{c.contact}</div>
-      </div>
-    ))}
-  </AppSkeleton>
-);
+const ContactsScreen = ({data, isIos, accent}) => {
+  const list = (data.contacts && data.contacts.length>0)
+    ? data.contacts
+    : (data.calls||[]).filter((c,i,a)=>a.findIndex(x=>x.contact===c.contact)===i).map(c=>({id:c.contact, name:c.contact, photo:null, phone:""}));
+  return (
+    <AppSkeleton icon="👥" name="Contacts" color={isIos?"#4CAF50":"#4a90c0"} isIos={isIos}>
+      {list.map((c,i)=>(
+        <div key={c.id??i} style={{background:isIos?"linear-gradient(180deg,#ffffff,#f5f4ef)":"#1e1e1e",padding:"10px 12px",borderBottom:isIos?"1px solid #b2b2a8":"1px solid #2a2a2a",display:"flex",gap:10,alignItems:"center"}}>
+          <div style={{width:36,height:36,borderRadius:"50%",background:accent,display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontWeight:700,fontSize:15,overflow:"hidden",flexShrink:0}}>
+            {c.photo ? <img src={c.photo} style={{width:"100%",height:"100%",objectFit:"cover"}}/> : (c.name||"?")[0]}
+          </div>
+          <div style={{flex:1,minWidth:0}}>
+            <div style={{color:isIos?"#000":"#fff",fontSize:13}}>{c.name}</div>
+            {c.phone && <div style={{color:isIos?"#8e8e93":"#999",fontSize:11,marginTop:1}}>{c.phone}</div>}
+          </div>
+        </div>
+      ))}
+    </AppSkeleton>
+  );
+};
 
 // Settings
 const IOSToggle = ({value, onChange, accent="#275ba8"}) => (
@@ -4707,6 +4754,7 @@ const TWITTER_HOME_BASE = {
 // Override tweet display info
 // Twitter (Elias)
 const TwitterScreen = ({data, isIos, accent, onBack=null, sharedTweets=[], onTweet=null, twitterUsers={}, homeBaseTweets=[]}) => {
+  const loreDateStr = useContext(LoreDateCtx);
   const [tab, setTab] = useState("home");
   const [composing, setComposing] = useState(false);
   const [draftText, setDraftText] = useState("");
@@ -4851,7 +4899,7 @@ const TwitterScreen = ({data, isIos, accent, onBack=null, sharedTweets=[], onTwe
         <div style={{display:"flex",alignItems:"baseline",gap:5,flexWrap:"wrap"}}>
           <span style={{color:textCol,fontSize:12,fontWeight:700}}>{t.name}</span>
           <span style={{color:subCol,fontSize:11}}>{t.h}</span>
-          <span style={{color:subCol,fontSize:11,marginLeft:"auto"}}>· {t.time}</span>
+          <span style={{color:subCol,fontSize:11,marginLeft:"auto"}}>· {loreRelativeLabel(t.time,loreDateStr)}</span>
         </div>
         <div style={{color:textCol,fontSize:12,lineHeight:1.45,marginTop:2}}>{t.text}</div>
         {t.photo&&<img src={t.photo} style={{width:"100%",borderRadius:6,marginTop:6,display:"block",maxHeight:180,objectFit:"cover",border:`1px solid ${rowBorder.replace("1px solid ","")}`}}/>}
@@ -6813,7 +6861,16 @@ const IOSPhone = ({data,admin,onUpdate,onUpdateShared=()=>{},loreDate:loreDatePr
     // ── Grid view (Camera Roll or Recently Deleted) ───────────────────────
     if(galleryView!=="albums") {
       const isDeleted = galleryView==="recently_deleted";
-      const list = isDeleted ? deletedPhotos : activePhotos;
+      const rawList = isDeleted ? deletedPhotos : activePhotos;
+      // Si au moins une photo a une date réelle (dateISO, posée via le sélecteur de date en admin),
+      // on trie tout par date (plus récent en premier) et on insère des séparateurs par année.
+      // Sinon, on garde l'ordre manuel (drag & drop) exactement comme avant, pour ne rien casser
+      // pour les parties déjà en cours qui n'ont pas encore daté leurs photos.
+      const hasDates = !isDeleted && rawList.some(p=>p.dateISO);
+      const list = hasDates
+        ? [...rawList].sort((a,b)=>(b.dateISO||"0000-00-00").localeCompare(a.dateISO||"0000-00-00"))
+        : rawList;
+      let lastYear = null;
       const onDrop_g = (toIdx) => {
         if(galDragIdx===null||galDragIdx===toIdx) return;
         const reorderable = isDeleted ? [...deletedPhotos] : [...activePhotos];
@@ -6833,6 +6890,42 @@ const IOSPhone = ({data,admin,onUpdate,onUpdateShared=()=>{},loreDate:loreDatePr
             <span style={{color:"#6b6b70",fontSize:10}}>Items will be permanently deleted after 30 days.</span>
           </div>}
           <div style={{flex:1,background:"#f2f2f7",overflowY:"auto"}}>
+            {hasDates ? (
+              // Vue groupée par année (lecture seule pour l'ordre — il suit les dates)
+              (()=>{
+                const groups = [];
+                list.forEach(photo=>{
+                  const year = photo.dateISO ? photo.dateISO.slice(0,4) : "Sans date";
+                  if(!groups.length || groups[groups.length-1].year!==year) groups.push({year, photos:[]});
+                  groups[groups.length-1].photos.push(photo);
+                });
+                return groups.map(g=>(
+                  <div key={g.year}>
+                    <div style={{padding:"8px 12px 4px",fontSize:13,fontWeight:700,color:"#3a3a3c"}}>{g.year}</div>
+                    <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:6,padding:"0 8px 8px"}}>
+                      {g.photos.map(photo=>{
+                        const i = list.indexOf(photo);
+                        return (
+                        <div key={photo.id}
+                          style={{aspectRatio:"1",background:photo.color||"#e5e5ea",position:"relative",cursor:"pointer",overflow:"hidden"}}
+                          onClick={()=>{ if(admin&&!isDeleted){ setPhotoModal({type:"gallery",index:allPhotos.indexOf(photo)}); } else { setPhotoDetail(i); } }}>
+                          {photo.src?<img src={photo.src} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+                            :<div style={{width:"100%",height:"100%",display:"flex",alignItems:"center",justifyContent:"center"}}>
+                              {admin&&<span style={{fontSize:6,color:"rgba(255,255,255,0.3)",textAlign:"center",padding:2}}>{photo.desc||"+"}</span>}
+                            </div>}
+                          {admin&&!isDeleted&&<AdminBadge label="✕" onClick={e=>{e.stopPropagation();update("gallery",allPhotos.map(p=>p.id===photo.id?{...p,deleted:true}:p));}} color="#f44" style={{position:"absolute",top:1,right:1}}/>}
+                          {admin&&isDeleted&&<>
+                            <AdminBadge label="↩" onClick={e=>{e.stopPropagation();update("gallery",allPhotos.map(p=>p.id===photo.id?{...p,deleted:false}:p));}} color="#4cd964" style={{position:"absolute",top:1,right:1}}/>
+                            <AdminBadge label="🗑" onClick={e=>{e.stopPropagation();update("gallery",allPhotos.filter(p=>p.id!==photo.id));}} color="#f44" style={{position:"absolute",top:1,left:1}}/>
+                          </>}
+                        </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ));
+              })()
+            ) : (
             <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:6,padding:8}}>
               {list.map((photo,i)=>(
                 <div key={photo.id}
@@ -6884,6 +6977,7 @@ const IOSPhone = ({data,admin,onUpdate,onUpdateShared=()=>{},loreDate:loreDatePr
                 }}/>
               </label>}
             </div>
+            )}
           </div>
           <PhotosToolbar/>
         </Shell>
@@ -7126,7 +7220,7 @@ const IOSPhone = ({data,admin,onUpdate,onUpdateShared=()=>{},loreDate:loreDatePr
                     </select>;
                   })()}
                 </div>}
-                {showTime&&<span style={{fontSize:10,color:"#555e6b",padding:"2px 4px",fontFamily:FF_IOS}}>{msg.time}</span>}
+                {showTime&&<span style={{fontSize:10,color:"#555e6b",padding:"2px 4px",fontFamily:FF_IOS}}>{loreRelativeLabel(msg.time,loreDate)}</span>}
               </div>
               </React.Fragment>
             );
@@ -7158,7 +7252,7 @@ const IOSPhone = ({data,admin,onUpdate,onUpdateShared=()=>{},loreDate:loreDatePr
   if(app==="reddit")     return <Shell><IOSStatusBar/><NavBar title="Reddit" back={goHome}/><RedditScreen data={data} isIos={true} accent={accent}/></Shell>;
   if(app==="vpn")        return <Shell><IOSStatusBar/><NavBar title="VPN" back={goHome}/><VPNScreen isIos={true} accent={accent}/></Shell>;
   if(app==="wikipedia")  return <Shell><IOSStatusBar/><NavBar title="Wikipedia" back={goHome}/><WikipediaScreen isIos={true} accent={accent} charKey={charKey} data={data}/></Shell>;
-  if(app==="calendar")  return <Shell><IOSStatusBar/><NavBar title="Calendar" back={goHome}/><CalendarScreen data={data} isIos={true} accent={accent} admin={admin}/></Shell>;
+  if(app==="calendar")  return <Shell><IOSStatusBar/><NavBar title="Calendar" back={goHome}/><CalendarScreen data={data} isIos={true} accent={accent} admin={admin} update={update}/></Shell>;
   if(app==="calculator")return <Shell><IOSStatusBar/><NavBar title="Calcul." back={goHome}/><CalculatorScreen isIos={true} accent={accent}/></Shell>;
   if(app==="settings")  return <Shell><IOSStatusBar/><NavBar title="Settings" back={goHome}/><SettingsScreen data={data} isIos={true} accent={accent}/></Shell>;
   if(app==="weather")   return <Shell><IOSStatusBar/><NavBar title="Weather" back={goHome}/><WeatherScreen isIos={true} accent={accent} data={data} update={update} admin={admin}/></Shell>;
@@ -7781,7 +7875,7 @@ const AndroidPhone = ({data,admin,onUpdate,sharedAndroidIcons={},onUpdateShared=
                     </select>;
                   })()}
                 </div>}
-                <div style={{fontSize:10,color:"#aaa",marginTop:2,textAlign:isMe?"right":"left",padding:"0 4px",fontFamily:FF_IOS}}>{msg.time}</div>
+                <div style={{fontSize:10,color:"#aaa",marginTop:2,textAlign:isMe?"right":"left",padding:"0 4px",fontFamily:FF_IOS}}>{loreRelativeLabel(msg.time,loreDate)}</div>
               </div>
             </div>
             </React.Fragment>;
@@ -7806,7 +7900,7 @@ const AndroidPhone = ({data,admin,onUpdate,sharedAndroidIcons={},onUpdateShared=
   if(app==="phone") return <AppShell><AndroidStatusBar notifApps={notifApps} accent={accent}/><PhoneScreen data={data} admin={admin} update={update} accent={accent} isIos={false} panel={phonePanel} setPanel={setPhonePanel}/></AppShell>;
   if(app==="notes") return <AppShell><AndroidStatusBar notifApps={notifApps} accent={accent}/><NotesScreen data={data} admin={admin} update={update} accent={accent} isIos={false} noteOpen={noteOpen} setNoteOpen={setNoteOpen} goHome={goHome}/></AppShell>;
   if(app==="youtube")   return <AppShell><AndroidStatusBar notifApps={notifApps} accent={accent}/><YouTubeScreen isIos={false} charKey={charKey} data={data} onBack={goHome}/></AppShell>;
-  if(app==="calendar")  return <AppShell><AndroidStatusBar notifApps={notifApps} accent={accent}/><ActionBar title="Calendar" back={goHome}/><CalendarScreen data={data} isIos={false} accent={accent} admin={admin}/></AppShell>;
+  if(app==="calendar")  return <AppShell><AndroidStatusBar notifApps={notifApps} accent={accent}/><ActionBar title="Calendar" back={goHome}/><CalendarScreen data={data} isIos={false} accent={accent} admin={admin} update={update}/></AppShell>;
   if(app==="calculator")return <AppShell><AndroidStatusBar notifApps={notifApps} accent={accent}/><ActionBar title="Calcul." back={goHome}/><CalculatorScreen isIos={false} accent={accent}/></AppShell>;
   if(app==="settings")  return <AppShell><AndroidStatusBar notifApps={notifApps} accent={accent}/><ActionBar title="Settings" back={goHome}/><SettingsScreen data={data} isIos={false} accent={accent}/></AppShell>;
   if(app==="weather")   return <AppShell><AndroidStatusBar notifApps={notifApps} accent={accent}/><ActionBar title="Weather" back={goHome}/><WeatherScreen isIos={false} accent={accent} data={data} update={update} admin={admin}/></AppShell>;
@@ -18415,6 +18509,41 @@ const CHARACTERS = [
 
 // Champ d'édition admin — au niveau module pour ne pas être recréé à chaque
 // render (sinon l'input est remonté et perd le focus à chaque frappe).
+// Sélecteur de date + heure pour les champs "lore" (ex: "6 oct, 9:58am") — remplace la saisie
+// manuelle par deux <input type="date"/"time"> natifs, tout en gardant le format de string attendu
+// par parseLoreTime/formatMsgTime partout ailleurs dans l'app. Année toujours 2012 (cf LORE_DATE_DEFAULT).
+const LORE_MONTHS_FR = ['','jan','fév','mar','avr','mai','juin','juil','aoû','sep','oct','nov','déc'];
+const LoreDateTimeInput = ({value, onChange, width="100%", showLabel=true}) => {
+  const parsed = parseLoreTime(value);
+  const dateVal = parsed?.day ? `2012-${String(parsed.month).padStart(2,'0')}-${String(parsed.day).padStart(2,'0')}` : '';
+  const timeVal = (parsed && parsed.hour!=null) ? `${String(parsed.hour).padStart(2,'0')}:${String(parsed.min).padStart(2,'0')}` : '';
+  const build = (d, t) => {
+    if(!d) return value||'';
+    const [, m, day] = d.split('-').map(Number);
+    let str = `${day} ${LORE_MONTHS_FR[m]}`;
+    if(t) {
+      const [hh, mm] = t.split(':').map(Number);
+      const period = hh < 12 ? 'am' : 'pm';
+      const h12 = hh % 12 === 0 ? 12 : hh % 12;
+      str += `, ${h12}:${String(mm).padStart(2,'0')}${period}`;
+    }
+    return str;
+  };
+  return (
+    <div style={{display:"flex",flexDirection:"column",gap:5,width}}>
+      {showLabel && <label style={{color:"#9ca3af",fontSize:10,letterSpacing:0.8,textTransform:"uppercase",fontWeight:600}}>Date / heure</label>}
+      <div style={{display:"flex",gap:4,flexWrap:"wrap"}}>
+        <input type="date" value={dateVal} min="2012-01-01" max="2012-12-31"
+          onChange={e=>onChange(build(e.target.value, timeVal))}
+          className="adm-input" style={{flex:"1 1 120px",minWidth:0,background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#1a1a2e",padding:"7px 8px",fontSize:11,borderRadius:7}}/>
+        <input type="time" value={timeVal}
+          onChange={e=>onChange(build(dateVal, e.target.value))}
+          className="adm-input" style={{flex:"1 1 90px",minWidth:0,background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#1a1a2e",padding:"7px 8px",fontSize:11,borderRadius:7}}/>
+      </div>
+    </div>
+  );
+};
+
 const Field = ({label, value, onChange, textarea=false, width="100%"}) => (
   <div style={{display:"flex",flexDirection:"column",gap:5,width}}>
     <label style={{color:"#9ca3af",fontSize:10,letterSpacing:0.8,textTransform:"uppercase",fontWeight:600}}>{label}</label>
@@ -18507,6 +18636,8 @@ const MoveButtons = ({index, length, onMoveUp, onMoveDown}) => (
 const APP_SECTIONS = {
   messages:   {icon:"💬", label:"Messages"},
   calls:      {icon:"📞", label:"Appels"},
+  contacts:   {icon:"👥", label:"Contacts"},
+  voicemail:  {icon:"📼", label:"Messages vocaux"},
   notes:      {icon:"📝", label:"Notes"},
   gallery:    {icon:"🖼", label:"Galerie"},
   photos:     {icon:"🖼", label:"Galerie"},   // iOS alias → même section "gallery"
@@ -18536,13 +18667,25 @@ const APP_SECTIONS = {
   youtube:    {icon:"▶️", label:"YouTube"},
 };
 
+// L'app "Téléphone" du portable couvre en réalité 3 sections admin distinctes (Appels, Contacts,
+// Messages vocaux). Toutes les autres apps sont 1-pour-1 (id d'app = clé de section), donc on
+// centralise ce cas particulier ici plutôt que de le dupliquer partout où on construit la nav.
+const expandAppSections = (id) => {
+  if(id==="phone") return [
+    {key:"calls",     ...APP_SECTIONS.calls},
+    {key:"contacts",  ...APP_SECTIONS.contacts},
+    {key:"voicemail", ...APP_SECTIONS.voicemail},
+  ];
+  const key = id==="photos" ? "gallery" : id==="gmail" ? "mail" : id==="safari" ? "browser" : id;
+  return APP_SECTIONS[key] ? [{key, ...APP_SECTIONS[key]}] : [];
+};
+
 // Calcule la première section admin disponible (triée alphabétiquement) pour un perso donné.
 // Utilisée pour ouvrir l'admin directement sur la bonne section, sans flash sur une valeur fixe.
 const firstAppSectionKey = (charData) => {
   const installedApps = [...new Set([...(charData?.apps||[]), ...(charData?.dock||[])])];
   const sections = installedApps
-    .filter(id => APP_SECTIONS[id])
-    .map(id => ({key: id==="photos" ? "gallery" : id==="gmail" ? "mail" : id==="safari" ? "browser" : id, ...APP_SECTIONS[id]}))
+    .flatMap(expandAppSections)
     .filter((s,i,a) => a.findIndex(x=>x.key===s.key)===i)
     .sort((a,b) => a.label.localeCompare(b.label, "fr"));
   return sections[0]?.key || "messages";
@@ -18556,10 +18699,6 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
   const [cropTarget, setCropTarget] = useState(null);
   const [cropRatio, setCropRatio] = useState(1);
   const [customAppName, setCustomAppName] = useState("");
-  const [showExportMenu, setShowExportMenu] = useState(false);
-  const [exportModal, setExportModal] = useState(null); // {filename, size, blobUrl}
-  const [exportLoading, setExportLoading] = useState(false);
-  const exportBlobUrl = React.useRef(null); // holds the live blob URL, never in state
   // Set of conv keys currently expanded in the messages admin panel
   const [openConvs, setOpenConvs] = useState(new Set());
   const toggleConv = (key) => setOpenConvs(prev => { const n=new Set(prev); n.has(key)?n.delete(key):n.add(key); return n; });
@@ -18587,33 +18726,6 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
   }, []);
 
 
-  const doExport = (filename, obj) => {
-    setShowExportMenu(false);
-    setExportLoading(true);
-    // Release previous blob
-    if(exportBlobUrl.current) { URL.revokeObjectURL(exportBlobUrl.current); exportBlobUrl.current = null; }
-    // Serialize off the main thread paint cycle
-    setTimeout(() => {
-      let json;
-      try { json = JSON.stringify(obj, null, 2); }
-      catch(e) { setExportLoading(false); alert("Export impossible : données non sérialisables."); return; }
-      const size = json.length;
-      let blobUrl = null;
-      try {
-        const blob = new Blob([json], {type:"application/json"});
-        blobUrl = URL.createObjectURL(blob);
-        exportBlobUrl.current = blobUrl;
-        // Try immediate download
-        const a = document.createElement("a");
-        a.href = blobUrl; a.download = filename;
-        document.body.appendChild(a); a.click(); document.body.removeChild(a);
-      } catch(e) { /* sandbox blocked */ }
-      // Store only metadata in state — never the json string itself
-      setExportLoading(false);
-      setExportModal({filename, size, blobUrl});
-    }, 30);
-  };
-  const fmtBytes = n => n>=1048576 ? (n/1048576).toFixed(1)+" Mo" : n>=1024 ? Math.round(n/1024)+" Ko" : n+" o";
   const [itunesMusicQuery, setItunesMusicQuery] = useState("");
   const [itunesResults, setItunesResults] = useState([]);
   const [itunesSearching, setItunesSearching] = useState(false);
@@ -19231,7 +19343,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                 : (msg.thread||[]);
               const updMsg = (newThread) => upd("messages", d.messages.map(mm=>mm===msg?{...mm,thread:newThread}:mm));
               return rawThread.map((msg2,mi)=>(
-              <div key={mi} style={{display:"flex",gap:8,marginBottom:6,alignItems:"center"}}>
+              <div key={mi} style={{display:"flex",gap:8,marginBottom:6,alignItems:"center",flexWrap:"wrap"}}>
                 <select value={msg2.from} onChange={e=>{
                   if(isShared){
                     const myL=msg.perspective||'a';const otherL=myL==='a'?'b':'a';
@@ -19245,11 +19357,11 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                 <input value={msg2.text} onChange={e=>{
                   if(isShared){const cur=[...(data.sharedThreads?.[msg.sharedThreadId]||[])];cur[mi]={...cur[mi],text:e.target.value};onUpdate(msg.sharedThreadId,cur);}
                   else{const t=[...rawThread];t[mi]={...t[mi],text:e.target.value};updMsg(t);}
-                }} className="adm-input" style={{flex:1,background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#1a1a2e",padding:"6px 10px",fontSize:12,borderRadius:7}}/>
-                <input value={msg2.time} onChange={e=>{
-                  if(isShared){const cur=[...(data.sharedThreads?.[msg.sharedThreadId]||[])];cur[mi]={...cur[mi],time:e.target.value};onUpdate(msg.sharedThreadId,cur);}
-                  else{const t=[...rawThread];t[mi]={...t[mi],time:e.target.value};updMsg(t);}
-                }} className="adm-input" style={{width:90,background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#6b7280",padding:"6px 8px",fontSize:11,borderRadius:7}}/>
+                }} className="adm-input" style={{flex:"1 1 140px",minWidth:0,background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#1a1a2e",padding:"6px 10px",fontSize:12,borderRadius:7}}/>
+                <LoreDateTimeInput value={msg2.time} onChange={v=>{
+                  if(isShared){const cur=[...(data.sharedThreads?.[msg.sharedThreadId]||[])];cur[mi]={...cur[mi],time:v};onUpdate(msg.sharedThreadId,cur);}
+                  else{const t=[...rawThread];t[mi]={...t[mi],time:v};updMsg(t);}
+                }} width="190px" showLabel={false}/>
                 <button onClick={()=>{
                   if(isShared){const cur=[...(data.sharedThreads?.[msg.sharedThreadId]||[])];cur.splice(mi,1);onUpdate(msg.sharedThreadId,cur);}
                   else{updMsg(rawThread.filter((_,tj)=>tj!==mi));}
@@ -19297,8 +19409,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
               className="adm-input" style={{background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#374151",padding:"7px 8px",fontSize:11,borderRadius:7}}>
               <option value="incoming">incoming</option><option value="outgoing">outgoing</option><option value="missed">missed</option>
             </select>
-            <input value={call.time} onChange={e=>{const c=[...d.calls];c[i]={...c[i],time:e.target.value};upd("calls",c);}}
-              placeholder="Heure" className="adm-input" style={{width:130,background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#6b7280",padding:"7px 8px",fontSize:11,borderRadius:7}}/>
+            <LoreDateTimeInput value={call.time} onChange={v=>{const c=[...d.calls];c[i]={...c[i],time:v};upd("calls",c);}} width="190px" showLabel={false}/>
             <input value={call.duration||""} onChange={e=>{const c=[...d.calls];c[i]={...c[i],duration:e.target.value||null};upd("calls",c);}}
               placeholder="Duration" className="adm-input" style={{width:90,background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#6b7280",padding:"7px 8px",fontSize:11,borderRadius:7}}/>
             <button onClick={()=>upd("calls",d.calls.filter((_,j)=>j!==i))}
@@ -19309,6 +19420,111 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
           style={{background:"rgba(99,102,241,0.08)",border:"1px dashed rgba(99,102,241,0.4)",color:"#6366f1",borderRadius:8,padding:"10px 18px",cursor:"pointer",fontSize:12,fontWeight:600}}>+ Call</button>
       </div>
     );
+
+    case "contacts": {
+      // Renomme un contact partout où son nom est référencé (appels + messages 1-à-1, pas les groupes)
+      // pour que les deux écrans restent synchronisés sans devoir tout refaire en sous-main.
+      const updContact = (id, field, val) => {
+        const contacts = d.contacts||[];
+        const idx = contacts.findIndex(c=>c.id===id);
+        if(idx<0) return;
+        const oldName = contacts[idx].name;
+        const newContacts = contacts.map(c=>c.id===id?{...c,[field]:val}:c);
+        if(field==="name" && oldName && oldName!==val){
+          const newCalls = (d.calls||[]).map(c=>c.contact===oldName?{...c,contact:val}:c);
+          const newMessages = (d.messages||[]).map(m=>(!m.isGroup && m.contact===oldName)?{...m,contact:val}:m);
+          onUpdate(tab, {...d, contacts:newContacts, calls:newCalls, messages:newMessages});
+        } else {
+          onUpdate(tab, {...d, contacts:newContacts});
+        }
+      };
+      const addContact = () => onUpdate(tab, {...d, contacts:[{id:Date.now(), name:"Nouveau contact", phone:"", photo:null}, ...(d.contacts||[])]});
+      const deleteContact = (id) => onUpdate(tab, {...d, contacts:(d.contacts||[]).filter(c=>c.id!==id)});
+      const seedContacts = () => {
+        const names = new Set();
+        (d.calls||[]).forEach(c=>c.contact && names.add(c.contact));
+        (d.messages||[]).forEach(m=>!m.isGroup && m.contact && names.add(m.contact));
+        const existing = new Set((d.contacts||[]).map(c=>c.name));
+        const toAdd = [...names].filter(n=>!existing.has(n)).map((n,i)=>({id:Date.now()+i, name:n, phone:"", photo:null}));
+        if(toAdd.length===0){ alert("Aucun nouveau contact à importer — tout est déjà dans la liste."); return; }
+        onUpdate(tab, {...d, contacts:[...(d.contacts||[]), ...toAdd]});
+      };
+      return (
+        <div style={{display:"flex",flexDirection:"column",gap:8}}>
+          <div style={{fontSize:11,color:"#6b7280",lineHeight:1.5}}>
+            Renommer un contact ici met aussi à jour son nom dans les Appels et les Messages de ce perso.
+          </div>
+          <button onClick={seedContacts}
+            style={{alignSelf:"flex-start",background:"rgba(16,185,129,0.08)",border:"1px dashed rgba(16,185,129,0.4)",color:"#059669",borderRadius:8,padding:"8px 14px",cursor:"pointer",fontSize:11,fontWeight:600}}>
+            ⇩ Importer les noms depuis Appels / Messages
+          </button>
+          {(d.contacts||[]).map((c,i)=>(
+            <div key={c.id} className="adm-card" style={{display:"flex",gap:8,alignItems:"center",background:"rgba(255,255,255,0.85)",padding:10,borderRadius:10,border:"1px solid rgba(0,0,0,0.07)",flexWrap:"wrap"}}>
+              <div onClick={()=>document.getElementById(`contact-photo-${tab}-${c.id}`).click()}
+                style={{width:40,height:40,borderRadius:"50%",background:"rgba(99,102,241,0.08)",border:"1px dashed rgba(99,102,241,0.3)",overflow:"hidden",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer"}}>
+                {c.photo ? <img src={c.photo} style={{width:"100%",height:"100%",objectFit:"cover"}}/> : <span style={{fontSize:16}}>👤</span>}
+              </div>
+              <input id={`contact-photo-${tab}-${c.id}`} type="file" accept="image/*" style={{display:"none"}} onChange={e=>{
+                const f=e.target.files?.[0]; if(!f)return;
+                const r=new UploadReader(); r.onload=ev=>updContact(c.id,"photo",ev.target.result); r.readAsDataURL(f); e.target.value="";
+              }}/>
+              <input value={c.name} onChange={e=>updContact(c.id,"name",e.target.value)}
+                placeholder="Nom" className="adm-input" style={{flex:"1 1 140px",minWidth:0,background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#1a1a2e",padding:"7px 10px",fontSize:12,borderRadius:7,fontWeight:600}}/>
+              <input value={c.phone||""} onChange={e=>updContact(c.id,"phone",e.target.value)}
+                placeholder="Téléphone (optionnel)" className="adm-input" style={{flex:"1 1 120px",minWidth:0,background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#6b7280",padding:"7px 10px",fontSize:12,borderRadius:7}}/>
+              <button onClick={()=>deleteContact(c.id)}
+                className="adm-del-btn" style={{background:"none",border:"none",color:"#d1d5db",cursor:"pointer",fontSize:16,padding:"2px 6px",flexShrink:0,borderRadius:5,transition:"all 0.15s"}}>×</button>
+            </div>
+          ))}
+          <button onClick={addContact}
+            style={{background:"rgba(99,102,241,0.08)",border:"1px dashed rgba(99,102,241,0.4)",color:"#6366f1",borderRadius:8,padding:"10px 18px",cursor:"pointer",fontSize:12,fontWeight:600,alignSelf:"flex-start"}}>+ Contact</button>
+        </div>
+      );
+    }
+
+    case "voicemail": {
+      const updVm = (id, field, val) => {
+        const list = (d.voicemails||[]).map(v=>v.id===id?{...v,[field]:val}:v);
+        upd("voicemails", list);
+      };
+      const addVm = () => upd("voicemails",[{id:Date.now(), contact:"", time:"1 oct, 9:00am", duration:"0:08", transcript:""},...(d.voicemails||[])]);
+      const deleteVm = (id) => upd("voicemails", (d.voicemails||[]).filter(v=>v.id!==id));
+      const seedVm = () => {
+        const missed = (d.calls||[]).filter(c=>c.type==="missed");
+        if(missed.length===0){ alert("Aucun appel manqué à importer."); return; }
+        const toAdd = missed.map((c,i)=>({id:Date.now()+i, contact:c.contact, time:c.time, duration:"0:08", transcript:""}));
+        upd("voicemails",[...(d.voicemails||[]), ...toAdd]);
+      };
+      return (
+        <div style={{display:"flex",flexDirection:"column",gap:8}}>
+          <div style={{fontSize:11,color:"#6b7280",lineHeight:1.5}}>
+            Sans message vocal ajouté ici, l'onglet "Voicemail" du téléphone affiche par défaut les 3 derniers appels manqués (sans texte).
+          </div>
+          <button onClick={seedVm}
+            style={{alignSelf:"flex-start",background:"rgba(16,185,129,0.08)",border:"1px dashed rgba(16,185,129,0.4)",color:"#059669",borderRadius:8,padding:"8px 14px",cursor:"pointer",fontSize:11,fontWeight:600}}>
+            ⇩ Importer les appels manqués
+          </button>
+          {(d.voicemails||[]).map((vm,i)=>(
+            <div key={vm.id} className="adm-card" style={{display:"flex",flexDirection:"column",gap:6,background:"rgba(255,255,255,0.85)",padding:10,borderRadius:10,border:"1px solid rgba(0,0,0,0.07)"}}>
+              <div style={{display:"flex",gap:8,flexWrap:"wrap",alignItems:"center"}}>
+                <input value={vm.contact} onChange={e=>updVm(vm.id,"contact",e.target.value)}
+                  placeholder="Contact" className="adm-input" style={{flex:"1 1 120px",minWidth:0,background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#1a1a2e",padding:"7px 10px",fontSize:12,borderRadius:7,fontWeight:600}}/>
+                <LoreDateTimeInput value={vm.time} onChange={v=>updVm(vm.id,"time",v)} width="190px" showLabel={false}/>
+                <input value={vm.duration||""} onChange={e=>updVm(vm.id,"duration",e.target.value)}
+                  placeholder="Durée" className="adm-input" style={{width:70,flexShrink:0,background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#6b7280",padding:"7px 8px",fontSize:11,borderRadius:7}}/>
+                <button onClick={()=>deleteVm(vm.id)}
+                  className="adm-del-btn" style={{background:"none",border:"none",color:"#d1d5db",cursor:"pointer",fontSize:16,padding:"2px 6px",flexShrink:0,borderRadius:5}}>×</button>
+              </div>
+              <textarea value={vm.transcript||""} onChange={e=>updVm(vm.id,"transcript",e.target.value)}
+                placeholder="Texte du message vocal (ce que la personne dit)…" className="adm-input"
+                style={{width:"100%",minHeight:50,background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#1a1a2e",padding:"7px 10px",fontSize:12,borderRadius:7,resize:"vertical",boxSizing:"border-box"}}/>
+            </div>
+          ))}
+          <button onClick={addVm}
+            style={{background:"rgba(99,102,241,0.08)",border:"1px dashed rgba(99,102,241,0.4)",color:"#6366f1",borderRadius:8,padding:"10px 18px",cursor:"pointer",fontSize:12,fontWeight:600,alignSelf:"flex-start"}}>+ Message vocal</button>
+        </div>
+      );
+    }
 
     case "notes": return (
       <div style={{display:"flex",flexDirection:"column",gap:12}}>
@@ -19391,8 +19607,13 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
             </label>
           </div>
           <div style={{padding:"6px 8px",display:"flex",flexDirection:"column",gap:4}}>
-            <input value={photo.date||""} onChange={e=>updPhoto(photo.id,{date:e.target.value})}
-              placeholder="Date" className="adm-input" style={{width:"100%",background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.08)",color:"#6b7280",padding:"4px 7px",fontSize:10,borderRadius:6}}/>
+            <input type="date" value={photo.dateISO||""} onChange={e=>{
+                const iso = e.target.value;
+                if(!iso){ updPhoto(photo.id,{dateISO:null}); return; }
+                const [y,m,dd] = iso.split('-').map(Number);
+                updPhoto(photo.id,{dateISO:iso, date:`${dd} ${LORE_MONTHS_FR[m]} ${y}`});
+              }}
+              className="adm-input" style={{width:"100%",background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.08)",color:"#6b7280",padding:"4px 7px",fontSize:10,borderRadius:6}}/>
             <div style={{display:"flex",gap:4}}>
               {activeTab==="deleted"
                 ? <button onClick={()=>updPhoto(photo.id,{deleted:false})} style={{flex:1,background:"rgba(16,185,129,0.07)",border:"1px solid rgba(16,185,129,0.2)",color:"#059669",borderRadius:6,padding:"3px 0",cursor:"pointer",fontSize:10}}>↩</button>
@@ -19987,7 +20208,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                   <div style={{display:"flex",gap:6}}>
                     <Field label="Handle" value={t.h||""} onChange={v=>upTw({h:v})} style={{flex:1}}/>
                     <Field label="Nom"    value={t.name||""} onChange={v=>upTw({name:v})} style={{flex:1}}/>
-                    <Field label="Temps"  value={t.time||""} onChange={v=>upTw({time:v})} style={{width:56}}/>
+                    <LoreDateTimeInput value={t.time||""} onChange={v=>upTw({time:v})} width="180px" showLabel={true}/>
                     <div style={{display:"flex",gap:6,alignItems:"flex-start"}}>
                     <MoveButtons 
                       index={i} 
@@ -20129,7 +20350,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                 </div>
                 <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
                   <Field label="Contact" value={snap.contact||""} onChange={v=>ensureCustom(i,{contact:v})} style={{flex:1}}/>
-                  <Field label="Date / heure" value={snap.time||""} onChange={v=>ensureCustom(i,{time:v})} width="160px"/>
+                  <LoreDateTimeInput value={snap.time||""} onChange={v=>ensureCustom(i,{time:v})} width="180px"/>
                 </div>
               </div>
             ))}
@@ -20523,7 +20744,11 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                             </select>
                           </div>
                         </div>
-                        <Field label="Heure" value={ev.time||""} onChange={v=>ensureCustom(i,{time:v})} width="80px"/>
+                        <div style={{display:"flex",flexDirection:"column",gap:5,width:"90px"}}>
+                          <label style={{color:"#9ca3af",fontSize:10,letterSpacing:0.8,textTransform:"uppercase",fontWeight:600}}>Heure</label>
+                          <input type="time" value={ev.time||""} onChange={e=>ensureCustom(i,{time:e.target.value})}
+                            className="adm-input" style={{background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#1a1a2e",padding:"8px 8px",fontSize:12,borderRadius:8,width:"90px"}}/>
+                        </div>
                         <Field label="Lieu" value={ev.location||""} onChange={v=>ensureCustom(i,{location:v})} width="130px"/>
                         <button onClick={()=>updList(effective.filter((_,j)=>j!==i))} style={{background:"none",border:"none",color:"#d1d5db",cursor:"pointer",fontSize:16,padding:"0 4px",marginTop:18}}>×</button>
                       </div>
@@ -20641,7 +20866,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                 <div key={h.id??i} style={{display:"flex",gap:6,alignItems:"center",background:"rgba(255,255,255,0.85)",padding:"8px 10px",borderRadius:8,border:"1px solid rgba(0,0,0,0.07)"}}>
                   <Field label="Titre" value={h.title||""} onChange={v=>{const hist=[...b.history];hist[i]={...hist[i],title:v};upB({history:hist});}} style={{flex:1}}/>
                   <Field label="URL" value={h.url||""} onChange={v=>{const hist=[...b.history];hist[i]={...hist[i],url:v};upB({history:hist});}} style={{flex:1}}/>
-                  <Field label="Date/Heure" value={h.time||""} onChange={v=>{const hist=[...b.history];hist[i]={...hist[i],time:v};upB({history:hist});}} width="140px"/>
+                  <LoreDateTimeInput value={h.time||""} onChange={v=>{const hist=[...b.history];hist[i]={...hist[i],time:v};upB({history:hist});}} width="190px"/>
                   <button onClick={()=>upB({history:b.history.filter((_,j)=>j!==i)})} style={{background:"none",border:"none",color:"#d1d5db",cursor:"pointer",fontSize:16}}>×</button>
                 </div>
               ))}
@@ -20830,7 +21055,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
               <div key={i} style={{background:"rgba(255,255,255,0.9)",borderRadius:10,border:"1px solid rgba(0,0,0,0.07)",padding:"12px 14px",display:"flex",flexDirection:"column",gap:8}}>
                 <div style={{display:"flex",gap:8,alignItems:"center",flexWrap:"wrap"}}>
                   <Field label="Expéditeur" value={m.from||""} onChange={v=>updMail({from:v})} style={{flex:1,minWidth:140}}/>
-                  <Field label="Heure/Date" value={m.time||""} onChange={v=>updMail({time:v})} width="80px"/>
+                  <LoreDateTimeInput value={m.time||""} onChange={v=>updMail({time:v})} width="180px"/>
                   <div style={{display:"flex",flexDirection:"column",gap:2,marginTop:18}}>
                     <label style={{display:"flex",alignItems:"center",gap:5,fontSize:11,color:"#6b7280",cursor:"pointer",whiteSpace:"nowrap"}}>
                       <input type="checkbox" checked={!!m.unread} onChange={e=>updMail({unread:e.target.checked})}/> Non lu
@@ -21039,8 +21264,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
   // Apps installed on this character that have admin sections
   const installedApps = [...new Set([...(d.apps||[]), ...(d.dock||[])])];
   const charAppSections = installedApps
-    .filter(id => APP_SECTIONS[id])
-    .map(id => ({key: id==="photos" ? "gallery" : id==="gmail" ? "mail" : id==="safari" ? "browser" : id, ...APP_SECTIONS[id]}))
+    .flatMap(expandAppSections)
     .filter((s,i,a) => a.findIndex(x=>x.key===s.key)===i) // dédoublonne si gallery+photos tous les deux
     .sort((a,b) => a.label.localeCompare(b.label, "fr"));
 
@@ -21063,83 +21287,6 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
 
   return (
     <div ref={adminRootRef} style={{minHeight:"100vh",background:"#f4f5f7",fontFamily:FF_IOS,display:"flex",flexDirection:"column",color:"#1a1a2e"}}>
-      {exportLoading&&(
-        <div style={{position:"fixed",inset:0,zIndex:100001,background:"rgba(0,0,0,0.45)",display:"flex",alignItems:"center",justifyContent:"center"}}>
-          <div style={{background:"#fff",borderRadius:12,padding:"28px 36px",display:"flex",flexDirection:"column",alignItems:"center",gap:14,boxShadow:"0 12px 40px rgba(0,0,0,0.3)"}}>
-            <div style={{width:36,height:36,border:"4px solid #e5e7eb",borderTop:"4px solid #6366f1",borderRadius:"50%",animation:"spin360 0.7s linear infinite"}}/>
-            <span style={{fontSize:13,color:"#374151",fontWeight:500}}>Préparation de l'export…</span>
-          </div>
-        </div>
-      )}
-      {exportModal&&(
-        <div style={{position:"fixed",inset:0,zIndex:100000,background:"rgba(0,0,0,0.55)",display:"flex",alignItems:"center",justifyContent:"center",padding:16}} onClick={()=>setExportModal(null)}>
-          <div onClick={e=>e.stopPropagation()} style={{background:"#fff",borderRadius:14,boxShadow:"0 12px 48px rgba(0,0,0,0.4)",width:"min(520px,100%)",maxHeight:"88vh",display:"flex",flexDirection:"column",overflow:"hidden"}}>
-            <div style={{padding:"14px 16px",borderBottom:"1px solid #eee",display:"flex",alignItems:"center",gap:8,flexShrink:0}}>
-              <div style={{fontWeight:700,fontSize:14,color:"#1a1a2e",flex:1}}>Export — {exportModal.filename}</div>
-              <button onClick={()=>setExportModal(null)} style={{background:"none",border:"none",fontSize:22,color:"#9ca3af",cursor:"pointer",lineHeight:1,padding:"0 2px"}}>×</button>
-            </div>
-            <div style={{padding:"14px 16px",display:"flex",flexDirection:"column",gap:14,overflowY:"auto"}}>
-
-              
-              <div style={{background:"#f8fafc",border:"1px solid #e2e8f0",borderRadius:8,padding:"10px 14px",display:"flex",alignItems:"center",gap:10}}>
-                <span style={{fontSize:24}}>📦</span>
-                <div>
-                  <div style={{fontSize:13,fontWeight:600,color:"#1e293b"}}>{exportModal.filename}</div>
-                  <div style={{fontSize:11,color:"#64748b",marginTop:1}}>{fmtBytes(exportModal.size)}</div>
-                </div>
-              </div>
-
-              
-              <div style={{fontSize:12,color:"#64748b",lineHeight:1.6,background:"#fffbeb",border:"1px solid #fde68a",borderRadius:8,padding:"10px 14px"}}>
-                <b style={{color:"#92400e"}}>Sur iPhone :</b> appuyez et maintenez le bouton <b>⬇ Télécharger</b> ci-dessous → choisissez <b>"Télécharger le fichier lié"</b>. Ou utilisez <b>📋 Copier</b> et collez dans une note ou un mail.
-              </div>
-
-              
-              <a
-                href={exportModal.blobUrl || "#"}
-                download={exportModal.filename}
-                onClick={e=>{
-                  // On desktop, click triggers download normally
-                  // On iPhone, user long-presses instead
-                  if(!exportModal.blobUrl){ e.preventDefault(); alert("Blob expiré — relancez l'export."); }
-                }}
-                style={{display:"block",background:"#4f46e5",color:"#fff",borderRadius:10,padding:"13px 20px",fontWeight:700,fontSize:14,textAlign:"center",textDecoration:"none",WebkitTapHighlightColor:"transparent",userSelect:"none"}}
-              >⬇ Télécharger</a>
-
-              
-              <button onClick={async()=>{
-                const url = exportBlobUrl.current || exportModal.blobUrl;
-                if(!url){ alert("Blob expiré — relancez l'export."); return; }
-                if(exportModal.size > 5_000_000){ alert("Fichier trop volumineux pour le presse-papier ("+fmtBytes(exportModal.size)+"). Utilisez Télécharger."); return; }
-                try {
-                  const resp = await fetch(url);
-                  const text = await resp.text();
-                  await navigator.clipboard.writeText(text);
-                  alert("JSON copié ✓");
-                } catch(e) {
-                  // Fallback: show textarea
-                  setExportModal(m=>({...m, showTextarea:true}));
-                }
-              }} style={{background:"#fff",border:"1px solid #e2e8f0",color:"#374151",borderRadius:10,padding:"11px 20px",fontWeight:600,fontSize:13,cursor:"pointer",textAlign:"center"}}>
-                📋 Copier le JSON {exportModal.size > 5_000_000 ? `(${fmtBytes(exportModal.size)} — déconseillé)` : ""}
-              </button>
-
-              
-              {exportModal.showTextarea&&(
-                <div style={{display:"flex",flexDirection:"column",gap:6}}>
-                  <div style={{fontSize:11,color:"#64748b"}}>Sélectionnez tout et copiez (Cmd/Ctrl+A puis C) :</div>
-                  <textarea
-                    readOnly
-                    defaultValue={exportModal.blobUrl ? "" : ""}
-                    ref={el=>{ if(el && exportModal.blobUrl){ fetch(exportModal.blobUrl).then(r=>r.text()).then(t=>{el.value=t;el.select();}); } }}
-                    style={{width:"100%",height:120,fontFamily:"monospace",fontSize:10,padding:8,border:"1px solid #d1d5db",borderRadius:6,resize:"none",color:"#374151",background:"#f8fafc",boxSizing:"border-box"}}
-                  />
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
       <style>{`
         @keyframes fadeToBlack { from { opacity:0; } to { opacity:1; } }
         @keyframes wakeUp { from { opacity:0; } to { opacity:1; } }
@@ -21154,7 +21301,6 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
         .nav-item:hover { background: rgba(0,0,0,0.04) !important; }
         .nav-item.active { background: var(--char-color-light) !important; color: var(--char-color) !important; font-weight: 700 !important; }
         .char-tab:hover { opacity: 0.85; }
-        .import-btn:hover { background: #f1f5f9 !important; }
         ::-webkit-scrollbar { width: 4px; height: 4px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.12); border-radius: 10px; }
@@ -21180,9 +21326,6 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
           .nav-item.active { border-left: none !important; border-bottom: 2px solid var(--char-color) !important; }
           .adm-content { padding: 12px !important; }
           .adm-breadcrumb { padding: 8px 12px !important; }
-        }
-        @media (max-width: 420px) {
-          .adm-topbar-export-label { display: none !important; }
         }
         .adm-subtabs { overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
         .adm-subtabs::-webkit-scrollbar { display: none; }
@@ -21233,125 +21376,11 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
               style={{background:"transparent",border:"none",color:"#6366f1",fontSize:11,cursor:"pointer",outline:"none",fontFamily:"monospace",fontWeight:600,width:110}}/>
           </div>}
 
-          {/* Export/Import */}
-          <div style={{position:"relative"}}>
-            <button onClick={()=>setShowExportMenu(v=>!v)}
-              style={{background:"#f8fafc",border:"1px solid #e5e7eb",color:"#374151",padding:"6px 11px",borderRadius:7,fontSize:12,cursor:"pointer",fontWeight:500,display:"flex",alignItems:"center",gap:5}}>
-              <span>⬇</span><span className="adm-topbar-export-label"> Données</span><span style={{fontSize:10,color:"#9ca3af"}}>▾</span>
-            </button>
-            {showExportMenu&&<>
-              <div style={{position:"fixed",inset:0,zIndex:99998}} onClick={()=>setShowExportMenu(false)}/>
-              <div style={{position:"absolute",top:"calc(100% + 6px)",right:0,background:"#fff",border:"1px solid #e5e7eb",borderRadius:10,boxShadow:"0 8px 24px rgba(0,0,0,0.12)",zIndex:99999,minWidth:200,padding:"6px 0",display:"flex",flexDirection:"column"}}>
-                <div style={{fontSize:10,color:"#9ca3af",fontWeight:700,padding:"6px 14px 4px",letterSpacing:0.8,textTransform:"uppercase"}}>Exporter</div>
-                {[
-                  ["📝 Texte uniquement", ()=>{
-                    const out={};
-                    ['glinda','eoghan','drew','elias'].forEach(k=>{const ch=data[k]||{};out[k]={messages:ch.messages,notes:ch.notes,calls:ch.calls,bio:ch.bio,name:ch.name,username:ch.username};});
-                    out.sharedThreads=data.sharedThreads;
-                    doExport(`findanna-text-${new Date().toISOString().slice(0,10)}.json`, out);
-                  }],
-                  ["🖼 Visuels & Icônes", ()=>{
-                    const out={};
-                    ['glinda','eoghan','drew','elias'].forEach(k=>{const ch=data[k]||{};out[k]={wallpaper:ch.wallpaper,chassisPng:ch.chassisPng,playlistCover:ch.playlistCover,avatar:ch.avatar,gallery:ch.gallery,grindrProfile:ch.grindrProfile,apps:ch.apps,dock:ch.dock,appIcons:ch.appIcons,appNames:ch.appNames};});
-                    out._sharedAndroidIcons=data._sharedAndroidIcons;
-                    doExport(`findanna-visuals-${new Date().toISOString().slice(0,10)}.json`, out);
-                  }],
-                  ["📦 Tout exporter", ()=>doExport(`findanna-full-${new Date().toISOString().slice(0,10)}.json`, data)],
-                ].map(([label,fn])=>(
-                  <button key={label} className="import-btn" onClick={fn}
-                    style={{background:"none",border:"none",textAlign:"left",padding:"8px 14px",fontSize:12,color:"#374151",cursor:"pointer",fontWeight:500,width:"100%"}}>
-                    {label}
-                  </button>
-                ))}
-                <div style={{height:1,background:"#f0f0f0",margin:"4px 0"}}/>
-                <div style={{fontSize:10,color:"#9ca3af",fontWeight:700,padding:"6px 14px 4px",letterSpacing:0.8,textTransform:"uppercase"}}>Importer</div>
-                {[
-                  ["📝 Texte uniquement",   {keys:["messages","notes","calls","bio","name","username"], shared:true}],
-                  ["🖼 Icônes uniquement",  {keys:["appIcons","appNames"], shared:false, android:true}],
-                  ["🖼 Visuels & Icônes",   {keys:["wallpaper","chassisPng","playlistCover","avatar","gallery","grindrProfile","appIcons","appNames"], shared:false, android:true}],
-                  ["📦 Tout importer",       {keys:null, shared:true, android:true}],
-                ].map(([label,opts])=>(
-                  <button key={label} className="import-btn" onClick={()=>{
-                    const _i=document.createElement("input");_i.type="file";_i.accept=".json";
-                    _i.onchange=ev=>{const f=ev.target.files?.[0];if(!f)return;const r=new FileReader();r.onload=re=>{try{
-                      const parsed=JSON.parse(re.target.result);
-                      const fp=FORCED_PLAYLISTS;
-                      const CHAR_OS={glinda:"ios",eoghan:"ios",drew:"android",elias:"ios"};
-                      const getOs=k=>(parsed[k]?.os||data[k]?.os||CHAR_OS[k]);
-                      const mergedIosIcons={};
-                      // On part des icônes déjà présentes (état courant / valeurs par défaut de l'artefact),
-                      // puis on superpose celles du fichier importé. Ainsi, une icône absente du JSON importé
-                      // garde sa valeur par défaut au lieu de disparaître.
-                      ["glinda","eoghan","elias"].forEach(k=>{
-                        if(getOs(k)==="ios"&&data[k]?.appIcons)
-                          Object.assign(mergedIosIcons,data[k].appIcons);
-                      });
-                      ["glinda","eoghan","elias"].forEach(k=>{
-                        if(getOs(k)==="ios"&&parsed[k]?.appIcons)
-                          Object.assign(mergedIosIcons,parsed[k].appIcons);
-                      });
-                      ['glinda','eoghan','drew','elias'].forEach(k=>{
-                        if(!parsed[k]) return;
-                        const src=parsed[k];
-                        const isIos=getOs(k)==="ios";
-                        const patch={};
-                        if(opts.keys){
-                          opts.keys.forEach(key=>{
-                            if(!(key in src)) return;
-                            if(key==="appIcons"){
-                              if(isIos){
-                                const charApps=new Set([...(data[k]?.apps||[]),...(data[k]?.dock||[])]);
-                                patch[key]=Object.fromEntries(Object.entries(mergedIosIcons).filter(([id])=>charApps.has(id)));
-                              } else {
-                                patch[key]={...(data[k]?.appIcons||{}), ...src[key]};
-                              }
-                            } else {
-                              patch[key]=src[key];
-                            }
-                          });
-                        } else {
-                          // "Tout importer" : on copie TOUTES les clés présentes dans le fichier source,
-                          // sans liste blanche (qui se désynchronise à chaque nouvelle fonctionnalité ajoutée
-                          // — c'est ce qui faisait perdre Pinterest, Facebook, badges, accentColor, etc.)
-                          Object.keys(src).forEach(key=>{ patch[key]=src[key]; });
-                          if(src.gallery) patch.gallery=src.gallery.filter(p=>p.src);
-                          if(isIos){
-                            const charApps=new Set([...(src.apps||data[k]?.apps||[]),...(src.dock||data[k]?.dock||[])]);
-                            patch.appIcons=Object.fromEntries(Object.entries(mergedIosIcons).filter(([id])=>charApps.has(id)));
-                          } else if(src.appIcons){
-                            patch.appIcons={...(data[k]?.appIcons||{}), ...src.appIcons};
-                          }
-                          const srcApps=Array.isArray(src.apps)?src.apps.filter(id=>typeof id==="string"):[];
-                          const curApps=Array.isArray(data[k]?.apps)?data[k].apps.filter(id=>typeof id==="string"):[];
-                          patch.apps=[...srcApps,...curApps.filter(id=>!new Set(srcApps).has(id))];
-                          const curDock=Array.isArray(data[k]?.dock)?data[k].dock:[];
-                          patch.dock=curDock.length>0?curDock:(Array.isArray(src.dock)?src.dock:[]);
-                        }
-                        // skipSync=true : on importe chaque perso indépendamment, sans laisser updateChar
-                        // propager (et donc écraser) les appIcons de l'autre perso du même OS.
-                        onUpdate(k,{...data[k],...patch,...(fp[k]||{})},true);
-                      });
-                      // skipSync=true partout : chaque perso reçoit déjà ses propres données complètes
-                      // depuis le fichier importé, la synchro auto de updateChar (qui suppose un seul
-                      // perso modifié à la fois en admin normal) écraserait à tort l'un avec les icônes de l'autre.
-                      if(opts.android&&parsed._sharedAndroidIcons)onUpdate("_sharedAndroidIcons",{...(data._sharedAndroidIcons||{}),...parsed._sharedAndroidIcons});
-                      if(opts.shared&&parsed.sharedThreads)onUpdate("sharedThreads",parsed.sharedThreads);
-                      if(opts.shared&&parsed.groupMeta)onUpdate("groupMeta",{...(data.groupMeta||{}),...parsed.groupMeta});
-                      alert("✓ Importé !");
-                    }catch(e){alert("JSON invalide");}};r.readAsText(f);};_i.click();
-                    setShowExportMenu(false);
-                  }} style={{background:"none",border:"none",textAlign:"left",padding:"8px 14px",fontSize:12,color:"#374151",cursor:"pointer",fontWeight:500,width:"100%"}}>
-                    {label}
-                  </button>
-                ))}
-                <div style={{height:1,background:"#f0f0f0",margin:"4px 0"}}/>
-                <button className="import-btn" onClick={()=>{if(window.confirm("Réinitialiser toutes les données ?")){ window.location.reload(); }}}
-                  style={{background:"none",border:"none",textAlign:"left",padding:"8px 14px",fontSize:12,color:"#ef4444",cursor:"pointer",fontWeight:500,width:"100%"}}>
-                  🗑 Réinitialiser
-                </button>
-              </div>
-            </>}
-          </div>
+          {/* Réinitialiser */}
+          <button onClick={()=>{if(window.confirm("Réinitialiser toutes les données ?")){ window.location.reload(); }}}
+            style={{background:"#f8fafc",border:"1px solid #e5e7eb",color:"#ef4444",padding:"6px 11px",borderRadius:7,fontSize:12,cursor:"pointer",fontWeight:500}}>
+            🗑 Réinitialiser
+          </button>
 
           {/* Back */}
           <button onClick={onExit}
@@ -21488,7 +21517,23 @@ export default function App() {
     const unsubscribe = onValue(rootRef, (snapshot) => {
       const remote = snapshot.val();
       if (remote && Object.keys(remote).length > 0) {
-        setData(remote);
+        setData(() => {
+          // Ré-applique par-dessus le snapshot reçu toute écriture locale pas encore envoyée à
+          // Firebase (encore dans le buffer de debounce ~600ms). Sans ça, un changement fait par un
+          // AUTRE joueur pendant ce court délai écraserait silencieusement ce qu'on vient de faire
+          // nous-même (ex: un tweet qui disparaît localement avant même d'avoir été synchronisé).
+          let merged = remote;
+          for (const [path, val] of Object.entries(pendingFirebaseUpdate.current)) {
+            const parts = path.split('/');
+            if (parts.length === 1) {
+              merged = {...merged, [parts[0]]: val};
+            } else {
+              const [parent, child] = parts;
+              merged = {...merged, [parent]: {...(merged[parent]||{}), [child]: val}};
+            }
+          }
+          return merged;
+        });
         setSyncStatus("synced");
       } else if (!hasReceivedFirstSnapshot.current) {
         // Base vide : on initialise avec les données par défaut.
@@ -21523,6 +21568,19 @@ export default function App() {
   useEffect(()=>{
     setSharedAndroidIcons(data._sharedAndroidIcons||{});
   },[data._sharedAndroidIcons]);
+
+  // Garde loreDate synchronisé avec data.loreDate (reçu de Firebase ou d'un import JSON),
+  // pour que le changement de date fait par un joueur se propage à tout le monde et survive au reload.
+  useEffect(()=>{
+    if(data.loreDate) setLoreDate(data.loreDate);
+  },[data.loreDate]);
+
+  // Met à jour la date de lore : état local (réactif immédiatement) + data.loreDate (persisté + synchronisé via Firebase)
+  const updateLoreDate = (val) => {
+    setLoreDate(val);
+    setData(prev => ({...prev, loreDate: val}));
+    queueFirebaseUpdate({ loreDate: val });
+  };
 
   // Detect ?admin=1 in URL
   useEffect(()=>{
@@ -21600,7 +21658,7 @@ export default function App() {
         onUpdateShared={updateSharedAndroid}
         onExit={()=>setAdminMode(false)}
         loreDate={loreDate}
-        onLoreDateChange={setLoreDate}
+        onLoreDateChange={updateLoreDate}
         />
     </div>
     </LoreDateCtx.Provider>
@@ -21890,34 +21948,33 @@ const CALENDAR_SEED = {
   },
 };
 
-const CalendarScreen = ({data, isIos, accent, admin=false}) => {
+const CalendarScreen = ({data, isIos, accent, admin=false, update=()=>{}}) => {
   const charKey = data.username?.includes("glinda")?"glinda":data.username?.includes("eoghan")?"eoghan":data.username?.includes("drew")?"drew":"elias";
   const DAYS = ["M","T","W","T","F","S","S"];
   const SEED = CALENDAR_SEED;
-  // Build events map from data.calendar (flat list) or fall back to SEED
-  const buildEventsFromData = () => {
-    const cal = data?.calendar;
-    if(cal && cal.length > 0) {
-      // data.calendar is [{day, month, year, title, time, location}]
-      // Group by day (oct = month 10)
-      const map = {};
-      cal.filter(e=>!e.month || e.month===10).forEach(e=>{
-        const d = e.day || 1;
-        if(!map[d]) map[d] = [];
-        map[d].push([e.title, e.time, e.location].filter(Boolean).join(e.time?" — ":""));
-      });
-      return map;
-    }
-    return JSON.parse(JSON.stringify(SEED[charKey]||{}));
+  const calendarArr = data?.calendar || [];
+  // Les vrais événements (créés ici ou dans l'admin) vivent dans data.calendar et sont donc
+  // synchronisés/persistés comme tout le reste. Tant qu'aucun vrai événement n'existe, on retombe
+  // sur les événements par défaut (SEED) pour ne pas afficher un calendrier vide au premier lancement.
+  const realEventsByDay = (() => {
+    const map = {};
+    calendarArr.filter(e=>!e.month || e.month===10).forEach(e=>{
+      const d = e.day || 1;
+      if(!map[d]) map[d] = [];
+      map[d].push(e);
+    });
+    return map;
+  })();
+  const seedMap = SEED[charKey] || {};
+  const eventsForDay = (d) => {
+    if(calendarArr.length > 0) return realEventsByDay[d] || [];
+    return (seedMap[d] || []).map((line, idx) => ({id:`seed-${d}-${idx}`, title:line, _seed:true}));
   };
-  const [events, setEvents] = useState(buildEventsFromData);
-  // Sync when data.calendar changes (admin update)
-  React.useEffect(() => { setEvents(buildEventsFromData()); }, [JSON.stringify(data?.calendar)]);
   const [selectedDay, setSelectedDay] = useState(6);
-  const [editing, setEditing] = useState(null); // {day, idx} or {day, idx:-1} for new
+  const [editing, setEditing] = useState(null); // {day, id} or {day, id:null} for new
   const [draft, setDraft] = useState("");
 
-  const todayEvents = events[selectedDay] || [];
+  const todayEvents = eventsForDay(selectedDay);
   const RED = isIos ? "#FF3B30" : "#c0392b";
   const BG = isIos ? "#fff" : "#1a1a1a";
   const TEXT = isIos ? "#000" : "#fff";
@@ -21925,27 +21982,23 @@ const CalendarScreen = ({data, isIos, accent, admin=false}) => {
   const BORDER = isIos ? "#e5e5e5" : "#2a2a2a";
   const ACC = accent || RED;
 
-  const saveEvent = () => {
-    if(editing==null) return;
+  const eventLabel = (ev) => [ev.title, ev.time, ev.location].filter(Boolean).join(ev.time ? " — " : " ");
+
+  const addEvent = () => {
     const t = draft.trim();
-    setEvents(prev=>{
-      const next = {...prev};
-      const list = [...(next[editing.day]||[])];
-      if(editing.idx===-1){ if(t) list.push(t); }
-      else { if(t) list[editing.idx]=t; else list.splice(editing.idx,1); }
-      if(list.length) next[editing.day]=list; else delete next[editing.day];
-      return next;
-    });
+    if(t) update("calendar", [...calendarArr, {id:Date.now(), day:selectedDay, month:10, year:2012, title:t}]);
     setEditing(null); setDraft("");
   };
-  const deleteEvent = (day,idx) => {
-    setEvents(prev=>{
-      const next={...prev};
-      const list=[...(next[day]||[])];
-      list.splice(idx,1);
-      if(list.length) next[day]=list; else delete next[day];
-      return next;
-    });
+  const saveEditTitle = () => {
+    if(editing==null || editing.id==null) return;
+    const t = draft.trim();
+    if(!t) { update("calendar", calendarArr.filter(e=>e.id!==editing.id)); }
+    else { update("calendar", calendarArr.map(e=>e.id===editing.id ? {...e, title:t} : e)); }
+    setEditing(null); setDraft("");
+  };
+  const deleteEvent = (ev) => {
+    if(ev._seed) return; // les événements par défaut ne sont pas modifiables ici — passez par l'admin pour les remplacer
+    update("calendar", calendarArr.filter(e=>e.id!==ev.id));
   };
 
   return (
@@ -21963,10 +22016,10 @@ const CalendarScreen = ({data, isIos, accent, admin=false}) => {
       <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:1,background:BORDER,flexShrink:0}}>
         {Array.from({length:31},(_,i)=>i+1).map(d=>{
           const isMatchDay = d===6;
-          const hasEv = !!events[d];
+          const hasEv = eventsForDay(d).length>0;
           const isSel = d===selectedDay;
           return (
-            <div key={d} onClick={()=>setSelectedDay(d)} style={{background:isSel?ACC:BG,padding:"6px 0",textAlign:"center",cursor:"pointer",position:"relative"}}>
+            <div key={d} onClick={()=>{setSelectedDay(d);setEditing(null);setDraft("");}} style={{background:isSel?ACC:BG,padding:"6px 0",textAlign:"center",cursor:"pointer",position:"relative"}}>
               <div style={{color:isSel?"#fff":isMatchDay?RED:TEXT,fontSize:12,fontWeight:isMatchDay||isSel?700:400}}>{d}</div>
               {hasEv&&<div style={{width:4,height:4,borderRadius:"50%",background:isSel?"#fff":ACC,margin:"2px auto 0"}}/>}
             </div>
@@ -21978,26 +22031,26 @@ const CalendarScreen = ({data, isIos, accent, admin=false}) => {
           <div style={{color:SUB,fontSize:11,fontWeight:600}}>
             {selectedDay===6 ? "Samedi 6 octobre 2012 🏈" : `${selectedDay} octobre 2012`}
           </div>
-          {admin&&<button onClick={()=>{setEditing({day:selectedDay,idx:-1});setDraft("");}} style={{background:ACC,border:"none",color:"#fff",borderRadius:14,width:24,height:24,fontSize:16,lineHeight:1,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>+</button>}
+          {admin&&<button onClick={()=>{setEditing({day:selectedDay,id:null});setDraft("");}} style={{background:ACC,border:"none",color:"#fff",borderRadius:14,width:24,height:24,fontSize:16,lineHeight:1,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>+</button>}
         </div>
-        {admin&&editing&&editing.idx===-1&&(
+        {admin&&editing&&editing.day===selectedDay&&editing.id===null&&(
           <div style={{display:"flex",gap:6}}>
-            <input autoFocus value={draft} onChange={e=>setDraft(e.target.value)} onKeyDown={e=>{if(e.key==="Enter")saveEvent();if(e.key==="Escape"){setEditing(null);setDraft("");}}} placeholder="Nouvel événement…" style={{flex:1,border:`1px solid ${ACC}`,borderRadius:8,padding:"7px 10px",fontSize:12,background:BG,color:TEXT,outline:"none"}}/>
-            <button onClick={saveEvent} style={{background:ACC,border:"none",color:"#fff",borderRadius:8,padding:"0 12px",fontSize:12,cursor:"pointer"}}>OK</button>
+            <input autoFocus value={draft} onChange={e=>setDraft(e.target.value)} onKeyDown={e=>{if(e.key==="Enter")addEvent();if(e.key==="Escape"){setEditing(null);setDraft("");}}} placeholder="Nouvel événement…" style={{flex:1,border:`1px solid ${ACC}`,borderRadius:8,padding:"7px 10px",fontSize:12,background:BG,color:TEXT,outline:"none"}}/>
+            <button onClick={addEvent} style={{background:ACC,border:"none",color:"#fff",borderRadius:8,padding:"0 12px",fontSize:12,cursor:"pointer"}}>OK</button>
           </div>
         )}
-        {todayEvents.length===0 && !(editing&&editing.idx===-1)
+        {todayEvents.length===0 && !(editing&&editing.day===selectedDay&&editing.id===null)
           ? <div style={{color:SUB,fontSize:12,textAlign:"center",marginTop:20}}>Aucun événement</div>
-          : todayEvents.map((ev,i)=>(
-            admin&&editing&&editing.day===selectedDay&&editing.idx===i
-              ? <div key={i} style={{display:"flex",gap:6}}>
-                  <input autoFocus value={draft} onChange={e=>setDraft(e.target.value)} onKeyDown={e=>{if(e.key==="Enter")saveEvent();if(e.key==="Escape"){setEditing(null);setDraft("");}}} style={{flex:1,border:`1px solid ${ACC}`,borderRadius:8,padding:"7px 10px",fontSize:12,background:BG,color:TEXT,outline:"none"}}/>
-                  <button onClick={saveEvent} style={{background:ACC,border:"none",color:"#fff",borderRadius:8,padding:"0 12px",fontSize:12,cursor:"pointer"}}>OK</button>
+          : todayEvents.map((ev)=>(
+            admin&&editing&&editing.day===selectedDay&&editing.id===ev.id
+              ? <div key={ev.id} style={{display:"flex",gap:6}}>
+                  <input autoFocus value={draft} onChange={e=>setDraft(e.target.value)} onKeyDown={e=>{if(e.key==="Enter")saveEditTitle();if(e.key==="Escape"){setEditing(null);setDraft("");}}} style={{flex:1,border:`1px solid ${ACC}`,borderRadius:8,padding:"7px 10px",fontSize:12,background:BG,color:TEXT,outline:"none"}}/>
+                  <button onClick={saveEditTitle} style={{background:ACC,border:"none",color:"#fff",borderRadius:8,padding:"0 12px",fontSize:12,cursor:"pointer"}}>OK</button>
                 </div>
-              : <div key={i} style={{background:isIos?"#f9f9f9":"#222",borderRadius:8,padding:"8px 12px",borderLeft:`3px solid ${ACC}`,display:"flex",alignItems:"center",gap:8}}>
-                  <div style={{flex:1,color:TEXT,fontSize:12}}>{ev}</div>
-                  {admin&&<><span onClick={()=>{setEditing({day:selectedDay,idx:i});setDraft(ev);}} style={{cursor:"pointer",fontSize:13,opacity:0.6}}>✏️</span>
-                  <span onClick={()=>deleteEvent(selectedDay,i)} style={{cursor:"pointer",fontSize:13,opacity:0.6}}>🗑️</span></>}
+              : <div key={ev.id} style={{background:isIos?"#f9f9f9":"#222",borderRadius:8,padding:"8px 12px",borderLeft:`3px solid ${ACC}`,display:"flex",alignItems:"center",gap:8}}>
+                  <div style={{flex:1,color:TEXT,fontSize:12}}>{eventLabel(ev)}</div>
+                  {admin&&!ev._seed&&<><span onClick={()=>{setEditing({day:selectedDay,id:ev.id});setDraft(ev.title||"");}} style={{cursor:"pointer",fontSize:13,opacity:0.6}}>✏️</span>
+                  <span onClick={()=>deleteEvent(ev)} style={{cursor:"pointer",fontSize:13,opacity:0.6}}>🗑️</span></>}
                 </div>
           ))
         }
@@ -22262,6 +22315,7 @@ const EMAILS_BY_CHAR = {
 
 const GmailScreen = ({data, isIos, accent}) => {
   const emailsByChar = EMAILS_BY_CHAR;
+  const loreDateStr = useContext(LoreDateCtx);
   const emails = data.mail_override?.[data.username]
     ?? emailsByChar[data.username]
     ?? emailsByChar.glindatheverygood;
@@ -22280,7 +22334,7 @@ const GmailScreen = ({data, isIos, accent}) => {
             <div style={{flex:1,minWidth:0}}>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",marginBottom:2}}>
                 <span style={{color:m.unread?"#202124":"#5f6368",fontSize:13,fontWeight:m.unread?"700":"400",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",maxWidth:"65%"}}>{m.from}</span>
-                <span style={{color:m.unread?"#202124":"#5f6368",fontSize:11,fontWeight:m.unread?"600":"400",flexShrink:0,marginLeft:4}}>{m.time}</span>
+                <span style={{color:m.unread?"#202124":"#5f6368",fontSize:11,fontWeight:m.unread?"600":"400",flexShrink:0,marginLeft:4}}>{loreRelativeLabel(m.time,loreDateStr)}</span>
               </div>
               <div style={{color:m.unread?"#202124":"#5f6368",fontSize:12,fontWeight:m.unread?"500":"400",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",marginBottom:1}}>{m.subj}</div>
               <div style={{color:"#9aa0a6",fontSize:11,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{m.preview}</div>
@@ -22320,7 +22374,7 @@ const GmailScreen = ({data, isIos, accent}) => {
             <div style={{flex:1,minWidth:0}}>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",marginBottom:1}}>
                 <span style={{color:"#000",fontSize:13,fontWeight:m.unread?700:600,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",maxWidth:"65%"}}>{m.from}</span>
-                <span style={{color:"#4a7ab5",fontSize:11,flexShrink:0}}>{m.time}</span>
+                <span style={{color:"#4a7ab5",fontSize:11,flexShrink:0}}>{loreRelativeLabel(m.time,loreDateStr)}</span>
               </div>
               <div style={{color:"#000",fontSize:12,fontWeight:m.unread?600:400,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",marginBottom:2}}>{m.subj}</div>
               <div style={{color:"#888",fontSize:11,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{m.preview}</div>
@@ -22399,4 +22453,3 @@ const ShazamScreen = ({isIos, accent}) => (
 );
 
 // Wikipedia (Drew + Elias)
-
