@@ -2492,6 +2492,50 @@ const TUMBLR_FEED_POSTS_DEFAULT = {
   ],
 };
 
+const TUMBLR_TAG_POSTS_DEFAULT = {
+  // Clé = charKey (glinda/eoghan/drew/elias)
+  glinda: {
+    tagName: "findanna",
+    posts: [
+      {id:"t1",username:"glindarvf",avatarBg:"#e91e8c",body:"if anyone knows where anna is please please reach out. she's been missing since the party at jackson's. we don't know what happened.",notes:847,date:"6 oct",type:"text"},
+      {id:"t2",username:"noteliasgreen",avatarBg:"#6672d0",body:"derry takes things. always has. don't wait for the police to care. they don't.",notes:312,date:"5 oct",type:"text"},
+      {id:"t3",username:"dreww-orms",avatarBg:"#aa6caa",body:"we were all at that party. nobody saw her leave. that's not nothing.",notes:204,date:"5 oct",type:"text"},
+      {id:"t4",username:"uma-campus-news",avatarBg:"#1a5a9a",title:"student reported missing",body:"university of maine at augusta student anna k. has been reported missing following an off-campus gathering on september 29th. anyone with information is asked to contact campus security.",notes:1203,date:"4 oct",type:"text"},
+      {id:"t5",username:"glindarvf",avatarBg:"#e91e8c",body:"she texted me at 11:47pm. that's the last thing. eleven forty-seven.",notes:589,date:"3 oct",type:"text"},
+    ],
+  },
+  eoghan: {
+    tagName: "findanna",
+    posts: [
+      {id:"t1",username:"noteliasgreen",avatarBg:"#6672d0",body:"derry takes things. always has. don't wait for the police to care. they don't.",notes:312,date:"5 oct",type:"text"},
+      {id:"t2",username:"glindarvf",avatarBg:"#e91e8c",body:"if anyone knows where anna is please please reach out. she's been missing since the party at jackson's.",notes:847,date:"6 oct",type:"text"},
+      {id:"t3",username:"uma-campus-news",avatarBg:"#1a5a9a",title:"student reported missing",body:"university of maine at augusta student anna k. has been reported missing following an off-campus gathering on september 29th.",notes:1203,date:"4 oct",type:"text"},
+      {id:"t4",username:"eoghan_masuda",avatarBg:"#00d435",body:"i was there that night. i keep going over it. there's a gap i can't explain.",notes:88,date:"4 oct",type:"text"},
+      {id:"t5",username:"dreww-orms",avatarBg:"#aa6caa",body:"we were all at that party. nobody saw her leave. that's not nothing.",notes:204,date:"5 oct",type:"text"},
+    ],
+  },
+  drew: {
+    tagName: "findanna",
+    posts: [
+      {id:"t1",username:"noteliasgreen",avatarBg:"#6672d0",body:"derry takes things. always has. don't wait for the police to care. they don't.",notes:312,date:"5 oct",type:"text"},
+      {id:"t2",username:"dreww-orms",avatarBg:"#aa6caa",body:"we were all at that party. nobody saw her leave. that's not nothing.",notes:204,date:"5 oct",type:"text"},
+      {id:"t3",username:"glindarvf",avatarBg:"#e91e8c",body:"she texted me at 11:47pm. that's the last thing. eleven forty-seven.",notes:589,date:"3 oct",type:"text"},
+      {id:"t4",username:"uma-campus-news",avatarBg:"#1a5a9a",title:"student reported missing",body:"university of maine at augusta student anna k. has been reported missing following an off-campus gathering on september 29th.",notes:1203,date:"4 oct",type:"text"},
+      {id:"t5",username:"deepdivepod-blog",avatarBg:"#0a1010",body:"episode 47 is about small towns and the things they choose to forget. timing is coincidental. or it isn't.",notes:204,date:"2 oct",type:"text"},
+    ],
+  },
+  elias: {
+    tagName: "findanna",
+    posts: [
+      {id:"t1",username:"noteliasgreen",avatarBg:"#6672d0",title:"what i know",body:"1. anna was at jackson's party. 2. she left alone or was taken. 3. the police closed the lead in 6 hours. 4. derry has done this before.",notes:1892,date:"5 oct",type:"text"},
+      {id:"t2",username:"paranormal-maine",avatarBg:"#441144",body:"four disappearances near derry since july. authorities say runaways. they always say runaways.",notes:1893,date:"4 oct",type:"text"},
+      {id:"t3",username:"glindarvf",avatarBg:"#e91e8c",body:"if anyone knows where anna is please please reach out.",notes:847,date:"6 oct",type:"text"},
+      {id:"t4",username:"noteliasgreen",avatarBg:"#6672d0",body:"i've been documenting derry disappearances since 2011. anna's case fits the pattern exactly. i don't know what that means but it means something.",notes:441,date:"3 oct",type:"text"},
+      {id:"t5",username:"uma-campus-news",avatarBg:"#1a5a9a",title:"student reported missing",body:"university of maine at augusta student anna k. has been reported missing following an off-campus gathering on september 29th.",notes:1203,date:"4 oct",type:"text"},
+    ],
+  },
+};
+
 const TumblrScreen = ({data,admin,update,accent}) => {
   const [activeTab, setActiveTab] = React.useState(0);
   const posts = data.tumblr?.posts||[];
@@ -2630,10 +2674,12 @@ const TumblrScreen = ({data,admin,update,accent}) => {
     </div>
   );
 
-  const tagPosts = data.tumblr?.tagPosts || [];
+  const charKeyTb = data.username?.includes("glinda")?"glinda":data.username?.includes("eoghan")?"eoghan":data.username?.includes("drew")?"drew":"elias";
+  const tagSeed = TUMBLR_TAG_POSTS_DEFAULT[charKeyTb] || {tagName:"findanna", posts:[]};
+  const tagPosts = data.tumblr?.tagPosts?.length ? data.tumblr.tagPosts : tagSeed.posts;
 
   const TagTab = () => {
-    const tagName = data.tumblr?.tagName || "findanna";
+    const tagName = data.tumblr?.tagName || tagSeed.tagName || "findanna";
     return (
       <div style={{flex:1,background:"#ebe9e4",display:"flex",flexDirection:"column",overflow:"hidden"}}>
         {/* Tag header */}
@@ -4768,6 +4814,38 @@ const TWITTER_HOME_BASE = {
 };
 
 // Override tweet display info
+// ── Tweets du profil de chaque perso (seed par défaut, écrasable via profileTweets) ──────────
+const PROFILE_TWEETS_DEFAULT = {
+  glinda:[
+    {h:"@glindarvf",name:"Glinda R.",text:"bibliothèque UMA = mon nouveau chez moi ☕📚 #UMA #Économie",time:"2m",rp:3,rt:7,fav:24},
+    {h:"@glindarvf",name:"Glinda R.",text:"quelqu'un a des notes du cours de macro de hier ? j'étais… indisponible 😬",time:"1:00am",rp:8,rt:2,fav:31},
+    {h:"@glindarvf",name:"Glinda R.",text:"Gee par SNSD en boucle depuis 3h. pas de regrets. #SNSD #GirlsGeneration",time:"3:00am",rp:5,rt:12,fav:47},
+    {h:"@glindarvf",name:"Glinda R.",text:"pourquoi les gens jouent aux échecs en silence ???? c'est un SPORT 🎲",time:"5:00am",rp:14,rt:28,fav:102},
+    {h:"@glindarvf",name:"Glinda R.",text:"déjà un mois à UMA et la bibli me connaît par mon prénom ☕📚 #UMA",time:"1j",rp:6,rt:9,fav:58},
+  ],
+  eoghan:[
+    {h:"@eoghan_m",name:"Eoghan M.",text:"nouveau son en ligne soundcloud.com/eoghan_m #Rush #indierock",time:"15m",rp:2,rt:4,fav:18},
+    {h:"@eoghan_m",name:"Eoghan M.",text:"les égouts de derry sont plus grands que vous ne le pensez. je dis ça je dis rien.",time:"2:00am",rp:7,rt:15,fav:43},
+    {h:"@eoghan_m",name:"Eoghan M.",text:"asra et ilya encore fourrés ensemble. cool. tout va bien. je gère.",time:"4:00am",rp:1,rt:0,fav:9},
+    {h:"@eoghan_m",name:"Eoghan M.",text:"\"This is the end, beautiful friend\" - The Doors. citation du jour.",time:"6:00am",rp:3,rt:8,fav:29},
+    {h:"@eoghan_m",name:"Eoghan M.",text:"UMA est une école comme les autres. les secrets en plus. #UMA",time:"1j",rp:11,rt:22,fav:67},
+  ],
+  drew:[
+    {h:"@dreww_orms",name:"Drew B.",text:"TP bio terminé. les vers de terre n'ont aucun secret pour moi 🪱 #Sciences #UMA",time:"30m",rp:4,rt:6,fav:22},
+    {h:"@dreww_orms",name:"Drew B.",text:"1812 elo. je suis un humble joueur d'échecs. c'est tout. ♟️",time:"2:00am",rp:2,rt:3,fav:17},
+    {h:"@dreww_orms",name:"Drew B.",text:"quelqu'un peut m'expliquer pourquoi je me souviens pas du mois de juillet ?",time:"3:00am",rp:9,rt:14,fav:38},
+    {h:"@dreww_orms",name:"Drew B.",text:"Weird Fishes by Radiohead hits different à 2h du mat. #Radiohead",time:"5:00am",rp:5,rt:11,fav:44},
+    {h:"@dreww_orms",name:"Drew B.",text:"maine → maine's university at augusta. upgrade en cours 🌿",time:"2j",rp:7,rt:19,fav:81},
+  ],
+  elias:[
+    {h:"@noteliasgreen",name:"Elias G.",text:"je sais des choses sur ce qui se passe à Augusta. personne ne me croit. c'est ok.",time:"23m",rp:6,rt:12,fav:34},
+    {h:"@noteliasgreen",name:"Elias G.",text:"il y a des disparitions non résolues à Derry depuis 27 ans. cherchez.",time:"1:00am",rp:18,rt:41,fav:127},
+    {h:"@noteliasgreen",name:"Elias G.",text:"Can You Feel My Heart — BMTH. c'est tout ce que j'ai à dire.",time:"3:00am",rp:3,rt:5,fav:21},
+    {h:"@noteliasgreen",name:"Elias G.",text:"\"The truth is out there\" mais personne cherche vraiment #conspi #Derry",time:"5:00am",rp:9,rt:23,fav:76},
+    {h:"@noteliasgreen",name:"Elias G.",text:"nouveau chapitre de Five Nights posté. oui c'est de la fanfic. non j'ai pas honte.",time:"1j",rp:2,rt:4,fav:16},
+  ],
+};
+
 // Twitter (Elias)
 const TwitterScreen = ({data, isIos, accent, onBack=null, sharedTweets=[], onTweet=null, twitterUsers={}, homeBaseTweets=[]}) => {
   const loreDateStr = useContext(LoreDateCtx);
@@ -4824,37 +4902,10 @@ const TwitterScreen = ({data, isIos, accent, onBack=null, sharedTweets=[], onTwe
   const names   = {glinda:"Glinda R.",eoghan:"Eoghan M.",drew:"Drew B.",elias:"Elias G."};
   const myHandle = handles[charKey];
 
-  // ── Profile tweets (static) ──
-  const PROFILE_TWEETS = {
-    glinda:[
-      {h:"@glindarvf",name:"Glinda R.",text:"bibliothèque UMA = mon nouveau chez moi ☕📚 #UMA #Économie",time:"2m",rp:3,rt:7,fav:24},
-      {h:"@glindarvf",name:"Glinda R.",text:"quelqu'un a des notes du cours de macro de hier ? j'étais… indisponible 😬",time:"1:00am",rp:8,rt:2,fav:31},
-      {h:"@glindarvf",name:"Glinda R.",text:"Gee par SNSD en boucle depuis 3h. pas de regrets. #SNSD #GirlsGeneration",time:"3:00am",rp:5,rt:12,fav:47},
-      {h:"@glindarvf",name:"Glinda R.",text:"pourquoi les gens jouent aux échecs en silence ???? c'est un SPORT 🎲",time:"5:00am",rp:14,rt:28,fav:102},
-      {h:"@glindarvf",name:"Glinda R.",text:"déjà un mois à UMA et la bibli me connaît par mon prénom ☕📚 #UMA",time:"1j",rp:6,rt:9,fav:58},
-    ],
-    eoghan:[
-      {h:"@eoghan_m",name:"Eoghan M.",text:"nouveau son en ligne soundcloud.com/eoghan_m #Rush #indierock",time:"15m",rp:2,rt:4,fav:18},
-      {h:"@eoghan_m",name:"Eoghan M.",text:"les égouts de derry sont plus grands que vous ne le pensez. je dis ça je dis rien.",time:"2:00am",rp:7,rt:15,fav:43},
-      {h:"@eoghan_m",name:"Eoghan M.",text:"asra et ilya encore fourrés ensemble. cool. tout va bien. je gère.",time:"4:00am",rp:1,rt:0,fav:9},
-      {h:"@eoghan_m",name:"Eoghan M.",text:"\"This is the end, beautiful friend\" - The Doors. citation du jour.",time:"6:00am",rp:3,rt:8,fav:29},
-      {h:"@eoghan_m",name:"Eoghan M.",text:"UMA est une école comme les autres. les secrets en plus. #UMA",time:"1j",rp:11,rt:22,fav:67},
-    ],
-    drew:[
-      {h:"@dreww_orms",name:"Drew B.",text:"TP bio terminé. les vers de terre n'ont aucun secret pour moi 🪱 #Sciences #UMA",time:"30m",rp:4,rt:6,fav:22},
-      {h:"@dreww_orms",name:"Drew B.",text:"1812 elo. je suis un humble joueur d'échecs. c'est tout. ♟️",time:"2:00am",rp:2,rt:3,fav:17},
-      {h:"@dreww_orms",name:"Drew B.",text:"quelqu'un peut m'expliquer pourquoi je me souviens pas du mois de juillet ?",time:"3:00am",rp:9,rt:14,fav:38},
-      {h:"@dreww_orms",name:"Drew B.",text:"Weird Fishes by Radiohead hits different à 2h du mat. #Radiohead",time:"5:00am",rp:5,rt:11,fav:44},
-      {h:"@dreww_orms",name:"Drew B.",text:"maine → maine's university at augusta. upgrade en cours 🌿",time:"2j",rp:7,rt:19,fav:81},
-    ],
-    elias:[
-      {h:"@noteliasgreen",name:"Elias G.",text:"je sais des choses sur ce qui se passe à Augusta. personne ne me croit. c'est ok.",time:"23m",rp:6,rt:12,fav:34},
-      {h:"@noteliasgreen",name:"Elias G.",text:"il y a des disparitions non résolues à Derry depuis 27 ans. cherchez.",time:"1:00am",rp:18,rt:41,fav:127},
-      {h:"@noteliasgreen",name:"Elias G.",text:"Can You Feel My Heart — BMTH. c'est tout ce que j'ai à dire.",time:"3:00am",rp:3,rt:5,fav:21},
-      {h:"@noteliasgreen",name:"Elias G.",text:"\"The truth is out there\" mais personne cherche vraiment #conspi #Derry",time:"5:00am",rp:9,rt:23,fav:76},
-      {h:"@noteliasgreen",name:"Elias G.",text:"nouveau chapitre de Five Nights posté. oui c'est de la fanfic. non j'ai pas honte.",time:"1j",rp:2,rt:4,fav:16},
-    ],
-  };
+  // ── Profile tweets : seed par défaut si aucun profileTweets custom n'est défini ──
+  const PROFILE_TWEETS = data.profileTweets?.length
+    ? { [charKey]: data.profileTweets.map(t => ({...t, h: handles[charKey], name: names[charKey]})) }
+    : PROFILE_TWEETS_DEFAULT;
 
   // ── Shared tweets injected into feeds ──
   const othersShared = sharedTweets.filter(t=>t.author!==charKey).map(t=>({
@@ -7286,7 +7337,15 @@ const IOSPhone = ({data,admin,onUpdate,onUpdateShared=()=>{},loreDate:loreDatePr
   if(app==="phone") return <Shell><IOSStatusBar/><PhoneScreen data={data} admin={admin} update={update} accent={accent} isIos={true} panel={phonePanel} setPanel={setPhonePanel}/></Shell>;
   if(app==="notes") return <Shell><IOSStatusBar/><NotesScreen data={data} admin={admin} update={update} accent={accent} isIos={true} noteOpen={noteOpen} setNoteOpen={setNoteOpen} goHome={goHome}/></Shell>;
   if(app==="tumblr")    return <Shell><IOSStatusBar/><NavBar title="Tumblr" back={goHome}/><TumblrScreen data={data} admin={admin} update={update} accent={accent}/></Shell>;
-  if(app==="twitter")   return <Shell><IOSStatusBar/><TwitterScreen data={data} isIos={true} accent={accent} onBack={goHome} sharedTweets={data.sharedThreads?._sharedTweets||[]} onTweet={t=>onUpdateShared("_sharedTweets",[...(data.sharedThreads?._sharedTweets||[]),t])} twitterUsers={{...(data.sharedThreads?._sharedTwitterUsers||{}),...(data.twitterUsers||{})}} homeBaseTweets={data.homeBaseTweets||[]}/></Shell>;
+  if(app==="twitter") {
+    const sharedTwUsers = data.sharedThreads?._sharedTwitterUsers || {};
+    const localTwUsers  = data.twitterUsers || {};
+    // Merge key by key so local overrides don't wipe fields from shared (e.g. bannerImg)
+    const mergedTwUsers = {};
+    const allKeys = new Set([...Object.keys(sharedTwUsers), ...Object.keys(localTwUsers)]);
+    allKeys.forEach(k => { mergedTwUsers[k] = {...(sharedTwUsers[k]||{}), ...(localTwUsers[k]||{})}; });
+    return <Shell><IOSStatusBar/><TwitterScreen data={data} isIos={true} accent={accent} onBack={goHome} sharedTweets={data.sharedThreads?._sharedTweets||[]} onTweet={t=>onUpdateShared("_sharedTweets",[...(data.sharedThreads?._sharedTweets||[]),t])} twitterUsers={mergedTwUsers} homeBaseTweets={data.homeBaseTweets||[]}/></Shell>;
+  }
   if(app==="nikeplus")  return <Shell><IOSStatusBar/><NavBar title="Nike+" back={goHome}/><NikeplusScreen data={data} accent={accent}/></Shell>;
   if(app==="youtube")   return <Shell><IOSStatusBar/><YouTubeScreen isIos={true} charKey={charKey} data={data} onBack={goHome}/></Shell>;
   if(app==="reddit")     return <Shell><IOSStatusBar/><NavBar title="Reddit" back={goHome}/><RedditScreen data={data} isIos={true} accent={accent}/></Shell>;
@@ -7951,7 +8010,15 @@ const AndroidPhone = ({data,admin,onUpdate,sharedAndroidIcons={},onUpdateShared=
   if(app==="kindle")    return <AppShell><AndroidStatusBar notifApps={notifApps} accent={accent}/><ActionBar title="Kindle" back={goHome}/><KindleScreen isIos={false} accent={accent} data={data}/></AppShell>;
   if(app==="inaturalist")return <AppShell><AndroidStatusBar notifApps={notifApps} accent={accent}/><ActionBar title="iNaturalist" back={goHome}/><INaturalistScreen data={data} isIos={false} accent={accent}/></AppShell>;
   if(app==="soundhound")return <AppShell><AndroidStatusBar notifApps={notifApps} accent={accent}/><ActionBar title="SoundHound" back={goHome}/><SoundHoundScreen isIos={false} accent={accent}/></AppShell>;
-  if(app==="reddit")    return <AppShell><AndroidStatusBar notifApps={notifApps} accent={accent}/><ActionBar title="Reddit" back={goHome}/><RedditScreen data={data} isIos={false} accent={accent}/></AppShell>;  if(app==="twitter")   return <AppShell><AndroidStatusBar notifApps={notifApps} accent={accent}/><TwitterScreen data={data} isIos={false} accent={accent} onBack={goHome} sharedTweets={data.sharedThreads?._sharedTweets||[]} onTweet={t=>onUpdateSharedThread("_sharedTweets",[...(data.sharedThreads?._sharedTweets||[]),t])} twitterUsers={{...(data.sharedThreads?._sharedTwitterUsers||{}),...(data.twitterUsers||{})}} homeBaseTweets={data.homeBaseTweets||[]}/></AppShell>;
+  if(app==="reddit")    return <AppShell><AndroidStatusBar notifApps={notifApps} accent={accent}/><ActionBar title="Reddit" back={goHome}/><RedditScreen data={data} isIos={false} accent={accent}/></AppShell>;
+  if(app==="twitter") {
+    const sharedTwUsers = data.sharedThreads?._sharedTwitterUsers || {};
+    const localTwUsers  = data.twitterUsers || {};
+    const mergedTwUsers = {};
+    const allKeys = new Set([...Object.keys(sharedTwUsers), ...Object.keys(localTwUsers)]);
+    allKeys.forEach(k => { mergedTwUsers[k] = {...(sharedTwUsers[k]||{}), ...(localTwUsers[k]||{})}; });
+    return <AppShell><AndroidStatusBar notifApps={notifApps} accent={accent}/><TwitterScreen data={data} isIos={false} accent={accent} onBack={goHome} sharedTweets={data.sharedThreads?._sharedTweets||[]} onTweet={t=>onUpdateSharedThread("_sharedTweets",[...(data.sharedThreads?._sharedTweets||[]),t])} twitterUsers={mergedTwUsers} homeBaseTweets={data.homeBaseTweets||[]}/></AppShell>;
+  }
   if(app==="vpn")       return <AppShell><AndroidStatusBar notifApps={notifApps} accent={accent}/><ActionBar title="VPN" back={goHome}/><VPNScreen isIos={false} accent={accent}/></AppShell>;
   if(app==="contacts")  return <AppShell><AndroidStatusBar notifApps={notifApps} accent={accent}/><ActionBar title="Contacts" back={goHome}/><ContactsScreen data={data} isIos={false} accent={accent}/></AppShell>;
   if(app==="clock")     return <AppShell><AndroidStatusBar notifApps={notifApps} accent={accent}/><ActionBar title="Clock" back={goHome}/><ClockScreen isIos={false} accent={accent}/></AppShell>;
@@ -18592,14 +18659,14 @@ const LoreDateTimeInput = ({value, onChange, width="100%", showLabel=true}) => {
   );
 };
 
-const Field = ({label, value, onChange, textarea=false, width="100%"}) => (
+const Field = ({label, value, onChange, textarea=false, width="100%", readOnly=false}) => (
   <div style={{display:"flex",flexDirection:"column",gap:5,width}}>
     <label style={{color:"#9ca3af",fontSize:10,letterSpacing:0.8,textTransform:"uppercase",fontWeight:600}}>{label}</label>
     {textarea
-      ?<textarea value={value||""} onChange={e=>onChange(e.target.value)} rows={4} className="adm-input"
-          style={{background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#1a1a2e",padding:"8px 12px",fontSize:12,borderRadius:8,resize:"vertical",fontFamily:"inherit",boxShadow:"0 1px 2px rgba(0,0,0,0.04)"}}/>
-      :<input value={value||""} onChange={e=>onChange(e.target.value)} className="adm-input"
-          style={{background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#1a1a2e",padding:"8px 12px",fontSize:12,borderRadius:8,width,boxShadow:"0 1px 2px rgba(0,0,0,0.04)"}}/>
+      ?<textarea value={value||""} onChange={e=>onChange&&onChange(e.target.value)} rows={4} readOnly={readOnly} className="adm-input"
+          style={{background:readOnly?"rgba(0,0,0,0.03)":"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:readOnly?"#9ca3af":"#1a1a2e",padding:"8px 12px",fontSize:12,borderRadius:8,resize:"vertical",fontFamily:"inherit",boxShadow:"0 1px 2px rgba(0,0,0,0.04)",cursor:readOnly?"not-allowed":"text"}}/>
+      :<input value={value||""} onChange={e=>onChange&&onChange(e.target.value)} readOnly={readOnly} className="adm-input"
+          style={{background:readOnly?"rgba(0,0,0,0.03)":"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:readOnly?"#9ca3af":"#1a1a2e",padding:"8px 12px",fontSize:12,borderRadius:8,width,boxShadow:"0 1px 2px rgba(0,0,0,0.04)",cursor:readOnly?"not-allowed":"text"}}/>
     }
   </div>
 );
@@ -19358,10 +19425,16 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                   </select>
                 );
               })()}
-              {!cOpen && preview && (
-                <span style={{fontSize:11,color:"#9ca3af",flex:2,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",minWidth:0}}>{preview}</span>
-              )}
               <span style={{fontSize:10,color:"#9ca3af",flexShrink:0,whiteSpace:"nowrap"}}>{threadLen} msg</span>
+              {/* Lu / Non-lu */}
+              <button onClick={e=>{e.stopPropagation();upd("messages",d.messages.map(m=>m===msg?{...m,unread:!m.unread}:m));}}
+                title={msg.unread?"Marquer comme lu":"Marquer comme non-lu"}
+                style={{
+                  background:msg.unread?"rgba(0,122,255,0.1)":"rgba(0,0,0,0.04)",
+                  border:`1px solid ${msg.unread?"rgba(0,122,255,0.35)":"rgba(0,0,0,0.12)"}`,
+                  color:msg.unread?"#007aff":"#9ca3af",
+                  borderRadius:6,padding:"3px 7px",cursor:"pointer",fontSize:11,flexShrink:0,lineHeight:1,whiteSpace:"nowrap",
+                }}>{msg.unread?"● NL":"○ Lu"}</button>
               {/* Move between inbox / deleted */}
               <button onClick={e=>{e.stopPropagation();toggleDeleted(msg);}}
                 title={msg.deleted ? "Restaurer dans la boîte de réception" : "Déplacer vers Supprimés récemment"}
@@ -19914,7 +19987,15 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                 : <span style={{fontSize:16}}>🎵</span>}
               <input type="file" accept="image/*" style={{display:"none"}} onChange={e=>{
                 const f=e.target.files?.[0]; if(!f)return;
-                const r=new UploadReader(); r.onload=ev=>{const m=[...d.music];m[i]={...m[i],cover:ev.target.result};upd("music",m);}; r.readAsDataURL(f); e.target.value="";
+                const trackId=track.id;
+                const r=new UploadReader(); r.onload=ev=>{
+                  // Relire data[tab].music au moment du callback pour éviter la stale closure
+                  const freshMusic=[...(data[tab]?.music||[])];
+                  const idx=freshMusic.findIndex(t=>t.id===trackId);
+                  if(idx>=0){freshMusic[idx]={...freshMusic[idx],cover:ev.target.result};}
+                  else{freshMusic[i]={...freshMusic[i],cover:ev.target.result};}
+                  onUpdate(tab,{...data[tab],music:freshMusic});
+                }; r.readAsDataURL(f); e.target.value="";
               }}/>
             </label>
             <input value={track.title} onChange={e=>{const m=[...d.music];m[i]={...m[i],title:e.target.value};upd("music",m);}}
@@ -20025,18 +20106,24 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
 
           {twTab==="users" && <>
             {(()=>{
-              const renderUserCard = (u, ov, onRemove) => (
-                <div key={u.key} className="adm-card" style={{background:"rgba(255,255,255,0.85)",borderRadius:10,padding:"10px 12px",border:"1px solid rgba(0,0,0,0.07)",display:"flex",flexDirection:"column",gap:6}}>
+              const renderUserCard = (u, ov, onRemove) => {
+                // Seul le perso actif peut modifier son propre profil Twitter (avatar, header, couleur)
+                // Les autres persos sont affichés en lecture seule pour le nom/handle
+                const isMyChar = u.char === tab;
+                const isOtherChar = u.char && u.char !== tab;
+                return (
+                <div key={u.key} className="adm-card" style={{background:"rgba(255,255,255,0.85)",borderRadius:10,padding:"10px 12px",border:"1px solid rgba(0,0,0,0.07)",display:"flex",flexDirection:"column",gap:6,opacity:isOtherChar?0.6:1}}>
                   <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-                    <div style={{fontSize:10,fontWeight:700,color:"#9ca3af",letterSpacing:0.5}}>
-                      {u.char ? (char?.key===u.char ? "★ CE PERSO" : u.char.toUpperCase()) : u.key.toUpperCase()}
+                    <div style={{fontSize:10,fontWeight:700,color:isMyChar?"#1da1f2":"#9ca3af",letterSpacing:0.5}}>
+                      {u.char ? (isMyChar ? "★ CE PERSO" : u.char.toUpperCase()+" — lecture seule") : u.key.toUpperCase()}
                     </div>
-                    {onRemove && <button onClick={onRemove} style={{background:"rgba(239,68,68,0.07)",border:"1px solid rgba(239,68,68,0.2)",color:"#ef4444",borderRadius:6,padding:"3px 7px",cursor:"pointer",fontSize:10}}>✕ Retirer</button>}
+                    {onRemove && !isOtherChar && <button onClick={onRemove} style={{background:"rgba(239,68,68,0.07)",border:"1px solid rgba(239,68,68,0.2)",color:"#ef4444",borderRadius:6,padding:"3px 7px",cursor:"pointer",fontSize:10}}>✕ Retirer</button>}
                   </div>
                   <div style={{display:"flex",gap:6}}>
-                    <Field label="Nom"    value={ov.name??u.name} onChange={v=>updTwUser(u.key,"name",v)} style={{flex:1}}/>
-                    <Field label="Handle" value={ov.h??u.h}       onChange={v=>updTwUser(u.key,"h",v)}    style={{flex:1}}/>
+                    <Field label="Nom"    value={ov.name??u.name} onChange={isOtherChar?undefined:v=>updTwUser(u.key,"name",v)} style={{flex:1}} readOnly={isOtherChar}/>
+                    <Field label="Handle" value={ov.h??u.h}       onChange={isOtherChar?undefined:v=>updTwUser(u.key,"h",v)}    style={{flex:1}} readOnly={isOtherChar}/>
                   </div>
+                  {!isOtherChar && (
                   <div style={{display:"flex",gap:10,alignItems:"center"}}>
                     <label style={{width:40,height:40,borderRadius:6,overflow:"hidden",cursor:"pointer",flexShrink:0,background:"#f3f4f6",border:"1px solid rgba(0,0,0,0.08)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:16}}>
                       {ov.av?<img src={ov.av} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:"🐦"}
@@ -20051,7 +20138,8 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                     </div>
                     {ov.av && <button onClick={()=>updTwUser(u.key,"av",null)} style={{fontSize:10,color:"#ef4444",background:"none",border:"none",cursor:"pointer",padding:0}}>Supprimer</button>}
                   </div>
-                  {u.char && (
+                  )}
+                  {isMyChar && (
                     <div style={{display:"flex",flexDirection:"column",gap:6}}>
                       <div style={{display:"flex",gap:10,alignItems:"center"}}>
                         <label style={{width:64,height:36,borderRadius:6,overflow:"hidden",cursor:"pointer",flexShrink:0,background:ov.bannerImg?"transparent":(ov.bannerColor||"#1DA1F2"),border:"1px solid rgba(0,0,0,0.08)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,color:"#fff"}}>
@@ -20073,8 +20161,12 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                       </div>
                     </div>
                   )}
+                  {isOtherChar && (
+                    <div style={{fontSize:10,color:"#9ca3af",fontStyle:"italic"}}>Pour modifier ce profil, passe sur l'onglet {u.char.charAt(0).toUpperCase()+u.char.slice(1)}.</div>
+                  )}
                 </div>
-              );
+                );
+              };
               return (<>
                 <div style={{background:"rgba(29,161,242,0.06)",border:"1px solid rgba(29,161,242,0.15)",borderRadius:8,padding:"7px 12px",fontSize:11,color:"#1da1f2"}}>
                   🔄 Comptes communs — partagés et synchronisés pour les 4 personnages.
@@ -20157,27 +20249,34 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
 
           {twTab==="mytweets" && (()=>{
             const charKey = tab;
-            const myTweets = d.profileTweets || [];
+            const isCustom = (d.profileTweets||[]).length > 0;
+            const defaults = (PROFILE_TWEETS_DEFAULT[charKey]||[]).map((t,i)=>({...t, id:i}));
+            const myTweets = isCustom ? d.profileTweets : defaults;
             const updMy = (newList) => upd("profileTweets", newList);
             return (
             <div style={{display:"flex",flexDirection:"column",gap:10}}>
               <div style={{background:"rgba(29,161,242,0.06)",border:"1px solid rgba(29,161,242,0.15)",borderRadius:8,padding:"7px 12px",fontSize:11,color:"#1da1f2"}}>
-                🐦 Mes tweets — s'affichent sur le profil de ce personnage ET dans sa timeline. Visible uniquement par ce perso.
+                🐦 Mes tweets — s'affichent sur le profil de ce personnage ET dans sa timeline.
               </div>
+              {isCustom && (
+                <div style={{display:"flex",alignItems:"center",justifyContent:"flex-end"}}>
+                  <button onClick={()=>updMy([])} style={{background:"none",border:"1px solid rgba(0,0,0,0.12)",color:"#6b7280",borderRadius:6,padding:"3px 9px",cursor:"pointer",fontSize:10,fontWeight:500,whiteSpace:"nowrap"}}>↩ Réinitialiser</button>
+                </div>
+              )}
               {myTweets.map((t,i)=>{
-                const upTw = (patch) => updMy(myTweets.map((t2,j)=>j===i?{...t2,...patch,id:t2.id||Date.now()+j}:{...t2,id:t2.id||Date.now()+j}));
+                const upTw = (patch) => updMy([...myTweets.map((t2,j)=>j===i?{...t2,...patch,id:t2.id||Date.now()+j}:{...t2,id:t2.id||Date.now()+j})]);
                 return (
-                <div key={t.id??i} className="adm-card" style={{background:"rgba(255,255,255,0.9)",borderRadius:10,padding:"10px 12px",border:"1px solid rgba(0,0,0,0.07)",display:"flex",flexDirection:"column",gap:6}}>
+                <div key={t.id??i} className="adm-card" style={{background:isCustom?"rgba(255,255,255,0.9)":"rgba(255,255,255,0.6)",borderRadius:10,padding:"10px 12px",border:"1px solid rgba(0,0,0,0.07)",display:"flex",flexDirection:"column",gap:6,opacity:isCustom?1:0.8}}>
                   <div style={{display:"flex",gap:6}}>
                     <LoreDateTimeInput value={t.time||""} onChange={v=>upTw({time:v})} width="180px" showLabel={true}/>
                     <div style={{display:"flex",gap:6,alignItems:"flex-start"}}>
                     <MoveButtons 
                       index={i} 
                       length={myTweets.length}
-                      onMoveUp={() => { const l=[...myTweets]; [l[i-1],l[i]]=[l[i],l[i-1]]; updMy(l); }}
-                      onMoveDown={() => { const l=[...myTweets]; [l[i+1],l[i]]=[l[i],l[i+1]]; updMy(l); }}
+                      onMoveUp={() => { const l=[...myTweets].map((t2,j)=>({...t2,id:t2.id||Date.now()+j})); [l[i-1],l[i]]=[l[i],l[i-1]]; updMy(l); }}
+                      onMoveDown={() => { const l=[...myTweets].map((t2,j)=>({...t2,id:t2.id||Date.now()+j})); [l[i+1],l[i]]=[l[i],l[i+1]]; updMy(l); }}
                     />
-                    <button onClick={()=>updMy(myTweets.filter((_,j)=>j!==i))} className="adm-del-btn" style={{background:"rgba(239,68,68,0.07)",border:"1px solid rgba(239,68,68,0.2)",color:"#ef4444",borderRadius:6,padding:"5px 8px",cursor:"pointer",fontSize:11,marginTop:18}}>✕</button>
+                    <button onClick={()=>updMy(myTweets.filter((_,j)=>j!==i).map((t2,j)=>({...t2,id:t2.id||Date.now()+j})))} className="adm-del-btn" style={{background:"rgba(239,68,68,0.07)",border:"1px solid rgba(239,68,68,0.2)",color:"#ef4444",borderRadius:6,padding:"5px 8px",cursor:"pointer",fontSize:11,marginTop:18}}>✕</button>
                   </div>
                   </div>
                   <Field label="Texte" value={t.text||""} onChange={v=>upTw({text:v})} textarea/>
@@ -20188,7 +20287,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                   </div>
                 </div>
               );})}
-              <button onClick={()=>updMy([...myTweets.map((t,j)=>({...t,id:t.id||Date.now()+j})),{id:Date.now(),text:"",time:"1:00am",rp:0,rt:0,fav:0}])}
+              <button onClick={()=>updMy([...myTweets.map((t2,j)=>({...t2,id:t2.id||Date.now()+j})),{id:Date.now(),text:"",time:"1:00am",rp:0,rt:0,fav:0}])}
                 style={{background:"rgba(29,161,242,0.08)",border:"1px dashed rgba(29,161,242,0.4)",color:"#1da1f2",borderRadius:8,padding:"10px 18px",cursor:"pointer",fontSize:12,fontWeight:600}}>+ Mon tweet</button>
             </div>
             );
@@ -20575,24 +20674,38 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
           style={{background:"rgba(53,70,92,0.08)",border:"1px dashed rgba(53,70,92,0.4)",color:"#35465c",borderRadius:8,padding:"10px 18px",cursor:"pointer",fontSize:12,fontWeight:600}}>+ Post Tumblr</button>
 
         <div style={{color:"#888",fontSize:10,letterSpacing:1,textTransform:"uppercase",margin:"16px 0 8px"}}>Onglet Tag</div>
-        <div style={{display:"flex",gap:8,alignItems:"center",flexWrap:"wrap",marginBottom:4}}>
-          <Field label="Nom du tag (sans #)" value={d.tumblr?.tagName||""} onChange={v=>upd("tumblr",{...(d.tumblr||{}),tagName:v})} width="200px"/>
-          <div style={{fontSize:11,color:"#9ca3af",marginTop:18}}>Les posts ci-dessous apparaissent dans l'onglet tag de ce perso.</div>
-        </div>
-        {(d.tumblr?.tagPosts||[]).map((post,i)=>(
-          <div key={post.id??i} className="adm-card" style={{background:"rgba(255,255,255,0.85)",borderRadius:12,padding:14,border:"1px solid rgba(0,0,0,0.07)",boxShadow:"0 2px 8px rgba(0,0,0,0.04)",marginTop:6}}>
-            <div style={{display:"flex",gap:8,marginBottom:8,alignItems:"center"}}>
-              <Field label="Pseudo auteur" value={post.username||""} onChange={v=>{const p=[...(d.tumblr?.tagPosts||[])];p[i]={...p[i],username:v};upd("tumblr",{...(d.tumblr||{}),tagPosts:p});}} width="30%"/>
-              <Field label="Date" value={post.date||""} onChange={v=>{const p=[...(d.tumblr?.tagPosts||[])];p[i]={...p[i],date:v};upd("tumblr",{...(d.tumblr||{}),tagPosts:p});}} width="20%"/>
-              <Field label="Notes" value={String(post.notes||0)} onChange={v=>{const p=[...(d.tumblr?.tagPosts||[])];p[i]={...p[i],notes:parseInt(v)||0};upd("tumblr",{...(d.tumblr||{}),tagPosts:p});}} width="14%"/>
-              <button onClick={()=>upd("tumblr",{...(d.tumblr||{}),tagPosts:(d.tumblr?.tagPosts||[]).filter((_,j)=>j!==i)})}
-                className="adm-del-btn" style={{background:"rgba(239,68,68,0.06)",border:"1px solid rgba(239,68,68,0.2)",color:"#ef4444",borderRadius:6,padding:"4px 8px",cursor:"pointer",fontSize:11,marginTop:18}}>✕</button>
+        {(()=>{
+          const tSeed = TUMBLR_TAG_POSTS_DEFAULT[tab] || {tagName:"findanna",posts:[]};
+          const isCustomTagName = !!d.tumblr?.tagName;
+          const isCustomTagPosts = (d.tumblr?.tagPosts||[]).length > 0;
+          const effectiveTagPosts = isCustomTagPosts ? (d.tumblr?.tagPosts||[]) : tSeed.posts;
+          const updTagPosts = (list) => upd("tumblr",{...(d.tumblr||{}),tagPosts:list});
+          return (<>
+            <div style={{display:"flex",gap:8,alignItems:"center",flexWrap:"wrap",marginBottom:4}}>
+              <Field label="Nom du tag (sans #)" value={d.tumblr?.tagName||tSeed.tagName||""} onChange={v=>upd("tumblr",{...(d.tumblr||{}),tagName:v})} width="200px"/>
+              <div style={{fontSize:11,color:"#9ca3af",marginTop:18}}>Les posts ci-dessous apparaissent dans l'onglet tag de ce perso.</div>
             </div>
-            <Field label="Texte" value={post.body||""} onChange={v=>{const p=[...(d.tumblr?.tagPosts||[])];p[i]={...p[i],body:v};upd("tumblr",{...(d.tumblr||{}),tagPosts:p});}} textarea/>
-          </div>
-        ))}
-        <button onClick={()=>upd("tumblr",{...(d.tumblr||{}),tagPosts:[{id:Date.now(),username:d.tumblr?.handle||"",body:"",notes:0,date:"1 oct",type:"text"},...(d.tumblr?.tagPosts||[])]})}
-          style={{background:"rgba(142,124,195,0.1)",border:"1px dashed rgba(142,124,195,0.5)",color:"#8e7cc3",borderRadius:8,padding:"10px 18px",cursor:"pointer",fontSize:12,fontWeight:600,marginTop:6}}>+ Post dans le tag</button>
+            {isCustomTagPosts && (
+              <div style={{display:"flex",alignItems:"center",justifyContent:"flex-end"}}>
+                <button onClick={()=>upd("tumblr",{...(d.tumblr||{}),tagPosts:[]})} style={{background:"none",border:"1px solid rgba(0,0,0,0.12)",color:"#6b7280",borderRadius:6,padding:"3px 9px",cursor:"pointer",fontSize:10}}>↩ Réinitialiser</button>
+              </div>
+            )}
+            {effectiveTagPosts.map((post,i)=>(
+              <div key={post.id??i} className="adm-card" style={{background:isCustomTagPosts?"rgba(255,255,255,0.85)":"rgba(255,255,255,0.6)",borderRadius:12,padding:14,border:"1px solid rgba(0,0,0,0.07)",boxShadow:"0 2px 8px rgba(0,0,0,0.04)",marginTop:6,opacity:isCustomTagPosts?1:0.8}}>
+                <div style={{display:"flex",gap:8,marginBottom:8,alignItems:"center"}}>
+                  <Field label="Pseudo auteur" value={post.username||""} onChange={v=>{const p=[...effectiveTagPosts].map((e,j)=>({...e,id:e.id||"t"+j}));p[i]={...p[i],username:v};updTagPosts(p);}} width="30%"/>
+                  <Field label="Date" value={post.date||""} onChange={v=>{const p=[...effectiveTagPosts].map((e,j)=>({...e,id:e.id||"t"+j}));p[i]={...p[i],date:v};updTagPosts(p);}} width="20%"/>
+                  <Field label="Notes" value={String(post.notes||0)} onChange={v=>{const p=[...effectiveTagPosts].map((e,j)=>({...e,id:e.id||"t"+j}));p[i]={...p[i],notes:parseInt(v)||0};updTagPosts(p);}} width="14%"/>
+                  <button onClick={()=>updTagPosts(effectiveTagPosts.filter((_,j)=>j!==i))}
+                    className="adm-del-btn" style={{background:"rgba(239,68,68,0.06)",border:"1px solid rgba(239,68,68,0.2)",color:"#ef4444",borderRadius:6,padding:"4px 8px",cursor:"pointer",fontSize:11,marginTop:18}}>✕</button>
+                </div>
+                <Field label="Texte" value={post.body||""} onChange={v=>{const p=[...effectiveTagPosts].map((e,j)=>({...e,id:e.id||"t"+j}));p[i]={...p[i],body:v};updTagPosts(p);}} textarea/>
+              </div>
+            ))}
+            <button onClick={()=>updTagPosts([{id:"t"+Date.now(),username:d.tumblr?.handle||"",body:"",notes:0,date:"1 oct",type:"text"},...effectiveTagPosts.map((e,j)=>({...e,id:e.id||"t"+j}))])}
+              style={{background:"rgba(142,124,195,0.1)",border:"1px dashed rgba(142,124,195,0.5)",color:"#8e7cc3",borderRadius:8,padding:"10px 18px",cursor:"pointer",fontSize:12,fontWeight:600,marginTop:6}}>+ Post dans le tag</button>
+          </>);
+        })()}
 
         <div style={{color:"#888",fontSize:10,letterSpacing:1,textTransform:"uppercase",margin:"16px 0 8px"}}>Fil d'accueil (posts des comptes suivis)</div>
         {(()=>{
@@ -20679,6 +20792,9 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
           const dayKeys = Object.keys(grouped).sort();
           const [collapsed, setCollapsed] = [calCollapsedSet, setCalCollapsedSet];
           const toggleDay = k => setCollapsed(prev=>{const s=new Set(prev);s.has(k)?s.delete(k):s.add(k);return s;});
+          // Par défaut tout est fermé : isOpen = vrai seulement si la clé est dans le set "ouvert"
+          // On réutilise calCollapsedSet comme "openSet" (renommage sémantique uniquement ici)
+          const isOpen = (k) => collapsed.has(k);
           const CAL_RED="#e04444";
           return (<>
             {isCustom && (
@@ -20689,17 +20805,17 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
 
             {dayKeys.map(k=>{
               const {label, indices} = grouped[k];
-              const isOpen = !collapsed.has(k);
+              const open = isOpen(k);
               return (
                 <div key={k}>
                   {/* Day header — togglable */}
                   <button onClick={()=>toggleDay(k)} style={{width:"100%",display:"flex",alignItems:"center",gap:8,background:"rgba(224,68,68,0.07)",border:"1px solid rgba(224,68,68,0.18)",borderRadius:8,padding:"7px 12px",cursor:"pointer",textAlign:"left"}}>
-                    <span style={{fontSize:12,color:isOpen?"▾":"▸",width:12,flexShrink:0}}>{isOpen?"▾":"▸"}</span>
+                    <span style={{fontSize:12,width:12,flexShrink:0}}>{open?"▾":"▸"}</span>
                     <span style={{fontSize:12,fontWeight:700,color:"#c0392b",flex:1}}>{label}</span>
                     <span style={{fontSize:10,color:"#9ca3af"}}>{indices.length} événement{indices.length>1?"s":""}</span>
                   </button>
 
-                  {isOpen && indices.map(i=>{
+                  {open && indices.map(i=>{
                     const ev = effective[i];
                     const mo = ev.month||10, yr = ev.year||2012;
                     return (
@@ -20738,7 +20854,14 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
               );
             })}
 
-            <button onClick={()=>{const today={id:Date.now(),day:1,month:10,year:2012,title:"",time:"",location:""};updList(isCustom?[...effective,today]:([...defaults,today].map((e,j)=>({...e,id:Date.now()+j}))))}}
+            <button onClick={()=>{
+              const today={id:Date.now(),day:1,month:10,year:2012,title:"",time:"",location:""};
+              const base = isCustom ? effective : defaults.map((e,j)=>({...e,id:"seed_"+j}));
+              updList([...base, today]);
+              // Ouvrir le groupe du nouveau jour (logique inversée : ajouter au set "open")
+              const k="2012-10-01";
+              setCollapsed(prev=>{const s=new Set(prev);s.add(k);return s;});
+            }}
               style={{background:"rgba(224,68,68,0.08)",border:"1px dashed rgba(224,68,68,0.35)",color:"#e04444",borderRadius:8,padding:"10px 18px",cursor:"pointer",fontSize:12,fontWeight:600}}>+ Événement</button>
           </>);
         })()}
@@ -21834,8 +21957,8 @@ export default function App() {
           </div>
 
           {charData.os==="ios"
-            ?<IOSPhone data={{...charData, sharedThreads:data.sharedThreads}} admin={true} loreDate={loreDate} onUpdate={d=>updateChar(selected.key,d)} onUpdateShared={(tid,raw)=>updateChar(tid,raw)}/>
-            :<AndroidPhone data={{...charData, sharedThreads:data.sharedThreads}} admin={true} loreDate={loreDate} onUpdate={d=>updateChar(selected.key,d)} sharedAndroidIcons={sharedAndroidIcons} onUpdateShared={updateSharedAndroid} onUpdateSharedThread={(tid,raw)=>updateChar(tid,raw)}/>}
+            ?<IOSPhone data={{...charData, sharedThreads:data.sharedThreads}} admin={false} loreDate={loreDate} onUpdate={d=>updateChar(selected.key,d)} onUpdateShared={(tid,raw)=>updateChar(tid,raw)}/>
+            :<AndroidPhone data={{...charData, sharedThreads:data.sharedThreads}} admin={false} loreDate={loreDate} onUpdate={d=>updateChar(selected.key,d)} sharedAndroidIcons={sharedAndroidIcons} onUpdateShared={updateSharedAndroid} onUpdateSharedThread={(tid,raw)=>updateChar(tid,raw)}/>}
 
           
           <div style={{display:"flex",gap:8,marginTop:8}}>
