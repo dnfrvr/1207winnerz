@@ -2513,10 +2513,13 @@ const TumblrScreen = ({data,admin,update,accent}) => {
     </svg>
   );
 
-  const PostCard = ({post, idx, isFeed=false}) => {
+  const PostCard = ({post, idx, isFeed=false, isTag=false}) => {
     const isQuote = post.quote || post.type==="quote";
     const savePost = (patch) => {
-      if(isFeed) {
+      if(isTag) {
+        const tp = [...tagPosts]; tp[idx] = {...tp[idx], ...patch};
+        update("tumblr", {...data.tumblr, tagPosts: tp});
+      } else if(isFeed) {
         const fp = [...feedPosts]; fp[idx] = {...fp[idx], ...patch};
         update("tumblr", {...data.tumblr, feedPosts: fp});
       } else {
@@ -2525,7 +2528,9 @@ const TumblrScreen = ({data,admin,update,accent}) => {
       }
     };
     const deletePost = () => {
-      if(isFeed) {
+      if(isTag) {
+        update("tumblr", {...data.tumblr, tagPosts: tagPosts.filter((_,j)=>j!==idx)});
+      } else if(isFeed) {
         update("tumblr", {...data.tumblr, feedPosts: feedPosts.filter((_,j)=>j!==idx)});
       } else {
         update("tumblr", {...data.tumblr, posts: posts.filter((_,j)=>j!==idx)});
@@ -2625,29 +2630,40 @@ const TumblrScreen = ({data,admin,update,accent}) => {
     </div>
   );
 
-  const Explore = () => (
-    <div style={{flex:1,background:"#ebe9e4",display:"flex",flexDirection:"column",overflow:"hidden"}}>
-      <div style={{padding:"8px 10px",background:"#fff",borderBottom:`1px solid ${SEP}`}}>
-        <div style={{background:"#eeedea",border:"1px solid #d5d4d0",borderRadius:10,padding:"5px 12px",display:"flex",alignItems:"center",gap:6}}>
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke={GRAY} strokeWidth="2"/><path d="M20 20l-3.5-3.5" stroke={GRAY} strokeWidth="2" strokeLinecap="round"/></svg>
-          <span style={{fontSize:13,color:GRAY}}>Search Tumblr</span>
+  const tagPosts = data.tumblr?.tagPosts || [];
+
+  const TagTab = () => {
+    const tagName = data.tumblr?.tagName || "findanna";
+    return (
+      <div style={{flex:1,background:"#ebe9e4",display:"flex",flexDirection:"column",overflow:"hidden"}}>
+        {/* Tag header */}
+        <div style={{background:TB,padding:"12px 14px 10px",display:"flex",alignItems:"center",gap:8,flexShrink:0}}>
+          <div style={{flex:1}}>
+            <div style={{color:"#fff",fontWeight:700,fontSize:15}}>#{tagName}</div>
+          </div>
+          {admin&&<input value={data.tumblr?.tagName||""} onChange={e=>update("tumblr",{...data.tumblr,tagName:e.target.value})}
+            placeholder="nom du tag"
+            style={{background:"rgba(255,255,255,0.18)",border:"1px dashed rgba(255,255,255,0.5)",color:"#fff",fontSize:12,padding:"3px 7px",borderRadius:4,width:110}}/>}
+        </div>
+        <div style={{overflowY:"auto",flex:1,padding:"8px 8px 0"}}>
+          {tagPosts.length===0&&!admin&&(
+            <div style={{textAlign:"center",color:GRAY,fontSize:12,paddingTop:30}}>Aucun post dans ce tag.</div>
+          )}
+          {tagPosts.map((post,i)=>(
+            <PostCard key={post.id??i} post={post} idx={i} isFeed={false} isTag={true}/>
+          ))}
+          {admin&&(
+            <div onClick={()=>{
+              const np={id:Date.now(),username:data.tumblr?.handle||data.username,avatarBg:"#8e7cc3",body:"",notes:0,date:"1 oct",type:"text"};
+              update("tumblr",{...data.tumblr,tagPosts:[np,...tagPosts]});
+            }} style={{padding:12,textAlign:"center",color:"#8e7cc3",cursor:"pointer",background:"#fff",borderRadius:2,fontSize:12,boxShadow:"0 1px 2px rgba(0,0,0,0.1)",marginBottom:8}}>
+              + Ajouter un post au tag
+            </div>
+          )}
         </div>
       </div>
-      <div style={{overflowY:"auto",flex:1,padding:"10px 8px"}}>
-        <div style={{fontSize:10,color:GRAY,letterSpacing:1,textTransform:"uppercase",marginBottom:8}}>Trending</div>
-        {["architecture","minimalism","photography","aesthetic","vintage","film","art","interiors"].map((tag,i)=>(
-          <div key={i} style={{background:"#fff",borderRadius:2,boxShadow:"0 1px 2px rgba(0,0,0,0.1)",padding:"9px 10px",marginBottom:6,display:"flex",alignItems:"center",gap:9}}>
-            <div style={{width:30,height:30,borderRadius:3,background:`hsl(${i*44},38%,58%)`,flexShrink:0}}/>
-            <div style={{flex:1}}>
-              <div style={{fontWeight:700,fontSize:13,color:"#222"}}>#{tag}</div>
-              <div style={{fontSize:11,color:GRAY}}>{(Math.floor(Math.random()*900+100)).toLocaleString()}K posts</div>
-            </div>
-            <svg width="8" height="14" viewBox="0 0 8 14" fill="none"><path d="M1 1l6 6-6 6" stroke="#c8c7c2" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
+    );
+  };
 
   const Profile = () => {
     // Glinda posts under "glindarvf" — match either username or the tumblr-specific handle
@@ -2698,7 +2714,7 @@ const TumblrScreen = ({data,admin,update,accent}) => {
     );
   };
 
-  const TABS = [Dashboard, Explore, Profile];
+  const TABS = [Dashboard, TagTab, Profile];
 
   /* ── Tab bar: 3 regular + 1 blue compose button ── */
   /* Screenshot: home | tag | person | [blue compose] */
@@ -4773,12 +4789,36 @@ const TwitterScreen = ({data, isIos, accent, onBack=null, sharedTweets=[], onTwe
   // Each char: use data.avatar (current char) or sharedAvatars (others), then twitterUsers override
   Object.entries(CHAR_TWITTER_KEYS).forEach(([char, info]) => {
     const charAv = char === charKey ? (data.avatar || sharedAvatarsTw[char]) : sharedAvatarsTw[char];
+    const ov = twitterUsers[info.key] || {};
     effectiveTwUsers[info.key] = {
-      h: (twitterUsers[info.key]?.h) || info.h,
-      name: (twitterUsers[info.key]?.name) || info.name,
-      av: twitterUsers[info.key]?.av || charAv || null,
+      ...ov,
+      h: ov.h || info.h,
+      name: ov.name || info.name,
+      av: ov.av || charAv || null,
+      bannerImg: ov.bannerImg || null,
+      bannerColor: ov.bannerColor || null,
     };
   });
+
+  const myProfileTweets = (data.profileTweets || []).map(t => ({
+    h: myHandle, name: names[charKey], text: t.text, time: t.time || "maintenant",
+    rp: t.rp ?? 0, rt: t.rt ?? 0, fav: t.fav ?? 0,
+    av: effectiveTwUsers[CHAR_TWITTER_KEYS[charKey]?.key]?.av || charKey[0].toUpperCase(),
+    _profileTweet: true, _ts: t.id || 0,
+  }));
+
+  // Tweets des autres persos issus de leur profileTweets (partagés dans _sharedProfileTweets)
+  const sharedProfileTweets = data.sharedThreads?._sharedProfileTweets || {};
+  const othersProfileTweets = Object.entries(sharedProfileTweets)
+    .filter(([k]) => k !== charKey)
+    .flatMap(([k, tweets]) => (tweets || []).map(t => ({
+      h: handles[k] || "@?", name: names[k] || "?",
+      text: t.text, time: t.time || "maintenant",
+      rp: t.rp ?? 0, rt: t.rt ?? 0, fav: t.fav ?? 0,
+      av: effectiveTwUsers[CHAR_TWITTER_KEYS[k]?.key]?.av || (names[k]||"?")[0],
+      _shared: true, _ts: t.id || 0,
+    }))
+  ).sort((a,b) => (b._ts||0) - (a._ts||0));
 
   const handles = {glinda:"@glindarvf",eoghan:"@eoghan_m",drew:"@dreww_orms",elias:"@noteliasgreen"};
   const names   = {glinda:"Glinda R.",eoghan:"Eoghan M.",drew:"Drew B.",elias:"Elias G."};
@@ -4839,7 +4879,7 @@ const TwitterScreen = ({data, isIos, accent, onBack=null, sharedTweets=[], onTwe
     const u = effectiveTwUsers[key];
     return {...t, name: u.name||t.name, h: u.h||t.h, av: u.av||t.av};
   };
-  const homeFeed = [...myShared, ...othersShared, ...(homeBaseTweets.length ? homeBaseTweets : (HOME_BASE[charKey]||[]))].map(resolveTweet);
+  const homeFeed = [...myProfileTweets, ...myShared, ...othersShared, ...othersProfileTweets, ...(homeBaseTweets.length ? homeBaseTweets : (HOME_BASE[charKey]||[]))].map(resolveTweet);
 
   // ── Connect ──
   const CONNECT = {
@@ -5015,7 +5055,7 @@ const TwitterScreen = ({data, isIos, accent, onBack=null, sharedTweets=[], onTwe
               <div key={l} style={{textAlign:"center"}}><div style={{color:textCol,fontWeight:700,fontSize:13}}>{v}</div><div style={{color:subCol,fontSize:10}}>{l}</div></div>
             ))}
           </div>
-          {[...myShared.slice().reverse(),...(PROFILE_TWEETS[charKey]||[])].map(resolveTweet).map((t,i)=><Tweet key={i} t={{...t,av:effectiveTwUsers[CHAR_TWITTER_KEYS[charKey].key]?.av||charKey[0].toUpperCase()}}/>)}
+          {[...myProfileTweets.slice().reverse(),...myShared.slice().reverse(),...(PROFILE_TWEETS[charKey]||[])].map(resolveTweet).map((t,i)=><Tweet key={i} t={{...t,av:effectiveTwUsers[CHAR_TWITTER_KEYS[charKey].key]?.av||charKey[0].toUpperCase()}}/>)}
         </>}
       </div>
       {isIos&&<div style={{background:"linear-gradient(180deg,#e8ecef,#d5dde3)",borderTop:"1px solid #b0bec5",display:"flex",flexShrink:0}}>
@@ -18533,12 +18573,20 @@ const LoreDateTimeInput = ({value, onChange, width="100%", showLabel=true}) => {
     <div style={{display:"flex",flexDirection:"column",gap:5,width}}>
       {showLabel && <label style={{color:"#9ca3af",fontSize:10,letterSpacing:0.8,textTransform:"uppercase",fontWeight:600}}>Date / heure</label>}
       <div style={{display:"flex",gap:4,flexWrap:"wrap"}}>
-        <input type="date" value={dateVal} min="2012-01-01" max="2012-12-31"
-          onChange={e=>onChange(build(e.target.value, timeVal))}
-          className="adm-input" style={{flex:"1 1 120px",minWidth:0,background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#1a1a2e",padding:"7px 8px",fontSize:11,borderRadius:7}}/>
-        <input type="time" value={timeVal}
-          onChange={e=>onChange(build(dateVal, e.target.value))}
-          className="adm-input" style={{flex:"1 1 90px",minWidth:0,background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#1a1a2e",padding:"7px 8px",fontSize:11,borderRadius:7}}/>
+        <div style={{display:"flex",flexDirection:"column",gap:2,flex:"1 1 120px",minWidth:0}}>
+          {!showLabel && <span style={{color:"#c4c9d4",fontSize:9,letterSpacing:0.5,textTransform:"uppercase",fontWeight:600}}>Date</span>}
+          <input type="date" value={dateVal} min="2012-01-01" max="2012-12-31"
+            placeholder="jj/mm/aaaa"
+            onChange={e=>onChange(build(e.target.value, timeVal))}
+            className="adm-input" style={{flex:1,minWidth:0,background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:dateVal?"#1a1a2e":"#9ca3af",padding:"7px 8px",fontSize:11,borderRadius:7}}/>
+        </div>
+        <div style={{display:"flex",flexDirection:"column",gap:2,flex:"1 1 90px",minWidth:0}}>
+          {!showLabel && <span style={{color:"#c4c9d4",fontSize:9,letterSpacing:0.5,textTransform:"uppercase",fontWeight:600}}>Heure</span>}
+          <input type="time" value={timeVal}
+            placeholder="hh:mm"
+            onChange={e=>onChange(build(dateVal, e.target.value))}
+            className="adm-input" style={{flex:1,minWidth:0,background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:timeVal?"#1a1a2e":"#9ca3af",padding:"7px 8px",fontSize:11,borderRadius:7}}/>
+        </div>
       </div>
     </div>
   );
@@ -18668,13 +18716,10 @@ const APP_SECTIONS = {
 };
 
 // L'app "Téléphone" du portable couvre en réalité 3 sections admin distinctes (Appels, Contacts,
-// Messages vocaux). Toutes les autres apps sont 1-pour-1 (id d'app = clé de section), donc on
-// centralise ce cas particulier ici plutôt que de le dupliquer partout où on construit la nav.
+// Messages vocaux). Elles sont maintenant fusionnées en un seul admin "📞 Téléphone" avec sous-onglets.
 const expandAppSections = (id) => {
   if(id==="phone") return [
-    {key:"calls",     ...APP_SECTIONS.calls},
-    {key:"contacts",  ...APP_SECTIONS.contacts},
-    {key:"voicemail", ...APP_SECTIONS.voicemail},
+    {key:"phone", icon:"📞", label:"Téléphone"},
   ];
   const key = id==="photos" ? "gallery" : id==="gmail" ? "mail" : id==="safari" ? "browser" : id;
   return APP_SECTIONS[key] ? [{key, ...APP_SECTIONS[key]}] : [];
@@ -18705,7 +18750,8 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
   const [grindrOpenDms, setGrindrOpenDms] = useState(new Set());
   const toggleGrindrDm = (id) => setGrindrOpenDms(prev => { const n=new Set(prev); n.has(id)?n.delete(id):n.add(id); return n; });
   const [msgAdminTab, setMsgAdminTab] = useState("inbox"); // "inbox" | "deleted"
-  const [twTab, setTwTab] = useState("users"); // "users" | "tweets"
+  const [twTab, setTwTab] = useState("users"); // "users" | "timeline" | "mytweets"
+  const [phoneAdmTab, setPhoneAdmTab] = useState("calls"); // "calls" | "contacts" | "voicemail"
   const [grindrTab, setGrindrTab] = useState("grid"); // "grid" | "dms" | "profile"
   const [galSection, setGalSection] = useState("roll"); // "roll" | "deleted" | "albums"
   const [calCollapsedSet, setCalCollapsedSet] = useState(new Set()); // togglable day groups
@@ -18725,11 +18771,6 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
     return () => { ro.disconnect(); window.removeEventListener("resize", check); };
   }, []);
 
-
-  const [itunesMusicQuery, setItunesMusicQuery] = useState("");
-  const [itunesResults, setItunesResults] = useState([]);
-  const [itunesSearching, setItunesSearching] = useState(false);
-  const itunesSearchRef = React.useRef(false);
 
   const char = CHARACTERS.find(c=>c.key===tab);
   const d    = data[tab];
@@ -19095,8 +19136,8 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                 return (
                   <div key={gid||gMsg.id} style={{background:"#fff",borderRadius:8,border:"1px solid rgba(0,0,0,0.07)",overflow:"hidden"}}>
                     {/* ── Header toggle ── */}
-                    <div onClick={()=>toggleConv(gKey)} style={{display:"flex",gap:8,alignItems:"center",padding:"10px 12px",cursor:"pointer",userSelect:"none"}}>
-                      <span style={{fontSize:13,transition:"transform 0.15s",display:"inline-block",transform:gOpen?"rotate(90deg)":"rotate(0deg)",color:"#9ca3af"}}>›</span>
+                    <div onClick={()=>toggleConv(gKey)} style={{display:"flex",gap:8,alignItems:"center",padding:"10px 12px",cursor:"pointer",userSelect:"none",minHeight:48}}>
+                      <span style={{fontSize:18,transition:"transform 0.15s",display:"flex",alignItems:"center",justifyContent:"center",width:28,height:28,flexShrink:0,borderRadius:6,background:"rgba(0,0,0,0.04)",color:"#6366f1",fontWeight:700,transform:gOpen?"rotate(90deg)":"rotate(0deg)"}}>›</span>
                       <span style={{fontSize:13}}>👥</span>
                       {isSharedGroup ? (
                         <input value={meta.name||""} onChange={e=>{
@@ -19289,7 +19330,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
           return (
           <div key={cKey} className="adm-card" style={{background:"rgba(255,255,255,0.85)",borderRadius:12,border:"1px solid rgba(0,0,0,0.07)",boxShadow:"0 2px 8px rgba(0,0,0,0.04)",overflow:"hidden"}}>
             {/* ── Header toggle ── */}
-            <div style={{display:"flex",gap:8,alignItems:"center",padding:"10px 14px",cursor:"pointer",userSelect:"none"}}
+            <div style={{display:"flex",gap:8,alignItems:"center",padding:"10px 14px",cursor:"pointer",userSelect:"none",minHeight:48}}
               onClick={()=>toggleConv(cKey)}>
               {/* Reorder arrows */}
               <div style={{display:"flex",flexDirection:"column",gap:2,flexShrink:0}} onClick={e=>e.stopPropagation()}>
@@ -19302,11 +19343,21 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                   if(ni===all.length-1)return;[all[ni+1],all[ni]]=[all[ni],all[ni+1]];upd("messages",all);
                 }} style={{background:"none",border:"1px solid rgba(0,0,0,0.1)",borderRadius:4,width:18,height:18,cursor:"pointer",color:"#6366f1",fontSize:10,display:"flex",alignItems:"center",justifyContent:"center",padding:0}}><svg width="8" height="8" viewBox="0 0 10 10" fill="currentColor"><path d="M5 9L1 1H9z"/></svg></button>
               </div>
-              <span style={{fontSize:12,transition:"transform 0.15s",display:"inline-block",transform:cOpen?"rotate(90deg)":"rotate(0deg)",color:"#9ca3af",flexShrink:0}}>›</span>
-              {/* Contact name — editable inline, stop propagation so click doesn't toggle */}
-              <input value={msg.contact} onClick={e=>e.stopPropagation()}
-                onChange={v=>{const m=[...d.messages];const ni=m.indexOf(msg);m[ni]={...m[ni],contact:v.target.value};upd("messages",m);}}
-                className="adm-input" style={{flex:1,background:"transparent",border:"none",color:"#1a1a2e",padding:"2px 0",fontSize:13,fontWeight:600,outline:"none",minWidth:0}}/>
+              <span style={{fontSize:18,transition:"transform 0.15s",display:"flex",alignItems:"center",justifyContent:"center",width:28,height:28,flexShrink:0,borderRadius:6,background:"rgba(0,0,0,0.04)",color:"#6366f1",fontWeight:700,transform:cOpen?"rotate(90deg)":"rotate(0deg)"}}>›</span>
+              {/* Contact name — dropdown sur les contacts du perso, stop propagation */}
+              {(()=>{
+                const contactNames = (d.contacts||[]).map(c=>c.name).filter(Boolean);
+                const val = msg.contact || "";
+                return (
+                  <select value={val} onClick={e=>e.stopPropagation()}
+                    onChange={e=>{e.stopPropagation();const m=[...d.messages];const ni=m.indexOf(msg);m[ni]={...m[ni],contact:e.target.value};upd("messages",m);}}
+                    className="adm-input" style={{flex:1,background:"transparent",border:"none",borderBottom:"1px solid rgba(0,0,0,0.08)",color:"#1a1a2e",padding:"2px 0",fontSize:13,fontWeight:600,outline:"none",minWidth:0,cursor:"pointer"}}>
+                    <option value="">— Contact —</option>
+                    {contactNames.map(n=><option key={n} value={n}>{n}</option>)}
+                    {val && !contactNames.includes(val) && <option value={val}>{val} (libre)</option>}
+                  </select>
+                );
+              })()}
               {!cOpen && preview && (
                 <span style={{fontSize:11,color:"#9ca3af",flex:2,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",minWidth:0}}>{preview}</span>
               )}
@@ -19399,129 +19450,145 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
       );
     }
 
-    case "calls": return (
-      <div style={{display:"flex",flexDirection:"column",gap:8}}>
-        {(d.calls||[]).map((call,i)=>(
-          <div key={call.id} className="adm-card" style={{display:"flex",gap:8,alignItems:"center",background:"rgba(255,255,255,0.85)",padding:10,borderRadius:10,border:"1px solid rgba(0,0,0,0.07)",flexWrap:"wrap"}}>
-            <input value={call.contact} onChange={e=>{const c=[...d.calls];c[i]={...c[i],contact:e.target.value};upd("calls",c);}}
-              placeholder="Contact" className="adm-input" style={{flex:1,background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#1a1a2e",padding:"7px 10px",fontSize:12,borderRadius:7}}/>
-            <select value={call.type} onChange={e=>{const c=[...d.calls];c[i]={...c[i],type:e.target.value};upd("calls",c);}}
-              className="adm-input" style={{background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#374151",padding:"7px 8px",fontSize:11,borderRadius:7}}>
-              <option value="incoming">incoming</option><option value="outgoing">outgoing</option><option value="missed">missed</option>
-            </select>
-            <LoreDateTimeInput value={call.time} onChange={v=>{const c=[...d.calls];c[i]={...c[i],time:v};upd("calls",c);}} width="190px" showLabel={false}/>
-            <input value={call.duration||""} onChange={e=>{const c=[...d.calls];c[i]={...c[i],duration:e.target.value||null};upd("calls",c);}}
-              placeholder="Duration" className="adm-input" style={{width:90,background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#6b7280",padding:"7px 8px",fontSize:11,borderRadius:7}}/>
-            <button onClick={()=>upd("calls",d.calls.filter((_,j)=>j!==i))}
-              className="adm-del-btn" style={{background:"none",border:"none",color:"#d1d5db",cursor:"pointer",fontSize:16,padding:"2px 6px",borderRadius:5,transition:"all 0.15s"}}>×</button>
-          </div>
-        ))}
-        <button onClick={()=>upd("calls",[{id:Date.now(),contact:"",type:"outgoing",time:"1 oct",duration:null},...(d.calls||[])])}
-          style={{background:"rgba(99,102,241,0.08)",border:"1px dashed rgba(99,102,241,0.4)",color:"#6366f1",borderRadius:8,padding:"10px 18px",cursor:"pointer",fontSize:12,fontWeight:600}}>+ Call</button>
-      </div>
-    );
-
-    case "contacts": {
-      // Renomme un contact partout où son nom est référencé (appels + messages 1-à-1, pas les groupes)
-      // pour que les deux écrans restent synchronisés sans devoir tout refaire en sous-main.
-      const updContact = (id, field, val) => {
-        const contacts = d.contacts||[];
-        const idx = contacts.findIndex(c=>c.id===id);
-        if(idx<0) return;
-        const oldName = contacts[idx].name;
-        const newContacts = contacts.map(c=>c.id===id?{...c,[field]:val}:c);
-        if(field==="name" && oldName && oldName!==val){
-          const newCalls = (d.calls||[]).map(c=>c.contact===oldName?{...c,contact:val}:c);
-          const newMessages = (d.messages||[]).map(m=>(!m.isGroup && m.contact===oldName)?{...m,contact:val}:m);
-          onUpdate(tab, {...d, contacts:newContacts, calls:newCalls, messages:newMessages});
-        } else {
-          onUpdate(tab, {...d, contacts:newContacts});
-        }
-      };
-      const addContact = () => onUpdate(tab, {...d, contacts:[{id:Date.now(), name:"Nouveau contact", phone:"", photo:null}, ...(d.contacts||[])]});
-      const deleteContact = (id) => onUpdate(tab, {...d, contacts:(d.contacts||[]).filter(c=>c.id!==id)});
-      const seedContacts = () => {
-        const names = new Set();
-        (d.calls||[]).forEach(c=>c.contact && names.add(c.contact));
-        (d.messages||[]).forEach(m=>!m.isGroup && m.contact && names.add(m.contact));
-        const existing = new Set((d.contacts||[]).map(c=>c.name));
-        const toAdd = [...names].filter(n=>!existing.has(n)).map((n,i)=>({id:Date.now()+i, name:n, phone:"", photo:null}));
-        if(toAdd.length===0){ alert("Aucun nouveau contact à importer — tout est déjà dans la liste."); return; }
-        onUpdate(tab, {...d, contacts:[...(d.contacts||[]), ...toAdd]});
-      };
+    case "calls":
+    case "contacts":
+    case "voicemail":
+    case "phone": {
+      // Sous-onglets Phone fusionnés
       return (
-        <div style={{display:"flex",flexDirection:"column",gap:8}}>
-          <div style={{fontSize:11,color:"#6b7280",lineHeight:1.5}}>
-            Renommer un contact ici met aussi à jour son nom dans les Appels et les Messages de ce perso.
+        <div style={{display:"flex",flexDirection:"column",gap:12}}>
+          {/* Sub-tab bar */}
+          <div className="adm-subtabs" style={{display:"flex",gap:0,background:"rgba(0,0,0,0.05)",borderRadius:8,padding:2,alignSelf:"flex-start"}}>
+            {[["calls","📞 Appels"],["contacts","👥 Contacts"],["voicemail","📼 Vocaux"]].map(([k,label])=>(
+              <button key={k} onClick={()=>setPhoneAdmTab(k)} style={{
+                padding:"6px 14px",border:"none",borderRadius:6,cursor:"pointer",fontSize:11,
+                fontWeight:phoneAdmTab===k?700:400,
+                background:phoneAdmTab===k?"#fff":"transparent",
+                color:phoneAdmTab===k?"#34c759":"#6b7280",
+                boxShadow:phoneAdmTab===k?"0 1px 3px rgba(0,0,0,0.1)":"none",
+                transition:"all 0.15s",
+              }}>{label}</button>
+            ))}
           </div>
-          <button onClick={seedContacts}
-            style={{alignSelf:"flex-start",background:"rgba(16,185,129,0.08)",border:"1px dashed rgba(16,185,129,0.4)",color:"#059669",borderRadius:8,padding:"8px 14px",cursor:"pointer",fontSize:11,fontWeight:600}}>
-            ⇩ Importer les noms depuis Appels / Messages
-          </button>
-          {(d.contacts||[]).map((c,i)=>(
-            <div key={c.id} className="adm-card" style={{display:"flex",gap:8,alignItems:"center",background:"rgba(255,255,255,0.85)",padding:10,borderRadius:10,border:"1px solid rgba(0,0,0,0.07)",flexWrap:"wrap"}}>
-              <div onClick={()=>document.getElementById(`contact-photo-${tab}-${c.id}`).click()}
-                style={{width:40,height:40,borderRadius:"50%",background:"rgba(99,102,241,0.08)",border:"1px dashed rgba(99,102,241,0.3)",overflow:"hidden",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer"}}>
-                {c.photo ? <img src={c.photo} style={{width:"100%",height:"100%",objectFit:"cover"}}/> : <span style={{fontSize:16}}>👤</span>}
-              </div>
-              <input id={`contact-photo-${tab}-${c.id}`} type="file" accept="image/*" style={{display:"none"}} onChange={e=>{
-                const f=e.target.files?.[0]; if(!f)return;
-                const r=new UploadReader(); r.onload=ev=>updContact(c.id,"photo",ev.target.result); r.readAsDataURL(f); e.target.value="";
-              }}/>
-              <input value={c.name} onChange={e=>updContact(c.id,"name",e.target.value)}
-                placeholder="Nom" className="adm-input" style={{flex:"1 1 140px",minWidth:0,background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#1a1a2e",padding:"7px 10px",fontSize:12,borderRadius:7,fontWeight:600}}/>
-              <input value={c.phone||""} onChange={e=>updContact(c.id,"phone",e.target.value)}
-                placeholder="Téléphone (optionnel)" className="adm-input" style={{flex:"1 1 120px",minWidth:0,background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#6b7280",padding:"7px 10px",fontSize:12,borderRadius:7}}/>
-              <button onClick={()=>deleteContact(c.id)}
-                className="adm-del-btn" style={{background:"none",border:"none",color:"#d1d5db",cursor:"pointer",fontSize:16,padding:"2px 6px",flexShrink:0,borderRadius:5,transition:"all 0.15s"}}>×</button>
-            </div>
-          ))}
-          <button onClick={addContact}
-            style={{background:"rgba(99,102,241,0.08)",border:"1px dashed rgba(99,102,241,0.4)",color:"#6366f1",borderRadius:8,padding:"10px 18px",cursor:"pointer",fontSize:12,fontWeight:600,alignSelf:"flex-start"}}>+ Contact</button>
-        </div>
-      );
-    }
 
-    case "voicemail": {
-      const updVm = (id, field, val) => {
-        const list = (d.voicemails||[]).map(v=>v.id===id?{...v,[field]:val}:v);
-        upd("voicemails", list);
-      };
-      const addVm = () => upd("voicemails",[{id:Date.now(), contact:"", time:"1 oct, 9:00am", duration:"0:08", transcript:""},...(d.voicemails||[])]);
-      const deleteVm = (id) => upd("voicemails", (d.voicemails||[]).filter(v=>v.id!==id));
-      const seedVm = () => {
-        const missed = (d.calls||[]).filter(c=>c.type==="missed");
-        if(missed.length===0){ alert("Aucun appel manqué à importer."); return; }
-        const toAdd = missed.map((c,i)=>({id:Date.now()+i, contact:c.contact, time:c.time, duration:"0:08", transcript:""}));
-        upd("voicemails",[...(d.voicemails||[]), ...toAdd]);
-      };
-      return (
-        <div style={{display:"flex",flexDirection:"column",gap:8}}>
-          <div style={{fontSize:11,color:"#6b7280",lineHeight:1.5}}>
-            Sans message vocal ajouté ici, l'onglet "Voicemail" du téléphone affiche par défaut les 3 derniers appels manqués (sans texte).
-          </div>
-          <button onClick={seedVm}
-            style={{alignSelf:"flex-start",background:"rgba(16,185,129,0.08)",border:"1px dashed rgba(16,185,129,0.4)",color:"#059669",borderRadius:8,padding:"8px 14px",cursor:"pointer",fontSize:11,fontWeight:600}}>
-            ⇩ Importer les appels manqués
-          </button>
-          {(d.voicemails||[]).map((vm,i)=>(
-            <div key={vm.id} className="adm-card" style={{display:"flex",flexDirection:"column",gap:6,background:"rgba(255,255,255,0.85)",padding:10,borderRadius:10,border:"1px solid rgba(0,0,0,0.07)"}}>
-              <div style={{display:"flex",gap:8,flexWrap:"wrap",alignItems:"center"}}>
-                <input value={vm.contact} onChange={e=>updVm(vm.id,"contact",e.target.value)}
-                  placeholder="Contact" className="adm-input" style={{flex:"1 1 120px",minWidth:0,background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#1a1a2e",padding:"7px 10px",fontSize:12,borderRadius:7,fontWeight:600}}/>
-                <LoreDateTimeInput value={vm.time} onChange={v=>updVm(vm.id,"time",v)} width="190px" showLabel={false}/>
-                <input value={vm.duration||""} onChange={e=>updVm(vm.id,"duration",e.target.value)}
-                  placeholder="Durée" className="adm-input" style={{width:70,flexShrink:0,background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#6b7280",padding:"7px 8px",fontSize:11,borderRadius:7}}/>
-                <button onClick={()=>deleteVm(vm.id)}
-                  className="adm-del-btn" style={{background:"none",border:"none",color:"#d1d5db",cursor:"pointer",fontSize:16,padding:"2px 6px",flexShrink:0,borderRadius:5}}>×</button>
+          {/* ── APPELS ── */}
+          {phoneAdmTab==="calls" && (()=>{
+            const contactNames = (d.contacts||[]).map(c=>c.name).filter(Boolean);
+            const ContactSelect = ({value, onChange}) => (
+              <select value={value} onChange={e=>onChange(e.target.value)}
+                className="adm-input" style={{flex:1,background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:value?"#1a1a2e":"#9ca3af",padding:"7px 10px",fontSize:12,borderRadius:7}}>
+                <option value="">— Contact —</option>
+                {contactNames.map(n=><option key={n} value={n}>{n}</option>)}
+                {value && !contactNames.includes(value) && <option value={value}>{value} (libre)</option>}
+              </select>
+            );
+            return (<>
+              {(d.calls||[]).map((call,i)=>(
+                <div key={call.id} className="adm-card" style={{display:"flex",gap:8,alignItems:"center",background:"rgba(255,255,255,0.85)",padding:10,borderRadius:10,border:"1px solid rgba(0,0,0,0.07)",flexWrap:"wrap"}}>
+                  <ContactSelect value={call.contact} onChange={v=>{const c=[...d.calls];c[i]={...c[i],contact:v};upd("calls",c);}}/>
+                  <select value={call.type} onChange={e=>{const c=[...d.calls];c[i]={...c[i],type:e.target.value};upd("calls",c);}}
+                    className="adm-input" style={{background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#374151",padding:"7px 8px",fontSize:11,borderRadius:7}}>
+                    <option value="incoming">incoming</option><option value="outgoing">outgoing</option><option value="missed">missed</option>
+                  </select>
+                  <LoreDateTimeInput value={call.time} onChange={v=>{const c=[...d.calls];c[i]={...c[i],time:v};upd("calls",c);}} width="190px" showLabel={false}/>
+                  <input value={call.duration||""} onChange={e=>{const c=[...d.calls];c[i]={...c[i],duration:e.target.value||null};upd("calls",c);}}
+                    placeholder="Durée" className="adm-input" style={{width:90,background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#6b7280",padding:"7px 8px",fontSize:11,borderRadius:7}}/>
+                  <button onClick={()=>upd("calls",d.calls.filter((_,j)=>j!==i))}
+                    className="adm-del-btn" style={{background:"none",border:"none",color:"#d1d5db",cursor:"pointer",fontSize:16,padding:"2px 6px",borderRadius:5,transition:"all 0.15s"}}>×</button>
+                </div>
+              ))}
+              <button onClick={()=>upd("calls",[{id:Date.now(),contact:"",type:"outgoing",time:"1 oct",duration:null},...(d.calls||[])])}
+                style={{background:"rgba(52,199,89,0.08)",border:"1px dashed rgba(52,199,89,0.4)",color:"#34c759",borderRadius:8,padding:"10px 18px",cursor:"pointer",fontSize:12,fontWeight:600}}>+ Appel</button>
+            </>);
+          })()}
+
+          {/* ── CONTACTS ── */}
+          {phoneAdmTab==="contacts" && (()=>{
+            const contacts = d.contacts || [];
+            const updContact = (id, field, val) => {
+              const idx = contacts.findIndex(c=>c.id===id);
+              if(idx<0) return;
+              const oldName = contacts[idx].name;
+              const newContacts = contacts.map(c=>c.id===id?{...c,[field]:val}:c);
+              if(field==="name" && oldName && oldName!==val){
+                const newCalls = (d.calls||[]).map(c=>c.contact===oldName?{...c,contact:val}:c);
+                const newMessages = (d.messages||[]).map(m=>(!m.isGroup && m.contact===oldName)?{...m,contact:val}:m);
+                onUpdate(tab, {...d, contacts:newContacts, calls:newCalls, messages:newMessages});
+              } else {
+                onUpdate(tab, {...d, contacts:newContacts});
+              }
+            };
+            const addContact = () => onUpdate(tab, {...d, contacts:[{id:Date.now(), name:"Nouveau contact", phone:"", photo:null}, ...(contacts)]}); 
+            const deleteContact = (id) => onUpdate(tab, {...d, contacts:contacts.filter(c=>c.id!==id)});
+            return (<>
+              <div style={{fontSize:11,color:"#6b7280",lineHeight:1.5}}>
+                Renommer un contact ici met aussi à jour son nom dans les Appels et les Messages.
               </div>
-              <textarea value={vm.transcript||""} onChange={e=>updVm(vm.id,"transcript",e.target.value)}
-                placeholder="Texte du message vocal (ce que la personne dit)…" className="adm-input"
-                style={{width:"100%",minHeight:50,background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#1a1a2e",padding:"7px 10px",fontSize:12,borderRadius:7,resize:"vertical",boxSizing:"border-box"}}/>
-            </div>
-          ))}
-          <button onClick={addVm}
-            style={{background:"rgba(99,102,241,0.08)",border:"1px dashed rgba(99,102,241,0.4)",color:"#6366f1",borderRadius:8,padding:"10px 18px",cursor:"pointer",fontSize:12,fontWeight:600,alignSelf:"flex-start"}}>+ Message vocal</button>
+              {contacts.length === 0 && (
+                <div style={{textAlign:"center",color:"#9ca3af",fontSize:12,padding:"16px 0"}}>Aucun contact — ajoutez-en un ci-dessous.</div>
+              )}
+              {contacts.map((c)=>(
+                <div key={c.id} className="adm-card" style={{display:"flex",gap:8,alignItems:"center",background:"rgba(255,255,255,0.85)",padding:10,borderRadius:10,border:"1px solid rgba(0,0,0,0.07)",flexWrap:"wrap"}}>
+                  <label style={{width:40,height:40,borderRadius:"50%",background:"rgba(99,102,241,0.08)",border:"1px dashed rgba(99,102,241,0.3)",overflow:"hidden",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer"}}>
+                    {c.photo ? <img src={c.photo} style={{width:"100%",height:"100%",objectFit:"cover"}}/> : <span style={{fontSize:16}}>👤</span>}
+                    <input type="file" accept="image/*" style={{display:"none"}} onChange={e=>{
+                      const f=e.target.files?.[0]; if(!f)return;
+                      const r=new UploadReader(); r.onload=ev=>updContact(c.id,"photo",ev.target.result); r.readAsDataURL(f); e.target.value="";
+                    }}/>
+                  </label>
+                  <input value={c.name} onChange={e=>updContact(c.id,"name",e.target.value)}
+                    placeholder="Nom" className="adm-input" style={{flex:"1 1 140px",minWidth:0,background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#1a1a2e",padding:"7px 10px",fontSize:12,borderRadius:7,fontWeight:600}}/>
+                  <input value={c.phone||""} onChange={e=>updContact(c.id,"phone",e.target.value)}
+                    placeholder="Téléphone (optionnel)" className="adm-input" style={{flex:"1 1 120px",minWidth:0,background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#6b7280",padding:"7px 10px",fontSize:12,borderRadius:7}}/>
+                  <button onClick={()=>deleteContact(c.id)}
+                    className="adm-del-btn" style={{background:"none",border:"none",color:"#d1d5db",cursor:"pointer",fontSize:16,padding:"2px 6px",flexShrink:0,borderRadius:5,transition:"all 0.15s"}}>×</button>
+                </div>
+              ))}
+              <button onClick={addContact}
+                style={{background:"rgba(52,199,89,0.08)",border:"1px dashed rgba(52,199,89,0.4)",color:"#34c759",borderRadius:8,padding:"10px 18px",cursor:"pointer",fontSize:12,fontWeight:600,alignSelf:"flex-start"}}>+ Contact</button>
+            </>);
+          })()}
+
+          {/* ── MESSAGES VOCAUX ── */}
+          {phoneAdmTab==="voicemail" && (()=>{
+            const contactNames = (d.contacts||[]).map(c=>c.name).filter(Boolean);
+            const ContactSelect = ({value, onChange}) => (
+              <select value={value} onChange={e=>onChange(e.target.value)}
+                className="adm-input" style={{flex:"1 1 120px",minWidth:0,background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:value?"#1a1a2e":"#9ca3af",padding:"7px 10px",fontSize:12,borderRadius:7,fontWeight:600}}>
+                <option value="">— Contact —</option>
+                {contactNames.map(n=><option key={n} value={n}>{n}</option>)}
+                {value && !contactNames.includes(value) && <option value={value}>{value} (libre)</option>}
+              </select>
+            );
+            const updVm = (id, field, val) => {
+              const list = (d.voicemails||[]).map(v=>v.id===id?{...v,[field]:val}:v);
+              upd("voicemails", list);
+            };
+            const addVm = () => upd("voicemails",[{id:Date.now(), contact:"", time:"1 oct, 9:00am", duration:"0:08", transcript:""},...(d.voicemails||[])]);
+            const deleteVm = (id) => upd("voicemails", (d.voicemails||[]).filter(v=>v.id!==id));
+            return (<>
+              <div style={{fontSize:11,color:"#6b7280",lineHeight:1.5}}>
+                Sans message vocal ajouté ici, l'onglet "Voicemail" affiche par défaut les 3 derniers appels manqués (sans texte).
+              </div>
+              {(d.voicemails||[]).map((vm)=>(
+                <div key={vm.id} className="adm-card" style={{display:"flex",flexDirection:"column",gap:6,background:"rgba(255,255,255,0.85)",padding:10,borderRadius:10,border:"1px solid rgba(0,0,0,0.07)"}}>
+                  <div style={{display:"flex",gap:8,flexWrap:"wrap",alignItems:"center"}}>
+                    <ContactSelect value={vm.contact} onChange={v=>updVm(vm.id,"contact",v)}/>
+                    <LoreDateTimeInput value={vm.time} onChange={v=>updVm(vm.id,"time",v)} width="190px" showLabel={false}/>
+                    <input value={vm.duration||""} onChange={e=>updVm(vm.id,"duration",e.target.value)}
+                      placeholder="Durée" className="adm-input" style={{width:70,flexShrink:0,background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#6b7280",padding:"7px 8px",fontSize:11,borderRadius:7}}/>
+                    <button onClick={()=>deleteVm(vm.id)}
+                      className="adm-del-btn" style={{background:"none",border:"none",color:"#d1d5db",cursor:"pointer",fontSize:16,padding:"2px 6px",flexShrink:0,borderRadius:5}}>×</button>
+                  </div>
+                  <textarea value={vm.transcript||""} onChange={e=>updVm(vm.id,"transcript",e.target.value)}
+                    placeholder="Texte du message vocal…" className="adm-input"
+                    style={{width:"100%",minHeight:50,background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#1a1a2e",padding:"7px 10px",fontSize:12,borderRadius:7,resize:"vertical",boxSizing:"border-box"}}/>
+                </div>
+              ))}
+              <button onClick={addVm}
+                style={{background:"rgba(52,199,89,0.08)",border:"1px dashed rgba(52,199,89,0.4)",color:"#34c759",borderRadius:8,padding:"10px 18px",cursor:"pointer",fontSize:12,fontWeight:600,alignSelf:"flex-start"}}>+ Message vocal</button>
+            </>);
+          })()}
         </div>
       );
     }
@@ -19815,171 +19882,25 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
 
     case "music": return (
       <div style={{display:"flex",flexDirection:"column",gap:10}}>
-
-        
-        {(()=>{
-          const [itunesQ, setItunesQ] = [itunesMusicQuery, setItunesMusicQuery];
-          const [results, setResults] = [itunesResults, setItunesResults];
-          const [searching, setSearching] = [itunesSearching, setItunesSearching];
-          const MUSIC_DB = [
-            // Pop 2010-2012
-            {t:"Rolling in the Deep",a:"Adele",d:"3:49"},{t:"Someone Like You",a:"Adele",d:"4:45"},{t:"Set Fire to the Rain",a:"Adele",d:"4:01"},{t:"Skyfall",a:"Adele",d:"4:46"},
-            {t:"We Are Young",a:"fun. ft. Janelle Monáe",d:"4:10"},{t:"Some Nights",a:"fun.",d:"4:58"},
-            {t:"Call Me Maybe",a:"Carly Rae Jepsen",d:"3:13"},{t:"Good Time",a:"Owl City & Carly Rae Jepsen",d:"3:26"},
-            {t:"Somebody That I Used to Know",a:"Gotye ft. Kimbra",d:"4:04"},{t:"Eyes Wide Open",a:"Gotye",d:"5:21"},
-            {t:"Ho Hey",a:"The Lumineers",d:"2:43"},{t:"Stubborn Love",a:"The Lumineers",d:"4:28"},
-            {t:"Shake It Out",a:"Florence + The Machine",d:"4:38"},{t:"Dog Days Are Over",a:"Florence + The Machine",d:"4:13"},{t:"You've Got the Love",a:"Florence + The Machine",d:"3:45"},
-            {t:"Pumped Up Kicks",a:"Foster The People",d:"3:59"},{t:"Helena Beat",a:"Foster The People",d:"4:01"},
-            {t:"Moves Like Jagger",a:"Maroon 5 ft. Christina Aguilera",d:"3:22"},{t:"Payphone",a:"Maroon 5 ft. Wiz Khalifa",d:"3:59"},{t:"She Will Be Loved",a:"Maroon 5",d:"4:17"},
-            {t:"Party Rock Anthem",a:"LMFAO ft. Lauren Bennett",d:"4:23"},{t:"Sexy and I Know It",a:"LMFAO",d:"3:19"},
-            {t:"Titanium",a:"David Guetta ft. Sia",d:"4:05"},{t:"Without You",a:"David Guetta ft. Usher",d:"3:49"},
-            {t:"Wide Awake",a:"Katy Perry",d:"3:41"},{t:"Roar",a:"Katy Perry",d:"3:43"},{t:"Teenage Dream",a:"Katy Perry",d:"3:48"},{t:"Last Friday Night",a:"Katy Perry",d:"3:51"},{t:"Part of Me",a:"Katy Perry",d:"2:44"},
-            {t:"We Found Love",a:"Rihanna ft. Calvin Harris",d:"3:36"},{t:"Diamonds",a:"Rihanna",d:"3:45"},{t:"Where Have You Been",a:"Rihanna",d:"3:58"},{t:"Stay",a:"Rihanna ft. Mikky Ekko",d:"4:00"},
-            {t:"As Long As You Love Me",a:"Justin Bieber ft. Big Sean",d:"3:30"},{t:"Boyfriend",a:"Justin Bieber",d:"3:35"},{t:"Beauty and a Beat",a:"Justin Bieber ft. Nicki Minaj",d:"3:14"},
-            {t:"Starships",a:"Nicki Minaj",d:"3:30"},{t:"Super Bass",a:"Nicki Minaj",d:"3:20"},
-            {t:"Glad You Came",a:"The Wanted",d:"3:14"},{t:"I Knew You Were Trouble",a:"Taylor Swift",d:"3:37"},{t:"We Are Never Ever Getting Back Together",a:"Taylor Swift",d:"3:13"},{t:"22",a:"Taylor Swift",d:"3:52"},
-            {t:"Blow Me (One Last Kiss)",a:"P!nk",d:"3:42"},{t:"Raise Your Glass",a:"P!nk",d:"2:55"},
-            {t:"Feel So Close",a:"Calvin Harris",d:"3:23"},{t:"Sweet Nothing",a:"Calvin Harris ft. Florence Welch",d:"3:36"},
-            {t:"Levels",a:"Avicii",d:"3:18"},{t:"Silhouettes",a:"Avicii",d:"3:43"},
-            {t:"Thrift Shop",a:"Macklemore & Ryan Lewis ft. Wanz",d:"3:54"},{t:"Can't Hold Us",a:"Macklemore & Ryan Lewis ft. Ray Dalton",d:"4:18"},
-            {t:"Sail",a:"AWOLNATION",d:"4:23"},{t:"Kill Everyone",a:"AWOLNATION",d:"2:37"},
-            {t:"Radioactive",a:"Imagine Dragons",d:"3:06"},{t:"Demons",a:"Imagine Dragons",d:"2:57"},{t:"It's Time",a:"Imagine Dragons",d:"4:00"},
-            {t:"Home",a:"Phillip Phillips",d:"3:32"},{t:"Gone Gone Gone",a:"Phillip Phillips",d:"3:38"},
-            {t:"Hall of Fame",a:"The Script ft. will.i.am",d:"3:23"},{t:"The Man Who Can't Be Moved",a:"The Script",d:"4:00"},{t:"Breakeven",a:"The Script",d:"3:55"},
-            {t:"Paradise",a:"Coldplay",d:"4:38"},{t:"The Scientist",a:"Coldplay",d:"5:09"},{t:"Every Teardrop Is a Waterfall",a:"Coldplay",d:"4:14"},{t:"Fix You",a:"Coldplay",d:"4:55"},
-            {t:"Lonely Boy",a:"The Black Keys",d:"3:13"},{t:"Gold on the Ceiling",a:"The Black Keys",d:"3:41"},
-            {t:"Little Talks",a:"Of Monsters and Men",d:"4:15"},{t:"Mountain Sound",a:"Of Monsters and Men",d:"3:33"},
-            {t:"Take Care",a:"Drake ft. Rihanna",d:"4:35"},{t:"Marvins Room",a:"Drake",d:"5:39"},{t:"Started From the Bottom",a:"Drake",d:"3:10"},
-            {t:"Otis",a:"Jay-Z & Kanye West",d:"3:25"},{t:"Niggas in Paris",a:"Jay-Z & Kanye West",d:"3:39"},{t:"New Day",a:"Jay-Z & Kanye West",d:"4:45"},
-            {t:"Birthday Song",a:"2 Chainz ft. Kanye West",d:"4:04"},{t:"No Lie",a:"2 Chainz ft. Drake",d:"4:11"},
-            {t:"Young, Wild & Free",a:"Snoop Dogg & Wiz Khalifa ft. Bruno Mars",d:"3:42"},{t:"Work Hard, Play Hard",a:"Wiz Khalifa",d:"4:00"},
-            {t:"Locked Out of Heaven",a:"Bruno Mars",d:"3:53"},{t:"When I Was Your Man",a:"Bruno Mars",d:"3:33"},{t:"The Lazy Song",a:"Bruno Mars",d:"3:09"},
-            {t:"Stronger (What Doesn't Kill You)",a:"Kelly Clarkson",d:"3:42"},{t:"Mr. Know It All",a:"Kelly Clarkson",d:"3:44"},
-            {t:"Gangnam Style",a:"PSY",d:"3:39"},
-            // K-Pop
-            {t:"Gee",a:"Girls' Generation",d:"2:59"},{t:"Genie",a:"Girls' Generation",d:"3:35"},{t:"The Boys",a:"Girls' Generation",d:"3:39"},{t:"Oh!",a:"Girls' Generation",d:"3:02"},{t:"Run Devil Run",a:"Girls' Generation",d:"3:06"},{t:"Mr. Taxi",a:"Girls' Generation",d:"3:36"},{t:"I Got a Boy",a:"Girls' Generation",d:"4:04"},{t:"Paparazzi",a:"Girls' Generation",d:"3:37"},
-            {t:"Sorry Sorry",a:"Super Junior",d:"3:36"},{t:"Mr. Simple",a:"Super Junior",d:"3:38"},{t:"Bonamana",a:"Super Junior",d:"3:32"},
-            {t:"Lucifer",a:"SHINee",d:"3:36"},{t:"Sherlock",a:"SHINee",d:"3:42"},{t:"Ring Ding Dong",a:"SHINee",d:"3:43"},
-            {t:"Bo Peep Bo Peep",a:"T-ara",d:"3:30"},{t:"Lovey Dovey",a:"T-ara",d:"3:29"},{t:"Roly Poly",a:"T-ara",d:"3:38"},
-            {t:"Fantastic Baby",a:"BIGBANG",d:"3:33"},{t:"Bad Boy",a:"BIGBANG",d:"3:38"},{t:"Blue",a:"BIGBANG",d:"3:40"},
-            {t:"Breathe",a:"2NE1",d:"3:30"},{t:"I Am the Best",a:"2NE1",d:"3:22"},{t:"Lonely",a:"2NE1",d:"3:40"},
-            {t:"What's Your Name?",a:"4Minute",d:"3:22"},{t:"Volume Up",a:"4Minute",d:"3:22"},
-            {t:"Danger",a:"BTS",d:"3:59"},{t:"No More Dream",a:"BTS",d:"3:38"},
-            {t:"EXO - MAMA",a:"EXO",d:"4:07"},{t:"History",a:"EXO",d:"3:35"},{t:"Wolf",a:"EXO",d:"3:31"},
-            {t:"A Pink - NoNoNo",a:"Apink",d:"3:22"},{t:"Hush",a:"Miss A",d:"3:29"},{t:"Touch",a:"Miss A",d:"3:27"},
-            {t:"Bubble Pop!",a:"HyunA",d:"3:20"},{t:"Ice Cream",a:"HyunA",d:"3:12"},
-            {t:"U-Kiss - Neverland",a:"U-KISS",d:"3:30"},{t:"Troublemaker",a:"Troublemaker",d:"3:40"},
-            // Indie / Alt
-            {t:"Tighten Up",a:"The Black Keys",d:"3:31"},{t:"Weight of Love",a:"The Black Keys",d:"6:50"},
-            {t:"Midnight City",a:"M83",d:"4:03"},{t:"Reunion",a:"M83",d:"4:07"},
-            {t:"Babel",a:"Mumford & Sons",d:"5:28"},{t:"I Will Wait",a:"Mumford & Sons",d:"4:38"},{t:"Little Lion Man",a:"Mumford & Sons",d:"4:05"},
-            {t:"A Team",a:"Ed Sheeran",d:"4:19"},{t:"Lego House",a:"Ed Sheeran",d:"3:04"},{t:"Drunk",a:"Ed Sheeran",d:"3:20"},
-            {t:"Breezeblocks",a:"alt-J",d:"4:02"},{t:"Tessellate",a:"alt-J",d:"2:49"},{t:"Fitzpleasure",a:"alt-J",d:"3:39"},
-            {t:"The XX - Intro",a:"The xx",d:"2:07"},{t:"Angels",a:"The xx",d:"3:21"},{t:"Chained",a:"The xx",d:"3:56"},
-            {t:"Video Games",a:"Lana Del Rey",d:"4:42"},{t:"Born to Die",a:"Lana Del Rey",d:"4:22"},{t:"Summertime Sadness",a:"Lana Del Rey",d:"4:25"},{t:"Blue Jeans",a:"Lana Del Rey",d:"3:31"},
-            {t:"Wuthering Heights",a:"Kate Bush",d:"4:28"},{t:"Running Up That Hill",a:"Kate Bush",d:"5:02"},
-            // Electronic / Dance
-            {t:"Spectrum",a:"Florence + The Machine",d:"4:08"},{t:"Never Let Me Go",a:"Florence + The Machine",d:"4:25"},
-            {t:"Blue (Da Ba Dee)",a:"Eiffel 65",d:"3:38"},{t:"I'm a Barbie Girl",a:"Aqua",d:"3:12"},
-            {t:"Starships",a:"Nicki Minaj",d:"3:30"},{t:"Turn Me On",a:"David Guetta ft. Nicki Minaj",d:"3:44"},
-            {t:"Don't You Worry Child",a:"Swedish House Mafia ft. John Martin",d:"3:48"},{t:"Save the World",a:"Swedish House Mafia",d:"4:12"},
-            {t:"In for the Kill",a:"La Roux",d:"3:30"},{t:"Bulletproof",a:"La Roux",d:"3:27"},
-            // Soundcloud / Indie
-            {t:"Flaws",a:"Bastille",d:"3:24"},{t:"Pompeii",a:"Bastille",d:"3:34"},{t:"Things We Lost in the Fire",a:"Bastille",d:"4:00"},
-            {t:"Ghosts",a:"Ladytron",d:"4:17"},{t:"Seventeen",a:"Ladytron",d:"4:09"},
-          ];
-
-          const search = () => {
-            if(!itunesQ.trim()) return;
-            const q = itunesQ.toLowerCase();
-            const found = MUSIC_DB.filter(s =>
-              s.t.toLowerCase().includes(q) ||
-              s.a.toLowerCase().includes(q)
-            ).slice(0, 10);
-            setResults(found.map(s=>({trackName:s.t, artistName:s.a, trackTimeMillis:0, _dur:s.d})));
-          };
-          const fmtMs = (r) => r._dur || "3:00";
-          return (
-            <div style={{background:"rgba(99,102,241,0.05)",border:"1px solid rgba(99,102,241,0.15)",borderRadius:10,padding:12,display:"flex",flexDirection:"column",gap:8}}>
-              <div style={{fontSize:11,fontWeight:700,color:"#6366f1"}}>🔍 iTunes Search</div>
-              <div style={{display:"flex",gap:6}}>
-                <input
-                  className="adm-input"
-                  placeholder="Artist, title, album…"
-                  value={itunesQ}
-                  onChange={e=>setItunesMusicQuery(e.target.value)}
-                  onKeyDown={e=>e.key==="Enter"&&search()}
-                  style={{flex:1,background:"rgba(255,255,255,0.9)",border:"1px solid rgba(0,0,0,0.1)",color:"#1a1a2e",padding:"7px 10px",fontSize:12,borderRadius:7}}
-                />
-                <button onClick={search} className="adm-btn-primary"
-                  style={{background:"linear-gradient(135deg,#6366f1,#8b5cf6)",border:"none",color:"#fff",padding:"7px 14px",borderRadius:7,fontWeight:600,fontSize:12,cursor:"pointer",whiteSpace:"nowrap"}}>
-                  {searching ? "…" : "Search"}
-                </button>
-              </div>
-              {results.length>0 && (
-                <div style={{display:"flex",flexDirection:"column",gap:4,maxHeight:220,overflowY:"auto"}}>
-                  {results.map(r=>(
-                    <div key={r.trackId} style={{display:"flex",alignItems:"center",gap:8,padding:"5px 6px",borderRadius:6,background:"rgba(255,255,255,0.7)",cursor:"pointer",transition:"background 0.1s"}}
-                      onMouseEnter={e=>e.currentTarget.style.background="rgba(99,102,241,0.1)"}
-                      onMouseLeave={e=>e.currentTarget.style.background="rgba(255,255,255,0.7)"}
-                      onClick={()=>{
-                        upd("music",[...(d.music||[]),{id:Date.now(),title:r.trackName,artist:r.artistName,duration:r._dur||fmtMs(r)}]);
-                        setResults([]);
-                        setItunesMusicQuery("");
-                      }}>
-                      {r.artworkUrl60 && <img src={r.artworkUrl60} style={{width:32,height:32,borderRadius:4,flexShrink:0}} alt=""/>}
-                      <div style={{flex:1,minWidth:0}}>
-                        <div style={{fontSize:11,fontWeight:600,color:"#1a1a2e",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{r.trackName}</div>
-                        <div style={{fontSize:10,color:"#6b7280",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{r.artistName}</div>
-                      </div>
-                      <div style={{fontSize:10,color:"#9ca3af",flexShrink:0}}>{fmtMs(r.trackTimeMillis||180000)}</div>
-                      <div style={{fontSize:11,color:"#6366f1",flexShrink:0,fontWeight:600}}>+ Add</div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          );
-        })()}
-
-        
-        
         <div style={{display:"flex",gap:12,alignItems:"center",background:"rgba(255,255,255,0.85)",padding:12,borderRadius:10,border:"1px solid rgba(0,0,0,0.07)"}}>
-          <div
-            onClick={()=>document.getElementById(`playlist-cover-${tab}`).click()}
-            style={{width:64,height:64,borderRadius:8,background:"rgba(99,102,241,0.08)",border:"2px dashed rgba(99,102,241,0.35)",overflow:"hidden",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer"}}>
+          <label style={{width:64,height:64,borderRadius:8,background:"rgba(99,102,241,0.08)",border:"2px dashed rgba(99,102,241,0.35)",overflow:"hidden",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer"}}>
             {d.playlistCover
               ? <img src={d.playlistCover} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
               : <span style={{fontSize:24}}>🖼</span>}
-          </div>
-          <input id={`playlist-cover-${tab}`} type="file" accept="image/*" style={{display:"none"}} onChange={e=>{
-            const f=e.target.files?.[0]; if(!f)return;
-            const r=new UploadReader(); r.onload=ev=>upd("playlistCover",ev.target.result); r.readAsDataURL(f); e.target.value="";
-          }}/>
+            <input type="file" accept="image/*" style={{display:"none"}} onChange={e=>{
+              const f=e.target.files?.[0]; if(!f)return;
+              const r=new UploadReader(); r.onload=ev=>upd("playlistCover",ev.target.result); r.readAsDataURL(f); e.target.value="";
+            }}/>
+          </label>
           <div style={{flex:1}}>
             <div style={{fontSize:12,fontWeight:600,color:"#374151"}}>Cover de la playlist</div>
             <div style={{fontSize:11,color:"#9ca3af"}}>S'affiche dans le lecteur quand rien ne joue</div>
             {d.playlistCover && <button onClick={()=>upd("playlistCover",null)} style={{fontSize:10,color:"#ef4444",background:"none",border:"none",cursor:"pointer",padding:0,marginTop:2}}>Supprimer</button>}
           </div>
           <button
-            onClick={async()=>{
-              const m=[...d.music]; let found=0, missed=[];
-              for(let i=0;i<m.length;i++){
-                if(m[i].cover) continue;
-                try{
-                  const q=encodeURIComponent(`${m[i].artist||""} ${m[i].title||""}`.trim());
-                  const r=await fetch(`https://itunes.apple.com/search?term=${q}&entity=song&limit=1&country=US`);
-                  const j=await r.json();
-                  const art=j.results?.[0]?.artworkUrl100;
-                  if(art){ m[i]={...m[i],cover:art.replace("100x100","600x600")}; found++; }
-                  else missed.push(m[i].title);
-                }catch(e){ missed.push(m[i].title); }
-              }
-              upd("music",m);
-              alert(`${found} pochette(s) trouvée(s).`+(missed.length?` Non trouvées : ${missed.join(", ")}`:""));
-            }}
+            onClick={()=>document.getElementById(`playlist-cover-${tab}`).click()}
             style={{background:"rgba(99,102,241,0.08)",border:"1px dashed rgba(99,102,241,0.4)",color:"#6366f1",borderRadius:8,padding:"8px 14px",cursor:"pointer",fontSize:11,fontWeight:600,whiteSpace:"nowrap",flexShrink:0}}>
-            🔍 Chercher les pochettes manquantes
+            🖼 Changer la cover
           </button>
         </div>
 
@@ -19987,31 +19908,15 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
         {(d.music||[]).map((track,i)=>(
           <div key={track.id} className="adm-card" style={{display:"flex",gap:8,alignItems:"center",background:"rgba(255,255,255,0.85)",padding:10,borderRadius:10,border:"1px solid rgba(0,0,0,0.07)",flexWrap:"wrap"}}>
             
-            <div onClick={()=>document.getElementById(`track-cover-${tab}-${i}`).click()}
-              style={{width:40,height:40,borderRadius:6,background:"rgba(99,102,241,0.08)",border:"1px dashed rgba(99,102,241,0.3)",overflow:"hidden",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer"}}>
+            <label style={{width:40,height:40,borderRadius:6,background:"rgba(99,102,241,0.08)",border:"1px dashed rgba(99,102,241,0.3)",overflow:"hidden",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer"}}>
               {track.cover
                 ? <img src={track.cover} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
                 : <span style={{fontSize:16}}>🎵</span>}
-            </div>
-            <input id={`track-cover-${tab}-${i}`} type="file" accept="image/*" style={{display:"none"}} onChange={e=>{
-              const f=e.target.files?.[0]; if(!f)return;
-              const r=new UploadReader(); r.onload=ev=>{const m=[...d.music];m[i]={...m[i],cover:ev.target.result};upd("music",m);}; r.readAsDataURL(f); e.target.value="";
-            }}/>
-            <button
-              title="Chercher la pochette automatiquement (iTunes)"
-              onClick={async()=>{
-                try{
-                  const q=encodeURIComponent(`${track.artist||""} ${track.title||""}`.trim());
-                  const r=await fetch(`https://itunes.apple.com/search?term=${q}&entity=song&limit=1&country=US`);
-                  const j=await r.json();
-                  const art=j.results?.[0]?.artworkUrl100;
-                  if(art){
-                    const big=art.replace("100x100","600x600");
-                    const m=[...d.music]; m[i]={...m[i],cover:big}; upd("music",m);
-                  } else alert("Pochette non trouvée pour "+track.title);
-                }catch(e){ alert("Recherche impossible (hors-ligne ?)"); }
-              }}
-              style={{width:24,height:24,borderRadius:6,background:"rgba(99,102,241,0.08)",border:"1px solid rgba(99,102,241,0.25)",color:"#6366f1",fontSize:11,cursor:"pointer",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center"}}>🔍</button>
+              <input type="file" accept="image/*" style={{display:"none"}} onChange={e=>{
+                const f=e.target.files?.[0]; if(!f)return;
+                const r=new UploadReader(); r.onload=ev=>{const m=[...d.music];m[i]={...m[i],cover:ev.target.result};upd("music",m);}; r.readAsDataURL(f); e.target.value="";
+              }}/>
+            </label>
             <input value={track.title} onChange={e=>{const m=[...d.music];m[i]={...m[i],title:e.target.value};upd("music",m);}}
               placeholder="Titre" className="adm-input" style={{flex:2,background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#1a1a2e",padding:"7px 10px",fontSize:12,borderRadius:7}}/>
             <input value={track.artist} onChange={e=>{const m=[...d.music];m[i]={...m[i],artist:e.target.value};upd("music",m);}}
@@ -20106,7 +20011,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
         <div style={{display:"flex",flexDirection:"column",gap:12}}>
           {/* Tab bar */}
           <div className="adm-subtabs" style={{display:"flex",gap:0,background:"rgba(0,0,0,0.05)",borderRadius:8,padding:2,alignSelf:"flex-start"}}>
-            {[["users","👥 Utilisateurs"],["tweets","🐦 Tweets"]].map(([k,label])=>(
+            {[["users","👥 Utilisateurs"],["timeline","📋 Timeline"],["mytweets","🐦 Mes tweets"]].map(([k,label])=>(
               <button key={k} onClick={()=>setTwTab(k)} style={{
                 padding:"6px 14px",border:"none",borderRadius:6,cursor:"pointer",fontSize:11,
                 fontWeight:twTab===k?700:400,
@@ -20188,13 +20093,21 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
             })()}
           </>}
 
-          {twTab==="tweets" && (()=>{
+          {twTab==="timeline" && (()=>{
             const charKey = tab;
+            // Handles des 4 persos pour détecter les tweets "des autres" dans la TL
+            const OTHER_HANDLES = {glinda:"@glindarvf",eoghan:"@eoghan_m",drew:"@dreww_orms",elias:"@noteliasgreen"};
+            const myHandle = OTHER_HANDLES[charKey];
+            const otherHandles = Object.entries(OTHER_HANDLES).filter(([k])=>k!==charKey).map(([,h])=>h);
+            const isOtherCharTweet = (t) => otherHandles.includes(t.h);
             const isCustom = hbTweets.length > 0;
             const effectiveTweets = isCustom ? hbTweets : (TWITTER_HOME_BASE[charKey]||[]).map((t,i)=>({...t,id:i}));
             const updEffective = (newList) => upd("homeBaseTweets", newList);
             return (
             <div style={{display:"flex",flexDirection:"column",gap:10}}>
+              <div style={{background:"rgba(29,161,242,0.06)",border:"1px solid rgba(29,161,242,0.15)",borderRadius:8,padding:"7px 12px",fontSize:11,color:"#1da1f2"}}>
+                📋 Timeline — tweets qui s'affichent dans le fil d'accueil de ce personnage. Les tweets des autres persos (en gris) ne peuvent pas être supprimés ici.
+              </div>
               {isCustom && (
                 <div style={{display:"flex",alignItems:"center",justifyContent:"flex-end"}}>
                   <button onClick={()=>updEffective([])} style={{background:"none",border:"1px solid rgba(0,0,0,0.12)",color:"#6b7280",borderRadius:6,padding:"3px 9px",cursor:"pointer",fontSize:10,fontWeight:500,whiteSpace:"nowrap"}}>↩ Réinitialiser</button>
@@ -20202,21 +20115,69 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
               )}
 
               {effectiveTweets.map((t,i)=>{
+                const locked = isOtherCharTweet(t);
                 const upTw = (patch) => updEffective(effectiveTweets.map((t2,j)=>j===i?{...t2,...patch,id:t2.id||Date.now()+j}:{...t2,id:t2.id||Date.now()+j}));
                 return (
-                <div key={t.id??i} className="adm-card" style={{background:"rgba(255,255,255,0.9)",borderRadius:10,padding:"10px 12px",border:"1px solid rgba(0,0,0,0.07)",display:"flex",flexDirection:"column",gap:6}}>
+                <div key={t.id??i} className="adm-card" style={{background:locked?"rgba(0,0,0,0.03)":"rgba(255,255,255,0.9)",borderRadius:10,padding:"10px 12px",border:locked?"1px solid rgba(0,0,0,0.04)":"1px solid rgba(0,0,0,0.07)",display:"flex",flexDirection:"column",gap:6,opacity:locked?0.6:1}}>
+                  {locked && <div style={{fontSize:10,color:"#9ca3af",fontStyle:"italic"}}>🔒 Tweet d'un autre perso — non modifiable ici</div>}
                   <div style={{display:"flex",gap:6}}>
-                    <Field label="Handle" value={t.h||""} onChange={v=>upTw({h:v})} style={{flex:1}}/>
-                    <Field label="Nom"    value={t.name||""} onChange={v=>upTw({name:v})} style={{flex:1}}/>
-                    <LoreDateTimeInput value={t.time||""} onChange={v=>upTw({time:v})} width="180px" showLabel={true}/>
+                    <Field label="Handle" value={t.h||""} onChange={locked?undefined:v=>upTw({h:v})} style={{flex:1}} readOnly={locked}/>
+                    <Field label="Nom"    value={t.name||""} onChange={locked?undefined:v=>upTw({name:v})} style={{flex:1}} readOnly={locked}/>
+                    <LoreDateTimeInput value={t.time||""} onChange={locked?undefined:v=>upTw({time:v})} width="180px" showLabel={true}/>
                     <div style={{display:"flex",gap:6,alignItems:"flex-start"}}>
-                    <MoveButtons 
+                    {!locked && <MoveButtons 
                       index={i} 
                       length={effectiveTweets.length}
                       onMoveUp={() => { const l=[...effectiveTweets]; [l[i-1],l[i]]=[l[i],l[i-1]]; updEffective(l); }}
                       onMoveDown={() => { const l=[...effectiveTweets]; [l[i+1],l[i]]=[l[i],l[i+1]]; updEffective(l); }}
+                    />}
+                    {locked
+                      ? <div style={{width:32,marginTop:18}}/>
+                      : <button onClick={()=>updEffective(effectiveTweets.filter((_,j)=>j!==i))} className="adm-del-btn" style={{background:"rgba(239,68,68,0.07)",border:"1px solid rgba(239,68,68,0.2)",color:"#ef4444",borderRadius:6,padding:"5px 8px",cursor:"pointer",fontSize:11,marginTop:18}}>✕</button>
+                    }
+                  </div>
+                  </div>
+                  {!locked && <>
+                    <Field label="Texte" value={t.text||""} onChange={v=>upTw({text:v})} textarea/>
+                    <div style={{display:"flex",gap:6,alignItems:"flex-end"}}>
+                      <Field label="💬" value={String(t.rp??0)}  onChange={v=>upTw({rp:parseInt(v)||0})} style={{flex:1}}/>
+                      <Field label="🔁" value={String(t.rt??0)}  onChange={v=>upTw({rt:parseInt(v)||0})} style={{flex:1}}/>
+                      <Field label="❤"  value={String(t.fav??0)} onChange={v=>upTw({fav:parseInt(v)||0})} style={{flex:1}}/>
+                    </div>
+                  </>}
+                  {locked && <div style={{color:"#9ca3af",fontSize:12,fontStyle:"italic",paddingLeft:2}}>{t.text}</div>}
+                </div>
+              );})}
+
+              <button onClick={()=>updEffective([...effectiveTweets.map((t,j)=>({...t,id:t.id||Date.now()+j})),{id:Date.now(),h:"@handle",name:"Nom",text:"",time:"1:00am",av:"?",rp:0,rt:0,fav:0}])}
+                style={{background:"rgba(29,161,242,0.08)",border:"1px dashed rgba(29,161,242,0.4)",color:"#1da1f2",borderRadius:8,padding:"10px 18px",cursor:"pointer",fontSize:12,fontWeight:600}}>+ Tweet dans la TL</button>
+            </div>
+            );
+          })()}
+
+          {twTab==="mytweets" && (()=>{
+            const charKey = tab;
+            const myTweets = d.profileTweets || [];
+            const updMy = (newList) => upd("profileTweets", newList);
+            return (
+            <div style={{display:"flex",flexDirection:"column",gap:10}}>
+              <div style={{background:"rgba(29,161,242,0.06)",border:"1px solid rgba(29,161,242,0.15)",borderRadius:8,padding:"7px 12px",fontSize:11,color:"#1da1f2"}}>
+                🐦 Mes tweets — s'affichent sur le profil de ce personnage ET dans sa timeline. Visible uniquement par ce perso.
+              </div>
+              {myTweets.map((t,i)=>{
+                const upTw = (patch) => updMy(myTweets.map((t2,j)=>j===i?{...t2,...patch,id:t2.id||Date.now()+j}:{...t2,id:t2.id||Date.now()+j}));
+                return (
+                <div key={t.id??i} className="adm-card" style={{background:"rgba(255,255,255,0.9)",borderRadius:10,padding:"10px 12px",border:"1px solid rgba(0,0,0,0.07)",display:"flex",flexDirection:"column",gap:6}}>
+                  <div style={{display:"flex",gap:6}}>
+                    <LoreDateTimeInput value={t.time||""} onChange={v=>upTw({time:v})} width="180px" showLabel={true}/>
+                    <div style={{display:"flex",gap:6,alignItems:"flex-start"}}>
+                    <MoveButtons 
+                      index={i} 
+                      length={myTweets.length}
+                      onMoveUp={() => { const l=[...myTweets]; [l[i-1],l[i]]=[l[i],l[i-1]]; updMy(l); }}
+                      onMoveDown={() => { const l=[...myTweets]; [l[i+1],l[i]]=[l[i],l[i+1]]; updMy(l); }}
                     />
-                    <button onClick={()=>updEffective(effectiveTweets.filter((_,j)=>j!==i))} className="adm-del-btn" style={{background:"rgba(239,68,68,0.07)",border:"1px solid rgba(239,68,68,0.2)",color:"#ef4444",borderRadius:6,padding:"5px 8px",cursor:"pointer",fontSize:11,marginTop:18}}>✕</button>
+                    <button onClick={()=>updMy(myTweets.filter((_,j)=>j!==i))} className="adm-del-btn" style={{background:"rgba(239,68,68,0.07)",border:"1px solid rgba(239,68,68,0.2)",color:"#ef4444",borderRadius:6,padding:"5px 8px",cursor:"pointer",fontSize:11,marginTop:18}}>✕</button>
                   </div>
                   </div>
                   <Field label="Texte" value={t.text||""} onChange={v=>upTw({text:v})} textarea/>
@@ -20227,9 +20188,8 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                   </div>
                 </div>
               );})}
-
-              <button onClick={()=>updEffective([...effectiveTweets.map((t,j)=>({...t,id:t.id||Date.now()+j})),{id:Date.now(),h:"@handle",name:"Nom",text:"",time:"1:00am",av:"?",rp:0,rt:0,fav:0}])}
-                style={{background:"rgba(29,161,242,0.08)",border:"1px dashed rgba(29,161,242,0.4)",color:"#1da1f2",borderRadius:8,padding:"10px 18px",cursor:"pointer",fontSize:12,fontWeight:600}}>+ Tweet</button>
+              <button onClick={()=>updMy([...myTweets.map((t,j)=>({...t,id:t.id||Date.now()+j})),{id:Date.now(),text:"",time:"1:00am",rp:0,rt:0,fav:0}])}
+                style={{background:"rgba(29,161,242,0.08)",border:"1px dashed rgba(29,161,242,0.4)",color:"#1da1f2",borderRadius:8,padding:"10px 18px",cursor:"pointer",fontSize:12,fontWeight:600}}>+ Mon tweet</button>
             </div>
             );
           })()}
@@ -20613,6 +20573,26 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
         ))}
         <button onClick={()=>upd("tumblr",{...(d.tumblr||{}),posts:[{id:Date.now(),username:d.tumblr?.handle||"",body:"",notes:0,date:"1 oct",type:"text"},...(d.tumblr?.posts||[])]})}
           style={{background:"rgba(53,70,92,0.08)",border:"1px dashed rgba(53,70,92,0.4)",color:"#35465c",borderRadius:8,padding:"10px 18px",cursor:"pointer",fontSize:12,fontWeight:600}}>+ Post Tumblr</button>
+
+        <div style={{color:"#888",fontSize:10,letterSpacing:1,textTransform:"uppercase",margin:"16px 0 8px"}}>Onglet Tag</div>
+        <div style={{display:"flex",gap:8,alignItems:"center",flexWrap:"wrap",marginBottom:4}}>
+          <Field label="Nom du tag (sans #)" value={d.tumblr?.tagName||""} onChange={v=>upd("tumblr",{...(d.tumblr||{}),tagName:v})} width="200px"/>
+          <div style={{fontSize:11,color:"#9ca3af",marginTop:18}}>Les posts ci-dessous apparaissent dans l'onglet tag de ce perso.</div>
+        </div>
+        {(d.tumblr?.tagPosts||[]).map((post,i)=>(
+          <div key={post.id??i} className="adm-card" style={{background:"rgba(255,255,255,0.85)",borderRadius:12,padding:14,border:"1px solid rgba(0,0,0,0.07)",boxShadow:"0 2px 8px rgba(0,0,0,0.04)",marginTop:6}}>
+            <div style={{display:"flex",gap:8,marginBottom:8,alignItems:"center"}}>
+              <Field label="Pseudo auteur" value={post.username||""} onChange={v=>{const p=[...(d.tumblr?.tagPosts||[])];p[i]={...p[i],username:v};upd("tumblr",{...(d.tumblr||{}),tagPosts:p});}} width="30%"/>
+              <Field label="Date" value={post.date||""} onChange={v=>{const p=[...(d.tumblr?.tagPosts||[])];p[i]={...p[i],date:v};upd("tumblr",{...(d.tumblr||{}),tagPosts:p});}} width="20%"/>
+              <Field label="Notes" value={String(post.notes||0)} onChange={v=>{const p=[...(d.tumblr?.tagPosts||[])];p[i]={...p[i],notes:parseInt(v)||0};upd("tumblr",{...(d.tumblr||{}),tagPosts:p});}} width="14%"/>
+              <button onClick={()=>upd("tumblr",{...(d.tumblr||{}),tagPosts:(d.tumblr?.tagPosts||[]).filter((_,j)=>j!==i)})}
+                className="adm-del-btn" style={{background:"rgba(239,68,68,0.06)",border:"1px solid rgba(239,68,68,0.2)",color:"#ef4444",borderRadius:6,padding:"4px 8px",cursor:"pointer",fontSize:11,marginTop:18}}>✕</button>
+            </div>
+            <Field label="Texte" value={post.body||""} onChange={v=>{const p=[...(d.tumblr?.tagPosts||[])];p[i]={...p[i],body:v};upd("tumblr",{...(d.tumblr||{}),tagPosts:p});}} textarea/>
+          </div>
+        ))}
+        <button onClick={()=>upd("tumblr",{...(d.tumblr||{}),tagPosts:[{id:Date.now(),username:d.tumblr?.handle||"",body:"",notes:0,date:"1 oct",type:"text"},...(d.tumblr?.tagPosts||[])]})}
+          style={{background:"rgba(142,124,195,0.1)",border:"1px dashed rgba(142,124,195,0.5)",color:"#8e7cc3",borderRadius:8,padding:"10px 18px",cursor:"pointer",fontSize:12,fontWeight:600,marginTop:6}}>+ Post dans le tag</button>
 
         <div style={{color:"#888",fontSize:10,letterSpacing:1,textTransform:"uppercase",margin:"16px 0 8px"}}>Fil d'accueil (posts des comptes suivis)</div>
         {(()=>{
@@ -21350,7 +21330,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
             const emoji = c.key==="glinda"?"🌸":c.key==="eoghan"?"🌈":c.key==="drew"?"🪱":"🖤";
             return (
               <button key={c.key} className="char-tab"
-                onClick={()=>{ const firstSection = (()=>{ const apps=[...(data[c.key]?.apps||[]),...(data[c.key]?.dock||[])]; const AS={messages:1,calls:1,notes:1,gallery:1,music:1,twitter:1,pinterest:1,browser:1,snapchat:1,grindr:1,tumblr:1,reddit:1,contacts:1,calendar:1,weather:1,settings:1,wikipedia:1,kindle:1,vpn:1,inaturalist:1}; return apps.find(id=>AS[id]) || 'apparence'; })(); setTab(c.key); setSection(firstSection); }}
+                onClick={()=>{ const firstSection = (()=>{ const apps=[...(data[c.key]?.apps||[]),...(data[c.key]?.dock||[])]; const AS={messages:1,phone:1,notes:1,gallery:1,music:1,twitter:1,pinterest:1,browser:1,snapchat:1,grindr:1,tumblr:1,reddit:1,calendar:1,weather:1,settings:1,wikipedia:1,kindle:1,vpn:1,inaturalist:1}; return apps.find(id=>AS[id]) || 'apparence'; })(); setTab(c.key); setSection(firstSection); }}
                 style={{
                   display:"flex",alignItems:"center",gap:7,padding:"0 16px",
                   border:"none",borderBottom:`3px solid ${isActive?c.color:"transparent"}`,
@@ -21369,12 +21349,12 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
         {/* Right actions */}
         <div className="adm-topbar-right" style={{display:"flex",alignItems:"center",gap:6,paddingLeft:isMobile?0:12,borderLeft:isMobile?"none":"1px solid #f0f0f0",flexShrink:0,order:isMobile?1:0,marginLeft:isMobile?"auto":0}}>
 
-          {/* Date lore */}
-          {!isMobile && <div style={{display:"flex",alignItems:"center",gap:5,background:"#f8fafc",border:"1px solid #e5e7eb",borderRadius:7,padding:"5px 9px"}}>
+          {/* Date lore — visible sur desktop et mobile */}
+          <div style={{display:"flex",alignItems:"center",gap:5,background:"#f8fafc",border:"1px solid #e5e7eb",borderRadius:7,padding:"5px 9px"}}>
             <span style={{fontSize:12}}>📅</span>
             <input type="date" value={loreDate} onChange={e=>onLoreDateChange(e.target.value)}
-              style={{background:"transparent",border:"none",color:"#6366f1",fontSize:11,cursor:"pointer",outline:"none",fontFamily:"monospace",fontWeight:600,width:110}}/>
-          </div>}
+              style={{background:"transparent",border:"none",color:"#6366f1",fontSize:11,cursor:"pointer",outline:"none",fontFamily:"monospace",fontWeight:600,width:isMobile?100:110}}/>
+          </div>
 
           {/* Réinitialiser */}
           <button onClick={()=>{if(window.confirm("Réinitialiser toutes les données ?")){ window.location.reload(); }}}
@@ -21632,6 +21612,14 @@ export default function App() {
         patch[other] = next[other];
       }
       queueFirebaseUpdate(patch);
+      // Propager profileTweets dans sharedThreads._sharedProfileTweets[key] pour les autres persos
+      if(merged.profileTweets !== undefined) {
+        const prevShared = prev.sharedThreads || {};
+        const prevPT = prevShared._sharedProfileTweets || {};
+        const nextPT = {...prevPT, [key]: merged.profileTweets};
+        next = {...next, sharedThreads: {...prevShared, _sharedProfileTweets: nextPT}};
+        queueFirebaseUpdate({ [`sharedThreads/_sharedProfileTweets/${key}`]: merged.profileTweets });
+      }
       return next;
     });
 
@@ -21846,8 +21834,8 @@ export default function App() {
           </div>
 
           {charData.os==="ios"
-            ?<IOSPhone data={{...charData, sharedThreads:data.sharedThreads}} admin={false} loreDate={loreDate} onUpdate={d=>updateChar(selected.key,d)} onUpdateShared={(tid,raw)=>updateChar(tid,raw)}/>
-            :<AndroidPhone data={{...charData, sharedThreads:data.sharedThreads}} admin={false} loreDate={loreDate} onUpdate={d=>updateChar(selected.key,d)} sharedAndroidIcons={sharedAndroidIcons} onUpdateShared={updateSharedAndroid} onUpdateSharedThread={(tid,raw)=>updateChar(tid,raw)}/>}
+            ?<IOSPhone data={{...charData, sharedThreads:data.sharedThreads}} admin={true} loreDate={loreDate} onUpdate={d=>updateChar(selected.key,d)} onUpdateShared={(tid,raw)=>updateChar(tid,raw)}/>
+            :<AndroidPhone data={{...charData, sharedThreads:data.sharedThreads}} admin={true} loreDate={loreDate} onUpdate={d=>updateChar(selected.key,d)} sharedAndroidIcons={sharedAndroidIcons} onUpdateShared={updateSharedAndroid} onUpdateSharedThread={(tid,raw)=>updateChar(tid,raw)}/>}
 
           
           <div style={{display:"flex",gap:8,marginTop:8}}>
@@ -22031,7 +22019,7 @@ const CalendarScreen = ({data, isIos, accent, admin=false, update=()=>{}}) => {
           <div style={{color:SUB,fontSize:11,fontWeight:600}}>
             {selectedDay===6 ? "Samedi 6 octobre 2012 🏈" : `${selectedDay} octobre 2012`}
           </div>
-          {admin&&<button onClick={()=>{setEditing({day:selectedDay,id:null});setDraft("");}} style={{background:ACC,border:"none",color:"#fff",borderRadius:14,width:24,height:24,fontSize:16,lineHeight:1,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>+</button>}
+          {admin&&<button onClick={()=>{setEditing({day:selectedDay,id:null});setDraft("");}} style={{background:ACC,border:"none",color:"#fff",borderRadius:14,minWidth:32,minHeight:32,width:32,height:32,fontSize:18,lineHeight:1,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",touchAction:"manipulation",WebkitTapHighlightColor:"transparent"}}>+</button>}
         </div>
         {admin&&editing&&editing.day===selectedDay&&editing.id===null&&(
           <div style={{display:"flex",gap:6}}>
