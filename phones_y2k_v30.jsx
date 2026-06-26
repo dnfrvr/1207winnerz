@@ -2492,48 +2492,33 @@ const TUMBLR_FEED_POSTS_DEFAULT = {
   ],
 };
 
-const TUMBLR_TAG_POSTS_DEFAULT = {
-  // Clé = charKey (glinda/eoghan/drew/elias)
-  glinda: {
-    tagName: "findanna",
-    posts: [
-      {id:"t1",username:"glindarvf",avatarBg:"#e91e8c",body:"if anyone knows where anna is please please reach out. she's been missing since the party at jackson's. we don't know what happened.",notes:847,date:"6 oct",type:"text"},
-      {id:"t2",username:"noteliasgreen",avatarBg:"#6672d0",body:"derry takes things. always has. don't wait for the police to care. they don't.",notes:312,date:"5 oct",type:"text"},
-      {id:"t3",username:"dreww-orms",avatarBg:"#aa6caa",body:"we were all at that party. nobody saw her leave. that's not nothing.",notes:204,date:"5 oct",type:"text"},
-      {id:"t4",username:"uma-campus-news",avatarBg:"#1a5a9a",title:"student reported missing",body:"university of maine at augusta student anna k. has been reported missing following an off-campus gathering on september 29th. anyone with information is asked to contact campus security.",notes:1203,date:"4 oct",type:"text"},
-      {id:"t5",username:"glindarvf",avatarBg:"#e91e8c",body:"she texted me at 11:47pm. that's the last thing. eleven forty-seven.",notes:589,date:"3 oct",type:"text"},
-    ],
-  },
-  eoghan: {
-    tagName: "findanna",
-    posts: [
-      {id:"t1",username:"noteliasgreen",avatarBg:"#6672d0",body:"derry takes things. always has. don't wait for the police to care. they don't.",notes:312,date:"5 oct",type:"text"},
-      {id:"t2",username:"glindarvf",avatarBg:"#e91e8c",body:"if anyone knows where anna is please please reach out. she's been missing since the party at jackson's.",notes:847,date:"6 oct",type:"text"},
-      {id:"t3",username:"uma-campus-news",avatarBg:"#1a5a9a",title:"student reported missing",body:"university of maine at augusta student anna k. has been reported missing following an off-campus gathering on september 29th.",notes:1203,date:"4 oct",type:"text"},
-      {id:"t4",username:"eoghan_masuda",avatarBg:"#00d435",body:"i was there that night. i keep going over it. there's a gap i can't explain.",notes:88,date:"4 oct",type:"text"},
-      {id:"t5",username:"dreww-orms",avatarBg:"#aa6caa",body:"we were all at that party. nobody saw her leave. that's not nothing.",notes:204,date:"5 oct",type:"text"},
-    ],
-  },
-  drew: {
-    tagName: "findanna",
-    posts: [
-      {id:"t1",username:"noteliasgreen",avatarBg:"#6672d0",body:"derry takes things. always has. don't wait for the police to care. they don't.",notes:312,date:"5 oct",type:"text"},
-      {id:"t2",username:"dreww-orms",avatarBg:"#aa6caa",body:"we were all at that party. nobody saw her leave. that's not nothing.",notes:204,date:"5 oct",type:"text"},
-      {id:"t3",username:"glindarvf",avatarBg:"#e91e8c",body:"she texted me at 11:47pm. that's the last thing. eleven forty-seven.",notes:589,date:"3 oct",type:"text"},
-      {id:"t4",username:"uma-campus-news",avatarBg:"#1a5a9a",title:"student reported missing",body:"university of maine at augusta student anna k. has been reported missing following an off-campus gathering on september 29th.",notes:1203,date:"4 oct",type:"text"},
-      {id:"t5",username:"deepdivepod-blog",avatarBg:"#0a1010",body:"episode 47 is about small towns and the things they choose to forget. timing is coincidental. or it isn't.",notes:204,date:"2 oct",type:"text"},
-    ],
-  },
-  elias: {
-    tagName: "findanna",
-    posts: [
-      {id:"t1",username:"noteliasgreen",avatarBg:"#6672d0",title:"what i know",body:"1. anna was at jackson's party. 2. she left alone or was taken. 3. the police closed the lead in 6 hours. 4. derry has done this before.",notes:1892,date:"5 oct",type:"text"},
-      {id:"t2",username:"paranormal-maine",avatarBg:"#441144",body:"four disappearances near derry since july. authorities say runaways. they always say runaways.",notes:1893,date:"4 oct",type:"text"},
-      {id:"t3",username:"glindarvf",avatarBg:"#e91e8c",body:"if anyone knows where anna is please please reach out.",notes:847,date:"6 oct",type:"text"},
-      {id:"t4",username:"noteliasgreen",avatarBg:"#6672d0",body:"i've been documenting derry disappearances since 2011. anna's case fits the pattern exactly. i don't know what that means but it means something.",notes:441,date:"3 oct",type:"text"},
-      {id:"t5",username:"uma-campus-news",avatarBg:"#1a5a9a",title:"student reported missing",body:"university of maine at augusta student anna k. has been reported missing following an off-campus gathering on september 29th.",notes:1203,date:"4 oct",type:"text"},
-    ],
-  },
+// Tags d'intérêts Tumblr par perso — affichés dans l'onglet "tag" (icône étiquette).
+// Chaque tag est un objet {tag, posts} où posts est le nombre affiché.
+const TUMBLR_TAGS_DEFAULT = {
+  glinda: [
+    {tag:"kpop",posts:"48.2K"},{tag:"girlsgeneration",posts:"12.1K"},{tag:"snsd",posts:"9.8K"},
+    {tag:"shinee",posts:"7.4K"},{tag:"chess",posts:"3.2K"},{tag:"uma",posts:"1.1K"},
+    {tag:"economics",posts:"892"},{tag:"aesthetics",posts:"22.4K"},{tag:"fashion",posts:"31.5K"},
+    {tag:"fall2012",posts:"4.3K"},{tag:"findanna",posts:"847"},{tag:"derry",posts:"2.3K"},
+  ],
+  eoghan: [
+    {tag:"indierock",posts:"14.8K"},{tag:"thestrokes",posts:"6.2K"},{tag:"ladygaga",posts:"19.1K"},
+    {tag:"football",posts:"8.7K"},{tag:"uma",posts:"1.1K"},{tag:"musicproduction",posts:"5.3K"},
+    {tag:"soundcloud",posts:"3.9K"},{tag:"rush",posts:"2.1K"},{tag:"derry",posts:"2.3K"},
+    {tag:"photography",posts:"27.6K"},{tag:"findanna",posts:"847"},{tag:"nightlife",posts:"6.8K"},
+  ],
+  drew: [
+    {tag:"biology",posts:"9.4K"},{tag:"earthworms",posts:"312"},{tag:"inaturalist",posts:"4.1K"},
+    {tag:"chess",posts:"3.2K"},{tag:"uma",posts:"1.1K"},{tag:"radiohead",posts:"11.2K"},
+    {tag:"weirdfishes",posts:"1.8K"},{tag:"nature",posts:"44.7K"},{tag:"scienceblog",posts:"7.3K"},
+    {tag:"derry",posts:"2.3K"},{tag:"findanna",posts:"847"},{tag:"maine",posts:"5.5K"},
+  ],
+  elias: [
+    {tag:"creepypasta",posts:"18.9K"},{tag:"paranormal",posts:"22.4K"},{tag:"derry",posts:"2.3K"},
+    {tag:"bmth",posts:"8.1K"},{tag:"bringmethehorizon",posts:"6.4K"},{tag:"fanfiction",posts:"14.2K"},
+    {tag:"ao3",posts:"9.7K"},{tag:"fiveknights",posts:"203"},{tag:"uma",posts:"1.1K"},
+    {tag:"findanna",posts:"847"},{tag:"missingpersons",posts:"3.1K"},{tag:"conspiracytheory",posts:"7.8K"},
+  ],
 };
 
 const TumblrScreen = ({data,admin,update,accent}) => {
@@ -2675,35 +2660,44 @@ const TumblrScreen = ({data,admin,update,accent}) => {
   );
 
   const charKeyTb = data.username?.includes("glinda")?"glinda":data.username?.includes("eoghan")?"eoghan":data.username?.includes("drew")?"drew":"elias";
-  const tagSeed = TUMBLR_TAG_POSTS_DEFAULT[charKeyTb] || {tagName:"findanna", posts:[]};
-  const tagPosts = data.tumblr?.tagPosts?.length ? data.tumblr.tagPosts : tagSeed.posts;
+  const interestTags = data.tumblr?.interestTags?.length ? data.tumblr.interestTags : (TUMBLR_TAGS_DEFAULT[charKeyTb]||[]);
 
   const TagTab = () => {
-    const tagName = data.tumblr?.tagName || tagSeed.tagName || "findanna";
     return (
       <div style={{flex:1,background:"#ebe9e4",display:"flex",flexDirection:"column",overflow:"hidden"}}>
-        {/* Tag header */}
-        <div style={{background:TB,padding:"12px 14px 10px",display:"flex",alignItems:"center",gap:8,flexShrink:0}}>
-          <div style={{flex:1}}>
-            <div style={{color:"#fff",fontWeight:700,fontSize:15}}>#{tagName}</div>
+        {/* Search bar style Tumblr */}
+        <div style={{padding:"8px 10px",background:"#fff",borderBottom:`1px solid ${SEP}`,flexShrink:0}}>
+          <div style={{background:"#eeedea",border:"1px solid #d5d4d0",borderRadius:10,padding:"5px 12px",display:"flex",alignItems:"center",gap:6}}>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke={GRAY} strokeWidth="2"/><path d="M20 20l-3.5-3.5" stroke={GRAY} strokeWidth="2" strokeLinecap="round"/></svg>
+            <span style={{fontSize:13,color:GRAY}}>Search Tumblr</span>
           </div>
-          {admin&&<input value={data.tumblr?.tagName||""} onChange={e=>update("tumblr",{...data.tumblr,tagName:e.target.value})}
-            placeholder="nom du tag"
-            style={{background:"rgba(255,255,255,0.18)",border:"1px dashed rgba(255,255,255,0.5)",color:"#fff",fontSize:12,padding:"3px 7px",borderRadius:4,width:110}}/>}
         </div>
-        <div style={{overflowY:"auto",flex:1,padding:"8px 8px 0"}}>
-          {tagPosts.length===0&&!admin&&(
-            <div style={{textAlign:"center",color:GRAY,fontSize:12,paddingTop:30}}>Aucun post dans ce tag.</div>
-          )}
-          {tagPosts.map((post,i)=>(
-            <PostCard key={post.id??i} post={post} idx={i} isFeed={false} isTag={true}/>
+        <div style={{overflowY:"auto",flex:1,padding:"10px 8px"}}>
+          <div style={{fontSize:10,color:GRAY,letterSpacing:1,textTransform:"uppercase",marginBottom:8}}>Tags suivis</div>
+          {interestTags.map((item,i)=>(
+            <div key={i} style={{background:"#fff",borderRadius:2,boxShadow:"0 1px 2px rgba(0,0,0,0.1)",padding:"9px 10px",marginBottom:6,display:"flex",alignItems:"center",gap:9}}>
+              <div style={{width:30,height:30,borderRadius:3,background:`hsl(${(i*53+17)%360},38%,55%)`,flexShrink:0}}/>
+              <div style={{flex:1}}>
+                {admin
+                  ? <input value={item.tag||""} onChange={e=>{const t=[...interestTags];t[i]={...t[i],tag:e.target.value};update("tumblr",{...data.tumblr,interestTags:t});}}
+                      style={{fontWeight:700,fontSize:13,color:"#222",background:"rgba(255,200,0,0.12)",border:"1px dashed #ffc107",width:"100%",padding:"1px 4px"}}/>
+                  : <div style={{fontWeight:700,fontSize:13,color:"#222"}}>#{item.tag}</div>
+                }
+                <div style={{fontSize:11,color:GRAY}}>{item.posts} posts</div>
+              </div>
+              {admin
+                ? <button onClick={()=>{const t=interestTags.filter((_,j)=>j!==i);update("tumblr",{...data.tumblr,interestTags:t});}}
+                    style={{background:"none",border:"none",color:"#f44",cursor:"pointer",fontSize:14,padding:"0 2px",flexShrink:0}}>✕</button>
+                : <svg width="8" height="14" viewBox="0 0 8 14" fill="none"><path d="M1 1l6 6-6 6" stroke="#c8c7c2" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
+              }
+            </div>
           ))}
           {admin&&(
             <div onClick={()=>{
-              const np={id:Date.now(),username:data.tumblr?.handle||data.username,avatarBg:"#8e7cc3",body:"",notes:0,date:"1 oct",type:"text"};
-              update("tumblr",{...data.tumblr,tagPosts:[np,...tagPosts]});
-            }} style={{padding:12,textAlign:"center",color:"#8e7cc3",cursor:"pointer",background:"#fff",borderRadius:2,fontSize:12,boxShadow:"0 1px 2px rgba(0,0,0,0.1)",marginBottom:8}}>
-              + Ajouter un post au tag
+              const t=[...interestTags,{tag:"nouveautag",posts:"0"}];
+              update("tumblr",{...data.tumblr,interestTags:t});
+            }} style={{padding:"9px 10px",textAlign:"center",color:"#8e7cc3",cursor:"pointer",background:"#fff",borderRadius:2,fontSize:12,boxShadow:"0 1px 2px rgba(0,0,0,0.1)",marginBottom:6}}>
+              + Ajouter un tag
             </div>
           )}
         </div>
@@ -6953,13 +6947,25 @@ const IOSPhone = ({data,admin,onUpdate,onUpdateShared=()=>{},loreDate:loreDatePr
     if(galleryView!=="albums") {
       const isDeleted = galleryView==="recently_deleted";
       const rawList = isDeleted ? deletedPhotos : activePhotos;
-      // Si au moins une photo a une date réelle (dateISO, posée via le sélecteur de date en admin),
-      // on trie tout par date (plus récent en premier) et on insère des séparateurs par année.
-      // Sinon, on garde l'ordre manuel (drag & drop) exactement comme avant, pour ne rien casser
-      // pour les parties déjà en cours qui n'ont pas encore daté leurs photos.
-      const hasDates = !isDeleted && rawList.some(p=>p.dateISO);
+      // Résoudre la date effective d'une photo : dateISO prioritaire, sinon tenter de parser date (texte)
+      const MONTH_MAP = {jan:1,fév:2,feb:2,mar:3,avr:4,apr:4,mai:5,may:5,juin:6,jun:6,juil:7,jul:7,aoû:8,aug:8,sep:9,oct:10,nov:11,déc:12,dec:12};
+      const resolveISO = (p) => {
+        if(p.dateISO) return p.dateISO;
+        if(!p.date) return null;
+        // Tenter de parser "Oct 2012", "6 oct 2012", "oct 2012", "October 2012"
+        const s = p.date.toLowerCase().trim();
+        const m1 = s.match(/^(\d{1,2})\s+([a-zé]+)\s+(\d{4})$/);
+        if(m1) { const mo=MONTH_MAP[m1[2].slice(0,3)]; if(mo) return `${m1[3]}-${String(mo).padStart(2,'0')}-${m1[1].padStart(2,'0')}`; }
+        const m2 = s.match(/^([a-zé]+)\s+(\d{4})$/);
+        if(m2) { const mo=MONTH_MAP[m2[1].slice(0,3)]; if(mo) return `${m2[2]}-${String(mo).padStart(2,'0')}-01`; }
+        const m3 = s.match(/^([a-zé]+)\s+(\d{1,2}),?\s+(\d{4})$/);
+        if(m3) { const mo=MONTH_MAP[m3[1].slice(0,3)]; if(mo) return `${m3[3]}-${String(mo).padStart(2,'0')}-${m3[2].padStart(2,'0')}`; }
+        return null;
+      };
+      // Si au moins une photo a une date (ISO ou texte parseable), on active tri + groupage
+      const hasDates = !isDeleted && rawList.some(p=>resolveISO(p));
       const list = hasDates
-        ? [...rawList].sort((a,b)=>(b.dateISO||"0000-00-00").localeCompare(a.dateISO||"0000-00-00"))
+        ? [...rawList].sort((a,b)=>(resolveISO(b)||"0000-00-00").localeCompare(resolveISO(a)||"0000-00-00"))
         : rawList;
       let lastYear = null;
       const onDrop_g = (toIdx) => {
@@ -6987,9 +6993,10 @@ const IOSPhone = ({data,admin,onUpdate,onUpdateShared=()=>{},loreDate:loreDatePr
                 const MONTHS_EN_FULL = ["","January","February","March","April","May","June","July","August","September","October","November","December"];
                 const groups = [];
                 list.forEach(photo=>{
-                  const monthKey = photo.dateISO ? photo.dateISO.slice(0,7) : "0000-00"; // "YYYY-MM"
-                  const label = photo.dateISO
-                    ? `${MONTHS_EN_FULL[parseInt(photo.dateISO.slice(5,7))||0]||""} ${photo.dateISO.slice(0,4)}`
+                  const iso = resolveISO(photo);
+                  const monthKey = iso ? iso.slice(0,7) : "0000-00";
+                  const label = iso
+                    ? `${MONTHS_EN_FULL[parseInt(iso.slice(5,7))||0]||""} ${iso.slice(0,4)}`
                     : "Sans date";
                   if(!groups.length || groups[groups.length-1].key!==monthKey) groups.push({key:monthKey, label, photos:[]});
                   groups[groups.length-1].photos.push(photo);
@@ -7829,9 +7836,22 @@ const AndroidPhone = ({data,admin,onUpdate,sharedAndroidIcons={},onUpdateShared=
           <div style={{padding:"6px 10px 3px",color:"#555",fontSize:11}}>{activeGallery.length} photo{activeGallery.length!==1?"s":""}</div>
           {(()=>{
             const MONTHS_EN_FULL = ["","January","February","March","April","May","June","July","August","September","October","November","December"];
-            const hasDates = activeGallery.some(p=>p.dateISO);
+            const MONTH_MAP_A = {jan:1,fév:2,feb:2,mar:3,avr:4,apr:4,mai:5,may:5,juin:6,jun:6,juil:7,jul:7,aoû:8,aug:8,sep:9,oct:10,nov:11,déc:12,dec:12};
+            const resolveISOa = (p) => {
+              if(p.dateISO) return p.dateISO;
+              if(!p.date) return null;
+              const s=p.date.toLowerCase().trim();
+              const m1=s.match(/^(\d{1,2})\s+([a-zé]+)\s+(\d{4})$/);
+              if(m1){const mo=MONTH_MAP_A[m1[2].slice(0,3)];if(mo)return `${m1[3]}-${String(mo).padStart(2,'0')}-${m1[1].padStart(2,'0')}`;}
+              const m2=s.match(/^([a-zé]+)\s+(\d{4})$/);
+              if(m2){const mo=MONTH_MAP_A[m2[1].slice(0,3)];if(mo)return `${m2[2]}-${String(mo).padStart(2,'0')}-01`;}
+              const m3=s.match(/^([a-zé]+)\s+(\d{1,2}),?\s+(\d{4})$/);
+              if(m3){const mo=MONTH_MAP_A[m3[1].slice(0,3)];if(mo)return `${m3[3]}-${String(mo).padStart(2,'0')}-${m3[2].padStart(2,'0')}`;}
+              return null;
+            };
+            const hasDates = activeGallery.some(p=>resolveISOa(p));
             const sorted = hasDates
-              ? [...activeGallery].sort((a,b)=>(b.dateISO||"0000-00-00").localeCompare(a.dateISO||"0000-00-00"))
+              ? [...activeGallery].sort((a,b)=>(resolveISOa(b)||"0000-00-00").localeCompare(resolveISOa(a)||"0000-00-00"))
               : activeGallery;
             if(!hasDates) return (
               <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:1}}>
@@ -7851,9 +7871,10 @@ const AndroidPhone = ({data,admin,onUpdate,sharedAndroidIcons={},onUpdateShared=
             // Groupage par mois+année
             const groups = [];
             sorted.forEach(photo=>{
-              const monthKey = photo.dateISO ? photo.dateISO.slice(0,7) : "0000-00";
-              const label = photo.dateISO
-                ? `${MONTHS_EN_FULL[parseInt(photo.dateISO.slice(5,7))||0]||""} ${photo.dateISO.slice(0,4)}`
+              const iso = resolveISOa(photo);
+              const monthKey = iso ? iso.slice(0,7) : "0000-00";
+              const label = iso
+                ? `${MONTHS_EN_FULL[parseInt(iso.slice(5,7))||0]||""} ${iso.slice(0,4)}`
                 : "Sans date";
               if(!groups.length || groups[groups.length-1].key!==monthKey) groups.push({key:monthKey, label, photos:[]});
               groups[groups.length-1].photos.push(photo);
@@ -19769,13 +19790,16 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
           <div style={{padding:"6px 8px",display:"flex",flexDirection:"column",gap:4}}>
             <div style={{display:"flex",flexDirection:"column",gap:2}}>
               <span style={{fontSize:9,color:"#9ca3af",fontWeight:600,textTransform:"uppercase",letterSpacing:0.5}}>Date</span>
-              <input type="date" value={photo.dateISO||""} onChange={e=>{
-                  const iso = e.target.value;
-                  if(!iso){ updPhoto(photo.id,{dateISO:null}); return; }
-                  const [y,m,dd] = iso.split('-').map(Number);
-                  updPhoto(photo.id,{dateISO:iso, date:`${dd} ${LORE_MONTHS_FR[m]} ${y}`});
-                }}
-                className="adm-input" style={{width:"100%",background:"rgba(255,255,255,0.9)",border:"1px solid rgba(0,0,0,0.12)",color:photo.dateISO?"#1a1a2e":"#9ca3af",padding:"4px 7px",fontSize:10,borderRadius:6}}/>
+              <input type="date" value={photo.dateISO||""} min="2010-01-01" max="2013-12-31"
+                  defaultValue="2012-10-01"
+                  onChange={e=>{
+                    const iso = e.target.value;
+                    if(!iso){ updPhoto(photo.id,{dateISO:null}); return; }
+                    const [y,m,dd] = iso.split('-').map(Number);
+                    updPhoto(photo.id,{dateISO:iso, date:`${dd} ${LORE_MONTHS_FR[m]} ${y}`});
+                  }}
+                  onFocus={e=>{ if(!photo.dateISO) e.target.value="2012-10-01"; }}
+                className="adm-input" style={{width:"100%",background:"rgba(255,255,255,0.9)",border:"1px solid rgba(0,0,0,0.12)",color:photo.dateISO?"#1a1a2e":"#9ca3af",padding:"5px 7px",fontSize:11,borderRadius:6,cursor:"pointer"}}/>
             </div>
             <div style={{display:"flex",gap:4}}>
               {activeTab==="deleted"
@@ -19839,8 +19863,19 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
 
           {/* Grille de photos — triées par date décroissante si dateISO dispo, sinon ordre manuel */}
           {(()=>{
-            const sortedPhotos = currentPhotos.some(p=>p.dateISO)
-              ? [...currentPhotos].sort((a,b)=>(b.dateISO||"0000-00-00").localeCompare(a.dateISO||"0000-00-00"))
+            const MONTH_MAP_ADM = {jan:1,fév:2,feb:2,mar:3,avr:4,apr:4,mai:5,may:5,juin:6,jun:6,juil:7,jul:7,aoû:8,aug:8,sep:9,oct:10,nov:11,déc:12,dec:12};
+            const resolveISOAdm = (p) => {
+              if(p.dateISO) return p.dateISO;
+              if(!p.date) return null;
+              const s=p.date.toLowerCase().trim();
+              const m2=s.match(/^([a-zé]+)\s+(\d{4})$/);
+              if(m2){const mo=MONTH_MAP_ADM[m2[1].slice(0,3)];if(mo)return `${m2[2]}-${String(mo).padStart(2,'0')}-01`;}
+              const m1=s.match(/^(\d{1,2})\s+([a-zé]+)\s+(\d{4})$/);
+              if(m1){const mo=MONTH_MAP_ADM[m1[2].slice(0,3)];if(mo)return `${m1[3]}-${String(mo).padStart(2,'0')}-${m1[1].padStart(2,'0')}`;}
+              return null;
+            };
+            const sortedPhotos = currentPhotos.some(p=>resolveISOAdm(p))
+              ? [...currentPhotos].sort((a,b)=>(resolveISOAdm(b)||"0000-00-00").localeCompare(resolveISOAdm(a)||"0000-00-00"))
               : currentPhotos;
             return (
               <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(130px,1fr))",gap:10}}>
@@ -20703,37 +20738,36 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
         <button onClick={()=>upd("tumblr",{...(d.tumblr||{}),posts:[{id:Date.now(),username:d.tumblr?.handle||"",body:"",notes:0,date:"1 oct",type:"text"},...(d.tumblr?.posts||[])]})}
           style={{background:"rgba(53,70,92,0.08)",border:"1px dashed rgba(53,70,92,0.4)",color:"#35465c",borderRadius:8,padding:"10px 18px",cursor:"pointer",fontSize:12,fontWeight:600}}>+ Post Tumblr</button>
 
-        <div style={{color:"#888",fontSize:10,letterSpacing:1,textTransform:"uppercase",margin:"16px 0 8px"}}>Onglet Tag</div>
+        <div style={{color:"#888",fontSize:10,letterSpacing:1,textTransform:"uppercase",margin:"16px 0 8px"}}>Onglet Tag — centres d'intérêt</div>
         {(()=>{
-          const tSeed = TUMBLR_TAG_POSTS_DEFAULT[tab] || {tagName:"findanna",posts:[]};
-          const isCustomTagName = !!d.tumblr?.tagName;
-          const isCustomTagPosts = (d.tumblr?.tagPosts||[]).length > 0;
-          const effectiveTagPosts = isCustomTagPosts ? (d.tumblr?.tagPosts||[]) : tSeed.posts;
-          const updTagPosts = (list) => upd("tumblr",{...(d.tumblr||{}),tagPosts:list});
+          const isCustom = (d.tumblr?.interestTags||[]).length > 0;
+          const effectiveTags = isCustom ? d.tumblr.interestTags : (TUMBLR_TAGS_DEFAULT[tab]||[]);
+          const updTags = (list) => upd("tumblr",{...(d.tumblr||{}),interestTags:list});
           return (<>
-            <div style={{display:"flex",gap:8,alignItems:"center",flexWrap:"wrap",marginBottom:4}}>
-              <Field label="Nom du tag (sans #)" value={d.tumblr?.tagName||tSeed.tagName||""} onChange={v=>upd("tumblr",{...(d.tumblr||{}),tagName:v})} width="200px"/>
-              <div style={{fontSize:11,color:"#9ca3af",marginTop:18}}>Les posts ci-dessous apparaissent dans l'onglet tag de ce perso.</div>
-            </div>
-            {isCustomTagPosts && (
-              <div style={{display:"flex",alignItems:"center",justifyContent:"flex-end"}}>
-                <button onClick={()=>upd("tumblr",{...(d.tumblr||{}),tagPosts:[]})} style={{background:"none",border:"1px solid rgba(0,0,0,0.12)",color:"#6b7280",borderRadius:6,padding:"3px 9px",cursor:"pointer",fontSize:10}}>↩ Réinitialiser</button>
+            <div style={{fontSize:11,color:"#9ca3af",marginBottom:8}}>Tags affichés dans l'onglet "tag" (icône étiquette) du profil Tumblr.</div>
+            {isCustom && (
+              <div style={{display:"flex",alignItems:"center",justifyContent:"flex-end",marginBottom:4}}>
+                <button onClick={()=>upd("tumblr",{...(d.tumblr||{}),interestTags:[]})} style={{background:"none",border:"1px solid rgba(0,0,0,0.12)",color:"#6b7280",borderRadius:6,padding:"3px 9px",cursor:"pointer",fontSize:10}}>↩ Réinitialiser</button>
               </div>
             )}
-            {effectiveTagPosts.map((post,i)=>(
-              <div key={post.id??i} className="adm-card" style={{background:isCustomTagPosts?"rgba(255,255,255,0.85)":"rgba(255,255,255,0.6)",borderRadius:12,padding:14,border:"1px solid rgba(0,0,0,0.07)",boxShadow:"0 2px 8px rgba(0,0,0,0.04)",marginTop:6,opacity:isCustomTagPosts?1:0.8}}>
-                <div style={{display:"flex",gap:8,marginBottom:8,alignItems:"center"}}>
-                  <Field label="Pseudo auteur" value={post.username||""} onChange={v=>{const p=[...effectiveTagPosts].map((e,j)=>({...e,id:e.id||"t"+j}));p[i]={...p[i],username:v};updTagPosts(p);}} width="30%"/>
-                  <Field label="Date" value={post.date||""} onChange={v=>{const p=[...effectiveTagPosts].map((e,j)=>({...e,id:e.id||"t"+j}));p[i]={...p[i],date:v};updTagPosts(p);}} width="20%"/>
-                  <Field label="Notes" value={String(post.notes||0)} onChange={v=>{const p=[...effectiveTagPosts].map((e,j)=>({...e,id:e.id||"t"+j}));p[i]={...p[i],notes:parseInt(v)||0};updTagPosts(p);}} width="14%"/>
-                  <button onClick={()=>updTagPosts(effectiveTagPosts.filter((_,j)=>j!==i))}
-                    className="adm-del-btn" style={{background:"rgba(239,68,68,0.06)",border:"1px solid rgba(239,68,68,0.2)",color:"#ef4444",borderRadius:6,padding:"4px 8px",cursor:"pointer",fontSize:11,marginTop:18}}>✕</button>
+            <div style={{display:"flex",flexDirection:"column",gap:6}}>
+              {effectiveTags.map((item,i)=>(
+                <div key={i} style={{display:"flex",gap:8,alignItems:"center",background:"rgba(255,255,255,0.85)",padding:"7px 10px",borderRadius:8,border:"1px solid rgba(0,0,0,0.07)",opacity:isCustom?1:0.8}}>
+                  <div style={{width:24,height:24,borderRadius:4,background:`hsl(${(i*53+17)%360},38%,55%)`,flexShrink:0}}/>
+                  <span style={{color:"#9ca3af",fontSize:12,flexShrink:0}}>#</span>
+                  <input value={item.tag||""} onChange={e=>{const t=[...effectiveTags.map(x=>({...x}))];t[i]={...t[i],tag:e.target.value};updTags(t);}}
+                    className="adm-input" placeholder="nom du tag"
+                    style={{flex:2,background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#1a1a2e",padding:"5px 8px",fontSize:12,borderRadius:6}}/>
+                  <input value={item.posts||""} onChange={e=>{const t=[...effectiveTags.map(x=>({...x}))];t[i]={...t[i],posts:e.target.value};updTags(t);}}
+                    className="adm-input" placeholder="Ex: 12.4K"
+                    style={{width:70,background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#6b7280",padding:"5px 8px",fontSize:11,borderRadius:6}}/>
+                  <button onClick={()=>updTags(effectiveTags.filter((_,j)=>j!==i))}
+                    className="adm-del-btn" style={{background:"none",border:"none",color:"#d1d5db",cursor:"pointer",fontSize:16,padding:"0 2px",flexShrink:0}}>×</button>
                 </div>
-                <Field label="Texte" value={post.body||""} onChange={v=>{const p=[...effectiveTagPosts].map((e,j)=>({...e,id:e.id||"t"+j}));p[i]={...p[i],body:v};updTagPosts(p);}} textarea/>
-              </div>
-            ))}
-            <button onClick={()=>updTagPosts([{id:"t"+Date.now(),username:d.tumblr?.handle||"",body:"",notes:0,date:"1 oct",type:"text"},...effectiveTagPosts.map((e,j)=>({...e,id:e.id||"t"+j}))])}
-              style={{background:"rgba(142,124,195,0.1)",border:"1px dashed rgba(142,124,195,0.5)",color:"#8e7cc3",borderRadius:8,padding:"10px 18px",cursor:"pointer",fontSize:12,fontWeight:600,marginTop:6}}>+ Post dans le tag</button>
+              ))}
+            </div>
+            <button onClick={()=>updTags([...effectiveTags.map(x=>({...x})),{tag:"nouveautag",posts:"0"}])}
+              style={{background:"rgba(142,124,195,0.1)",border:"1px dashed rgba(142,124,195,0.5)",color:"#8e7cc3",borderRadius:8,padding:"9px 16px",cursor:"pointer",fontSize:12,fontWeight:600,marginTop:6}}>+ Tag</button>
           </>);
         })()}
 
@@ -20814,12 +20848,23 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
           const daysInMonth = (m,y) => new Date(y,m,0).getDate();
           // Group by day key
           const grouped = effective.reduce((acc,ev,i)=>{
-            const k=`${ev.year||2012}-${String(ev.month||10).padStart(2,"0")}-${String(ev.day||1).padStart(2,"0")}`;
-            if(!acc[k]) acc[k]={label:`${ev.day||1} ${MONTHS[(ev.month||10)-1]} ${ev.year||2012}`,indices:[]};
+            const hasDate = ev.day && ev.month && ev.year;
+            const k = hasDate
+              ? `${ev.year||2012}-${String(ev.month||10).padStart(2,"0")}-${String(ev.day||1).padStart(2,"0")}`
+              : "__nodate__";
+            const label = hasDate
+              ? `${ev.day} ${MONTHS[(ev.month||10)-1]} ${ev.year||2012}`
+              : "📋 Sans date";
+            if(!acc[k]) acc[k]={label,indices:[],nodate:!hasDate};
             acc[k].indices.push(i);
             return acc;
           }, {});
-          const dayKeys = Object.keys(grouped).sort();
+          // Trier : dates réelles d'abord (ordre chrono), puis "Sans date" toujours en bas
+          const dayKeys = Object.keys(grouped).sort((a,b)=>{
+            if(a==="__nodate__") return 1;
+            if(b==="__nodate__") return -1;
+            return a.localeCompare(b);
+          });
           const [collapsed, setCollapsed] = [calCollapsedSet, setCalCollapsedSet];
           const toggleDay = k => setCollapsed(prev=>{const s=new Set(prev);s.has(k)?s.delete(k):s.add(k);return s;});
           // Par défaut tout est fermé : isOpen = vrai seulement si la clé est dans le set "ouvert"
@@ -20834,20 +20879,26 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
             )}
 
             {dayKeys.map(k=>{
-              const {label, indices} = grouped[k];
-              const open = isOpen(k);
+              const {label, indices, nodate} = grouped[k];
+              // Le groupe "Sans date" est toujours ouvert, pas toggleable
+              const open = nodate ? true : isOpen(k);
               return (
                 <div key={k}>
-                  {/* Day header — togglable */}
-                  <button onClick={()=>toggleDay(k)} style={{width:"100%",display:"flex",alignItems:"center",gap:8,background:"rgba(224,68,68,0.07)",border:"1px solid rgba(224,68,68,0.18)",borderRadius:8,padding:"7px 12px",cursor:"pointer",textAlign:"left"}}>
-                    <span style={{fontSize:12,width:12,flexShrink:0}}>{open?"▾":"▸"}</span>
-                    <span style={{fontSize:12,fontWeight:700,color:"#c0392b",flex:1}}>{label}</span>
-                    <span style={{fontSize:10,color:"#9ca3af"}}>{indices.length} événement{indices.length>1?"s":""}</span>
-                  </button>
+                  {/* Day header */}
+                  {nodate
+                    ? <div style={{display:"flex",alignItems:"center",gap:8,background:"rgba(99,102,241,0.06)",border:"1px solid rgba(99,102,241,0.18)",borderRadius:8,padding:"7px 12px"}}>
+                        <span style={{fontSize:12,fontWeight:700,color:"#6366f1",flex:1}}>{label}</span>
+                        <span style={{fontSize:10,color:"#9ca3af"}}>{indices.length} événement{indices.length>1?"s":""} — définir une date pour classer</span>
+                      </div>
+                    : <button onClick={()=>toggleDay(k)} style={{width:"100%",display:"flex",alignItems:"center",gap:8,background:"rgba(224,68,68,0.07)",border:"1px solid rgba(224,68,68,0.18)",borderRadius:8,padding:"7px 12px",cursor:"pointer",textAlign:"left"}}>
+                        <span style={{fontSize:12,width:12,flexShrink:0}}>{open?"▾":"▸"}</span>
+                        <span style={{fontSize:12,fontWeight:700,color:"#c0392b",flex:1}}>{label}</span>
+                        <span style={{fontSize:10,color:"#9ca3af"}}>{indices.length} événement{indices.length>1?"s":""}</span>
+                      </button>
+                  }
 
                   {open && indices.map(i=>{
                     const ev = effective[i];
-                    const mo = ev.month||10, yr = ev.year||2012;
                     return (
                     <div key={ev.id??i} className="adm-card" style={{background:"rgba(255,255,255,0.9)",borderRadius:"0 0 10px 10px",padding:"10px 12px",border:"1px solid rgba(0,0,0,0.07)",borderTop:"none",display:"flex",flexDirection:"column",gap:7,marginTop:0}}>
                       <Field label="Titre" value={ev.title||""} onChange={v=>ensureCustom(i,{title:v})}/>
@@ -20856,16 +20907,24 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                         <div style={{display:"flex",flexDirection:"column",gap:2}}>
                           <label style={{color:"#9ca3af",fontSize:10,letterSpacing:0.6,fontWeight:600,textTransform:"uppercase"}}>Date</label>
                           <div style={{display:"flex",gap:4}}>
-                            <select value={mo} onChange={e=>ensureCustom(i,{month:parseInt(e.target.value)})}
-                              style={{background:"rgba(255,255,255,0.9)",border:"1px solid rgba(0,0,0,0.1)",color:"#1a1a2e",padding:"5px 6px",fontSize:11,borderRadius:7}}>
+                            <select value={ev.month||""} onChange={e=>{
+                              const v=parseInt(e.target.value)||null;
+                              ensureCustom(i,{month:v, day:v?ev.day||1:null, year:v?ev.year||2012:null});
+                            }}
+                              style={{background:"rgba(255,255,255,0.9)",border:"1px solid rgba(0,0,0,0.1)",color:ev.month?"#1a1a2e":"#9ca3af",padding:"5px 6px",fontSize:11,borderRadius:7}}>
+                              <option value="">— Mois</option>
                               {MONTHS.map((m,idx)=><option key={idx+1} value={idx+1}>{m}</option>)}
                             </select>
-                            <select value={ev.day||1} onChange={e=>ensureCustom(i,{day:parseInt(e.target.value)})}
-                              style={{background:"rgba(255,255,255,0.9)",border:"1px solid rgba(0,0,0,0.1)",color:"#1a1a2e",padding:"5px 6px",fontSize:11,borderRadius:7,width:60}}>
-                              {Array.from({length:daysInMonth(mo,yr)},(_,k)=>k+1).map(n=><option key={n} value={n}>{n}</option>)}
+                            <select value={ev.day||""} onChange={e=>ensureCustom(i,{day:parseInt(e.target.value)||null})}
+                              disabled={!ev.month}
+                              style={{background:"rgba(255,255,255,0.9)",border:"1px solid rgba(0,0,0,0.1)",color:ev.day?"#1a1a2e":"#9ca3af",padding:"5px 6px",fontSize:11,borderRadius:7,width:60,opacity:ev.month?1:0.5}}>
+                              <option value="">—</option>
+                              {Array.from({length:daysInMonth(ev.month||10,ev.year||2012)},(_,k)=>k+1).map(n=><option key={n} value={n}>{n}</option>)}
                             </select>
-                            <select value={yr} onChange={e=>ensureCustom(i,{year:parseInt(e.target.value)})}
-                              style={{background:"rgba(255,255,255,0.9)",border:"1px solid rgba(0,0,0,0.1)",color:"#1a1a2e",padding:"5px 6px",fontSize:11,borderRadius:7,width:66}}>
+                            <select value={ev.year||""} onChange={e=>ensureCustom(i,{year:parseInt(e.target.value)||null})}
+                              disabled={!ev.month}
+                              style={{background:"rgba(255,255,255,0.9)",border:"1px solid rgba(0,0,0,0.1)",color:ev.year?"#1a1a2e":"#9ca3af",padding:"5px 6px",fontSize:11,borderRadius:7,width:66,opacity:ev.month?1:0.5}}>
+                              <option value="">—</option>
                               {[2011,2012,2013].map(y=><option key={y} value={y}>{y}</option>)}
                             </select>
                           </div>
@@ -20885,12 +20944,10 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
             })}
 
             <button onClick={()=>{
-              const today={id:Date.now(),day:1,month:10,year:2012,title:"",time:"",location:""};
+              // Créer sans date — l'événement apparaît dans "📋 Sans date" en bas
+              const newEv={id:Date.now(),day:null,month:null,year:null,title:"",time:"",location:""};
               const base = isCustom ? effective : defaults.map((e,j)=>({...e,id:"seed_"+j}));
-              updList([...base, today]);
-              // Ouvrir le groupe du nouveau jour (logique inversée : ajouter au set "open")
-              const k="2012-10-01";
-              setCollapsed(prev=>{const s=new Set(prev);s.add(k);return s;});
+              updList([...base, newEv]);
             }}
               style={{background:"rgba(224,68,68,0.08)",border:"1px dashed rgba(224,68,68,0.35)",color:"#e04444",borderRadius:8,padding:"10px 18px",cursor:"pointer",fontSize:12,fontWeight:600}}>+ Événement</button>
           </>);
