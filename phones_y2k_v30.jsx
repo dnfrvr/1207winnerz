@@ -1965,11 +1965,13 @@ const IOSPhoneApp = ({data,admin,update,panel,setPanel}) => {
   const loreDateStr = useContext(LoreDateCtx);
   const calls = data.calls||[];
   const charKey = data.username?.includes("glinda")?"glinda":data.username?.includes("eoghan")?"eoghan":data.username?.includes("drew")?"drew":"elias";
-  const callColor = t => t==="missed"?"#ff3b30":t==="incoming"?"#4cd964":"#8e8e93";
+  const callColor = t => (t==="missed"||t==="outgoing_missed")?"#ff3b30":t==="incoming"?"#4cd964":"#8e8e93";
   const callArrow = t => t==="incoming"
     ? <svg width="12" height="12" viewBox="0 0 14 14" fill="none"><path d="M3 3l8 8M11 11V5M11 11H5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
     : <svg width="12" height="12" viewBox="0 0 14 14" fill="none"><path d="M3 11l8-8M11 3v6M11 3H5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>;
-  const uniqContacts = calls.filter((c,i,a)=>a.findIndex(x=>x.contact===c.contact)===i);
+  const uniqContacts = (data.contacts && data.contacts.length>0)
+    ? data.contacts.map(c=>({contact:c.name, photo:c.photo}))
+    : calls.filter((c,i,a)=>a.findIndex(x=>x.contact===c.contact)===i);
 
   const launchBalloons = () => {
     setBalloons([]);
@@ -2065,7 +2067,7 @@ const IOSPhoneApp = ({data,admin,update,panel,setPanel}) => {
         {admin
           ?<input value={c.contact} onChange={e=>{const cl=[...calls];cl[i]={...cl[i],contact:e.target.value};update("calls",cl);}} style={{background:"rgba(255,200,0,0.15)",border:"1px dashed #ffc107",color:"#000",fontSize:13,display:"block",width:"95%"}}/>
           :<div style={{color:c.type==="missed"?"#ff3b30":"#000",fontSize:13,fontWeight:600,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{c.contact}</div>}
-        <div style={{color:"#8e8e93",fontSize:10,marginTop:1}}>{c.type==="missed"?"Manqué":c.type==="incoming"?"Entrant":"Sortant"} · {loreRelativeLabel(c.time,loreDateStr)}{c.duration?` · ${c.duration}`:""}</div>
+        <div style={{color:"#8e8e93",fontSize:10,marginTop:1}}>{c.type==="missed"?"Manqué":c.type==="incoming"?"Entrant":c.type==="outgoing_missed"?"Sans réponse":"Sortant"} · {loreRelativeLabel(c.time,loreDateStr)}{c.duration?` · ${c.duration}`:""}</div>
       </div>
       <span style={{color:"#007aff",fontSize:16,flexShrink:0}}>ⓘ</span>
     </div>
@@ -2073,7 +2075,7 @@ const IOSPhoneApp = ({data,admin,update,panel,setPanel}) => {
 
   const contacts = list(uniqContacts.map((c,i)=>(
     <div key={i} style={{padding:"10px 12px",borderBottom:"1px solid #d9d8d2",display:"flex",alignItems:"center",gap:10,background:"linear-gradient(180deg,#ffffff,#f6f5f0)"}}>
-      <div style={{width:32,height:32,borderRadius:"50%",background:"#c8c7c2",display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontWeight:700,fontSize:14,flexShrink:0}}>{(c.contact||"?")[0]}</div>
+      <div style={{width:32,height:32,borderRadius:"50%",background:"#c8c7c2",display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontWeight:700,fontSize:14,flexShrink:0,overflow:"hidden"}}>{c.photo?<img src={c.photo} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:(c.contact||"?")[0]}</div>
       <div style={{color:"#000",fontSize:14}}>{c.contact}</div>
     </div>
   )));
@@ -2145,11 +2147,13 @@ const AndroidDialer = ({data,admin,update,panel,setPanel}) => {
   const calls = data.calls||[];
   const HOLO = "#33b5e5";
   const NUMC = "#7fb2dd";
-  const callColor = t => t==="missed"?"#ff5252":t==="incoming"?"#8bc34a":"#9aa0a6";
+  const callColor = t => (t==="missed"||t==="outgoing_missed")?"#ff5252":t==="incoming"?"#8bc34a":"#9aa0a6";
   const callArrow = t => t==="incoming"
     ? <svg width="12" height="12" viewBox="0 0 14 14" fill="none"><path d="M3 3l8 8M11 11V5M11 11H5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
     : <svg width="12" height="12" viewBox="0 0 14 14" fill="none"><path d="M3 11l8-8M11 3v6M11 3H5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>;
-  const uniqContacts = calls.filter((c,i,a)=>a.findIndex(x=>x.contact===c.contact)===i);
+  const uniqContacts = (data.contacts && data.contacts.length>0)
+    ? data.contacts.map(c=>({contact:c.name, photo:c.photo}))
+    : calls.filter((c,i,a)=>a.findIndex(x=>x.contact===c.contact)===i);
 
   const launchBalloons = () => {
     setBalloons([]);
@@ -2237,8 +2241,8 @@ const AndroidDialer = ({data,admin,update,panel,setPanel}) => {
       <div style={{flex:1,minWidth:0}}>
         {admin
           ?<input value={c.contact} onChange={e=>{const cl=[...calls];cl[i]={...cl[i],contact:e.target.value};update("calls",cl);}} style={{background:"rgba(255,200,0,0.12)",border:"1px dashed #ffc107",color:"#fff",fontSize:13,display:"block",width:"95%"}}/>
-          :<div style={{color:c.type==="missed"?"#ff5252":"#eceff1",fontSize:13,fontWeight:500,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{c.contact}</div>}
-        <div style={{color:"#78848c",fontSize:10,marginTop:1}}>{loreRelativeLabel(c.time,loreDateStr)}{c.duration?` · ${c.duration}`:""}</div>
+          :<div style={{color:(c.type==="missed"||c.type==="outgoing_missed")?"#ff5252":"#eceff1",fontSize:13,fontWeight:500,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{c.contact}</div>}
+        <div style={{color:"#78848c",fontSize:10,marginTop:1}}>{c.type==="outgoing_missed"?"Sans réponse · ":""}{loreRelativeLabel(c.time,loreDateStr)}{c.duration?` · ${c.duration}`:""}</div>
       </div>
       <span style={{color:HOLO,lineHeight:1,flexShrink:0}}><svg width="16" height="16" viewBox="0 0 18 18" fill="none"><path d="M3.5 2h3l1.5 4-2 1.5A12 12 0 009.5 11l1.5-2 4 1.5v3A2 2 0 0113 16 12 12 0 012 5a2 2 0 011.5-3z" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/></svg></span>
     </div>
@@ -2246,7 +2250,7 @@ const AndroidDialer = ({data,admin,update,panel,setPanel}) => {
 
   const contacts = list(uniqContacts.map((c,i)=>(
     <div key={i} style={{padding:"11px 14px",borderBottom:"1px solid rgba(255,255,255,0.05)",display:"flex",alignItems:"center",gap:12}}>
-      <div style={{width:34,height:34,borderRadius:2,background:"#2a3a47",borderLeft:`3px solid ${HOLO}`,display:"flex",alignItems:"center",justifyContent:"center",color:"#cfd6db",fontWeight:700,fontSize:15,flexShrink:0}}>{(c.contact||"?")[0]}</div>
+      <div style={{width:34,height:34,borderRadius:2,background:"#2a3a47",borderLeft:`3px solid ${HOLO}`,display:"flex",alignItems:"center",justifyContent:"center",color:"#cfd6db",fontWeight:700,fontSize:15,flexShrink:0,overflow:"hidden"}}>{c.photo?<img src={c.photo} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:(c.contact||"?")[0]}</div>
       <div style={{color:"#eceff1",fontSize:14}}>{c.contact}</div>
     </div>
   )));
@@ -2492,38 +2496,17 @@ const TUMBLR_FEED_POSTS_DEFAULT = {
   ],
 };
 
-// Tags d'intérêts Tumblr par perso — affichés dans l'onglet "tag" (icône étiquette).
-// Chaque tag est un objet {tag, posts} où posts est le nombre affiché.
-const TUMBLR_TAGS_DEFAULT = {
-  glinda: [
-    {tag:"kpop",posts:"48.2K"},{tag:"girlsgeneration",posts:"12.1K"},{tag:"snsd",posts:"9.8K"},
-    {tag:"shinee",posts:"7.4K"},{tag:"chess",posts:"3.2K"},{tag:"uma",posts:"1.1K"},
-    {tag:"economics",posts:"892"},{tag:"aesthetics",posts:"22.4K"},{tag:"fashion",posts:"31.5K"},
-    {tag:"fall2012",posts:"4.3K"},{tag:"findanna",posts:"847"},{tag:"derry",posts:"2.3K"},
-  ],
-  eoghan: [
-    {tag:"indierock",posts:"14.8K"},{tag:"thestrokes",posts:"6.2K"},{tag:"ladygaga",posts:"19.1K"},
-    {tag:"football",posts:"8.7K"},{tag:"uma",posts:"1.1K"},{tag:"musicproduction",posts:"5.3K"},
-    {tag:"soundcloud",posts:"3.9K"},{tag:"rush",posts:"2.1K"},{tag:"derry",posts:"2.3K"},
-    {tag:"photography",posts:"27.6K"},{tag:"findanna",posts:"847"},{tag:"nightlife",posts:"6.8K"},
-  ],
-  drew: [
-    {tag:"biology",posts:"9.4K"},{tag:"earthworms",posts:"312"},{tag:"inaturalist",posts:"4.1K"},
-    {tag:"chess",posts:"3.2K"},{tag:"uma",posts:"1.1K"},{tag:"radiohead",posts:"11.2K"},
-    {tag:"weirdfishes",posts:"1.8K"},{tag:"nature",posts:"44.7K"},{tag:"scienceblog",posts:"7.3K"},
-    {tag:"derry",posts:"2.3K"},{tag:"findanna",posts:"847"},{tag:"maine",posts:"5.5K"},
-  ],
-  elias: [
-    {tag:"creepypasta",posts:"18.9K"},{tag:"paranormal",posts:"22.4K"},{tag:"derry",posts:"2.3K"},
-    {tag:"bmth",posts:"8.1K"},{tag:"bringmethehorizon",posts:"6.4K"},{tag:"fanfiction",posts:"14.2K"},
-    {tag:"ao3",posts:"9.7K"},{tag:"fiveknights",posts:"203"},{tag:"uma",posts:"1.1K"},
-    {tag:"findanna",posts:"847"},{tag:"missingpersons",posts:"3.1K"},{tag:"conspiracytheory",posts:"7.8K"},
-  ],
-};
-
-const TumblrScreen = ({data,admin,update,accent}) => {
+const TumblrScreen = ({data,admin,update,onUpdateShared=()=>{},accent}) => {
   const [activeTab, setActiveTab] = React.useState(0);
   const posts = data.tumblr?.posts||[];
+  const charKey = data.username?.includes("glinda")?"glinda":data.username?.includes("eoghan")?"eoghan":data.username?.includes("drew")?"drew":"elias";
+  // Posts "réels" partagés entre persos (comme les tweets) : postés par un perso, visibles par tous,
+  // et seul l'auteur peut les modifier/supprimer — contrairement aux anciens posts/feedPosts qui ne
+  // vivaient que dans la copie locale de chaque perso.
+  const sharedTumblrPosts = data.sharedThreads?._sharedTumblrPosts || [];
+  const myShared = sharedTumblrPosts.filter(p=>p.author===charKey);
+  const othersShared = sharedTumblrPosts.filter(p=>p.author!==charKey);
+  const updateSharedPosts = (newList) => onUpdateShared("_sharedTumblrPosts", newList);
   const TB    = "#35465c";
   const GRAY  = "#9b9b9b";
   const SEP   = "#e0deda";
@@ -2542,12 +2525,15 @@ const TumblrScreen = ({data,admin,update,accent}) => {
     </svg>
   );
 
-  const PostCard = ({post, idx, isFeed=false, isTag=false}) => {
+  const PostCard = ({post, idx, isFeed=false, isShared=false}) => {
     const isQuote = post.quote || post.type==="quote";
+    // Un post partagé ne peut être modifié que par son auteur — comme sur Twitter, on ne touche
+    // jamais aux posts des autres persos.
+    const canEdit = admin && (!isShared || post.author===charKey);
     const savePost = (patch) => {
-      if(isTag) {
-        const tp = [...tagPosts]; tp[idx] = {...tp[idx], ...patch};
-        update("tumblr", {...data.tumblr, tagPosts: tp});
+      if(isShared) {
+        if(post.author!==charKey) return;
+        updateSharedPosts(sharedTumblrPosts.map(p=>p.id===post.id?{...p,...patch}:p));
       } else if(isFeed) {
         const fp = [...feedPosts]; fp[idx] = {...fp[idx], ...patch};
         update("tumblr", {...data.tumblr, feedPosts: fp});
@@ -2557,8 +2543,9 @@ const TumblrScreen = ({data,admin,update,accent}) => {
       }
     };
     const deletePost = () => {
-      if(isTag) {
-        update("tumblr", {...data.tumblr, tagPosts: tagPosts.filter((_,j)=>j!==idx)});
+      if(isShared) {
+        if(post.author!==charKey) return;
+        updateSharedPosts(sharedTumblrPosts.filter(p=>p.id!==post.id));
       } else if(isFeed) {
         update("tumblr", {...data.tumblr, feedPosts: feedPosts.filter((_,j)=>j!==idx)});
       } else {
@@ -2586,7 +2573,7 @@ const TumblrScreen = ({data,admin,update,accent}) => {
             })()}
           </div>
           <div style={{flex:1,minWidth:0}}>
-            {admin
+            {canEdit
               ?<input value={post.username||""} onChange={e=>savePost({username:e.target.value})} style={{background:"rgba(255,200,0,0.15)",border:"1px dashed #ffc107",fontSize:13,fontWeight:700,width:130,display:"block"}}/>
               :<div style={{fontWeight:700,fontSize:(post.username||data.username||"").length>16?11:13,color:"#222",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{post.username||data.tumblr?.handle||data.username}</div>}
             {post.reblogFrom&&(
@@ -2600,9 +2587,23 @@ const TumblrScreen = ({data,admin,update,accent}) => {
         </div>
 
         
+        {post.img && <div style={{borderTop:`1px solid ${SEP}`}}><img src={post.img} style={{width:"100%",display:"block",maxHeight:340,objectFit:"cover"}}/></div>}
         <div style={{padding:"10px 10px 8px"}}>
-          {admin
-            ?<textarea value={post.body||""} rows={3} onChange={e=>savePost({body:e.target.value})} style={{width:"100%",background:"rgba(255,200,0,0.08)",border:"1px dashed #ffc107",fontSize:13,resize:"vertical",lineHeight:1.5,boxSizing:"border-box"}}/>
+          {canEdit
+            ?<div style={{display:"flex",flexDirection:"column",gap:6}}>
+              {post.img && <div style={{position:"relative",alignSelf:"flex-start"}}>
+                <img src={post.img} style={{maxWidth:160,maxHeight:120,borderRadius:6,display:"block"}}/>
+                <button onClick={()=>savePost({img:null})} style={{position:"absolute",top:2,right:2,background:"rgba(0,0,0,0.6)",border:"none",color:"#fff",borderRadius:"50%",width:18,height:18,fontSize:11,cursor:"pointer",lineHeight:1}}>✕</button>
+              </div>}
+              <label style={{alignSelf:"flex-start",background:"rgba(0,122,255,0.12)",border:"1px dashed #007aff",color:"#007aff",borderRadius:6,padding:"3px 8px",fontSize:10,cursor:"pointer"}}>
+                {post.img?"Changer l'image":"+ Image"}
+                <input type="file" accept="image/*" style={{display:"none"}} onChange={e=>{
+                  const f=e.target.files?.[0]; if(!f) return;
+                  const r=new UploadReader(); r.onload=ev=>savePost({img:ev.target.result}); r.readAsDataURL(f); e.target.value="";
+                }}/>
+              </label>
+              <textarea value={post.body||""} rows={3} onChange={e=>savePost({body:e.target.value})} style={{width:"100%",background:"rgba(255,200,0,0.08)",border:"1px dashed #ffc107",fontSize:13,resize:"vertical",lineHeight:1.5,boxSizing:"border-box"}}/>
+            </div>
             :isQuote
               ?<div>
                 <div style={{fontSize:14,color:"#222",lineHeight:1.6,fontWeight:400}}>
@@ -2617,13 +2618,14 @@ const TumblrScreen = ({data,admin,update,accent}) => {
         
         <div style={{display:"flex",alignItems:"center",borderTop:`1px solid ${SEP}`,padding:"5px 10px",background:"#f9f8f6"}}>
           <span style={{flex:1,fontSize:12,color:GRAY}}>
-            {admin
+            {canEdit
               ?<input type="number" value={post.notes||0} onChange={e=>savePost({notes:Number(e.target.value)})} style={{background:"rgba(255,200,0,0.1)",border:"1px dashed #ffc107",fontSize:12,width:70}}/>
               :<>{(post.notes||0).toLocaleString()} notes</>}
           </span>
           <div style={{padding:"3px 14px 3px 6px"}}><ReblogIcon/></div>
           <div style={{padding:"3px 4px"}}><HeartIcon/></div>
-          {admin&&<button onClick={deletePost} style={{background:"#f44",border:"none",color:"#fff",borderRadius:3,fontSize:8,padding:"2px 5px",cursor:"pointer",marginLeft:8}}>✕</button>}
+          {canEdit&&<button onClick={deletePost} style={{background:"#f44",border:"none",color:"#fff",borderRadius:3,fontSize:8,padding:"2px 5px",cursor:"pointer",marginLeft:8}}>✕</button>}
+          {admin&&isShared&&post.author!==charKey&&<span style={{fontSize:9,color:GRAY,marginLeft:8,fontStyle:"italic"}}>post de {post.author}</span>}
         </div>
       </div>
     );
@@ -2636,22 +2638,31 @@ const TumblrScreen = ({data,admin,update,accent}) => {
   const Dashboard = () => (
     <div style={{flex:1,overflowY:"auto",minHeight:0,WebkitOverflowScrolling:"touch",background:"#ebe9e4"}}>
       <div style={{padding:"8px 8px 0"}}>
-        {/* Own posts interspersed with feed posts */}
-        {[...posts.map(p=>({...p,_isFeed:false})), ...feedPosts.map(p=>({...p,_isFeed:true}))]
+        {/* Posts perso (legacy) + posts partagés (les vrais, qui apparaissent chez tout le monde) + feed décoratif */}
+        {[
+          ...posts.map(p=>({...p,_kind:"own"})),
+          ...sharedTumblrPosts.map(p=>({...p,_kind:"shared"})),
+          ...feedPosts.map(p=>({...p,_kind:"feed"})),
+        ]
           .sort((a,b)=>loreSortKey(b.date)-loreSortKey(a.date))
           .map((post,i)=>(
-            <PostCard key={post.id??i} post={post} idx={post._isFeed?feedPosts.findIndex(fp=>fp.id===post.id):posts.findIndex(p=>p.id===post.id)} isFeed={post._isFeed}/>
+            post._kind==="shared"
+              ? <PostCard key={post.id??i} post={post} isShared/>
+              : <PostCard key={post.id??i} post={post} isFeed={post._kind==="feed"} idx={post._kind==="feed"?feedPosts.findIndex(fp=>fp.id===post.id):posts.findIndex(p=>p.id===post.id)}/>
           ))}
       </div>
       {admin&&(
         <div style={{display:"flex",gap:6,margin:"0 8px 8px"}}>
-          <div onClick={()=>{const np={id:Date.now(),username:data.tumblr?.handle||data.username,avatarBg:"#8e7cc3",body:"Nouveau post",notes:0,date:"1 oct",type:"text"};update("tumblr",{...data.tumblr,posts:[np,...posts]});}}
+          <div onClick={()=>{
+            const np={id:Date.now(),author:charKey,username:data.tumblr?.handle||data.username,avatarBg:"#8e7cc3",body:"Nouveau post",notes:0,date:"1 oct",type:"text"};
+            updateSharedPosts([np,...sharedTumblrPosts]);
+          }}
             style={{flex:1,padding:12,textAlign:"center",color:"#ffc107",cursor:"pointer",background:"#fff",borderRadius:2,fontSize:12,boxShadow:"0 1px 2px rgba(0,0,0,0.1)"}}>
             + Nouveau post
           </div>
           <div onClick={()=>{const np={id:Date.now(),username:"",avatarBg:"#8e7cc3",body:"Nouveau post du fil",notes:0,date:"1 oct",type:"text"};update("tumblr",{...data.tumblr,feedPosts:[np,...feedPosts]});}}
             style={{flex:1,padding:12,textAlign:"center",color:"#7c9fc9",cursor:"pointer",background:"#fff",borderRadius:2,fontSize:12,boxShadow:"0 1px 2px rgba(0,0,0,0.1)"}}>
-            + Post du fil
+            + Post du fil (déco)
           </div>
         </div>
       )}
@@ -2659,56 +2670,37 @@ const TumblrScreen = ({data,admin,update,accent}) => {
     </div>
   );
 
-  const charKeyTb = data.username?.includes("glinda")?"glinda":data.username?.includes("eoghan")?"eoghan":data.username?.includes("drew")?"drew":"elias";
-  const interestTags = data.tumblr?.interestTags?.length ? data.tumblr.interestTags : (TUMBLR_TAGS_DEFAULT[charKeyTb]||[]);
-
-  const TagTab = () => {
-    return (
-      <div style={{flex:1,background:"#ebe9e4",display:"flex",flexDirection:"column",overflow:"hidden"}}>
-        {/* Search bar style Tumblr */}
-        <div style={{padding:"8px 10px",background:"#fff",borderBottom:`1px solid ${SEP}`,flexShrink:0}}>
-          <div style={{background:"#eeedea",border:"1px solid #d5d4d0",borderRadius:10,padding:"5px 12px",display:"flex",alignItems:"center",gap:6}}>
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke={GRAY} strokeWidth="2"/><path d="M20 20l-3.5-3.5" stroke={GRAY} strokeWidth="2" strokeLinecap="round"/></svg>
-            <span style={{fontSize:13,color:GRAY}}>Search Tumblr</span>
-          </div>
-        </div>
-        <div style={{overflowY:"auto",flex:1,padding:"10px 8px"}}>
-          <div style={{fontSize:10,color:GRAY,letterSpacing:1,textTransform:"uppercase",marginBottom:8}}>Tags suivis</div>
-          {interestTags.map((item,i)=>(
-            <div key={i} style={{background:"#fff",borderRadius:2,boxShadow:"0 1px 2px rgba(0,0,0,0.1)",padding:"9px 10px",marginBottom:6,display:"flex",alignItems:"center",gap:9}}>
-              <div style={{width:30,height:30,borderRadius:3,background:`hsl(${(i*53+17)%360},38%,55%)`,flexShrink:0}}/>
-              <div style={{flex:1}}>
-                {admin
-                  ? <input value={item.tag||""} onChange={e=>{const t=[...interestTags];t[i]={...t[i],tag:e.target.value};update("tumblr",{...data.tumblr,interestTags:t});}}
-                      style={{fontWeight:700,fontSize:13,color:"#222",background:"rgba(255,200,0,0.12)",border:"1px dashed #ffc107",width:"100%",padding:"1px 4px"}}/>
-                  : <div style={{fontWeight:700,fontSize:13,color:"#222"}}>#{item.tag}</div>
-                }
-                <div style={{fontSize:11,color:GRAY}}>{item.posts} posts</div>
-              </div>
-              {admin
-                ? <button onClick={()=>{const t=interestTags.filter((_,j)=>j!==i);update("tumblr",{...data.tumblr,interestTags:t});}}
-                    style={{background:"none",border:"none",color:"#f44",cursor:"pointer",fontSize:14,padding:"0 2px",flexShrink:0}}>✕</button>
-                : <svg width="8" height="14" viewBox="0 0 8 14" fill="none"><path d="M1 1l6 6-6 6" stroke="#c8c7c2" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
-              }
-            </div>
-          ))}
-          {admin&&(
-            <div onClick={()=>{
-              const t=[...interestTags,{tag:"nouveautag",posts:"0"}];
-              update("tumblr",{...data.tumblr,interestTags:t});
-            }} style={{padding:"9px 10px",textAlign:"center",color:"#8e7cc3",cursor:"pointer",background:"#fff",borderRadius:2,fontSize:12,boxShadow:"0 1px 2px rgba(0,0,0,0.1)",marginBottom:6}}>
-              + Ajouter un tag
-            </div>
-          )}
+  const Explore = () => (
+    <div style={{flex:1,background:"#ebe9e4",display:"flex",flexDirection:"column",overflow:"hidden"}}>
+      <div style={{padding:"8px 10px",background:"#fff",borderBottom:`1px solid ${SEP}`}}>
+        <div style={{background:"#eeedea",border:"1px solid #d5d4d0",borderRadius:10,padding:"5px 12px",display:"flex",alignItems:"center",gap:6}}>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke={GRAY} strokeWidth="2"/><path d="M20 20l-3.5-3.5" stroke={GRAY} strokeWidth="2" strokeLinecap="round"/></svg>
+          <span style={{fontSize:13,color:GRAY}}>Search Tumblr</span>
         </div>
       </div>
-    );
-  };
+      <div style={{overflowY:"auto",flex:1,padding:"10px 8px"}}>
+        <div style={{fontSize:10,color:GRAY,letterSpacing:1,textTransform:"uppercase",marginBottom:8}}>Trending</div>
+        {["architecture","minimalism","photography","aesthetic","vintage","film","art","interiors"].map((tag,i)=>(
+          <div key={i} style={{background:"#fff",borderRadius:2,boxShadow:"0 1px 2px rgba(0,0,0,0.1)",padding:"9px 10px",marginBottom:6,display:"flex",alignItems:"center",gap:9}}>
+            <div style={{width:30,height:30,borderRadius:3,background:`hsl(${i*44},38%,58%)`,flexShrink:0}}/>
+            <div style={{flex:1}}>
+              <div style={{fontWeight:700,fontSize:13,color:"#222"}}>#{tag}</div>
+              <div style={{fontSize:11,color:GRAY}}>{(Math.floor(Math.random()*900+100)).toLocaleString()}K posts</div>
+            </div>
+            <svg width="8" height="14" viewBox="0 0 8 14" fill="none"><path d="M1 1l6 6-6 6" stroke="#c8c7c2" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 
   const Profile = () => {
     // Glinda posts under "glindarvf" — match either username or the tumblr-specific handle
     const tumblrHandle = data.tumblr?.handle || data.username;
-    const myPosts = posts.filter(p=>(!p.username||p.username===data.username||p.username===tumblrHandle));
+    const myPosts = [
+      ...posts.filter(p=>(!p.username||p.username===data.username||p.username===tumblrHandle)).map(p=>({...p,_kind:"own"})),
+      ...myShared.map(p=>({...p,_kind:"shared"})),
+    ].sort((a,b)=>loreSortKey(b.date)-loreSortKey(a.date));
     const coverColor = data.tumblr?.coverColor || "#2c3e50";
     return (
       <div style={{flex:1,background:"#ebe9e4",overflowY:"auto",minHeight:0}}>
@@ -2747,14 +2739,18 @@ const TumblrScreen = ({data,admin,update,accent}) => {
         </div>
         
         <div style={{padding:"8px 8px 0"}}>
-          {myPosts.map((post,i)=><PostCard key={post.id} post={post} idx={posts.indexOf(post)}/>)}
+          {myPosts.map((post,i)=>
+            post._kind==="shared"
+              ? <PostCard key={post.id} post={post} isShared/>
+              : <PostCard key={post.id} post={post} idx={posts.indexOf(post)}/>
+          )}
         </div>
         <div style={{height:8}}/>
       </div>
     );
   };
 
-  const TABS = [Dashboard, TagTab, Profile];
+  const TABS = [Dashboard, Explore, Profile];
 
   /* ── Tab bar: 3 regular + 1 blue compose button ── */
   /* Screenshot: home | tag | person | [blue compose] */
@@ -4808,45 +4804,10 @@ const TWITTER_HOME_BASE = {
 };
 
 // Override tweet display info
-// ── Tweets du profil de chaque perso (seed par défaut, écrasable via profileTweets) ──────────
-const PROFILE_TWEETS_DEFAULT = {
-  glinda:[
-    {h:"@glindarvf",name:"Glinda R.",text:"bibliothèque UMA = mon nouveau chez moi ☕📚 #UMA #Économie",time:"2m",rp:3,rt:7,fav:24},
-    {h:"@glindarvf",name:"Glinda R.",text:"quelqu'un a des notes du cours de macro de hier ? j'étais… indisponible 😬",time:"1:00am",rp:8,rt:2,fav:31},
-    {h:"@glindarvf",name:"Glinda R.",text:"Gee par SNSD en boucle depuis 3h. pas de regrets. #SNSD #GirlsGeneration",time:"3:00am",rp:5,rt:12,fav:47},
-    {h:"@glindarvf",name:"Glinda R.",text:"pourquoi les gens jouent aux échecs en silence ???? c'est un SPORT 🎲",time:"5:00am",rp:14,rt:28,fav:102},
-    {h:"@glindarvf",name:"Glinda R.",text:"déjà un mois à UMA et la bibli me connaît par mon prénom ☕📚 #UMA",time:"1j",rp:6,rt:9,fav:58},
-  ],
-  eoghan:[
-    {h:"@eoghan_m",name:"Eoghan M.",text:"nouveau son en ligne soundcloud.com/eoghan_m #Rush #indierock",time:"15m",rp:2,rt:4,fav:18},
-    {h:"@eoghan_m",name:"Eoghan M.",text:"les égouts de derry sont plus grands que vous ne le pensez. je dis ça je dis rien.",time:"2:00am",rp:7,rt:15,fav:43},
-    {h:"@eoghan_m",name:"Eoghan M.",text:"asra et ilya encore fourrés ensemble. cool. tout va bien. je gère.",time:"4:00am",rp:1,rt:0,fav:9},
-    {h:"@eoghan_m",name:"Eoghan M.",text:"\"This is the end, beautiful friend\" - The Doors. citation du jour.",time:"6:00am",rp:3,rt:8,fav:29},
-    {h:"@eoghan_m",name:"Eoghan M.",text:"UMA est une école comme les autres. les secrets en plus. #UMA",time:"1j",rp:11,rt:22,fav:67},
-  ],
-  drew:[
-    {h:"@dreww_orms",name:"Drew B.",text:"TP bio terminé. les vers de terre n'ont aucun secret pour moi 🪱 #Sciences #UMA",time:"30m",rp:4,rt:6,fav:22},
-    {h:"@dreww_orms",name:"Drew B.",text:"1812 elo. je suis un humble joueur d'échecs. c'est tout. ♟️",time:"2:00am",rp:2,rt:3,fav:17},
-    {h:"@dreww_orms",name:"Drew B.",text:"quelqu'un peut m'expliquer pourquoi je me souviens pas du mois de juillet ?",time:"3:00am",rp:9,rt:14,fav:38},
-    {h:"@dreww_orms",name:"Drew B.",text:"Weird Fishes by Radiohead hits different à 2h du mat. #Radiohead",time:"5:00am",rp:5,rt:11,fav:44},
-    {h:"@dreww_orms",name:"Drew B.",text:"maine → maine's university at augusta. upgrade en cours 🌿",time:"2j",rp:7,rt:19,fav:81},
-  ],
-  elias:[
-    {h:"@noteliasgreen",name:"Elias G.",text:"je sais des choses sur ce qui se passe à Augusta. personne ne me croit. c'est ok.",time:"23m",rp:6,rt:12,fav:34},
-    {h:"@noteliasgreen",name:"Elias G.",text:"il y a des disparitions non résolues à Derry depuis 27 ans. cherchez.",time:"1:00am",rp:18,rt:41,fav:127},
-    {h:"@noteliasgreen",name:"Elias G.",text:"Can You Feel My Heart — BMTH. c'est tout ce que j'ai à dire.",time:"3:00am",rp:3,rt:5,fav:21},
-    {h:"@noteliasgreen",name:"Elias G.",text:"\"The truth is out there\" mais personne cherche vraiment #conspi #Derry",time:"5:00am",rp:9,rt:23,fav:76},
-    {h:"@noteliasgreen",name:"Elias G.",text:"nouveau chapitre de Five Nights posté. oui c'est de la fanfic. non j'ai pas honte.",time:"1j",rp:2,rt:4,fav:16},
-  ],
-};
-
 // Twitter (Elias)
-const TwitterScreen = ({data, isIos, accent, onBack=null, sharedTweets=[], onTweet=null, twitterUsers={}, homeBaseTweets=[]}) => {
+const TwitterScreen = ({data, isIos, accent, onBack=null, sharedTweets=[], twitterUsers={}, homeBaseTweets=[]}) => {
   const loreDateStr = useContext(LoreDateCtx);
   const [tab, setTab] = useState("home");
-  const [composing, setComposing] = useState(false);
-  const [draftText, setDraftText] = useState("");
-  const [draftPhoto, setDraftPhoto] = useState(null);
   const charKey = data.username?.includes("glinda")?"glinda":data.username?.includes("eoghan")?"eoghan":data.username?.includes("drew")?"drew":"elias";
 
   // Auto-sync the 4 chars' twitter display info from their profile data
@@ -4861,45 +4822,48 @@ const TwitterScreen = ({data, isIos, accent, onBack=null, sharedTweets=[], onTwe
   // Each char: use data.avatar (current char) or sharedAvatars (others), then twitterUsers override
   Object.entries(CHAR_TWITTER_KEYS).forEach(([char, info]) => {
     const charAv = char === charKey ? (data.avatar || sharedAvatarsTw[char]) : sharedAvatarsTw[char];
-    const ov = twitterUsers[info.key] || {};
     effectiveTwUsers[info.key] = {
-      ...ov,
-      h: ov.h || info.h,
-      name: ov.name || info.name,
-      av: ov.av || charAv || null,
-      bannerImg: ov.bannerImg || null,
-      bannerColor: ov.bannerColor || null,
+      h: (twitterUsers[info.key]?.h) || info.h,
+      name: (twitterUsers[info.key]?.name) || info.name,
+      av: twitterUsers[info.key]?.av || charAv || null,
     };
   });
-
-  const myProfileTweets = (data.profileTweets || []).map(t => ({
-    h: myHandle, name: names[charKey], text: t.text, time: t.time || "maintenant",
-    rp: t.rp ?? 0, rt: t.rt ?? 0, fav: t.fav ?? 0,
-    av: effectiveTwUsers[CHAR_TWITTER_KEYS[charKey]?.key]?.av || charKey[0].toUpperCase(),
-    _profileTweet: true, _ts: t.id || 0,
-  }));
-
-  // Tweets des autres persos issus de leur profileTweets (partagés dans _sharedProfileTweets)
-  const sharedProfileTweets = data.sharedThreads?._sharedProfileTweets || {};
-  const othersProfileTweets = Object.entries(sharedProfileTweets)
-    .filter(([k]) => k !== charKey)
-    .flatMap(([k, tweets]) => (tweets || []).map(t => ({
-      h: handles[k] || "@?", name: names[k] || "?",
-      text: t.text, time: t.time || "maintenant",
-      rp: t.rp ?? 0, rt: t.rt ?? 0, fav: t.fav ?? 0,
-      av: effectiveTwUsers[CHAR_TWITTER_KEYS[k]?.key]?.av || (names[k]||"?")[0],
-      _shared: true, _ts: t.id || 0,
-    }))
-  ).sort((a,b) => (b._ts||0) - (a._ts||0));
 
   const handles = {glinda:"@glindarvf",eoghan:"@eoghan_m",drew:"@dreww_orms",elias:"@noteliasgreen"};
   const names   = {glinda:"Glinda R.",eoghan:"Eoghan M.",drew:"Drew B.",elias:"Elias G."};
   const myHandle = handles[charKey];
 
-  // ── Profile tweets : seed par défaut si aucun profileTweets custom n'est défini ──
-  const PROFILE_TWEETS = data.profileTweets?.length
-    ? { [charKey]: data.profileTweets.map(t => ({...t, h: handles[charKey], name: names[charKey]})) }
-    : PROFILE_TWEETS_DEFAULT;
+  // ── Profile tweets (static) ──
+  const PROFILE_TWEETS = {
+    glinda:[
+      {h:"@glindarvf",name:"Glinda R.",text:"bibliothèque UMA = mon nouveau chez moi ☕📚 #UMA #Économie",time:"2m",rp:3,rt:7,fav:24},
+      {h:"@glindarvf",name:"Glinda R.",text:"quelqu'un a des notes du cours de macro de hier ? j'étais… indisponible 😬",time:"1:00am",rp:8,rt:2,fav:31},
+      {h:"@glindarvf",name:"Glinda R.",text:"Gee par SNSD en boucle depuis 3h. pas de regrets. #SNSD #GirlsGeneration",time:"3:00am",rp:5,rt:12,fav:47},
+      {h:"@glindarvf",name:"Glinda R.",text:"pourquoi les gens jouent aux échecs en silence ???? c'est un SPORT 🎲",time:"5:00am",rp:14,rt:28,fav:102},
+      {h:"@glindarvf",name:"Glinda R.",text:"déjà un mois à UMA et la bibli me connaît par mon prénom ☕📚 #UMA",time:"1j",rp:6,rt:9,fav:58},
+    ],
+    eoghan:[
+      {h:"@eoghan_m",name:"Eoghan M.",text:"nouveau son en ligne soundcloud.com/eoghan_m #Rush #indierock",time:"15m",rp:2,rt:4,fav:18},
+      {h:"@eoghan_m",name:"Eoghan M.",text:"les égouts de derry sont plus grands que vous ne le pensez. je dis ça je dis rien.",time:"2:00am",rp:7,rt:15,fav:43},
+      {h:"@eoghan_m",name:"Eoghan M.",text:"asra et ilya encore fourrés ensemble. cool. tout va bien. je gère.",time:"4:00am",rp:1,rt:0,fav:9},
+      {h:"@eoghan_m",name:"Eoghan M.",text:"\"This is the end, beautiful friend\" - The Doors. citation du jour.",time:"6:00am",rp:3,rt:8,fav:29},
+      {h:"@eoghan_m",name:"Eoghan M.",text:"UMA est une école comme les autres. les secrets en plus. #UMA",time:"1j",rp:11,rt:22,fav:67},
+    ],
+    drew:[
+      {h:"@dreww_orms",name:"Drew B.",text:"TP bio terminé. les vers de terre n'ont aucun secret pour moi 🪱 #Sciences #UMA",time:"30m",rp:4,rt:6,fav:22},
+      {h:"@dreww_orms",name:"Drew B.",text:"1812 elo. je suis un humble joueur d'échecs. c'est tout. ♟️",time:"2:00am",rp:2,rt:3,fav:17},
+      {h:"@dreww_orms",name:"Drew B.",text:"quelqu'un peut m'expliquer pourquoi je me souviens pas du mois de juillet ?",time:"3:00am",rp:9,rt:14,fav:38},
+      {h:"@dreww_orms",name:"Drew B.",text:"Weird Fishes by Radiohead hits different à 2h du mat. #Radiohead",time:"5:00am",rp:5,rt:11,fav:44},
+      {h:"@dreww_orms",name:"Drew B.",text:"maine → maine's university at augusta. upgrade en cours 🌿",time:"2j",rp:7,rt:19,fav:81},
+    ],
+    elias:[
+      {h:"@noteliasgreen",name:"Elias G.",text:"je sais des choses sur ce qui se passe à Augusta. personne ne me croit. c'est ok.",time:"23m",rp:6,rt:12,fav:34},
+      {h:"@noteliasgreen",name:"Elias G.",text:"il y a des disparitions non résolues à Derry depuis 27 ans. cherchez.",time:"1:00am",rp:18,rt:41,fav:127},
+      {h:"@noteliasgreen",name:"Elias G.",text:"Can You Feel My Heart — BMTH. c'est tout ce que j'ai à dire.",time:"3:00am",rp:3,rt:5,fav:21},
+      {h:"@noteliasgreen",name:"Elias G.",text:"\"The truth is out there\" mais personne cherche vraiment #conspi #Derry",time:"5:00am",rp:9,rt:23,fav:76},
+      {h:"@noteliasgreen",name:"Elias G.",text:"nouveau chapitre de Five Nights posté. oui c'est de la fanfic. non j'ai pas honte.",time:"1j",rp:2,rt:4,fav:16},
+    ],
+  };
 
   // ── Shared tweets injected into feeds ──
   const othersShared = sharedTweets.filter(t=>t.author!==charKey).map(t=>({
@@ -4924,7 +4888,7 @@ const TwitterScreen = ({data, isIos, accent, onBack=null, sharedTweets=[], onTwe
     const u = effectiveTwUsers[key];
     return {...t, name: u.name||t.name, h: u.h||t.h, av: u.av||t.av};
   };
-  const homeFeed = [...myProfileTweets, ...myShared, ...othersShared, ...othersProfileTweets, ...(homeBaseTweets.length ? homeBaseTweets : (HOME_BASE[charKey]||[]))].map(resolveTweet);
+  const homeFeed = [...myShared, ...othersShared, ...(homeBaseTweets.length ? homeBaseTweets : (HOME_BASE[charKey]||[]))].map(resolveTweet);
 
   // ── Connect ──
   const CONNECT = {
@@ -5025,46 +4989,14 @@ const TwitterScreen = ({data, isIos, accent, onBack=null, sharedTweets=[], onTwe
     {id:"me",label:"Me",icon:(a)=><svg width="18" height="17" viewBox="0 0 22 21" fill="none"><circle cx="11" cy="7" r="4" stroke={a?"#1da1f2":"#8899a6"} strokeWidth="1.8"/><path d="M3 20c0-4.42 3.58-8 8-8s8 3.58 8 8" stroke={a?"#1da1f2":"#8899a6"} strokeWidth="1.8" strokeLinecap="round"/></svg>},
   ];
 
-  const ComposeModal = () => (
-    <div style={{position:"absolute",inset:0,zIndex:200,background:"rgba(0,0,0,0.55)",display:"flex",alignItems:"flex-start",justifyContent:"center",padding:"40px 12px 0"}} onClick={()=>setComposing(false)}>
-      <div onClick={e=>e.stopPropagation()} style={{background:isIos?"#fff":"#1e2530",borderRadius:12,width:"100%",maxWidth:380,boxShadow:"0 8px 32px rgba(0,0,0,0.4)",overflow:"hidden"}}>
-        <div style={{padding:"10px 14px",borderBottom:`1px solid ${isIos?"#e1e8ed":"#2a3a4a"}`,display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-          <button onClick={()=>setComposing(false)} style={{background:"none",border:"none",color:TW_BLUE,fontSize:13,cursor:"pointer",fontWeight:600}}>Annuler</button>
-          <span style={{color:isIos?"#0f1419":"#fff",fontWeight:700,fontSize:13}}>Nouveau Tweet</span>
-          <button onClick={()=>{
-            if(!draftText.trim()) return;
-            onTweet&&onTweet({author:charKey,text:draftText.trim(),photo:draftPhoto,time:"maintenant",ts:Date.now()});
-            setDraftText(""); setDraftPhoto(null); setComposing(false);
-          }} style={{background:TW_BLUE,border:"none",color:"#fff",borderRadius:20,padding:"5px 14px",fontWeight:700,fontSize:12,cursor:"pointer",opacity:draftText.trim()?1:0.5}}>
-            Tweeter
-          </button>
-        </div>
-        <div style={{display:"flex",gap:10,padding:"12px 14px"}}>
-          <div style={{width:36,height:36,borderRadius:6,background:TW_BLUE,flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontWeight:700,fontSize:16}}>
-            {names[charKey][0]}
-          </div>
-          <div style={{flex:1}}>
-            <textarea autoFocus dir="ltr" value={draftText} onChange={e=>setDraftText(e.target.value.slice(0,140))}
-              placeholder="Quoi de neuf ?"
-              style={{width:"100%",minHeight:90,border:"none",outline:"none",resize:"none",fontSize:14,color:isIos?"#0f1419":"#fff",background:"transparent",fontFamily:"inherit",lineHeight:1.5}}/>
-            <div style={{textAlign:"right",fontSize:11,color:draftText.length>120?"#e0245e":subCol}}>{140-draftText.length}</div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-
   return (
     <div style={{flex:1,display:"flex",flexDirection:"column",background:isIos?"#c0cfd8":"#131619",overflow:"hidden",position:"relative"}}>
-      {composing&&<ComposeModal/>}
       <div style={{background:TW_BLUE,padding:"8px 12px",display:"flex",alignItems:"center",justifyContent:"space-between",flexShrink:0}}>
         {isIos?<button onClick={onBack} style={{background:"linear-gradient(180deg,#1690d8,#1070b0)",border:"1px solid rgba(0,0,0,0.4)",borderRadius:6,color:"#fff",fontSize:11,fontWeight:600,cursor:"pointer",padding:"3px 8px",display:"flex",alignItems:"center",gap:2,textShadow:"0 -1px 0 rgba(0,0,0,0.4)",boxShadow:"inset 0 1px 0 rgba(255,255,255,0.2)",flexShrink:0}}>
           <svg width="8" height="14" viewBox="0 0 8 14" fill="none"><path d="M7 1L1 7l6 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
         </button>:<span style={{width:28}}/>}
         <svg width="22" height="18" viewBox="0 0 24 20" fill="#fff"><path d="M24 2.4c-.9.4-1.8.7-2.8.8 1-.6 1.8-1.6 2.2-2.8-.9.6-2 1-3.1 1.2C19.4.6 18.1 0 16.7 0c-2.7 0-4.9 2.3-4.9 5.1 0 .4 0 .8.1 1.1C8 6 4.4 4 1.9.9c-.4.8-.6 1.6-.6 2.6 0 1.7.9 3.3 2.2 4.2-.8 0-1.6-.2-2.3-.6 0 2.4 1.6 4.4 3.8 4.9-.4.1-.8.2-1.3.2-.3 0-.6 0-.9-.1.6 2 2.3 3.4 4.4 3.4-1.6 1.3-3.6 2.1-5.8 2.1-.4 0-.7 0-1.1-.1C2.3 18.6 4.9 19.4 7.6 19.4c9 0 13.9-7.7 13.9-14.4v-.7c1-.7 1.8-1.6 2.5-2.6"/></svg>
-        <button onClick={()=>setComposing(true)} style={{width:28,height:28,borderRadius:6,background:"rgba(255,255,255,0.2)",display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",border:"none",cursor:"pointer"}}>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M20 4c1 0 2 1 2 2 0 5-7 12-12 14L4 21l1-6C7 10 14 4 18 4c.7 0 1.4.3 2 1z" stroke="#fff" strokeWidth="1.8" strokeLinejoin="round"/><path d="M14 6.5L18 10" stroke="#fff" strokeWidth="1.8"/></svg>
-        </button>
+        <span style={{width:28}}/>
       </div>
       {!isIos&&<div style={{background:"#1a1a1a",borderBottom:"1px solid #2a2a2a",display:"flex",flexShrink:0}}>
         {tabs.map(t=><button key={t.id} onClick={()=>setTab(t.id)} style={{flex:1,padding:"10px 0 8px",border:"none",background:"transparent",color:tab===t.id?"#fff":subCol,cursor:"pointer",fontSize:11,fontWeight:tab===t.id?"700":"400",borderBottom:`3px solid ${tab===t.id?TW_BLUE:"transparent"}`,display:"flex",flexDirection:"column",alignItems:"center",gap:2,transition:"border-color 0.15s",fontFamily:FF_IOS}}>{typeof t.icon==="function" ? t.icon(tab===t.id) : <span style={{fontSize:16}}>{t.icon}</span>}</button>)}
@@ -5100,7 +5032,7 @@ const TwitterScreen = ({data, isIos, accent, onBack=null, sharedTweets=[], onTwe
               <div key={l} style={{textAlign:"center"}}><div style={{color:textCol,fontWeight:700,fontSize:13}}>{v}</div><div style={{color:subCol,fontSize:10}}>{l}</div></div>
             ))}
           </div>
-          {[...myProfileTweets.slice().reverse(),...myShared.slice().reverse(),...(PROFILE_TWEETS[charKey]||[])].map(resolveTweet).map((t,i)=><Tweet key={i} t={{...t,av:effectiveTwUsers[CHAR_TWITTER_KEYS[charKey].key]?.av||charKey[0].toUpperCase()}}/>)}
+          {[...myShared.slice().reverse(),...(PROFILE_TWEETS[charKey]||[])].map(resolveTweet).map((t,i)=><Tweet key={i} t={{...t,av:effectiveTwUsers[CHAR_TWITTER_KEYS[charKey].key]?.av||charKey[0].toUpperCase()}}/>)}
         </>}
       </div>
       {isIos&&<div style={{background:"linear-gradient(180deg,#e8ecef,#d5dde3)",borderTop:"1px solid #b0bec5",display:"flex",flexShrink:0}}>
@@ -6947,25 +6879,13 @@ const IOSPhone = ({data,admin,onUpdate,onUpdateShared=()=>{},loreDate:loreDatePr
     if(galleryView!=="albums") {
       const isDeleted = galleryView==="recently_deleted";
       const rawList = isDeleted ? deletedPhotos : activePhotos;
-      // Résoudre la date effective d'une photo : dateISO prioritaire, sinon tenter de parser date (texte)
-      const MONTH_MAP = {jan:1,fév:2,feb:2,mar:3,avr:4,apr:4,mai:5,may:5,juin:6,jun:6,juil:7,jul:7,aoû:8,aug:8,sep:9,oct:10,nov:11,déc:12,dec:12};
-      const resolveISO = (p) => {
-        if(p.dateISO) return p.dateISO;
-        if(!p.date) return null;
-        // Tenter de parser "Oct 2012", "6 oct 2012", "oct 2012", "October 2012"
-        const s = p.date.toLowerCase().trim();
-        const m1 = s.match(/^(\d{1,2})\s+([a-zé]+)\s+(\d{4})$/);
-        if(m1) { const mo=MONTH_MAP[m1[2].slice(0,3)]; if(mo) return `${m1[3]}-${String(mo).padStart(2,'0')}-${m1[1].padStart(2,'0')}`; }
-        const m2 = s.match(/^([a-zé]+)\s+(\d{4})$/);
-        if(m2) { const mo=MONTH_MAP[m2[1].slice(0,3)]; if(mo) return `${m2[2]}-${String(mo).padStart(2,'0')}-01`; }
-        const m3 = s.match(/^([a-zé]+)\s+(\d{1,2}),?\s+(\d{4})$/);
-        if(m3) { const mo=MONTH_MAP[m3[1].slice(0,3)]; if(mo) return `${m3[3]}-${String(mo).padStart(2,'0')}-${m3[2].padStart(2,'0')}`; }
-        return null;
-      };
-      // Si au moins une photo a une date (ISO ou texte parseable), on active tri + groupage
-      const hasDates = !isDeleted && rawList.some(p=>resolveISO(p));
+      // Si au moins une photo a une date réelle (dateISO, posée via le sélecteur de date en admin),
+      // on trie tout par date (plus récent en premier) et on insère des séparateurs par année.
+      // Sinon, on garde l'ordre manuel (drag & drop) exactement comme avant, pour ne rien casser
+      // pour les parties déjà en cours qui n'ont pas encore daté leurs photos.
+      const hasDates = !isDeleted && rawList.some(p=>p.dateISO);
       const list = hasDates
-        ? [...rawList].sort((a,b)=>(resolveISO(b)||"0000-00-00").localeCompare(resolveISO(a)||"0000-00-00"))
+        ? [...rawList].sort((a,b)=>(b.dateISO||"0000-00-00").localeCompare(a.dateISO||"0000-00-00"))
         : rawList;
       let lastYear = null;
       const onDrop_g = (toIdx) => {
@@ -6988,23 +6908,18 @@ const IOSPhone = ({data,admin,onUpdate,onUpdateShared=()=>{},loreDate:loreDatePr
           </div>}
           <div style={{flex:1,background:"#f2f2f7",overflowY:"auto"}}>
             {hasDates ? (
-              // Vue groupée par mois+année (lecture seule pour l'ordre — il suit les dates)
+              // Vue groupée par année (lecture seule pour l'ordre — il suit les dates)
               (()=>{
-                const MONTHS_EN_FULL = ["","January","February","March","April","May","June","July","August","September","October","November","December"];
                 const groups = [];
                 list.forEach(photo=>{
-                  const iso = resolveISO(photo);
-                  const monthKey = iso ? iso.slice(0,7) : "0000-00";
-                  const label = iso
-                    ? `${MONTHS_EN_FULL[parseInt(iso.slice(5,7))||0]||""} ${iso.slice(0,4)}`
-                    : "Sans date";
-                  if(!groups.length || groups[groups.length-1].key!==monthKey) groups.push({key:monthKey, label, photos:[]});
+                  const year = photo.dateISO ? photo.dateISO.slice(0,4) : "Sans date";
+                  if(!groups.length || groups[groups.length-1].year!==year) groups.push({year, photos:[]});
                   groups[groups.length-1].photos.push(photo);
                 });
                 return groups.map(g=>(
-                  <div key={g.key}>
-                    <div style={{padding:"10px 12px 4px",fontSize:14,fontWeight:700,color:"#3a3a3c",letterSpacing:-0.3}}>{g.label}</div>
-                    <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:2,padding:"0 0 8px"}}>
+                  <div key={g.year}>
+                    <div style={{padding:"8px 12px 4px",fontSize:13,fontWeight:700,color:"#3a3a3c"}}>{g.year}</div>
+                    <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:6,padding:"0 8px 8px"}}>
                       {g.photos.map(photo=>{
                         const i = list.indexOf(photo);
                         return (
@@ -7347,16 +7262,8 @@ const IOSPhone = ({data,admin,onUpdate,onUpdateShared=()=>{},loreDate:loreDatePr
   if(app==="safari"||app==="browser") return <Shell><IOSStatusBar/><NavBar title="Safari" back={goHome}/><BrowserScreen data={data} admin={admin} update={update} accent={accent} isIos={true} tab={browserTab} setTab={setBrowserTab}/></Shell>;
   if(app==="phone") return <Shell><IOSStatusBar/><PhoneScreen data={data} admin={admin} update={update} accent={accent} isIos={true} panel={phonePanel} setPanel={setPhonePanel}/></Shell>;
   if(app==="notes") return <Shell><IOSStatusBar/><NotesScreen data={data} admin={admin} update={update} accent={accent} isIos={true} noteOpen={noteOpen} setNoteOpen={setNoteOpen} goHome={goHome}/></Shell>;
-  if(app==="tumblr")    return <Shell><IOSStatusBar/><NavBar title="Tumblr" back={goHome}/><TumblrScreen data={data} admin={admin} update={update} accent={accent}/></Shell>;
-  if(app==="twitter") {
-    const sharedTwUsers = data.sharedThreads?._sharedTwitterUsers || {};
-    const localTwUsers  = data.twitterUsers || {};
-    // Merge key by key so local overrides don't wipe fields from shared (e.g. bannerImg)
-    const mergedTwUsers = {};
-    const allKeys = new Set([...Object.keys(sharedTwUsers), ...Object.keys(localTwUsers)]);
-    allKeys.forEach(k => { mergedTwUsers[k] = {...(sharedTwUsers[k]||{}), ...(localTwUsers[k]||{})}; });
-    return <Shell><IOSStatusBar/><TwitterScreen data={data} isIos={true} accent={accent} onBack={goHome} sharedTweets={data.sharedThreads?._sharedTweets||[]} onTweet={t=>onUpdateShared("_sharedTweets",[...(data.sharedThreads?._sharedTweets||[]),t])} twitterUsers={mergedTwUsers} homeBaseTweets={data.homeBaseTweets||[]}/></Shell>;
-  }
+  if(app==="tumblr")    return <Shell><IOSStatusBar/><NavBar title="Tumblr" back={goHome}/><TumblrScreen data={data} admin={admin} update={update} onUpdateShared={onUpdateShared} accent={accent}/></Shell>;
+  if(app==="twitter")   return <Shell><IOSStatusBar/><TwitterScreen data={data} isIos={true} accent={accent} onBack={goHome} sharedTweets={data.sharedThreads?._sharedTweets||[]} twitterUsers={{...(data.sharedThreads?._sharedTwitterUsers||{}),...(data.twitterUsers||{})}} homeBaseTweets={data.homeBaseTweets||[]}/></Shell>;
   if(app==="nikeplus")  return <Shell><IOSStatusBar/><NavBar title="Nike+" back={goHome}/><NikeplusScreen data={data} accent={accent}/></Shell>;
   if(app==="youtube")   return <Shell><IOSStatusBar/><YouTubeScreen isIos={true} charKey={charKey} data={data} onBack={goHome}/></Shell>;
   if(app==="reddit")     return <Shell><IOSStatusBar/><NavBar title="Reddit" back={goHome}/><RedditScreen data={data} isIos={true} accent={accent}/></Shell>;
@@ -7833,75 +7740,45 @@ const AndroidPhone = ({data,admin,onUpdate,sharedAndroidIcons={},onUpdateShared=
       <AppShell>
         <AndroidStatusBar notifApps={notifApps} accent={accent}/><ActionBar title="Camera Roll" back={()=>setGalleryView("albums")} overflow/>
         <div style={{flex:1,background:"#111",overflowY:"auto"}}>
-          <div style={{padding:"6px 10px 3px",color:"#555",fontSize:11}}>{activeGallery.length} photo{activeGallery.length!==1?"s":""}</div>
-          {(()=>{
-            const MONTHS_EN_FULL = ["","January","February","March","April","May","June","July","August","September","October","November","December"];
-            const MONTH_MAP_A = {jan:1,fév:2,feb:2,mar:3,avr:4,apr:4,mai:5,may:5,juin:6,jun:6,juil:7,jul:7,aoû:8,aug:8,sep:9,oct:10,nov:11,déc:12,dec:12};
-            const resolveISOa = (p) => {
-              if(p.dateISO) return p.dateISO;
-              if(!p.date) return null;
-              const s=p.date.toLowerCase().trim();
-              const m1=s.match(/^(\d{1,2})\s+([a-zé]+)\s+(\d{4})$/);
-              if(m1){const mo=MONTH_MAP_A[m1[2].slice(0,3)];if(mo)return `${m1[3]}-${String(mo).padStart(2,'0')}-${m1[1].padStart(2,'0')}`;}
-              const m2=s.match(/^([a-zé]+)\s+(\d{4})$/);
-              if(m2){const mo=MONTH_MAP_A[m2[1].slice(0,3)];if(mo)return `${m2[2]}-${String(mo).padStart(2,'0')}-01`;}
-              const m3=s.match(/^([a-zé]+)\s+(\d{1,2}),?\s+(\d{4})$/);
-              if(m3){const mo=MONTH_MAP_A[m3[1].slice(0,3)];if(mo)return `${m3[3]}-${String(mo).padStart(2,'0')}-${m3[2].padStart(2,'0')}`;}
-              return null;
-            };
-            const hasDates = activeGallery.some(p=>resolveISOa(p));
-            const sorted = hasDates
-              ? [...activeGallery].sort((a,b)=>(resolveISOa(b)||"0000-00-00").localeCompare(resolveISOa(a)||"0000-00-00"))
-              : activeGallery;
-            if(!hasDates) return (
-              <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:1}}>
-                {sorted.map((photo,i)=>(
-                  <div key={photo.id} style={{aspectRatio:"1",background:"#222",position:"relative",cursor:"pointer",overflow:"hidden"}}
-                    onClick={()=>{ if(admin){ setPhotoModal({type:"gallery",index:allGallery.indexOf(photo)}); } else { setPhotoDetail(i); } }}>
-                    {photo.src?<img src={photo.src} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:<span style={{color:"#444",fontSize:20}}>🏔️</span>}
-                    {admin&&<AdminBadge label="🗑" onClick={e=>{e.stopPropagation();update("gallery",allGallery.map(p=>p.id===photo.id?{...p,deleted:true}:p));}} color="#f44" style={{position:"absolute",top:2,right:2}}/>}
-                  </div>
-                ))}
-                {admin&&<label style={{aspectRatio:"1",background:"#1a1a1a",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",cursor:"pointer",color:"#ffc107",fontSize:22,border:"1px dashed #ffc107",gap:3}}>
-                  <span>+</span><span style={{fontSize:8,opacity:0.7}}>multi</span>
-                  <input type="file" accept="image/*" multiple style={{display:"none"}} onChange={e=>{const files=Array.from(e.target.files||[]);if(!files.length)return;let loaded=0;const np=[];files.forEach((f,fi)=>{const r=new UploadReader();r.onload=ev=>{np.push({id:Date.now()+fi,src:ev.target.result,date:"Oct 2012"});loaded++;if(loaded===files.length)update("gallery",[...activeGallery,...deletedGallery,...np]);};r.readAsDataURL(f);});e.target.value="";}}/>
-                </label>}
+          <div style={{padding:"6px 10px 3px",color:"#555",fontSize:11}}>{activeGallery.length} photo{activeGallery.length!==1?"s":""}{admin&&<span style={{color:"#ffc10788",marginLeft:6}}>· drag to reorder</span>}</div>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:1}}>
+            {activeGallery.map((photo,i)=>{
+              const onDragStart_g=()=>{window.__galleryDrag=i;};
+              const onDragOver_g=(e)=>{e.preventDefault();window.__galleryOver=i;};
+              const onDrop_g=()=>{
+                const from=window.__galleryDrag, to=window.__galleryOver;
+                if(from===undefined||from===to) return;
+                const reorderable=[...activeGallery];
+                const [moved]=reorderable.splice(from,1);
+                reorderable.splice(to,0,moved);
+                update("gallery",[...reorderable,...deletedGallery]);
+                window.__galleryDrag=undefined; window.__galleryOver=undefined;
+              };
+              return (
+              <div key={photo.id}
+                draggable={admin}
+                onDragStart={onDragStart_g}
+                onDragOver={onDragOver_g}
+                onDrop={onDrop_g}
+                style={{aspectRatio:"1",background:"#222",display:"flex",alignItems:"center",justifyContent:"center",position:"relative",cursor:admin?"grab":"pointer"}}
+                onClick={()=>{ if(admin){ setPhotoModal({type:"gallery",index:allGallery.indexOf(photo)}); } else { setPhotoDetail(i); } }}>
+                {photo.src?<img src={photo.src} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:<span style={{color:"#444",fontSize:20}}>🏔️</span>}
+                {admin&&<AdminBadge label="🗑" onClick={e=>{e.stopPropagation();update("gallery",allGallery.map(p=>p.id===photo.id?{...p,deleted:true}:p));}} color="#f44" style={{position:"absolute",top:2,right:2}}/>}
               </div>
-            );
-            // Groupage par mois+année
-            const groups = [];
-            sorted.forEach(photo=>{
-              const iso = resolveISOa(photo);
-              const monthKey = iso ? iso.slice(0,7) : "0000-00";
-              const label = iso
-                ? `${MONTHS_EN_FULL[parseInt(iso.slice(5,7))||0]||""} ${iso.slice(0,4)}`
-                : "Sans date";
-              if(!groups.length || groups[groups.length-1].key!==monthKey) groups.push({key:monthKey, label, photos:[]});
-              groups[groups.length-1].photos.push(photo);
-            });
-            return (<>
-              {groups.map(g=>(
-                <div key={g.key}>
-                  <div style={{padding:"10px 12px 5px",fontSize:13,fontWeight:700,color:"#aaa",letterSpacing:-0.2}}>{g.label}</div>
-                  <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:1}}>
-                    {g.photos.map((photo,i)=>{
-                      const globalIdx = sorted.indexOf(photo);
-                      return (
-                      <div key={photo.id} style={{aspectRatio:"1",background:"#222",position:"relative",cursor:"pointer",overflow:"hidden"}}
-                        onClick={()=>{ if(admin){ setPhotoModal({type:"gallery",index:allGallery.indexOf(photo)}); } else { setPhotoDetail(globalIdx); } }}>
-                        {photo.src?<img src={photo.src} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:<span style={{color:"#444",fontSize:20}}>🏔️</span>}
-                        {admin&&<AdminBadge label="🗑" onClick={e=>{e.stopPropagation();update("gallery",allGallery.map(p=>p.id===photo.id?{...p,deleted:true}:p));}} color="#f44" style={{position:"absolute",top:2,right:2}}/>}
-                      </div>
-                    );})}
-                  </div>
-                </div>
-              ))}
-              {admin&&<label style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",cursor:"pointer",color:"#ffc107",fontSize:22,border:"1px dashed #ffc107",gap:3,padding:16,margin:"8px 10px",borderRadius:8}}>
-                <span>+</span><span style={{fontSize:10,opacity:0.7}}>Ajouter des photos</span>
-                <input type="file" accept="image/*" multiple style={{display:"none"}} onChange={e=>{const files=Array.from(e.target.files||[]);if(!files.length)return;let loaded=0;const np=[];files.forEach((f,fi)=>{const r=new UploadReader();r.onload=ev=>{np.push({id:Date.now()+fi,src:ev.target.result,date:"Oct 2012"});loaded++;if(loaded===files.length)update("gallery",[...activeGallery,...deletedGallery,...np]);};r.readAsDataURL(f);});e.target.value="";}}/>
-              </label>}
-            </>);
-          })()}
+            );})}
+            {admin&&<label style={{aspectRatio:"1",background:"#1a1a1a",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",cursor:"pointer",color:"#ffc107",fontSize:22,border:"1px dashed #ffc107",gap:3}}>
+              <span style={{lineHeight:1}}>+</span>
+              <span style={{fontSize:8,opacity:0.7,fontFamily:FF_IOS}}>multi</span>
+              <input type="file" accept="image/*" multiple style={{display:"none"}} onChange={e=>{
+                const files=Array.from(e.target.files||[]);
+                if(!files.length) return;
+                let loaded=0;
+                const newPhotos=[];
+                files.forEach((f,fi)=>{const r=new UploadReader();r.onload=ev=>{newPhotos.push({id:Date.now()+fi,src:ev.target.result,date:"Oct 2012"});loaded++;if(loaded===files.length)update("gallery",[...activeGallery.filter(p=>p.src),...deletedGallery,...newPhotos]);};r.readAsDataURL(f);});
+                e.target.value="";
+              }}/>
+            </label>}
+          </div>
         </div>
       </AppShell>
     );
@@ -8051,15 +7928,7 @@ const AndroidPhone = ({data,admin,onUpdate,sharedAndroidIcons={},onUpdateShared=
   if(app==="kindle")    return <AppShell><AndroidStatusBar notifApps={notifApps} accent={accent}/><ActionBar title="Kindle" back={goHome}/><KindleScreen isIos={false} accent={accent} data={data}/></AppShell>;
   if(app==="inaturalist")return <AppShell><AndroidStatusBar notifApps={notifApps} accent={accent}/><ActionBar title="iNaturalist" back={goHome}/><INaturalistScreen data={data} isIos={false} accent={accent}/></AppShell>;
   if(app==="soundhound")return <AppShell><AndroidStatusBar notifApps={notifApps} accent={accent}/><ActionBar title="SoundHound" back={goHome}/><SoundHoundScreen isIos={false} accent={accent}/></AppShell>;
-  if(app==="reddit")    return <AppShell><AndroidStatusBar notifApps={notifApps} accent={accent}/><ActionBar title="Reddit" back={goHome}/><RedditScreen data={data} isIos={false} accent={accent}/></AppShell>;
-  if(app==="twitter") {
-    const sharedTwUsers = data.sharedThreads?._sharedTwitterUsers || {};
-    const localTwUsers  = data.twitterUsers || {};
-    const mergedTwUsers = {};
-    const allKeys = new Set([...Object.keys(sharedTwUsers), ...Object.keys(localTwUsers)]);
-    allKeys.forEach(k => { mergedTwUsers[k] = {...(sharedTwUsers[k]||{}), ...(localTwUsers[k]||{})}; });
-    return <AppShell><AndroidStatusBar notifApps={notifApps} accent={accent}/><TwitterScreen data={data} isIos={false} accent={accent} onBack={goHome} sharedTweets={data.sharedThreads?._sharedTweets||[]} onTweet={t=>onUpdateSharedThread("_sharedTweets",[...(data.sharedThreads?._sharedTweets||[]),t])} twitterUsers={mergedTwUsers} homeBaseTweets={data.homeBaseTweets||[]}/></AppShell>;
-  }
+  if(app==="reddit")    return <AppShell><AndroidStatusBar notifApps={notifApps} accent={accent}/><ActionBar title="Reddit" back={goHome}/><RedditScreen data={data} isIos={false} accent={accent}/></AppShell>;  if(app==="twitter")   return <AppShell><AndroidStatusBar notifApps={notifApps} accent={accent}/><TwitterScreen data={data} isIos={false} accent={accent} onBack={goHome} sharedTweets={data.sharedThreads?._sharedTweets||[]} twitterUsers={{...(data.sharedThreads?._sharedTwitterUsers||{}),...(data.twitterUsers||{})}} homeBaseTweets={data.homeBaseTweets||[]}/></AppShell>;
   if(app==="vpn")       return <AppShell><AndroidStatusBar notifApps={notifApps} accent={accent}/><ActionBar title="VPN" back={goHome}/><VPNScreen isIos={false} accent={accent}/></AppShell>;
   if(app==="contacts")  return <AppShell><AndroidStatusBar notifApps={notifApps} accent={accent}/><ActionBar title="Contacts" back={goHome}/><ContactsScreen data={data} isIos={false} accent={accent}/></AppShell>;
   if(app==="clock")     return <AppShell><AndroidStatusBar notifApps={notifApps} accent={accent}/><ActionBar title="Clock" back={goHome}/><ClockScreen isIos={false} accent={accent}/></AppShell>;
@@ -9557,7 +9426,6 @@ const mkData = () => ({
       "weather",
       "settings",
       "facetime",
-      "contacts",
       "camera",
       "compass",
       "passbook",
@@ -11961,7 +11829,6 @@ const mkData = () => ({
       "weather",
       "settings",
       "facetime",
-      "contacts",
       "camera",
       "compass",
       "passbook",
@@ -13910,7 +13777,6 @@ const mkData = () => ({
       "weather",
       "settings",
       "youtube",
-      "contacts",
       "camera",
       "messenger",
       "wordswfriends",
@@ -16389,7 +16255,6 @@ const mkData = () => ({
       "settings",
       "wikipedia",
       "vpn",
-      "contacts",
       "camera",
       "facetime",
       "snapchat",
@@ -18663,7 +18528,11 @@ const CHARACTERS = [
 const LORE_MONTHS_FR = ['','jan','fév','mar','avr','mai','juin','juil','aoû','sep','oct','nov','déc'];
 const LoreDateTimeInput = ({value, onChange, width="100%", showLabel=true}) => {
   const parsed = parseLoreTime(value);
-  const dateVal = parsed?.day ? `2012-${String(parsed.month).padStart(2,'0')}-${String(parsed.day).padStart(2,'0')}` : '';
+  // Si aucune date n'est encore posée, on pré-remplit avec la date de lore par défaut (oct. 2012)
+  // plutôt que de laisser le champ vide : un <input type="date"> vide ouvre son calendrier sur la
+  // date du jour RÉELLE (ex: 2026), hors de la plage min/max (2012) — certains navigateurs gèrent
+  // mal ce cas et referment le calendrier avant qu'on ait pu choisir un jour.
+  const dateVal = parsed?.day ? `2012-${String(parsed.month).padStart(2,'0')}-${String(parsed.day).padStart(2,'0')}` : LORE_DATE_DEFAULT;
   const timeVal = (parsed && parsed.hour!=null) ? `${String(parsed.hour).padStart(2,'0')}:${String(parsed.min).padStart(2,'0')}` : '';
   const build = (d, t) => {
     if(!d) return value||'';
@@ -18681,33 +18550,25 @@ const LoreDateTimeInput = ({value, onChange, width="100%", showLabel=true}) => {
     <div style={{display:"flex",flexDirection:"column",gap:5,width}}>
       {showLabel && <label style={{color:"#9ca3af",fontSize:10,letterSpacing:0.8,textTransform:"uppercase",fontWeight:600}}>Date / heure</label>}
       <div style={{display:"flex",gap:4,flexWrap:"wrap"}}>
-        <div style={{display:"flex",flexDirection:"column",gap:2,flex:"1 1 120px",minWidth:0}}>
-          {!showLabel && <span style={{color:"#c4c9d4",fontSize:9,letterSpacing:0.5,textTransform:"uppercase",fontWeight:600}}>Date</span>}
-          <input type="date" value={dateVal} min="2012-01-01" max="2012-12-31"
-            placeholder="jj/mm/aaaa"
-            onChange={e=>onChange(build(e.target.value, timeVal))}
-            className="adm-input" style={{flex:1,minWidth:0,background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:dateVal?"#1a1a2e":"#9ca3af",padding:"7px 8px",fontSize:11,borderRadius:7}}/>
-        </div>
-        <div style={{display:"flex",flexDirection:"column",gap:2,flex:"1 1 90px",minWidth:0}}>
-          {!showLabel && <span style={{color:"#c4c9d4",fontSize:9,letterSpacing:0.5,textTransform:"uppercase",fontWeight:600}}>Heure</span>}
-          <input type="time" value={timeVal}
-            placeholder="hh:mm"
-            onChange={e=>onChange(build(dateVal, e.target.value))}
-            className="adm-input" style={{flex:1,minWidth:0,background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:timeVal?"#1a1a2e":"#9ca3af",padding:"7px 8px",fontSize:11,borderRadius:7}}/>
-        </div>
+        <input type="date" value={dateVal} min="2012-01-01" max="2012-12-31"
+          onChange={e=>onChange(build(e.target.value, timeVal))}
+          className="adm-input" style={{flex:"1 1 120px",minWidth:0,background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#1a1a2e",padding:"7px 8px",fontSize:11,borderRadius:7}}/>
+        <input type="time" value={timeVal}
+          onChange={e=>onChange(build(dateVal, e.target.value))}
+          className="adm-input" style={{flex:"1 1 90px",minWidth:0,background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#1a1a2e",padding:"7px 8px",fontSize:11,borderRadius:7}}/>
       </div>
     </div>
   );
 };
 
-const Field = ({label, value, onChange, textarea=false, width="100%", readOnly=false}) => (
+const Field = ({label, value, onChange, textarea=false, width="100%"}) => (
   <div style={{display:"flex",flexDirection:"column",gap:5,width}}>
     <label style={{color:"#9ca3af",fontSize:10,letterSpacing:0.8,textTransform:"uppercase",fontWeight:600}}>{label}</label>
     {textarea
-      ?<textarea value={value||""} onChange={e=>onChange&&onChange(e.target.value)} rows={4} readOnly={readOnly} className="adm-input"
-          style={{background:readOnly?"rgba(0,0,0,0.03)":"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:readOnly?"#9ca3af":"#1a1a2e",padding:"8px 12px",fontSize:12,borderRadius:8,resize:"vertical",fontFamily:"inherit",boxShadow:"0 1px 2px rgba(0,0,0,0.04)",cursor:readOnly?"not-allowed":"text"}}/>
-      :<input value={value||""} onChange={e=>onChange&&onChange(e.target.value)} readOnly={readOnly} className="adm-input"
-          style={{background:readOnly?"rgba(0,0,0,0.03)":"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:readOnly?"#9ca3af":"#1a1a2e",padding:"8px 12px",fontSize:12,borderRadius:8,width,boxShadow:"0 1px 2px rgba(0,0,0,0.04)",cursor:readOnly?"not-allowed":"text"}}/>
+      ?<textarea value={value||""} onChange={e=>onChange(e.target.value)} rows={4} className="adm-input"
+          style={{background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#1a1a2e",padding:"8px 12px",fontSize:12,borderRadius:8,resize:"vertical",fontFamily:"inherit",boxShadow:"0 1px 2px rgba(0,0,0,0.04)"}}/>
+      :<input value={value||""} onChange={e=>onChange(e.target.value)} className="adm-input"
+          style={{background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#1a1a2e",padding:"8px 12px",fontSize:12,borderRadius:8,width,boxShadow:"0 1px 2px rgba(0,0,0,0.04)"}}/>
     }
   </div>
 );
@@ -18824,10 +18685,13 @@ const APP_SECTIONS = {
 };
 
 // L'app "Téléphone" du portable couvre en réalité 3 sections admin distinctes (Appels, Contacts,
-// Messages vocaux). Elles sont maintenant fusionnées en un seul admin "📞 Téléphone" avec sous-onglets.
+// Messages vocaux). Toutes les autres apps sont 1-pour-1 (id d'app = clé de section), donc on
+// centralise ce cas particulier ici plutôt que de le dupliquer partout où on construit la nav.
 const expandAppSections = (id) => {
   if(id==="phone") return [
-    {key:"phone", icon:"📞", label:"Téléphone"},
+    {key:"calls",     ...APP_SECTIONS.calls},
+    {key:"contacts",  ...APP_SECTIONS.contacts},
+    {key:"voicemail", ...APP_SECTIONS.voicemail},
   ];
   const key = id==="photos" ? "gallery" : id==="gmail" ? "mail" : id==="safari" ? "browser" : id;
   return APP_SECTIONS[key] ? [{key, ...APP_SECTIONS[key]}] : [];
@@ -18846,6 +18710,12 @@ const firstAppSectionKey = (charData) => {
 
 const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDate, onLoreDateChange}) => {
   const [tab, setTab]         = useState("glinda");
+  // Toujours à jour, contrairement à `data`/`d` qui sont figés dans la closure du render en cours.
+  // Indispensable pour les callbacks asynchrones (upload d'image) : par le temps que l'upload
+  // termine, `data` a pu changer (autre champ modifié, sync Firebase...) — lire dataRef.current
+  // au moment d'écrire évite d'écraser ces changements avec une version périmée.
+  const dataRef = useRef(data);
+  useEffect(()=>{ dataRef.current = data; }, [data]);
   const [section, setSection] = useState(()=>firstAppSectionKey(data?.glinda));
   const [saved, setSaved]     = useState(false);
   const [cropSrc, setCropSrc] = useState(null);
@@ -18858,8 +18728,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
   const [grindrOpenDms, setGrindrOpenDms] = useState(new Set());
   const toggleGrindrDm = (id) => setGrindrOpenDms(prev => { const n=new Set(prev); n.has(id)?n.delete(id):n.add(id); return n; });
   const [msgAdminTab, setMsgAdminTab] = useState("inbox"); // "inbox" | "deleted"
-  const [twTab, setTwTab] = useState("users"); // "users" | "timeline" | "mytweets"
-  const [phoneAdmTab, setPhoneAdmTab] = useState("calls"); // "calls" | "contacts" | "voicemail"
+  const [twTab, setTwTab] = useState("users"); // "users" | "tweets"
   const [grindrTab, setGrindrTab] = useState("grid"); // "grid" | "dms" | "profile"
   const [galSection, setGalSection] = useState("roll"); // "roll" | "deleted" | "albums"
   const [calCollapsedSet, setCalCollapsedSet] = useState(new Set()); // togglable day groups
@@ -18879,6 +18748,11 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
     return () => { ro.disconnect(); window.removeEventListener("resize", check); };
   }, []);
 
+
+  const [itunesMusicQuery, setItunesMusicQuery] = useState("");
+  const [itunesResults, setItunesResults] = useState([]);
+  const [itunesSearching, setItunesSearching] = useState(false);
+  const itunesSearchRef = React.useRef(false);
 
   const char = CHARACTERS.find(c=>c.key===tab);
   const d    = data[tab];
@@ -19244,8 +19118,8 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                 return (
                   <div key={gid||gMsg.id} style={{background:"#fff",borderRadius:8,border:"1px solid rgba(0,0,0,0.07)",overflow:"hidden"}}>
                     {/* ── Header toggle ── */}
-                    <div onClick={()=>toggleConv(gKey)} style={{display:"flex",gap:8,alignItems:"center",padding:"10px 12px",cursor:"pointer",userSelect:"none",minHeight:48}}>
-                      <span style={{fontSize:18,transition:"transform 0.15s",display:"flex",alignItems:"center",justifyContent:"center",width:28,height:28,flexShrink:0,borderRadius:6,background:"rgba(0,0,0,0.04)",color:"#6366f1",fontWeight:700,transform:gOpen?"rotate(90deg)":"rotate(0deg)"}}>›</span>
+                    <div onClick={()=>toggleConv(gKey)} style={{display:"flex",gap:8,alignItems:"center",padding:"10px 12px",cursor:"pointer",userSelect:"none"}}>
+                      <span style={{fontSize:13,transition:"transform 0.15s",display:"inline-block",transform:gOpen?"rotate(90deg)":"rotate(0deg)",color:"#9ca3af"}}>›</span>
                       <span style={{fontSize:13}}>👥</span>
                       {isSharedGroup ? (
                         <input value={meta.name||""} onChange={e=>{
@@ -19438,7 +19312,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
           return (
           <div key={cKey} className="adm-card" style={{background:"rgba(255,255,255,0.85)",borderRadius:12,border:"1px solid rgba(0,0,0,0.07)",boxShadow:"0 2px 8px rgba(0,0,0,0.04)",overflow:"hidden"}}>
             {/* ── Header toggle ── */}
-            <div style={{display:"flex",gap:8,alignItems:"center",padding:"10px 14px",cursor:"pointer",userSelect:"none",minHeight:48}}
+            <div style={{display:"flex",gap:8,alignItems:"center",padding:"10px 14px",cursor:"pointer",userSelect:"none"}}
               onClick={()=>toggleConv(cKey)}>
               {/* Reorder arrows */}
               <div style={{display:"flex",flexDirection:"column",gap:2,flexShrink:0}} onClick={e=>e.stopPropagation()}>
@@ -19451,31 +19325,15 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                   if(ni===all.length-1)return;[all[ni+1],all[ni]]=[all[ni],all[ni+1]];upd("messages",all);
                 }} style={{background:"none",border:"1px solid rgba(0,0,0,0.1)",borderRadius:4,width:18,height:18,cursor:"pointer",color:"#6366f1",fontSize:10,display:"flex",alignItems:"center",justifyContent:"center",padding:0}}><svg width="8" height="8" viewBox="0 0 10 10" fill="currentColor"><path d="M5 9L1 1H9z"/></svg></button>
               </div>
-              <span style={{fontSize:18,transition:"transform 0.15s",display:"flex",alignItems:"center",justifyContent:"center",width:28,height:28,flexShrink:0,borderRadius:6,background:"rgba(0,0,0,0.04)",color:"#6366f1",fontWeight:700,transform:cOpen?"rotate(90deg)":"rotate(0deg)"}}>›</span>
-              {/* Contact name — dropdown sur les contacts du perso, stop propagation */}
-              {(()=>{
-                const contactNames = (d.contacts||[]).map(c=>c.name).filter(Boolean);
-                const val = msg.contact || "";
-                return (
-                  <select value={val} onClick={e=>e.stopPropagation()}
-                    onChange={e=>{e.stopPropagation();const m=[...d.messages];const ni=m.indexOf(msg);m[ni]={...m[ni],contact:e.target.value};upd("messages",m);}}
-                    className="adm-input" style={{flex:1,background:"transparent",border:"none",borderBottom:"1px solid rgba(0,0,0,0.08)",color:"#1a1a2e",padding:"2px 0",fontSize:13,fontWeight:600,outline:"none",minWidth:0,cursor:"pointer"}}>
-                    <option value="">— Contact —</option>
-                    {contactNames.map(n=><option key={n} value={n}>{n}</option>)}
-                    {val && !contactNames.includes(val) && <option value={val}>{val} (libre)</option>}
-                  </select>
-                );
-              })()}
+              <span style={{fontSize:12,transition:"transform 0.15s",display:"inline-block",transform:cOpen?"rotate(90deg)":"rotate(0deg)",color:"#9ca3af",flexShrink:0}}>›</span>
+              {/* Contact name — editable inline, stop propagation so click doesn't toggle */}
+              <input value={msg.contact} onClick={e=>e.stopPropagation()}
+                onChange={v=>{const m=[...d.messages];const ni=m.indexOf(msg);m[ni]={...m[ni],contact:v.target.value};upd("messages",m);}}
+                className="adm-input" style={{flex:1,background:"transparent",border:"none",color:"#1a1a2e",padding:"2px 0",fontSize:13,fontWeight:600,outline:"none",minWidth:0}}/>
+              {!cOpen && preview && (
+                <span style={{fontSize:11,color:"#9ca3af",flex:2,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",minWidth:0}}>{preview}</span>
+              )}
               <span style={{fontSize:10,color:"#9ca3af",flexShrink:0,whiteSpace:"nowrap"}}>{threadLen} msg</span>
-              {/* Lu / Non-lu */}
-              <button onClick={e=>{e.stopPropagation();upd("messages",d.messages.map(m=>m===msg?{...m,unread:!m.unread}:m));}}
-                title={msg.unread?"Marquer comme lu":"Marquer comme non-lu"}
-                style={{
-                  background:msg.unread?"rgba(0,122,255,0.1)":"rgba(0,0,0,0.04)",
-                  border:`1px solid ${msg.unread?"rgba(0,122,255,0.35)":"rgba(0,0,0,0.12)"}`,
-                  color:msg.unread?"#007aff":"#9ca3af",
-                  borderRadius:6,padding:"3px 7px",cursor:"pointer",fontSize:11,flexShrink:0,lineHeight:1,whiteSpace:"nowrap",
-                }}>{msg.unread?"● NL":"○ Lu"}</button>
               {/* Move between inbox / deleted */}
               <button onClick={e=>{e.stopPropagation();toggleDeleted(msg);}}
                 title={msg.deleted ? "Restaurer dans la boîte de réception" : "Déplacer vers Supprimés récemment"}
@@ -19509,6 +19367,23 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
               const updMsg = (newThread) => upd("messages", d.messages.map(mm=>mm===msg?{...mm,thread:newThread}:mm));
               return rawThread.map((msg2,mi)=>(
               <div key={mi} style={{display:"flex",gap:8,marginBottom:6,alignItems:"center",flexWrap:"wrap"}}>
+                <label style={{width:34,height:34,borderRadius:7,overflow:"hidden",flexShrink:0,background:"rgba(99,102,241,0.08)",border:"1px dashed rgba(99,102,241,0.3)",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",position:"relative"}}>
+                  {msg2.img
+                    ? <img src={msg2.img} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+                    : <span style={{fontSize:14,color:"#6366f1"}}>📷</span>}
+                  <input type="file" accept="image/*" style={{display:"none"}} onChange={e=>{
+                    const f=e.target.files?.[0]; if(!f) return;
+                    const r=new UploadReader(); r.onload=ev=>{
+                      if(isShared){const cur=[...(data.sharedThreads?.[msg.sharedThreadId]||[])];cur[mi]={...cur[mi],img:ev.target.result};onUpdate(msg.sharedThreadId,cur);}
+                      else{const t=[...rawThread];t[mi]={...t[mi],img:ev.target.result};updMsg(t);}
+                    };
+                    r.readAsDataURL(f); e.target.value="";
+                  }}/>
+                </label>
+                {msg2.img && <button onClick={()=>{
+                  if(isShared){const cur=[...(data.sharedThreads?.[msg.sharedThreadId]||[])];cur[mi]={...cur[mi],img:null};onUpdate(msg.sharedThreadId,cur);}
+                  else{const t=[...rawThread];t[mi]={...t[mi],img:null};updMsg(t);}
+                }} title="Retirer l'image" style={{background:"none",border:"none",color:"#ef4444",cursor:"pointer",fontSize:13,padding:"0 2px",flexShrink:0}}>✕</button>}
                 <select value={msg2.from} onChange={e=>{
                   if(isShared){
                     const myL=msg.perspective||'a';const otherL=myL==='a'?'b':'a';
@@ -19564,145 +19439,129 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
       );
     }
 
-    case "calls":
-    case "contacts":
-    case "voicemail":
-    case "phone": {
-      // Sous-onglets Phone fusionnés
-      return (
-        <div style={{display:"flex",flexDirection:"column",gap:12}}>
-          {/* Sub-tab bar */}
-          <div className="adm-subtabs" style={{display:"flex",gap:0,background:"rgba(0,0,0,0.05)",borderRadius:8,padding:2,alignSelf:"flex-start"}}>
-            {[["calls","📞 Appels"],["contacts","👥 Contacts"],["voicemail","📼 Vocaux"]].map(([k,label])=>(
-              <button key={k} onClick={()=>setPhoneAdmTab(k)} style={{
-                padding:"6px 14px",border:"none",borderRadius:6,cursor:"pointer",fontSize:11,
-                fontWeight:phoneAdmTab===k?700:400,
-                background:phoneAdmTab===k?"#fff":"transparent",
-                color:phoneAdmTab===k?"#34c759":"#6b7280",
-                boxShadow:phoneAdmTab===k?"0 1px 3px rgba(0,0,0,0.1)":"none",
-                transition:"all 0.15s",
-              }}>{label}</button>
-            ))}
+    case "calls": return (
+      <div style={{display:"flex",flexDirection:"column",gap:8}}>
+        {(d.calls||[]).map((call,i)=>(
+          <div key={call.id} className="adm-card" style={{display:"flex",gap:8,alignItems:"center",background:"rgba(255,255,255,0.85)",padding:10,borderRadius:10,border:"1px solid rgba(0,0,0,0.07)",flexWrap:"wrap"}}>
+            <input value={call.contact} onChange={e=>{const c=[...d.calls];c[i]={...c[i],contact:e.target.value};upd("calls",c);}}
+              placeholder="Contact" className="adm-input" style={{flex:1,background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#1a1a2e",padding:"7px 10px",fontSize:12,borderRadius:7}}/>
+            <select value={call.type} onChange={e=>{const c=[...d.calls];c[i]={...c[i],type:e.target.value};upd("calls",c);}}
+              className="adm-input" style={{background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#374151",padding:"7px 8px",fontSize:11,borderRadius:7}}>
+              <option value="incoming">incoming</option><option value="outgoing">outgoing</option><option value="missed">missed (entrant)</option><option value="outgoing_missed">outgoing sans réponse</option>
+            </select>
+            <LoreDateTimeInput value={call.time} onChange={v=>{const c=[...d.calls];c[i]={...c[i],time:v};upd("calls",c);}} width="190px" showLabel={false}/>
+            <input value={call.duration||""} onChange={e=>{const c=[...d.calls];c[i]={...c[i],duration:e.target.value||null};upd("calls",c);}}
+              placeholder="Duration" className="adm-input" style={{width:90,background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#6b7280",padding:"7px 8px",fontSize:11,borderRadius:7}}/>
+            <button onClick={()=>upd("calls",d.calls.filter((_,j)=>j!==i))}
+              className="adm-del-btn" style={{background:"none",border:"none",color:"#d1d5db",cursor:"pointer",fontSize:16,padding:"2px 6px",borderRadius:5,transition:"all 0.15s"}}>×</button>
           </div>
+        ))}
+        <button onClick={()=>upd("calls",[{id:Date.now(),contact:"",type:"outgoing",time:"1 oct",duration:null},...(d.calls||[])])}
+          style={{background:"rgba(99,102,241,0.08)",border:"1px dashed rgba(99,102,241,0.4)",color:"#6366f1",borderRadius:8,padding:"10px 18px",cursor:"pointer",fontSize:12,fontWeight:600}}>+ Call</button>
+      </div>
+    );
 
-          {/* ── APPELS ── */}
-          {phoneAdmTab==="calls" && (()=>{
-            const contactNames = (d.contacts||[]).map(c=>c.name).filter(Boolean);
-            const ContactSelect = ({value, onChange}) => (
-              <select value={value} onChange={e=>onChange(e.target.value)}
-                className="adm-input" style={{flex:1,background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:value?"#1a1a2e":"#9ca3af",padding:"7px 10px",fontSize:12,borderRadius:7}}>
-                <option value="">— Contact —</option>
-                {contactNames.map(n=><option key={n} value={n}>{n}</option>)}
-                {value && !contactNames.includes(value) && <option value={value}>{value} (libre)</option>}
-              </select>
-            );
-            return (<>
-              {(d.calls||[]).map((call,i)=>(
-                <div key={call.id} className="adm-card" style={{display:"flex",gap:8,alignItems:"center",background:"rgba(255,255,255,0.85)",padding:10,borderRadius:10,border:"1px solid rgba(0,0,0,0.07)",flexWrap:"wrap"}}>
-                  <ContactSelect value={call.contact} onChange={v=>{const c=[...d.calls];c[i]={...c[i],contact:v};upd("calls",c);}}/>
-                  <select value={call.type} onChange={e=>{const c=[...d.calls];c[i]={...c[i],type:e.target.value};upd("calls",c);}}
-                    className="adm-input" style={{background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#374151",padding:"7px 8px",fontSize:11,borderRadius:7}}>
-                    <option value="incoming">incoming</option><option value="outgoing">outgoing</option><option value="missed">missed</option>
-                  </select>
-                  <LoreDateTimeInput value={call.time} onChange={v=>{const c=[...d.calls];c[i]={...c[i],time:v};upd("calls",c);}} width="190px" showLabel={false}/>
-                  <input value={call.duration||""} onChange={e=>{const c=[...d.calls];c[i]={...c[i],duration:e.target.value||null};upd("calls",c);}}
-                    placeholder="Durée" className="adm-input" style={{width:90,background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#6b7280",padding:"7px 8px",fontSize:11,borderRadius:7}}/>
-                  <button onClick={()=>upd("calls",d.calls.filter((_,j)=>j!==i))}
-                    className="adm-del-btn" style={{background:"none",border:"none",color:"#d1d5db",cursor:"pointer",fontSize:16,padding:"2px 6px",borderRadius:5,transition:"all 0.15s"}}>×</button>
-                </div>
-              ))}
-              <button onClick={()=>upd("calls",[{id:Date.now(),contact:"",type:"outgoing",time:"1 oct",duration:null},...(d.calls||[])])}
-                style={{background:"rgba(52,199,89,0.08)",border:"1px dashed rgba(52,199,89,0.4)",color:"#34c759",borderRadius:8,padding:"10px 18px",cursor:"pointer",fontSize:12,fontWeight:600}}>+ Appel</button>
-            </>);
-          })()}
-
-          {/* ── CONTACTS ── */}
-          {phoneAdmTab==="contacts" && (()=>{
-            const contacts = d.contacts || [];
-            const updContact = (id, field, val) => {
-              const idx = contacts.findIndex(c=>c.id===id);
-              if(idx<0) return;
-              const oldName = contacts[idx].name;
-              const newContacts = contacts.map(c=>c.id===id?{...c,[field]:val}:c);
-              if(field==="name" && oldName && oldName!==val){
-                const newCalls = (d.calls||[]).map(c=>c.contact===oldName?{...c,contact:val}:c);
-                const newMessages = (d.messages||[]).map(m=>(!m.isGroup && m.contact===oldName)?{...m,contact:val}:m);
-                onUpdate(tab, {...d, contacts:newContacts, calls:newCalls, messages:newMessages});
-              } else {
-                onUpdate(tab, {...d, contacts:newContacts});
-              }
-            };
-            const addContact = () => onUpdate(tab, {...d, contacts:[{id:Date.now(), name:"Nouveau contact", phone:"", photo:null}, ...(contacts)]}); 
-            const deleteContact = (id) => onUpdate(tab, {...d, contacts:contacts.filter(c=>c.id!==id)});
-            return (<>
-              <div style={{fontSize:11,color:"#6b7280",lineHeight:1.5}}>
-                Renommer un contact ici met aussi à jour son nom dans les Appels et les Messages.
+    case "contacts": {
+      // Renomme un contact partout où son nom est référencé (appels + messages 1-à-1, pas les groupes)
+      // pour que les deux écrans restent synchronisés sans devoir tout refaire en sous-main.
+      const updContact = (id, field, val) => {
+        const contacts = d.contacts||[];
+        const idx = contacts.findIndex(c=>c.id===id);
+        if(idx<0) return;
+        const oldName = contacts[idx].name;
+        const newContacts = contacts.map(c=>c.id===id?{...c,[field]:val}:c);
+        if(field==="name" && oldName && oldName!==val){
+          const newCalls = (d.calls||[]).map(c=>c.contact===oldName?{...c,contact:val}:c);
+          const newMessages = (d.messages||[]).map(m=>(!m.isGroup && m.contact===oldName)?{...m,contact:val}:m);
+          onUpdate(tab, {...d, contacts:newContacts, calls:newCalls, messages:newMessages});
+        } else {
+          onUpdate(tab, {...d, contacts:newContacts});
+        }
+      };
+      const addContact = () => onUpdate(tab, {...d, contacts:[{id:Date.now(), name:"Nouveau contact", phone:"", photo:null}, ...(d.contacts||[])]});
+      const deleteContact = (id) => onUpdate(tab, {...d, contacts:(d.contacts||[]).filter(c=>c.id!==id)});
+      const seedContacts = () => {
+        const names = new Set();
+        (d.calls||[]).forEach(c=>c.contact && names.add(c.contact));
+        (d.messages||[]).forEach(m=>!m.isGroup && m.contact && names.add(m.contact));
+        const existing = new Set((d.contacts||[]).map(c=>c.name));
+        const toAdd = [...names].filter(n=>!existing.has(n)).map((n,i)=>({id:Date.now()+i, name:n, phone:"", photo:null}));
+        if(toAdd.length===0){ alert("Aucun nouveau contact à importer — tout est déjà dans la liste."); return; }
+        onUpdate(tab, {...d, contacts:[...(d.contacts||[]), ...toAdd]});
+      };
+      return (
+        <div style={{display:"flex",flexDirection:"column",gap:8}}>
+          <div style={{fontSize:11,color:"#6b7280",lineHeight:1.5}}>
+            Renommer un contact ici met aussi à jour son nom dans les Appels et les Messages de ce perso.
+          </div>
+          <button onClick={seedContacts}
+            style={{alignSelf:"flex-start",background:"rgba(16,185,129,0.08)",border:"1px dashed rgba(16,185,129,0.4)",color:"#059669",borderRadius:8,padding:"8px 14px",cursor:"pointer",fontSize:11,fontWeight:600}}>
+            ⇩ Importer les noms depuis Appels / Messages
+          </button>
+          {(d.contacts||[]).map((c,i)=>(
+            <div key={c.id} className="adm-card" style={{display:"flex",gap:8,alignItems:"center",background:"rgba(255,255,255,0.85)",padding:10,borderRadius:10,border:"1px solid rgba(0,0,0,0.07)",flexWrap:"wrap"}}>
+              <div onClick={()=>document.getElementById(`contact-photo-${tab}-${c.id}`).click()}
+                style={{width:40,height:40,borderRadius:"50%",background:"rgba(99,102,241,0.08)",border:"1px dashed rgba(99,102,241,0.3)",overflow:"hidden",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer"}}>
+                {c.photo ? <img src={c.photo} style={{width:"100%",height:"100%",objectFit:"cover"}}/> : <span style={{fontSize:16}}>👤</span>}
               </div>
-              {contacts.length === 0 && (
-                <div style={{textAlign:"center",color:"#9ca3af",fontSize:12,padding:"16px 0"}}>Aucun contact — ajoutez-en un ci-dessous.</div>
-              )}
-              {contacts.map((c)=>(
-                <div key={c.id} className="adm-card" style={{display:"flex",gap:8,alignItems:"center",background:"rgba(255,255,255,0.85)",padding:10,borderRadius:10,border:"1px solid rgba(0,0,0,0.07)",flexWrap:"wrap"}}>
-                  <label style={{width:40,height:40,borderRadius:"50%",background:"rgba(99,102,241,0.08)",border:"1px dashed rgba(99,102,241,0.3)",overflow:"hidden",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer"}}>
-                    {c.photo ? <img src={c.photo} style={{width:"100%",height:"100%",objectFit:"cover"}}/> : <span style={{fontSize:16}}>👤</span>}
-                    <input type="file" accept="image/*" style={{display:"none"}} onChange={e=>{
-                      const f=e.target.files?.[0]; if(!f)return;
-                      const r=new UploadReader(); r.onload=ev=>updContact(c.id,"photo",ev.target.result); r.readAsDataURL(f); e.target.value="";
-                    }}/>
-                  </label>
-                  <input value={c.name} onChange={e=>updContact(c.id,"name",e.target.value)}
-                    placeholder="Nom" className="adm-input" style={{flex:"1 1 140px",minWidth:0,background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#1a1a2e",padding:"7px 10px",fontSize:12,borderRadius:7,fontWeight:600}}/>
-                  <input value={c.phone||""} onChange={e=>updContact(c.id,"phone",e.target.value)}
-                    placeholder="Téléphone (optionnel)" className="adm-input" style={{flex:"1 1 120px",minWidth:0,background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#6b7280",padding:"7px 10px",fontSize:12,borderRadius:7}}/>
-                  <button onClick={()=>deleteContact(c.id)}
-                    className="adm-del-btn" style={{background:"none",border:"none",color:"#d1d5db",cursor:"pointer",fontSize:16,padding:"2px 6px",flexShrink:0,borderRadius:5,transition:"all 0.15s"}}>×</button>
-                </div>
-              ))}
-              <button onClick={addContact}
-                style={{background:"rgba(52,199,89,0.08)",border:"1px dashed rgba(52,199,89,0.4)",color:"#34c759",borderRadius:8,padding:"10px 18px",cursor:"pointer",fontSize:12,fontWeight:600,alignSelf:"flex-start"}}>+ Contact</button>
-            </>);
-          })()}
+              <input id={`contact-photo-${tab}-${c.id}`} type="file" accept="image/*" style={{display:"none"}} onChange={e=>{
+                const f=e.target.files?.[0]; if(!f)return;
+                const r=new UploadReader(); r.onload=ev=>updContact(c.id,"photo",ev.target.result); r.readAsDataURL(f); e.target.value="";
+              }}/>
+              <input value={c.name} onChange={e=>updContact(c.id,"name",e.target.value)}
+                placeholder="Nom" className="adm-input" style={{flex:"1 1 140px",minWidth:0,background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#1a1a2e",padding:"7px 10px",fontSize:12,borderRadius:7,fontWeight:600}}/>
+              <input value={c.phone||""} onChange={e=>updContact(c.id,"phone",e.target.value)}
+                placeholder="Téléphone (optionnel)" className="adm-input" style={{flex:"1 1 120px",minWidth:0,background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#6b7280",padding:"7px 10px",fontSize:12,borderRadius:7}}/>
+              <button onClick={()=>deleteContact(c.id)}
+                className="adm-del-btn" style={{background:"none",border:"none",color:"#d1d5db",cursor:"pointer",fontSize:16,padding:"2px 6px",flexShrink:0,borderRadius:5,transition:"all 0.15s"}}>×</button>
+            </div>
+          ))}
+          <button onClick={addContact}
+            style={{background:"rgba(99,102,241,0.08)",border:"1px dashed rgba(99,102,241,0.4)",color:"#6366f1",borderRadius:8,padding:"10px 18px",cursor:"pointer",fontSize:12,fontWeight:600,alignSelf:"flex-start"}}>+ Contact</button>
+        </div>
+      );
+    }
 
-          {/* ── MESSAGES VOCAUX ── */}
-          {phoneAdmTab==="voicemail" && (()=>{
-            const contactNames = (d.contacts||[]).map(c=>c.name).filter(Boolean);
-            const ContactSelect = ({value, onChange}) => (
-              <select value={value} onChange={e=>onChange(e.target.value)}
-                className="adm-input" style={{flex:"1 1 120px",minWidth:0,background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:value?"#1a1a2e":"#9ca3af",padding:"7px 10px",fontSize:12,borderRadius:7,fontWeight:600}}>
-                <option value="">— Contact —</option>
-                {contactNames.map(n=><option key={n} value={n}>{n}</option>)}
-                {value && !contactNames.includes(value) && <option value={value}>{value} (libre)</option>}
-              </select>
-            );
-            const updVm = (id, field, val) => {
-              const list = (d.voicemails||[]).map(v=>v.id===id?{...v,[field]:val}:v);
-              upd("voicemails", list);
-            };
-            const addVm = () => upd("voicemails",[{id:Date.now(), contact:"", time:"1 oct, 9:00am", duration:"0:08", transcript:""},...(d.voicemails||[])]);
-            const deleteVm = (id) => upd("voicemails", (d.voicemails||[]).filter(v=>v.id!==id));
-            return (<>
-              <div style={{fontSize:11,color:"#6b7280",lineHeight:1.5}}>
-                Sans message vocal ajouté ici, l'onglet "Voicemail" affiche par défaut les 3 derniers appels manqués (sans texte).
+    case "voicemail": {
+      const updVm = (id, field, val) => {
+        const list = (d.voicemails||[]).map(v=>v.id===id?{...v,[field]:val}:v);
+        upd("voicemails", list);
+      };
+      const addVm = () => upd("voicemails",[{id:Date.now(), contact:"", time:"1 oct, 9:00am", duration:"0:08", transcript:""},...(d.voicemails||[])]);
+      const deleteVm = (id) => upd("voicemails", (d.voicemails||[]).filter(v=>v.id!==id));
+      const seedVm = () => {
+        const missed = (d.calls||[]).filter(c=>c.type==="missed");
+        if(missed.length===0){ alert("Aucun appel manqué à importer."); return; }
+        const toAdd = missed.map((c,i)=>({id:Date.now()+i, contact:c.contact, time:c.time, duration:"0:08", transcript:""}));
+        upd("voicemails",[...(d.voicemails||[]), ...toAdd]);
+      };
+      return (
+        <div style={{display:"flex",flexDirection:"column",gap:8}}>
+          <div style={{fontSize:11,color:"#6b7280",lineHeight:1.5}}>
+            Sans message vocal ajouté ici, l'onglet "Voicemail" du téléphone affiche par défaut les 3 derniers appels manqués (sans texte).
+          </div>
+          <button onClick={seedVm}
+            style={{alignSelf:"flex-start",background:"rgba(16,185,129,0.08)",border:"1px dashed rgba(16,185,129,0.4)",color:"#059669",borderRadius:8,padding:"8px 14px",cursor:"pointer",fontSize:11,fontWeight:600}}>
+            ⇩ Importer les appels manqués
+          </button>
+          {(d.voicemails||[]).map((vm,i)=>(
+            <div key={vm.id} className="adm-card" style={{display:"flex",flexDirection:"column",gap:6,background:"rgba(255,255,255,0.85)",padding:10,borderRadius:10,border:"1px solid rgba(0,0,0,0.07)"}}>
+              <div style={{display:"flex",gap:8,flexWrap:"wrap",alignItems:"center"}}>
+                <input value={vm.contact} onChange={e=>updVm(vm.id,"contact",e.target.value)}
+                  placeholder="Contact" className="adm-input" style={{flex:"1 1 120px",minWidth:0,background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#1a1a2e",padding:"7px 10px",fontSize:12,borderRadius:7,fontWeight:600}}/>
+                <LoreDateTimeInput value={vm.time} onChange={v=>updVm(vm.id,"time",v)} width="190px" showLabel={false}/>
+                <input value={vm.duration||""} onChange={e=>updVm(vm.id,"duration",e.target.value)}
+                  placeholder="Durée" className="adm-input" style={{width:70,flexShrink:0,background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#6b7280",padding:"7px 8px",fontSize:11,borderRadius:7}}/>
+                <button onClick={()=>deleteVm(vm.id)}
+                  className="adm-del-btn" style={{background:"none",border:"none",color:"#d1d5db",cursor:"pointer",fontSize:16,padding:"2px 6px",flexShrink:0,borderRadius:5}}>×</button>
               </div>
-              {(d.voicemails||[]).map((vm)=>(
-                <div key={vm.id} className="adm-card" style={{display:"flex",flexDirection:"column",gap:6,background:"rgba(255,255,255,0.85)",padding:10,borderRadius:10,border:"1px solid rgba(0,0,0,0.07)"}}>
-                  <div style={{display:"flex",gap:8,flexWrap:"wrap",alignItems:"center"}}>
-                    <ContactSelect value={vm.contact} onChange={v=>updVm(vm.id,"contact",v)}/>
-                    <LoreDateTimeInput value={vm.time} onChange={v=>updVm(vm.id,"time",v)} width="190px" showLabel={false}/>
-                    <input value={vm.duration||""} onChange={e=>updVm(vm.id,"duration",e.target.value)}
-                      placeholder="Durée" className="adm-input" style={{width:70,flexShrink:0,background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#6b7280",padding:"7px 8px",fontSize:11,borderRadius:7}}/>
-                    <button onClick={()=>deleteVm(vm.id)}
-                      className="adm-del-btn" style={{background:"none",border:"none",color:"#d1d5db",cursor:"pointer",fontSize:16,padding:"2px 6px",flexShrink:0,borderRadius:5}}>×</button>
-                  </div>
-                  <textarea value={vm.transcript||""} onChange={e=>updVm(vm.id,"transcript",e.target.value)}
-                    placeholder="Texte du message vocal…" className="adm-input"
-                    style={{width:"100%",minHeight:50,background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#1a1a2e",padding:"7px 10px",fontSize:12,borderRadius:7,resize:"vertical",boxSizing:"border-box"}}/>
-                </div>
-              ))}
-              <button onClick={addVm}
-                style={{background:"rgba(52,199,89,0.08)",border:"1px dashed rgba(52,199,89,0.4)",color:"#34c759",borderRadius:8,padding:"10px 18px",cursor:"pointer",fontSize:12,fontWeight:600,alignSelf:"flex-start"}}>+ Message vocal</button>
-            </>);
-          })()}
+              <textarea value={vm.transcript||""} onChange={e=>updVm(vm.id,"transcript",e.target.value)}
+                placeholder="Texte du message vocal (ce que la personne dit)…" className="adm-input"
+                style={{width:"100%",minHeight:50,background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#1a1a2e",padding:"7px 10px",fontSize:12,borderRadius:7,resize:"vertical",boxSizing:"border-box"}}/>
+            </div>
+          ))}
+          <button onClick={addVm}
+            style={{background:"rgba(99,102,241,0.08)",border:"1px dashed rgba(99,102,241,0.4)",color:"#6366f1",borderRadius:8,padding:"10px 18px",cursor:"pointer",fontSize:12,fontWeight:600,alignSelf:"flex-start"}}>+ Message vocal</button>
         </div>
       );
     }
@@ -19713,7 +19572,19 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
           <div key={note.id} className="adm-card" style={{background:"rgba(255,255,255,0.85)",borderRadius:12,padding:14,border:"1px solid rgba(0,0,0,0.07)",boxShadow:"0 2px 8px rgba(0,0,0,0.04)"}}>
             <div style={{display:"flex",gap:8,marginBottom:8}}>
               <Field label="Titre" value={note.title} onChange={v=>{const n=[...d.notes];n[i]={...n[i],title:v};upd("notes",n);}} width="60%"/>
-              <Field label="Date"  value={note.date}  onChange={v=>{const n=[...d.notes];n[i]={...n[i],date:v};upd("notes",n);}} width="30%"/>
+              <div style={{display:"flex",flexDirection:"column",gap:5,width:"30%"}}>
+                <label style={{color:"#9ca3af",fontSize:10,letterSpacing:0.8,textTransform:"uppercase",fontWeight:600}}>Date</label>
+                <input type="date" min="2012-01-01" max="2012-12-31"
+                  value={(()=>{const p=parseLoreTime(note.date); return p?.day?`2012-${String(p.month).padStart(2,'0')}-${String(p.day).padStart(2,'0')}`:LORE_DATE_DEFAULT;})()}
+                  onChange={e=>{
+                    const n=[...d.notes];
+                    if(!e.target.value){ n[i]={...n[i],date:""}; upd("notes",n); return; }
+                    const [,m,dd]=e.target.value.split('-').map(Number);
+                    n[i]={...n[i],date:`${dd} ${LORE_MONTHS_FR[m]}`};
+                    upd("notes",n);
+                  }}
+                  className="adm-input" style={{background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#1a1a2e",padding:"7px 8px",fontSize:11,borderRadius:7}}/>
+              </div>
               <button onClick={()=>upd("notes",d.notes.filter((_,j)=>j!==i))}
                 className="adm-del-btn" style={{background:"rgba(239,68,68,0.06)",border:"1px solid rgba(239,68,68,0.2)",color:"#ef4444",borderRadius:6,padding:"5px 10px",cursor:"pointer",fontSize:11,marginTop:18,flexShrink:0,transition:"all 0.15s"}}>✕</button>
             </div>
@@ -19788,19 +19659,13 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
             </label>
           </div>
           <div style={{padding:"6px 8px",display:"flex",flexDirection:"column",gap:4}}>
-            <div style={{display:"flex",flexDirection:"column",gap:2}}>
-              <span style={{fontSize:9,color:"#9ca3af",fontWeight:600,textTransform:"uppercase",letterSpacing:0.5}}>Date</span>
-              <input type="date" value={photo.dateISO||""} min="2010-01-01" max="2013-12-31"
-                  defaultValue="2012-10-01"
-                  onChange={e=>{
-                    const iso = e.target.value;
-                    if(!iso){ updPhoto(photo.id,{dateISO:null}); return; }
-                    const [y,m,dd] = iso.split('-').map(Number);
-                    updPhoto(photo.id,{dateISO:iso, date:`${dd} ${LORE_MONTHS_FR[m]} ${y}`});
-                  }}
-                  onFocus={e=>{ if(!photo.dateISO) e.target.value="2012-10-01"; }}
-                className="adm-input" style={{width:"100%",background:"rgba(255,255,255,0.9)",border:"1px solid rgba(0,0,0,0.12)",color:photo.dateISO?"#1a1a2e":"#9ca3af",padding:"5px 7px",fontSize:11,borderRadius:6,cursor:"pointer"}}/>
-            </div>
+            <input type="date" value={photo.dateISO||LORE_DATE_DEFAULT} onChange={e=>{
+                const iso = e.target.value;
+                if(!iso){ updPhoto(photo.id,{dateISO:null}); return; }
+                const [y,m,dd] = iso.split('-').map(Number);
+                updPhoto(photo.id,{dateISO:iso, date:`${dd} ${LORE_MONTHS_FR[m]} ${y}`});
+              }}
+              className="adm-input" style={{width:"100%",background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.08)",color:"#6b7280",padding:"4px 7px",fontSize:10,borderRadius:6}}/>
             <div style={{display:"flex",gap:4}}>
               {activeTab==="deleted"
                 ? <button onClick={()=>updPhoto(photo.id,{deleted:false})} style={{flex:1,background:"rgba(16,185,129,0.07)",border:"1px solid rgba(16,185,129,0.2)",color:"#059669",borderRadius:6,padding:"3px 0",cursor:"pointer",fontSize:10}}>↩</button>
@@ -19861,39 +19726,21 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
             );
           })()}
 
-          {/* Grille de photos — triées par date décroissante si dateISO dispo, sinon ordre manuel */}
-          {(()=>{
-            const MONTH_MAP_ADM = {jan:1,fév:2,feb:2,mar:3,avr:4,apr:4,mai:5,may:5,juin:6,jun:6,juil:7,jul:7,aoû:8,aug:8,sep:9,oct:10,nov:11,déc:12,dec:12};
-            const resolveISOAdm = (p) => {
-              if(p.dateISO) return p.dateISO;
-              if(!p.date) return null;
-              const s=p.date.toLowerCase().trim();
-              const m2=s.match(/^([a-zé]+)\s+(\d{4})$/);
-              if(m2){const mo=MONTH_MAP_ADM[m2[1].slice(0,3)];if(mo)return `${m2[2]}-${String(mo).padStart(2,'0')}-01`;}
-              const m1=s.match(/^(\d{1,2})\s+([a-zé]+)\s+(\d{4})$/);
-              if(m1){const mo=MONTH_MAP_ADM[m1[2].slice(0,3)];if(mo)return `${m1[3]}-${String(mo).padStart(2,'0')}-${m1[1].padStart(2,'0')}`;}
-              return null;
-            };
-            const sortedPhotos = currentPhotos.some(p=>resolveISOAdm(p))
-              ? [...currentPhotos].sort((a,b)=>(resolveISOAdm(b)||"0000-00-00").localeCompare(resolveISOAdm(a)||"0000-00-00"))
-              : currentPhotos;
-            return (
-              <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(130px,1fr))",gap:10}}>
-                {sortedPhotos.map(photo=><PhotoCard key={photo.id} photo={photo}/>)}
-                <label style={{
-                  aspectRatio:"1",background:"rgba(99,102,241,0.05)",border:"2px dashed rgba(99,102,241,0.25)",
-                  borderRadius:10,display:"flex",alignItems:"center",justifyContent:"center",
-                  cursor:"pointer",color:"#6366f1",fontSize:28,fontWeight:300,minHeight:80
-                }}>
-                  +
-                  <input type="file" accept="image/*" multiple style={{display:"none"}} onChange={e=>{
-                    addPhotosFromFiles(e.target.files, activeTab);
-                    e.target.value="";
-                  }}/>
-                </label>
-              </div>
-            );
-          })()}
+          {/* Grille de photos */}
+          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(130px,1fr))",gap:10}}>
+            {currentPhotos.map(photo=><PhotoCard key={photo.id} photo={photo}/>)}
+            <label style={{
+              aspectRatio:"1",background:"rgba(99,102,241,0.05)",border:"2px dashed rgba(99,102,241,0.25)",
+              borderRadius:10,display:"flex",alignItems:"center",justifyContent:"center",
+              cursor:"pointer",color:"#6366f1",fontSize:28,fontWeight:300,minHeight:80
+            }}>
+              +
+              <input type="file" accept="image/*" multiple style={{display:"none"}} onChange={e=>{
+                addPhotosFromFiles(e.target.files, activeTab);
+                e.target.value="";
+              }}/>
+            </label>
+          </div>
         </div>
       );
     }
@@ -20020,25 +19867,171 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
 
     case "music": return (
       <div style={{display:"flex",flexDirection:"column",gap:10}}>
+
+        
+        {(()=>{
+          const [itunesQ, setItunesQ] = [itunesMusicQuery, setItunesMusicQuery];
+          const [results, setResults] = [itunesResults, setItunesResults];
+          const [searching, setSearching] = [itunesSearching, setItunesSearching];
+          const MUSIC_DB = [
+            // Pop 2010-2012
+            {t:"Rolling in the Deep",a:"Adele",d:"3:49"},{t:"Someone Like You",a:"Adele",d:"4:45"},{t:"Set Fire to the Rain",a:"Adele",d:"4:01"},{t:"Skyfall",a:"Adele",d:"4:46"},
+            {t:"We Are Young",a:"fun. ft. Janelle Monáe",d:"4:10"},{t:"Some Nights",a:"fun.",d:"4:58"},
+            {t:"Call Me Maybe",a:"Carly Rae Jepsen",d:"3:13"},{t:"Good Time",a:"Owl City & Carly Rae Jepsen",d:"3:26"},
+            {t:"Somebody That I Used to Know",a:"Gotye ft. Kimbra",d:"4:04"},{t:"Eyes Wide Open",a:"Gotye",d:"5:21"},
+            {t:"Ho Hey",a:"The Lumineers",d:"2:43"},{t:"Stubborn Love",a:"The Lumineers",d:"4:28"},
+            {t:"Shake It Out",a:"Florence + The Machine",d:"4:38"},{t:"Dog Days Are Over",a:"Florence + The Machine",d:"4:13"},{t:"You've Got the Love",a:"Florence + The Machine",d:"3:45"},
+            {t:"Pumped Up Kicks",a:"Foster The People",d:"3:59"},{t:"Helena Beat",a:"Foster The People",d:"4:01"},
+            {t:"Moves Like Jagger",a:"Maroon 5 ft. Christina Aguilera",d:"3:22"},{t:"Payphone",a:"Maroon 5 ft. Wiz Khalifa",d:"3:59"},{t:"She Will Be Loved",a:"Maroon 5",d:"4:17"},
+            {t:"Party Rock Anthem",a:"LMFAO ft. Lauren Bennett",d:"4:23"},{t:"Sexy and I Know It",a:"LMFAO",d:"3:19"},
+            {t:"Titanium",a:"David Guetta ft. Sia",d:"4:05"},{t:"Without You",a:"David Guetta ft. Usher",d:"3:49"},
+            {t:"Wide Awake",a:"Katy Perry",d:"3:41"},{t:"Roar",a:"Katy Perry",d:"3:43"},{t:"Teenage Dream",a:"Katy Perry",d:"3:48"},{t:"Last Friday Night",a:"Katy Perry",d:"3:51"},{t:"Part of Me",a:"Katy Perry",d:"2:44"},
+            {t:"We Found Love",a:"Rihanna ft. Calvin Harris",d:"3:36"},{t:"Diamonds",a:"Rihanna",d:"3:45"},{t:"Where Have You Been",a:"Rihanna",d:"3:58"},{t:"Stay",a:"Rihanna ft. Mikky Ekko",d:"4:00"},
+            {t:"As Long As You Love Me",a:"Justin Bieber ft. Big Sean",d:"3:30"},{t:"Boyfriend",a:"Justin Bieber",d:"3:35"},{t:"Beauty and a Beat",a:"Justin Bieber ft. Nicki Minaj",d:"3:14"},
+            {t:"Starships",a:"Nicki Minaj",d:"3:30"},{t:"Super Bass",a:"Nicki Minaj",d:"3:20"},
+            {t:"Glad You Came",a:"The Wanted",d:"3:14"},{t:"I Knew You Were Trouble",a:"Taylor Swift",d:"3:37"},{t:"We Are Never Ever Getting Back Together",a:"Taylor Swift",d:"3:13"},{t:"22",a:"Taylor Swift",d:"3:52"},
+            {t:"Blow Me (One Last Kiss)",a:"P!nk",d:"3:42"},{t:"Raise Your Glass",a:"P!nk",d:"2:55"},
+            {t:"Feel So Close",a:"Calvin Harris",d:"3:23"},{t:"Sweet Nothing",a:"Calvin Harris ft. Florence Welch",d:"3:36"},
+            {t:"Levels",a:"Avicii",d:"3:18"},{t:"Silhouettes",a:"Avicii",d:"3:43"},
+            {t:"Thrift Shop",a:"Macklemore & Ryan Lewis ft. Wanz",d:"3:54"},{t:"Can't Hold Us",a:"Macklemore & Ryan Lewis ft. Ray Dalton",d:"4:18"},
+            {t:"Sail",a:"AWOLNATION",d:"4:23"},{t:"Kill Everyone",a:"AWOLNATION",d:"2:37"},
+            {t:"Radioactive",a:"Imagine Dragons",d:"3:06"},{t:"Demons",a:"Imagine Dragons",d:"2:57"},{t:"It's Time",a:"Imagine Dragons",d:"4:00"},
+            {t:"Home",a:"Phillip Phillips",d:"3:32"},{t:"Gone Gone Gone",a:"Phillip Phillips",d:"3:38"},
+            {t:"Hall of Fame",a:"The Script ft. will.i.am",d:"3:23"},{t:"The Man Who Can't Be Moved",a:"The Script",d:"4:00"},{t:"Breakeven",a:"The Script",d:"3:55"},
+            {t:"Paradise",a:"Coldplay",d:"4:38"},{t:"The Scientist",a:"Coldplay",d:"5:09"},{t:"Every Teardrop Is a Waterfall",a:"Coldplay",d:"4:14"},{t:"Fix You",a:"Coldplay",d:"4:55"},
+            {t:"Lonely Boy",a:"The Black Keys",d:"3:13"},{t:"Gold on the Ceiling",a:"The Black Keys",d:"3:41"},
+            {t:"Little Talks",a:"Of Monsters and Men",d:"4:15"},{t:"Mountain Sound",a:"Of Monsters and Men",d:"3:33"},
+            {t:"Take Care",a:"Drake ft. Rihanna",d:"4:35"},{t:"Marvins Room",a:"Drake",d:"5:39"},{t:"Started From the Bottom",a:"Drake",d:"3:10"},
+            {t:"Otis",a:"Jay-Z & Kanye West",d:"3:25"},{t:"Niggas in Paris",a:"Jay-Z & Kanye West",d:"3:39"},{t:"New Day",a:"Jay-Z & Kanye West",d:"4:45"},
+            {t:"Birthday Song",a:"2 Chainz ft. Kanye West",d:"4:04"},{t:"No Lie",a:"2 Chainz ft. Drake",d:"4:11"},
+            {t:"Young, Wild & Free",a:"Snoop Dogg & Wiz Khalifa ft. Bruno Mars",d:"3:42"},{t:"Work Hard, Play Hard",a:"Wiz Khalifa",d:"4:00"},
+            {t:"Locked Out of Heaven",a:"Bruno Mars",d:"3:53"},{t:"When I Was Your Man",a:"Bruno Mars",d:"3:33"},{t:"The Lazy Song",a:"Bruno Mars",d:"3:09"},
+            {t:"Stronger (What Doesn't Kill You)",a:"Kelly Clarkson",d:"3:42"},{t:"Mr. Know It All",a:"Kelly Clarkson",d:"3:44"},
+            {t:"Gangnam Style",a:"PSY",d:"3:39"},
+            // K-Pop
+            {t:"Gee",a:"Girls' Generation",d:"2:59"},{t:"Genie",a:"Girls' Generation",d:"3:35"},{t:"The Boys",a:"Girls' Generation",d:"3:39"},{t:"Oh!",a:"Girls' Generation",d:"3:02"},{t:"Run Devil Run",a:"Girls' Generation",d:"3:06"},{t:"Mr. Taxi",a:"Girls' Generation",d:"3:36"},{t:"I Got a Boy",a:"Girls' Generation",d:"4:04"},{t:"Paparazzi",a:"Girls' Generation",d:"3:37"},
+            {t:"Sorry Sorry",a:"Super Junior",d:"3:36"},{t:"Mr. Simple",a:"Super Junior",d:"3:38"},{t:"Bonamana",a:"Super Junior",d:"3:32"},
+            {t:"Lucifer",a:"SHINee",d:"3:36"},{t:"Sherlock",a:"SHINee",d:"3:42"},{t:"Ring Ding Dong",a:"SHINee",d:"3:43"},
+            {t:"Bo Peep Bo Peep",a:"T-ara",d:"3:30"},{t:"Lovey Dovey",a:"T-ara",d:"3:29"},{t:"Roly Poly",a:"T-ara",d:"3:38"},
+            {t:"Fantastic Baby",a:"BIGBANG",d:"3:33"},{t:"Bad Boy",a:"BIGBANG",d:"3:38"},{t:"Blue",a:"BIGBANG",d:"3:40"},
+            {t:"Breathe",a:"2NE1",d:"3:30"},{t:"I Am the Best",a:"2NE1",d:"3:22"},{t:"Lonely",a:"2NE1",d:"3:40"},
+            {t:"What's Your Name?",a:"4Minute",d:"3:22"},{t:"Volume Up",a:"4Minute",d:"3:22"},
+            {t:"Danger",a:"BTS",d:"3:59"},{t:"No More Dream",a:"BTS",d:"3:38"},
+            {t:"EXO - MAMA",a:"EXO",d:"4:07"},{t:"History",a:"EXO",d:"3:35"},{t:"Wolf",a:"EXO",d:"3:31"},
+            {t:"A Pink - NoNoNo",a:"Apink",d:"3:22"},{t:"Hush",a:"Miss A",d:"3:29"},{t:"Touch",a:"Miss A",d:"3:27"},
+            {t:"Bubble Pop!",a:"HyunA",d:"3:20"},{t:"Ice Cream",a:"HyunA",d:"3:12"},
+            {t:"U-Kiss - Neverland",a:"U-KISS",d:"3:30"},{t:"Troublemaker",a:"Troublemaker",d:"3:40"},
+            // Indie / Alt
+            {t:"Tighten Up",a:"The Black Keys",d:"3:31"},{t:"Weight of Love",a:"The Black Keys",d:"6:50"},
+            {t:"Midnight City",a:"M83",d:"4:03"},{t:"Reunion",a:"M83",d:"4:07"},
+            {t:"Babel",a:"Mumford & Sons",d:"5:28"},{t:"I Will Wait",a:"Mumford & Sons",d:"4:38"},{t:"Little Lion Man",a:"Mumford & Sons",d:"4:05"},
+            {t:"A Team",a:"Ed Sheeran",d:"4:19"},{t:"Lego House",a:"Ed Sheeran",d:"3:04"},{t:"Drunk",a:"Ed Sheeran",d:"3:20"},
+            {t:"Breezeblocks",a:"alt-J",d:"4:02"},{t:"Tessellate",a:"alt-J",d:"2:49"},{t:"Fitzpleasure",a:"alt-J",d:"3:39"},
+            {t:"The XX - Intro",a:"The xx",d:"2:07"},{t:"Angels",a:"The xx",d:"3:21"},{t:"Chained",a:"The xx",d:"3:56"},
+            {t:"Video Games",a:"Lana Del Rey",d:"4:42"},{t:"Born to Die",a:"Lana Del Rey",d:"4:22"},{t:"Summertime Sadness",a:"Lana Del Rey",d:"4:25"},{t:"Blue Jeans",a:"Lana Del Rey",d:"3:31"},
+            {t:"Wuthering Heights",a:"Kate Bush",d:"4:28"},{t:"Running Up That Hill",a:"Kate Bush",d:"5:02"},
+            // Electronic / Dance
+            {t:"Spectrum",a:"Florence + The Machine",d:"4:08"},{t:"Never Let Me Go",a:"Florence + The Machine",d:"4:25"},
+            {t:"Blue (Da Ba Dee)",a:"Eiffel 65",d:"3:38"},{t:"I'm a Barbie Girl",a:"Aqua",d:"3:12"},
+            {t:"Starships",a:"Nicki Minaj",d:"3:30"},{t:"Turn Me On",a:"David Guetta ft. Nicki Minaj",d:"3:44"},
+            {t:"Don't You Worry Child",a:"Swedish House Mafia ft. John Martin",d:"3:48"},{t:"Save the World",a:"Swedish House Mafia",d:"4:12"},
+            {t:"In for the Kill",a:"La Roux",d:"3:30"},{t:"Bulletproof",a:"La Roux",d:"3:27"},
+            // Soundcloud / Indie
+            {t:"Flaws",a:"Bastille",d:"3:24"},{t:"Pompeii",a:"Bastille",d:"3:34"},{t:"Things We Lost in the Fire",a:"Bastille",d:"4:00"},
+            {t:"Ghosts",a:"Ladytron",d:"4:17"},{t:"Seventeen",a:"Ladytron",d:"4:09"},
+          ];
+
+          const search = () => {
+            if(!itunesQ.trim()) return;
+            const q = itunesQ.toLowerCase();
+            const found = MUSIC_DB.filter(s =>
+              s.t.toLowerCase().includes(q) ||
+              s.a.toLowerCase().includes(q)
+            ).slice(0, 10);
+            setResults(found.map(s=>({trackName:s.t, artistName:s.a, trackTimeMillis:0, _dur:s.d})));
+          };
+          const fmtMs = (r) => r._dur || "3:00";
+          return (
+            <div style={{background:"rgba(99,102,241,0.05)",border:"1px solid rgba(99,102,241,0.15)",borderRadius:10,padding:12,display:"flex",flexDirection:"column",gap:8}}>
+              <div style={{fontSize:11,fontWeight:700,color:"#6366f1"}}>🔍 iTunes Search</div>
+              <div style={{display:"flex",gap:6}}>
+                <input
+                  className="adm-input"
+                  placeholder="Artist, title, album…"
+                  value={itunesQ}
+                  onChange={e=>setItunesMusicQuery(e.target.value)}
+                  onKeyDown={e=>e.key==="Enter"&&search()}
+                  style={{flex:1,background:"rgba(255,255,255,0.9)",border:"1px solid rgba(0,0,0,0.1)",color:"#1a1a2e",padding:"7px 10px",fontSize:12,borderRadius:7}}
+                />
+                <button onClick={search} className="adm-btn-primary"
+                  style={{background:"linear-gradient(135deg,#6366f1,#8b5cf6)",border:"none",color:"#fff",padding:"7px 14px",borderRadius:7,fontWeight:600,fontSize:12,cursor:"pointer",whiteSpace:"nowrap"}}>
+                  {searching ? "…" : "Search"}
+                </button>
+              </div>
+              {results.length>0 && (
+                <div style={{display:"flex",flexDirection:"column",gap:4,maxHeight:220,overflowY:"auto"}}>
+                  {results.map(r=>(
+                    <div key={r.trackId} style={{display:"flex",alignItems:"center",gap:8,padding:"5px 6px",borderRadius:6,background:"rgba(255,255,255,0.7)",cursor:"pointer",transition:"background 0.1s"}}
+                      onMouseEnter={e=>e.currentTarget.style.background="rgba(99,102,241,0.1)"}
+                      onMouseLeave={e=>e.currentTarget.style.background="rgba(255,255,255,0.7)"}
+                      onClick={()=>{
+                        upd("music",[...(d.music||[]),{id:Date.now(),title:r.trackName,artist:r.artistName,duration:r._dur||fmtMs(r)}]);
+                        setResults([]);
+                        setItunesMusicQuery("");
+                      }}>
+                      {r.artworkUrl60 && <img src={r.artworkUrl60} style={{width:32,height:32,borderRadius:4,flexShrink:0}} alt=""/>}
+                      <div style={{flex:1,minWidth:0}}>
+                        <div style={{fontSize:11,fontWeight:600,color:"#1a1a2e",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{r.trackName}</div>
+                        <div style={{fontSize:10,color:"#6b7280",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{r.artistName}</div>
+                      </div>
+                      <div style={{fontSize:10,color:"#9ca3af",flexShrink:0}}>{fmtMs(r.trackTimeMillis||180000)}</div>
+                      <div style={{fontSize:11,color:"#6366f1",flexShrink:0,fontWeight:600}}>+ Add</div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          );
+        })()}
+
+        
+        
         <div style={{display:"flex",gap:12,alignItems:"center",background:"rgba(255,255,255,0.85)",padding:12,borderRadius:10,border:"1px solid rgba(0,0,0,0.07)"}}>
-          <label style={{width:64,height:64,borderRadius:8,background:"rgba(99,102,241,0.08)",border:"2px dashed rgba(99,102,241,0.35)",overflow:"hidden",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer"}}>
+          <div
+            onClick={()=>document.getElementById(`playlist-cover-${tab}`).click()}
+            style={{width:64,height:64,borderRadius:8,background:"rgba(99,102,241,0.08)",border:"2px dashed rgba(99,102,241,0.35)",overflow:"hidden",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer"}}>
             {d.playlistCover
               ? <img src={d.playlistCover} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
               : <span style={{fontSize:24}}>🖼</span>}
-            <input type="file" accept="image/*" style={{display:"none"}} onChange={e=>{
-              const f=e.target.files?.[0]; if(!f)return;
-              const r=new UploadReader(); r.onload=ev=>upd("playlistCover",ev.target.result); r.readAsDataURL(f); e.target.value="";
-            }}/>
-          </label>
+          </div>
+          <input id={`playlist-cover-${tab}`} type="file" accept="image/*" style={{display:"none"}} onChange={e=>{
+            const f=e.target.files?.[0]; if(!f)return;
+            const r=new UploadReader(); r.onload=ev=>upd("playlistCover",ev.target.result); r.readAsDataURL(f); e.target.value="";
+          }}/>
           <div style={{flex:1}}>
             <div style={{fontSize:12,fontWeight:600,color:"#374151"}}>Cover de la playlist</div>
             <div style={{fontSize:11,color:"#9ca3af"}}>S'affiche dans le lecteur quand rien ne joue</div>
             {d.playlistCover && <button onClick={()=>upd("playlistCover",null)} style={{fontSize:10,color:"#ef4444",background:"none",border:"none",cursor:"pointer",padding:0,marginTop:2}}>Supprimer</button>}
           </div>
           <button
-            onClick={()=>document.getElementById(`playlist-cover-${tab}`).click()}
+            onClick={async()=>{
+              const m=[...(dataRef.current[tab]?.music||d.music||[])]; let found=0, missed=[];
+              for(let i=0;i<m.length;i++){
+                if(m[i].cover) continue;
+                try{
+                  const q=encodeURIComponent(`${m[i].artist||""} ${m[i].title||""}`.trim());
+                  const r=await fetch(`https://itunes.apple.com/search?term=${q}&entity=song&limit=1&country=US`);
+                  const j=await r.json();
+                  const art=j.results?.[0]?.artworkUrl100;
+                  if(art){ m[i]={...m[i],cover:art.replace("100x100","600x600")}; found++; }
+                  else missed.push(m[i].title);
+                }catch(e){ missed.push(m[i].title); }
+              }
+              onUpdate(tab,{...dataRef.current[tab],music:m});
+              alert(`${found} pochette(s) trouvée(s).`+(missed.length?` Non trouvées : ${missed.join(", ")}`:""));
+            }}
             style={{background:"rgba(99,102,241,0.08)",border:"1px dashed rgba(99,102,241,0.4)",color:"#6366f1",borderRadius:8,padding:"8px 14px",cursor:"pointer",fontSize:11,fontWeight:600,whiteSpace:"nowrap",flexShrink:0}}>
-            🖼 Changer la cover
+            🔍 Chercher les pochettes manquantes
           </button>
         </div>
 
@@ -20046,23 +20039,43 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
         {(d.music||[]).map((track,i)=>(
           <div key={track.id} className="adm-card" style={{display:"flex",gap:8,alignItems:"center",background:"rgba(255,255,255,0.85)",padding:10,borderRadius:10,border:"1px solid rgba(0,0,0,0.07)",flexWrap:"wrap"}}>
             
-            <label style={{width:40,height:40,borderRadius:6,background:"rgba(99,102,241,0.08)",border:"1px dashed rgba(99,102,241,0.3)",overflow:"hidden",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer"}}>
+            <div onClick={()=>document.getElementById(`track-cover-${tab}-${i}`).click()}
+              style={{width:40,height:40,borderRadius:6,background:"rgba(99,102,241,0.08)",border:"1px dashed rgba(99,102,241,0.3)",overflow:"hidden",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer"}}>
               {track.cover
                 ? <img src={track.cover} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
                 : <span style={{fontSize:16}}>🎵</span>}
-              <input type="file" accept="image/*" style={{display:"none"}} onChange={e=>{
-                const f=e.target.files?.[0]; if(!f)return;
+            </div>
+            <input id={`track-cover-${tab}-${i}`} type="file" accept="image/*" style={{display:"none"}} onChange={e=>{
+              const f=e.target.files?.[0]; if(!f)return;
+              const trackId=track.id;
+              const r=new UploadReader(); r.onload=ev=>{
+                const freshMusic=[...(dataRef.current[tab]?.music||[])];
+                const idx=freshMusic.findIndex(t=>t.id===trackId);
+                if(idx<0) return;
+                freshMusic[idx]={...freshMusic[idx],cover:ev.target.result};
+                onUpdate(tab,{...dataRef.current[tab],music:freshMusic});
+              }; r.readAsDataURL(f); e.target.value="";
+            }}/>
+            <button
+              title="Chercher la pochette automatiquement (iTunes)"
+              onClick={async()=>{
                 const trackId=track.id;
-                const r=new UploadReader(); r.onload=ev=>{
-                  // Relire data[tab].music au moment du callback pour éviter la stale closure
-                  const freshMusic=[...(data[tab]?.music||[])];
-                  const idx=freshMusic.findIndex(t=>t.id===trackId);
-                  if(idx>=0){freshMusic[idx]={...freshMusic[idx],cover:ev.target.result};}
-                  else{freshMusic[i]={...freshMusic[i],cover:ev.target.result};}
-                  onUpdate(tab,{...data[tab],music:freshMusic});
-                }; r.readAsDataURL(f); e.target.value="";
-              }}/>
-            </label>
+                try{
+                  const q=encodeURIComponent(`${track.artist||""} ${track.title||""}`.trim());
+                  const r=await fetch(`https://itunes.apple.com/search?term=${q}&entity=song&limit=1&country=US`);
+                  const j=await r.json();
+                  const art=j.results?.[0]?.artworkUrl100;
+                  if(art){
+                    const big=art.replace("100x100","600x600");
+                    const freshMusic=[...(dataRef.current[tab]?.music||[])];
+                    const idx=freshMusic.findIndex(t=>t.id===trackId);
+                    if(idx<0) return;
+                    freshMusic[idx]={...freshMusic[idx],cover:big};
+                    onUpdate(tab,{...dataRef.current[tab],music:freshMusic});
+                  } else alert("Pochette non trouvée pour "+track.title);
+                }catch(e){ alert("Recherche impossible (hors-ligne ?)"); }
+              }}
+              style={{width:24,height:24,borderRadius:6,background:"rgba(99,102,241,0.08)",border:"1px solid rgba(99,102,241,0.25)",color:"#6366f1",fontSize:11,cursor:"pointer",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center"}}>🔍</button>
             <input value={track.title} onChange={e=>{const m=[...d.music];m[i]={...m[i],title:e.target.value};upd("music",m);}}
               placeholder="Titre" className="adm-input" style={{flex:2,background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#1a1a2e",padding:"7px 10px",fontSize:12,borderRadius:7}}/>
             <input value={track.artist} onChange={e=>{const m=[...d.music];m[i]={...m[i],artist:e.target.value};upd("music",m);}}
@@ -20157,7 +20170,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
         <div style={{display:"flex",flexDirection:"column",gap:12}}>
           {/* Tab bar */}
           <div className="adm-subtabs" style={{display:"flex",gap:0,background:"rgba(0,0,0,0.05)",borderRadius:8,padding:2,alignSelf:"flex-start"}}>
-            {[["users","👥 Utilisateurs"],["timeline","📋 Timeline"],["mytweets","🐦 Mes tweets"]].map(([k,label])=>(
+            {[["users","👥 Utilisateurs"],["shared","🐦 Mes tweets (partagés)"],["tweets","🗒 Tweets de fond (déco)"]].map(([k,label])=>(
               <button key={k} onClick={()=>setTwTab(k)} style={{
                 padding:"6px 14px",border:"none",borderRadius:6,cursor:"pointer",fontSize:11,
                 fontWeight:twTab===k?700:400,
@@ -20171,24 +20184,18 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
 
           {twTab==="users" && <>
             {(()=>{
-              const renderUserCard = (u, ov, onRemove) => {
-                // Seul le perso actif peut modifier son propre profil Twitter (avatar, header, couleur)
-                // Les autres persos sont affichés en lecture seule pour le nom/handle
-                const isMyChar = u.char === tab;
-                const isOtherChar = u.char && u.char !== tab;
-                return (
-                <div key={u.key} className="adm-card" style={{background:"rgba(255,255,255,0.85)",borderRadius:10,padding:"10px 12px",border:"1px solid rgba(0,0,0,0.07)",display:"flex",flexDirection:"column",gap:6,opacity:isOtherChar?0.6:1}}>
+              const renderUserCard = (u, ov, onRemove) => (
+                <div key={u.key} className="adm-card" style={{background:"rgba(255,255,255,0.85)",borderRadius:10,padding:"10px 12px",border:"1px solid rgba(0,0,0,0.07)",display:"flex",flexDirection:"column",gap:6}}>
                   <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-                    <div style={{fontSize:10,fontWeight:700,color:isMyChar?"#1da1f2":"#9ca3af",letterSpacing:0.5}}>
-                      {u.char ? (isMyChar ? "★ CE PERSO" : u.char.toUpperCase()+" — lecture seule") : u.key.toUpperCase()}
+                    <div style={{fontSize:10,fontWeight:700,color:"#9ca3af",letterSpacing:0.5}}>
+                      {u.char ? (char?.key===u.char ? "★ CE PERSO" : u.char.toUpperCase()) : u.key.toUpperCase()}
                     </div>
-                    {onRemove && !isOtherChar && <button onClick={onRemove} style={{background:"rgba(239,68,68,0.07)",border:"1px solid rgba(239,68,68,0.2)",color:"#ef4444",borderRadius:6,padding:"3px 7px",cursor:"pointer",fontSize:10}}>✕ Retirer</button>}
+                    {onRemove && <button onClick={onRemove} style={{background:"rgba(239,68,68,0.07)",border:"1px solid rgba(239,68,68,0.2)",color:"#ef4444",borderRadius:6,padding:"3px 7px",cursor:"pointer",fontSize:10}}>✕ Retirer</button>}
                   </div>
                   <div style={{display:"flex",gap:6}}>
-                    <Field label="Nom"    value={ov.name??u.name} onChange={isOtherChar?undefined:v=>updTwUser(u.key,"name",v)} style={{flex:1}} readOnly={isOtherChar}/>
-                    <Field label="Handle" value={ov.h??u.h}       onChange={isOtherChar?undefined:v=>updTwUser(u.key,"h",v)}    style={{flex:1}} readOnly={isOtherChar}/>
+                    <Field label="Nom"    value={ov.name??u.name} onChange={v=>updTwUser(u.key,"name",v)} style={{flex:1}}/>
+                    <Field label="Handle" value={ov.h??u.h}       onChange={v=>updTwUser(u.key,"h",v)}    style={{flex:1}}/>
                   </div>
-                  {!isOtherChar && (
                   <div style={{display:"flex",gap:10,alignItems:"center"}}>
                     <label style={{width:40,height:40,borderRadius:6,overflow:"hidden",cursor:"pointer",flexShrink:0,background:"#f3f4f6",border:"1px solid rgba(0,0,0,0.08)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:16}}>
                       {ov.av?<img src={ov.av} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:"🐦"}
@@ -20203,8 +20210,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                     </div>
                     {ov.av && <button onClick={()=>updTwUser(u.key,"av",null)} style={{fontSize:10,color:"#ef4444",background:"none",border:"none",cursor:"pointer",padding:0}}>Supprimer</button>}
                   </div>
-                  )}
-                  {isMyChar && (
+                  {u.char && (
                     <div style={{display:"flex",flexDirection:"column",gap:6}}>
                       <div style={{display:"flex",gap:10,alignItems:"center"}}>
                         <label style={{width:64,height:36,borderRadius:6,overflow:"hidden",cursor:"pointer",flexShrink:0,background:ov.bannerImg?"transparent":(ov.bannerColor||"#1DA1F2"),border:"1px solid rgba(0,0,0,0.08)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,color:"#fff"}}>
@@ -20226,12 +20232,8 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                       </div>
                     </div>
                   )}
-                  {isOtherChar && (
-                    <div style={{fontSize:10,color:"#9ca3af",fontStyle:"italic"}}>Pour modifier ce profil, passe sur l'onglet {u.char.charAt(0).toUpperCase()+u.char.slice(1)}.</div>
-                  )}
                 </div>
-                );
-              };
+              );
               return (<>
                 <div style={{background:"rgba(29,161,242,0.06)",border:"1px solid rgba(29,161,242,0.15)",borderRadius:8,padding:"7px 12px",fontSize:11,color:"#1da1f2"}}>
                   🔄 Comptes communs — partagés et synchronisés pour les 4 personnages.
@@ -20250,21 +20252,52 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
             })()}
           </>}
 
-          {twTab==="timeline" && (()=>{
+          {twTab==="shared" && (()=>{
+            const allShared = data.sharedThreads?._sharedTweets || [];
+            const mySharedTweets = allShared.filter(t=>t.author===tab);
+            const updAllShared = (list) => onUpdate("_sharedTweets", list);
+            const updMine = (patch, id) => updAllShared(allShared.map(t=>t.id===id?{...t,...patch}:t));
+            return (
+            <div style={{display:"flex",flexDirection:"column",gap:10}}>
+              <div style={{fontSize:11,color:"#9ca3af"}}>Ces tweets sont réellement partagés : ils apparaissent dans le fil des autres persos et sur ton profil, comme un vrai tweet posté depuis l'app. Tu ne peux modifier que les tiens.</div>
+              {mySharedTweets.map((t)=>(
+                <div key={t.id} className="adm-card" style={{background:"rgba(255,255,255,0.9)",borderRadius:10,padding:"10px 12px",border:"1px solid rgba(0,0,0,0.07)",display:"flex",flexDirection:"column",gap:6}}>
+                  <div style={{display:"flex",gap:6,flexWrap:"wrap",alignItems:"flex-end"}}>
+                    <LoreDateTimeInput value={t.time||""} onChange={v=>updMine({time:v},t.id)} width="190px" showLabel={true}/>
+                    <button onClick={()=>updAllShared(allShared.filter(x=>x.id!==t.id))} className="adm-del-btn" style={{background:"rgba(239,68,68,0.07)",border:"1px solid rgba(239,68,68,0.2)",color:"#ef4444",borderRadius:6,padding:"5px 8px",cursor:"pointer",fontSize:11}}>✕</button>
+                  </div>
+                  {t.photo && <div style={{position:"relative",alignSelf:"flex-start"}}>
+                    <img src={t.photo} style={{maxWidth:180,maxHeight:140,borderRadius:8,display:"block"}}/>
+                    <button onClick={()=>updMine({photo:null},t.id)} style={{position:"absolute",top:2,right:2,background:"rgba(0,0,0,0.6)",border:"none",color:"#fff",borderRadius:"50%",width:20,height:20,fontSize:12,cursor:"pointer",lineHeight:1}}>✕</button>
+                  </div>}
+                  <label style={{alignSelf:"flex-start",background:"rgba(29,161,242,0.1)",border:"1px dashed rgba(29,161,242,0.4)",color:"#1da1f2",borderRadius:6,padding:"5px 10px",fontSize:11,cursor:"pointer"}}>
+                    {t.photo?"Changer l'image":"+ Image"}
+                    <input type="file" accept="image/*" style={{display:"none"}} onChange={e=>{
+                      const f=e.target.files?.[0]; if(!f) return;
+                      const r=new UploadReader(); r.onload=ev=>updMine({photo:ev.target.result},t.id); r.readAsDataURL(f); e.target.value="";
+                    }}/>
+                  </label>
+                  <Field label="Texte" value={t.text||""} onChange={v=>updMine({text:v},t.id)} textarea/>
+                  <div style={{display:"flex",gap:6,alignItems:"flex-end"}}>
+                    <Field label="💬" value={String(t.rp??0)}  onChange={v=>updMine({rp:parseInt(v)||0},t.id)} style={{flex:1}}/>
+                    <Field label="🔁" value={String(t.rt??0)}  onChange={v=>updMine({rt:parseInt(v)||0},t.id)} style={{flex:1}}/>
+                    <Field label="❤"  value={String(t.fav??0)} onChange={v=>updMine({fav:parseInt(v)||0},t.id)} style={{flex:1}}/>
+                  </div>
+                </div>
+              ))}
+              <button onClick={()=>updAllShared([{id:Date.now(),author:tab,text:"",time:"1 oct, 9:00am",rp:0,rt:0,fav:0},...allShared])}
+                style={{background:"rgba(29,161,242,0.08)",border:"1px dashed rgba(29,161,242,0.4)",color:"#1da1f2",borderRadius:8,padding:"10px 18px",cursor:"pointer",fontSize:12,fontWeight:600}}>+ Tweet</button>
+            </div>
+            );
+          })()}
+
+          {twTab==="tweets" && (()=>{
             const charKey = tab;
-            // Handles des 4 persos pour détecter les tweets "des autres" dans la TL
-            const OTHER_HANDLES = {glinda:"@glindarvf",eoghan:"@eoghan_m",drew:"@dreww_orms",elias:"@noteliasgreen"};
-            const myHandle = OTHER_HANDLES[charKey];
-            const otherHandles = Object.entries(OTHER_HANDLES).filter(([k])=>k!==charKey).map(([,h])=>h);
-            const isOtherCharTweet = (t) => otherHandles.includes(t.h);
             const isCustom = hbTweets.length > 0;
             const effectiveTweets = isCustom ? hbTweets : (TWITTER_HOME_BASE[charKey]||[]).map((t,i)=>({...t,id:i}));
             const updEffective = (newList) => upd("homeBaseTweets", newList);
             return (
             <div style={{display:"flex",flexDirection:"column",gap:10}}>
-              <div style={{background:"rgba(29,161,242,0.06)",border:"1px solid rgba(29,161,242,0.15)",borderRadius:8,padding:"7px 12px",fontSize:11,color:"#1da1f2"}}>
-                📋 Timeline — tweets qui s'affichent dans le fil d'accueil de ce personnage. Les tweets des autres persos (en gris) ne peuvent pas être supprimés ici.
-              </div>
               {isCustom && (
                 <div style={{display:"flex",alignItems:"center",justifyContent:"flex-end"}}>
                   <button onClick={()=>updEffective([])} style={{background:"none",border:"1px solid rgba(0,0,0,0.12)",color:"#6b7280",borderRadius:6,padding:"3px 9px",cursor:"pointer",fontSize:10,fontWeight:500,whiteSpace:"nowrap"}}>↩ Réinitialiser</button>
@@ -20272,76 +20305,21 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
               )}
 
               {effectiveTweets.map((t,i)=>{
-                const locked = isOtherCharTweet(t);
                 const upTw = (patch) => updEffective(effectiveTweets.map((t2,j)=>j===i?{...t2,...patch,id:t2.id||Date.now()+j}:{...t2,id:t2.id||Date.now()+j}));
                 return (
-                <div key={t.id??i} className="adm-card" style={{background:locked?"rgba(0,0,0,0.03)":"rgba(255,255,255,0.9)",borderRadius:10,padding:"10px 12px",border:locked?"1px solid rgba(0,0,0,0.04)":"1px solid rgba(0,0,0,0.07)",display:"flex",flexDirection:"column",gap:6,opacity:locked?0.6:1}}>
-                  {locked && <div style={{fontSize:10,color:"#9ca3af",fontStyle:"italic"}}>🔒 Tweet d'un autre perso — non modifiable ici</div>}
+                <div key={t.id??i} className="adm-card" style={{background:"rgba(255,255,255,0.9)",borderRadius:10,padding:"10px 12px",border:"1px solid rgba(0,0,0,0.07)",display:"flex",flexDirection:"column",gap:6}}>
                   <div style={{display:"flex",gap:6}}>
-                    <Field label="Handle" value={t.h||""} onChange={locked?undefined:v=>upTw({h:v})} style={{flex:1}} readOnly={locked}/>
-                    <Field label="Nom"    value={t.name||""} onChange={locked?undefined:v=>upTw({name:v})} style={{flex:1}} readOnly={locked}/>
-                    <LoreDateTimeInput value={t.time||""} onChange={locked?undefined:v=>upTw({time:v})} width="180px" showLabel={true}/>
-                    <div style={{display:"flex",gap:6,alignItems:"flex-start"}}>
-                    {!locked && <MoveButtons 
-                      index={i} 
-                      length={effectiveTweets.length}
-                      onMoveUp={() => { const l=[...effectiveTweets]; [l[i-1],l[i]]=[l[i],l[i-1]]; updEffective(l); }}
-                      onMoveDown={() => { const l=[...effectiveTweets]; [l[i+1],l[i]]=[l[i],l[i+1]]; updEffective(l); }}
-                    />}
-                    {locked
-                      ? <div style={{width:32,marginTop:18}}/>
-                      : <button onClick={()=>updEffective(effectiveTweets.filter((_,j)=>j!==i))} className="adm-del-btn" style={{background:"rgba(239,68,68,0.07)",border:"1px solid rgba(239,68,68,0.2)",color:"#ef4444",borderRadius:6,padding:"5px 8px",cursor:"pointer",fontSize:11,marginTop:18}}>✕</button>
-                    }
-                  </div>
-                  </div>
-                  {!locked && <>
-                    <Field label="Texte" value={t.text||""} onChange={v=>upTw({text:v})} textarea/>
-                    <div style={{display:"flex",gap:6,alignItems:"flex-end"}}>
-                      <Field label="💬" value={String(t.rp??0)}  onChange={v=>upTw({rp:parseInt(v)||0})} style={{flex:1}}/>
-                      <Field label="🔁" value={String(t.rt??0)}  onChange={v=>upTw({rt:parseInt(v)||0})} style={{flex:1}}/>
-                      <Field label="❤"  value={String(t.fav??0)} onChange={v=>upTw({fav:parseInt(v)||0})} style={{flex:1}}/>
-                    </div>
-                  </>}
-                  {locked && <div style={{color:"#9ca3af",fontSize:12,fontStyle:"italic",paddingLeft:2}}>{t.text}</div>}
-                </div>
-              );})}
-
-              <button onClick={()=>updEffective([...effectiveTweets.map((t,j)=>({...t,id:t.id||Date.now()+j})),{id:Date.now(),h:"@handle",name:"Nom",text:"",time:"1:00am",av:"?",rp:0,rt:0,fav:0}])}
-                style={{background:"rgba(29,161,242,0.08)",border:"1px dashed rgba(29,161,242,0.4)",color:"#1da1f2",borderRadius:8,padding:"10px 18px",cursor:"pointer",fontSize:12,fontWeight:600}}>+ Tweet dans la TL</button>
-            </div>
-            );
-          })()}
-
-          {twTab==="mytweets" && (()=>{
-            const charKey = tab;
-            const isCustom = (d.profileTweets||[]).length > 0;
-            const defaults = (PROFILE_TWEETS_DEFAULT[charKey]||[]).map((t,i)=>({...t, id:i}));
-            const myTweets = isCustom ? d.profileTweets : defaults;
-            const updMy = (newList) => upd("profileTweets", newList);
-            return (
-            <div style={{display:"flex",flexDirection:"column",gap:10}}>
-              <div style={{background:"rgba(29,161,242,0.06)",border:"1px solid rgba(29,161,242,0.15)",borderRadius:8,padding:"7px 12px",fontSize:11,color:"#1da1f2"}}>
-                🐦 Mes tweets — s'affichent sur le profil de ce personnage ET dans sa timeline.
-              </div>
-              {isCustom && (
-                <div style={{display:"flex",alignItems:"center",justifyContent:"flex-end"}}>
-                  <button onClick={()=>updMy([])} style={{background:"none",border:"1px solid rgba(0,0,0,0.12)",color:"#6b7280",borderRadius:6,padding:"3px 9px",cursor:"pointer",fontSize:10,fontWeight:500,whiteSpace:"nowrap"}}>↩ Réinitialiser</button>
-                </div>
-              )}
-              {myTweets.map((t,i)=>{
-                const upTw = (patch) => updMy([...myTweets.map((t2,j)=>j===i?{...t2,...patch,id:t2.id||Date.now()+j}:{...t2,id:t2.id||Date.now()+j})]);
-                return (
-                <div key={t.id??i} className="adm-card" style={{background:isCustom?"rgba(255,255,255,0.9)":"rgba(255,255,255,0.6)",borderRadius:10,padding:"10px 12px",border:"1px solid rgba(0,0,0,0.07)",display:"flex",flexDirection:"column",gap:6,opacity:isCustom?1:0.8}}>
-                  <div style={{display:"flex",gap:6}}>
+                    <Field label="Handle" value={t.h||""} onChange={v=>upTw({h:v})} style={{flex:1}}/>
+                    <Field label="Nom"    value={t.name||""} onChange={v=>upTw({name:v})} style={{flex:1}}/>
                     <LoreDateTimeInput value={t.time||""} onChange={v=>upTw({time:v})} width="180px" showLabel={true}/>
                     <div style={{display:"flex",gap:6,alignItems:"flex-start"}}>
                     <MoveButtons 
                       index={i} 
-                      length={myTweets.length}
-                      onMoveUp={() => { const l=[...myTweets].map((t2,j)=>({...t2,id:t2.id||Date.now()+j})); [l[i-1],l[i]]=[l[i],l[i-1]]; updMy(l); }}
-                      onMoveDown={() => { const l=[...myTweets].map((t2,j)=>({...t2,id:t2.id||Date.now()+j})); [l[i+1],l[i]]=[l[i],l[i+1]]; updMy(l); }}
+                      length={effectiveTweets.length}
+                      onMoveUp={() => { const l=[...effectiveTweets]; [l[i-1],l[i]]=[l[i],l[i-1]]; updEffective(l); }}
+                      onMoveDown={() => { const l=[...effectiveTweets]; [l[i+1],l[i]]=[l[i],l[i+1]]; updEffective(l); }}
                     />
-                    <button onClick={()=>updMy(myTweets.filter((_,j)=>j!==i).map((t2,j)=>({...t2,id:t2.id||Date.now()+j})))} className="adm-del-btn" style={{background:"rgba(239,68,68,0.07)",border:"1px solid rgba(239,68,68,0.2)",color:"#ef4444",borderRadius:6,padding:"5px 8px",cursor:"pointer",fontSize:11,marginTop:18}}>✕</button>
+                    <button onClick={()=>updEffective(effectiveTweets.filter((_,j)=>j!==i))} className="adm-del-btn" style={{background:"rgba(239,68,68,0.07)",border:"1px solid rgba(239,68,68,0.2)",color:"#ef4444",borderRadius:6,padding:"5px 8px",cursor:"pointer",fontSize:11,marginTop:18}}>✕</button>
                   </div>
                   </div>
                   <Field label="Texte" value={t.text||""} onChange={v=>upTw({text:v})} textarea/>
@@ -20352,8 +20330,9 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                   </div>
                 </div>
               );})}
-              <button onClick={()=>updMy([...myTweets.map((t2,j)=>({...t2,id:t2.id||Date.now()+j})),{id:Date.now(),text:"",time:"1:00am",rp:0,rt:0,fav:0}])}
-                style={{background:"rgba(29,161,242,0.08)",border:"1px dashed rgba(29,161,242,0.4)",color:"#1da1f2",borderRadius:8,padding:"10px 18px",cursor:"pointer",fontSize:12,fontWeight:600}}>+ Mon tweet</button>
+
+              <button onClick={()=>updEffective([...effectiveTweets.map((t,j)=>({...t,id:t.id||Date.now()+j})),{id:Date.now(),h:"@handle",name:"Nom",text:"",time:"1:00am",av:"?",rp:0,rt:0,fav:0}])}
+                style={{background:"rgba(29,161,242,0.08)",border:"1px dashed rgba(29,161,242,0.4)",color:"#1da1f2",borderRadius:8,padding:"10px 18px",cursor:"pointer",fontSize:12,fontWeight:600}}>+ Tweet</button>
             </div>
             );
           })()}
@@ -20700,14 +20679,18 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
       </div>
     );
 
-    case "tumblr": return (
+    case "tumblr": {
+      const sharedPosts = data.sharedThreads?._sharedTumblrPosts || [];
+      const myShared = sharedPosts.filter(p=>p.author===tab);
+      const updShared = (list) => onUpdate("_sharedTumblrPosts", list);
+      return (
       <div style={{display:"flex",flexDirection:"column",gap:12}}>
         <div style={{display:"flex",gap:10,flexWrap:"wrap"}}>
           <Field label="Handle" value={d.tumblr?.handle||""} onChange={v=>upd("tumblr",{...(d.tumblr||{}),handle:v})}/>
           <Field label="Followers" value={String(d.tumblr?.followers||"")} onChange={v=>upd("tumblr",{...(d.tumblr||{}),followers:parseInt(v)||0})}/>
           <Field label="Following" value={String(d.tumblr?.following||"")} onChange={v=>upd("tumblr",{...(d.tumblr||{}),following:parseInt(v)||0})}/>
         </div>
-        <div style={{display:"flex",gap:14,alignItems:"center",background:"rgba(255,255,255,0.6)",borderRadius:10,padding:"10px 12px",border:"1px solid rgba(0,0,0,0.06)"}}>
+        <div style={{display:"flex",gap:14,alignItems:"center",flexWrap:"wrap",background:"rgba(255,255,255,0.6)",borderRadius:10,padding:"10px 12px",border:"1px solid rgba(0,0,0,0.06)"}}>
           <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:4}}>
             <label style={{width:48,height:48,borderRadius:8,overflow:"hidden",background:d.tumblr?.avatarBg||"#8e7cc3",display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontWeight:700,fontSize:18,cursor:"pointer",border:"1px solid rgba(0,0,0,0.1)"}}>
               {d.avatar?<img src={d.avatar} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:(d.username||"?")[0].toUpperCase()}
@@ -20715,7 +20698,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
             </label>
             <span style={{fontSize:9,color:"#888"}}>Photo de profil</span>
           </div>
-          <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:4,flex:1}}>
+          <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:4,flex:"1 1 160px",minWidth:0}}>
             <label style={{width:"100%",height:48,borderRadius:8,overflow:"hidden",background:d.tumblr?.coverColor||"#2c3e50",display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontSize:11,cursor:"pointer",border:"1px solid rgba(0,0,0,0.1)"}}>
               {d.tumblr?.cover?<img src={d.tumblr.cover} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:"Cliquer pour importer"}
               <input type="file" accept="image/*" style={{display:"none"}} onChange={e=>{const f=e.target.files?.[0];if(!f)return;const r=new UploadReader();r.onload=ev=>upd("tumblr",{...(d.tumblr||{}),cover:ev.target.result});r.readAsDataURL(f);e.target.value="";}}/>
@@ -20723,55 +20706,44 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
             <span style={{fontSize:9,color:"#888"}}>Bannière du header</span>
           </div>
         </div>
-        {(d.tumblr?.posts||[]).map((post,i)=>(
+
+        <div style={{color:"#888",fontSize:10,letterSpacing:1,textTransform:"uppercase",margin:"4px 0 0"}}>Mes posts (partagés — visibles par tout le monde, comme sur Twitter)</div>
+        <div style={{fontSize:11,color:"#9ca3af"}}>Seul toi peux modifier ou supprimer tes propres posts ici.</div>
+        {myShared.map((post)=>{
+          const updPost = (patch) => updShared(sharedPosts.map(p=>p.id===post.id?{...p,...patch}:p));
+          return (
           <div key={post.id} className="adm-card" style={{background:"rgba(255,255,255,0.85)",borderRadius:12,padding:14,border:"1px solid rgba(0,0,0,0.07)",boxShadow:"0 2px 8px rgba(0,0,0,0.04)"}}>
-            <div style={{display:"flex",gap:8,marginBottom:8,alignItems:"center"}}>
-              <Field label="Titre (opt.)" value={post.title||""} onChange={v=>{const p=[...d.tumblr.posts];p[i]={...p[i],title:v};upd("tumblr",{...d.tumblr,posts:p});}} width="40%"/>
-              <Field label="Date" value={post.date||""} onChange={v=>{const p=[...d.tumblr.posts];p[i]={...p[i],date:v};upd("tumblr",{...d.tumblr,posts:p});}} width="20%"/>
-              <Field label="Notes" value={String(post.notes||0)} onChange={v=>{const p=[...d.tumblr.posts];p[i]={...p[i],notes:parseInt(v)||0};upd("tumblr",{...d.tumblr,posts:p});}} width="15%"/>
-              <button onClick={()=>upd("tumblr",{...d.tumblr,posts:d.tumblr.posts.filter((_,j)=>j!==i)})}
+            <div style={{display:"flex",gap:8,marginBottom:8,alignItems:"center",flexWrap:"wrap"}}>
+              <Field label="Titre (opt.)" value={post.title||""} onChange={v=>updPost({title:v})} width="160px"/>
+              <div style={{display:"flex",flexDirection:"column",gap:5,width:"150px"}}>
+                <label style={{color:"#9ca3af",fontSize:10,letterSpacing:0.8,textTransform:"uppercase",fontWeight:600}}>Date</label>
+                <input type="date" min="2012-01-01" max="2012-12-31"
+                  value={(()=>{const p=parseLoreTime(post.date); return p?.day?`2012-${String(p.month).padStart(2,'0')}-${String(p.day).padStart(2,'0')}`:LORE_DATE_DEFAULT;})()}
+                  onChange={e=>{ if(!e.target.value){updPost({date:""});return;} const [,m,dd]=e.target.value.split('-').map(Number); updPost({date:`${dd} ${LORE_MONTHS_FR[m]}`}); }}
+                  className="adm-input" style={{background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#1a1a2e",padding:"7px 8px",fontSize:11,borderRadius:7}}/>
+              </div>
+              <Field label="Notes" value={String(post.notes||0)} onChange={v=>updPost({notes:parseInt(v)||0})} width="80px"/>
+              <button onClick={()=>updShared(sharedPosts.filter(p=>p.id!==post.id))}
                 className="adm-del-btn" style={{background:"rgba(239,68,68,0.06)",border:"1px solid rgba(239,68,68,0.2)",color:"#ef4444",borderRadius:6,padding:"4px 8px",cursor:"pointer",fontSize:11,marginTop:18}}>✕</button>
             </div>
-            <Field label="Texte" value={post.body||""} onChange={v=>{const p=[...d.tumblr.posts];p[i]={...p[i],body:v};upd("tumblr",{...d.tumblr,posts:p});}} textarea/>
+            {post.img && <div style={{position:"relative",alignSelf:"flex-start",marginBottom:8,display:"inline-block"}}>
+              <img src={post.img} style={{maxWidth:200,maxHeight:150,borderRadius:8,display:"block"}}/>
+              <button onClick={()=>updPost({img:null})} style={{position:"absolute",top:2,right:2,background:"rgba(0,0,0,0.6)",border:"none",color:"#fff",borderRadius:"50%",width:20,height:20,fontSize:12,cursor:"pointer",lineHeight:1}}>✕</button>
+            </div>}
+            <label style={{display:"inline-block",marginBottom:8,background:"rgba(99,102,241,0.08)",border:"1px dashed rgba(99,102,241,0.4)",color:"#6366f1",borderRadius:6,padding:"5px 10px",fontSize:11,cursor:"pointer"}}>
+              {post.img?"Changer l'image":"+ Image"}
+              <input type="file" accept="image/*" style={{display:"none"}} onChange={e=>{
+                const f=e.target.files?.[0]; if(!f)return;
+                const r=new UploadReader(); r.onload=ev=>updPost({img:ev.target.result}); r.readAsDataURL(f); e.target.value="";
+              }}/>
+            </label>
+            <Field label="Texte" value={post.body||""} onChange={v=>updPost({body:v})} textarea/>
           </div>
-        ))}
-        <button onClick={()=>upd("tumblr",{...(d.tumblr||{}),posts:[{id:Date.now(),username:d.tumblr?.handle||"",body:"",notes:0,date:"1 oct",type:"text"},...(d.tumblr?.posts||[])]})}
+        );})}
+        <button onClick={()=>updShared([{id:Date.now(),author:tab,username:d.tumblr?.handle||"",body:"",notes:0,date:"1 oct",type:"text"},...sharedPosts])}
           style={{background:"rgba(53,70,92,0.08)",border:"1px dashed rgba(53,70,92,0.4)",color:"#35465c",borderRadius:8,padding:"10px 18px",cursor:"pointer",fontSize:12,fontWeight:600}}>+ Post Tumblr</button>
 
-        <div style={{color:"#888",fontSize:10,letterSpacing:1,textTransform:"uppercase",margin:"16px 0 8px"}}>Onglet Tag — centres d'intérêt</div>
-        {(()=>{
-          const isCustom = (d.tumblr?.interestTags||[]).length > 0;
-          const effectiveTags = isCustom ? d.tumblr.interestTags : (TUMBLR_TAGS_DEFAULT[tab]||[]);
-          const updTags = (list) => upd("tumblr",{...(d.tumblr||{}),interestTags:list});
-          return (<>
-            <div style={{fontSize:11,color:"#9ca3af",marginBottom:8}}>Tags affichés dans l'onglet "tag" (icône étiquette) du profil Tumblr.</div>
-            {isCustom && (
-              <div style={{display:"flex",alignItems:"center",justifyContent:"flex-end",marginBottom:4}}>
-                <button onClick={()=>upd("tumblr",{...(d.tumblr||{}),interestTags:[]})} style={{background:"none",border:"1px solid rgba(0,0,0,0.12)",color:"#6b7280",borderRadius:6,padding:"3px 9px",cursor:"pointer",fontSize:10}}>↩ Réinitialiser</button>
-              </div>
-            )}
-            <div style={{display:"flex",flexDirection:"column",gap:6}}>
-              {effectiveTags.map((item,i)=>(
-                <div key={i} style={{display:"flex",gap:8,alignItems:"center",background:"rgba(255,255,255,0.85)",padding:"7px 10px",borderRadius:8,border:"1px solid rgba(0,0,0,0.07)",opacity:isCustom?1:0.8}}>
-                  <div style={{width:24,height:24,borderRadius:4,background:`hsl(${(i*53+17)%360},38%,55%)`,flexShrink:0}}/>
-                  <span style={{color:"#9ca3af",fontSize:12,flexShrink:0}}>#</span>
-                  <input value={item.tag||""} onChange={e=>{const t=[...effectiveTags.map(x=>({...x}))];t[i]={...t[i],tag:e.target.value};updTags(t);}}
-                    className="adm-input" placeholder="nom du tag"
-                    style={{flex:2,background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#1a1a2e",padding:"5px 8px",fontSize:12,borderRadius:6}}/>
-                  <input value={item.posts||""} onChange={e=>{const t=[...effectiveTags.map(x=>({...x}))];t[i]={...t[i],posts:e.target.value};updTags(t);}}
-                    className="adm-input" placeholder="Ex: 12.4K"
-                    style={{width:70,background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#6b7280",padding:"5px 8px",fontSize:11,borderRadius:6}}/>
-                  <button onClick={()=>updTags(effectiveTags.filter((_,j)=>j!==i))}
-                    className="adm-del-btn" style={{background:"none",border:"none",color:"#d1d5db",cursor:"pointer",fontSize:16,padding:"0 2px",flexShrink:0}}>×</button>
-                </div>
-              ))}
-            </div>
-            <button onClick={()=>updTags([...effectiveTags.map(x=>({...x})),{tag:"nouveautag",posts:"0"}])}
-              style={{background:"rgba(142,124,195,0.1)",border:"1px dashed rgba(142,124,195,0.5)",color:"#8e7cc3",borderRadius:8,padding:"9px 16px",cursor:"pointer",fontSize:12,fontWeight:600,marginTop:6}}>+ Tag</button>
-          </>);
-        })()}
-
-        <div style={{color:"#888",fontSize:10,letterSpacing:1,textTransform:"uppercase",margin:"16px 0 8px"}}>Fil d'accueil (posts des comptes suivis)</div>
+        <div style={{color:"#888",fontSize:10,letterSpacing:1,textTransform:"uppercase",margin:"16px 0 8px"}}>Fil d'accueil (posts décoratifs des comptes suivis — pas partagés, propres à ce perso)</div>
         {(()=>{
           const isCustomFeed = !!d.tumblr?.feedPosts;
           const effectiveFeed = d.tumblr?.feedPosts || TUMBLR_FEED_POSTS_DEFAULT[d.username] || [];
@@ -20784,11 +20756,11 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
             )}
             {effectiveFeed.map((post,i)=>(
               <div key={post.id??i} className="adm-card" style={{background:"rgba(255,255,255,0.85)",borderRadius:12,padding:14,border:"1px solid rgba(0,0,0,0.07)",boxShadow:"0 2px 8px rgba(0,0,0,0.04)",marginTop:6}}>
-                <div style={{display:"flex",gap:8,marginBottom:8,alignItems:"center"}}>
-                  <Field label="Pseudo de l'auteur" value={post.username||""} onChange={v=>{const p=[...effectiveFeed];p[i]={...p[i],username:v};updFeed(p);}} width="30%"/>
-                  <Field label="Titre (opt.)" value={post.title||""} onChange={v=>{const p=[...effectiveFeed];p[i]={...p[i],title:v};updFeed(p);}} width="25%"/>
-                  <Field label="Date" value={post.date||""} onChange={v=>{const p=[...effectiveFeed];p[i]={...p[i],date:v};updFeed(p);}} width="15%"/>
-                  <Field label="Notes" value={String(post.notes||0)} onChange={v=>{const p=[...effectiveFeed];p[i]={...p[i],notes:parseInt(v)||0};updFeed(p);}} width="12%"/>
+                <div style={{display:"flex",gap:8,marginBottom:8,alignItems:"center",flexWrap:"wrap"}}>
+                  <Field label="Pseudo de l'auteur" value={post.username||""} onChange={v=>{const p=[...effectiveFeed];p[i]={...p[i],username:v};updFeed(p);}} width="140px"/>
+                  <Field label="Titre (opt.)" value={post.title||""} onChange={v=>{const p=[...effectiveFeed];p[i]={...p[i],title:v};updFeed(p);}} width="140px"/>
+                  <Field label="Date" value={post.date||""} onChange={v=>{const p=[...effectiveFeed];p[i]={...p[i],date:v};updFeed(p);}} width="90px"/>
+                  <Field label="Notes" value={String(post.notes||0)} onChange={v=>{const p=[...effectiveFeed];p[i]={...p[i],notes:parseInt(v)||0};updFeed(p);}} width="70px"/>
                   <button onClick={()=>updFeed(effectiveFeed.filter((_,j)=>j!==i))}
                     className="adm-del-btn" style={{background:"rgba(239,68,68,0.06)",border:"1px solid rgba(239,68,68,0.2)",color:"#ef4444",borderRadius:6,padding:"4px 8px",cursor:"pointer",fontSize:11,marginTop:18}}>✕</button>
                 </div>
@@ -20800,7 +20772,8 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
           </>);
         })()}
       </div>
-    );
+      );
+    }
 
     case "reddit": return (
       <div style={{display:"flex",flexDirection:"column",gap:8}}>
@@ -20848,28 +20821,14 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
           const daysInMonth = (m,y) => new Date(y,m,0).getDate();
           // Group by day key
           const grouped = effective.reduce((acc,ev,i)=>{
-            const hasDate = ev.day && ev.month && ev.year;
-            const k = hasDate
-              ? `${ev.year||2012}-${String(ev.month||10).padStart(2,"0")}-${String(ev.day||1).padStart(2,"0")}`
-              : "__nodate__";
-            const label = hasDate
-              ? `${ev.day} ${MONTHS[(ev.month||10)-1]} ${ev.year||2012}`
-              : "📋 Sans date";
-            if(!acc[k]) acc[k]={label,indices:[],nodate:!hasDate};
+            const k=`${ev.year||2012}-${String(ev.month||10).padStart(2,"0")}-${String(ev.day||1).padStart(2,"0")}`;
+            if(!acc[k]) acc[k]={label:`${ev.day||1} ${MONTHS[(ev.month||10)-1]} ${ev.year||2012}`,indices:[]};
             acc[k].indices.push(i);
             return acc;
           }, {});
-          // Trier : dates réelles d'abord (ordre chrono), puis "Sans date" toujours en bas
-          const dayKeys = Object.keys(grouped).sort((a,b)=>{
-            if(a==="__nodate__") return 1;
-            if(b==="__nodate__") return -1;
-            return a.localeCompare(b);
-          });
+          const dayKeys = Object.keys(grouped).sort();
           const [collapsed, setCollapsed] = [calCollapsedSet, setCalCollapsedSet];
           const toggleDay = k => setCollapsed(prev=>{const s=new Set(prev);s.has(k)?s.delete(k):s.add(k);return s;});
-          // Par défaut tout est fermé : isOpen = vrai seulement si la clé est dans le set "ouvert"
-          // On réutilise calCollapsedSet comme "openSet" (renommage sémantique uniquement ici)
-          const isOpen = (k) => collapsed.has(k);
           const CAL_RED="#e04444";
           return (<>
             {isCustom && (
@@ -20879,26 +20838,20 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
             )}
 
             {dayKeys.map(k=>{
-              const {label, indices, nodate} = grouped[k];
-              // Le groupe "Sans date" est toujours ouvert, pas toggleable
-              const open = nodate ? true : isOpen(k);
+              const {label, indices} = grouped[k];
+              const isOpen = !collapsed.has(k);
               return (
                 <div key={k}>
-                  {/* Day header */}
-                  {nodate
-                    ? <div style={{display:"flex",alignItems:"center",gap:8,background:"rgba(99,102,241,0.06)",border:"1px solid rgba(99,102,241,0.18)",borderRadius:8,padding:"7px 12px"}}>
-                        <span style={{fontSize:12,fontWeight:700,color:"#6366f1",flex:1}}>{label}</span>
-                        <span style={{fontSize:10,color:"#9ca3af"}}>{indices.length} événement{indices.length>1?"s":""} — définir une date pour classer</span>
-                      </div>
-                    : <button onClick={()=>toggleDay(k)} style={{width:"100%",display:"flex",alignItems:"center",gap:8,background:"rgba(224,68,68,0.07)",border:"1px solid rgba(224,68,68,0.18)",borderRadius:8,padding:"7px 12px",cursor:"pointer",textAlign:"left"}}>
-                        <span style={{fontSize:12,width:12,flexShrink:0}}>{open?"▾":"▸"}</span>
-                        <span style={{fontSize:12,fontWeight:700,color:"#c0392b",flex:1}}>{label}</span>
-                        <span style={{fontSize:10,color:"#9ca3af"}}>{indices.length} événement{indices.length>1?"s":""}</span>
-                      </button>
-                  }
+                  {/* Day header — togglable */}
+                  <button onClick={()=>toggleDay(k)} style={{width:"100%",display:"flex",alignItems:"center",gap:8,background:"rgba(224,68,68,0.07)",border:"1px solid rgba(224,68,68,0.18)",borderRadius:8,padding:"7px 12px",cursor:"pointer",textAlign:"left"}}>
+                    <span style={{fontSize:12,color:isOpen?"▾":"▸",width:12,flexShrink:0}}>{isOpen?"▾":"▸"}</span>
+                    <span style={{fontSize:12,fontWeight:700,color:"#c0392b",flex:1}}>{label}</span>
+                    <span style={{fontSize:10,color:"#9ca3af"}}>{indices.length} événement{indices.length>1?"s":""}</span>
+                  </button>
 
-                  {open && indices.map(i=>{
+                  {isOpen && indices.map(i=>{
                     const ev = effective[i];
+                    const mo = ev.month||10, yr = ev.year||2012;
                     return (
                     <div key={ev.id??i} className="adm-card" style={{background:"rgba(255,255,255,0.9)",borderRadius:"0 0 10px 10px",padding:"10px 12px",border:"1px solid rgba(0,0,0,0.07)",borderTop:"none",display:"flex",flexDirection:"column",gap:7,marginTop:0}}>
                       <Field label="Titre" value={ev.title||""} onChange={v=>ensureCustom(i,{title:v})}/>
@@ -20907,24 +20860,16 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                         <div style={{display:"flex",flexDirection:"column",gap:2}}>
                           <label style={{color:"#9ca3af",fontSize:10,letterSpacing:0.6,fontWeight:600,textTransform:"uppercase"}}>Date</label>
                           <div style={{display:"flex",gap:4}}>
-                            <select value={ev.month||""} onChange={e=>{
-                              const v=parseInt(e.target.value)||null;
-                              ensureCustom(i,{month:v, day:v?ev.day||1:null, year:v?ev.year||2012:null});
-                            }}
-                              style={{background:"rgba(255,255,255,0.9)",border:"1px solid rgba(0,0,0,0.1)",color:ev.month?"#1a1a2e":"#9ca3af",padding:"5px 6px",fontSize:11,borderRadius:7}}>
-                              <option value="">— Mois</option>
+                            <select value={mo} onChange={e=>ensureCustom(i,{month:parseInt(e.target.value)})}
+                              style={{background:"rgba(255,255,255,0.9)",border:"1px solid rgba(0,0,0,0.1)",color:"#1a1a2e",padding:"5px 6px",fontSize:11,borderRadius:7}}>
                               {MONTHS.map((m,idx)=><option key={idx+1} value={idx+1}>{m}</option>)}
                             </select>
-                            <select value={ev.day||""} onChange={e=>ensureCustom(i,{day:parseInt(e.target.value)||null})}
-                              disabled={!ev.month}
-                              style={{background:"rgba(255,255,255,0.9)",border:"1px solid rgba(0,0,0,0.1)",color:ev.day?"#1a1a2e":"#9ca3af",padding:"5px 6px",fontSize:11,borderRadius:7,width:60,opacity:ev.month?1:0.5}}>
-                              <option value="">—</option>
-                              {Array.from({length:daysInMonth(ev.month||10,ev.year||2012)},(_,k)=>k+1).map(n=><option key={n} value={n}>{n}</option>)}
+                            <select value={ev.day||1} onChange={e=>ensureCustom(i,{day:parseInt(e.target.value)})}
+                              style={{background:"rgba(255,255,255,0.9)",border:"1px solid rgba(0,0,0,0.1)",color:"#1a1a2e",padding:"5px 6px",fontSize:11,borderRadius:7,width:60}}>
+                              {Array.from({length:daysInMonth(mo,yr)},(_,k)=>k+1).map(n=><option key={n} value={n}>{n}</option>)}
                             </select>
-                            <select value={ev.year||""} onChange={e=>ensureCustom(i,{year:parseInt(e.target.value)||null})}
-                              disabled={!ev.month}
-                              style={{background:"rgba(255,255,255,0.9)",border:"1px solid rgba(0,0,0,0.1)",color:ev.year?"#1a1a2e":"#9ca3af",padding:"5px 6px",fontSize:11,borderRadius:7,width:66,opacity:ev.month?1:0.5}}>
-                              <option value="">—</option>
+                            <select value={yr} onChange={e=>ensureCustom(i,{year:parseInt(e.target.value)})}
+                              style={{background:"rgba(255,255,255,0.9)",border:"1px solid rgba(0,0,0,0.1)",color:"#1a1a2e",padding:"5px 6px",fontSize:11,borderRadius:7,width:66}}>
                               {[2011,2012,2013].map(y=><option key={y} value={y}>{y}</option>)}
                             </select>
                           </div>
@@ -20943,12 +20888,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
               );
             })}
 
-            <button onClick={()=>{
-              // Créer sans date — l'événement apparaît dans "📋 Sans date" en bas
-              const newEv={id:Date.now(),day:null,month:null,year:null,title:"",time:"",location:""};
-              const base = isCustom ? effective : defaults.map((e,j)=>({...e,id:"seed_"+j}));
-              updList([...base, newEv]);
-            }}
+            <button onClick={()=>{const today={id:Date.now(),day:1,month:10,year:2012,title:"",time:"",location:""};updList(isCustom?[...effective,today]:([...defaults,today].map((e,j)=>({...e,id:Date.now()+j}))))}}
               style={{background:"rgba(224,68,68,0.08)",border:"1px dashed rgba(224,68,68,0.35)",color:"#e04444",borderRadius:8,padding:"10px 18px",cursor:"pointer",fontSize:12,fontWeight:600}}>+ Événement</button>
           </>);
         })()}
@@ -21540,7 +21480,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
             const emoji = c.key==="glinda"?"🌸":c.key==="eoghan"?"🌈":c.key==="drew"?"🪱":"🖤";
             return (
               <button key={c.key} className="char-tab"
-                onClick={()=>{ const firstSection = (()=>{ const apps=[...(data[c.key]?.apps||[]),...(data[c.key]?.dock||[])]; const AS={messages:1,phone:1,notes:1,gallery:1,music:1,twitter:1,pinterest:1,browser:1,snapchat:1,grindr:1,tumblr:1,reddit:1,calendar:1,weather:1,settings:1,wikipedia:1,kindle:1,vpn:1,inaturalist:1}; return apps.find(id=>AS[id]) || 'apparence'; })(); setTab(c.key); setSection(firstSection); }}
+                onClick={()=>{ const firstSection = (()=>{ const apps=[...(data[c.key]?.apps||[]),...(data[c.key]?.dock||[])]; const AS={messages:1,calls:1,notes:1,gallery:1,music:1,twitter:1,pinterest:1,browser:1,snapchat:1,grindr:1,tumblr:1,reddit:1,contacts:1,calendar:1,weather:1,settings:1,wikipedia:1,kindle:1,vpn:1,inaturalist:1}; return apps.find(id=>AS[id]) || 'apparence'; })(); setTab(c.key); setSection(firstSection); }}
                 style={{
                   display:"flex",alignItems:"center",gap:7,padding:"0 16px",
                   border:"none",borderBottom:`3px solid ${isActive?c.color:"transparent"}`,
@@ -21559,18 +21499,12 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
         {/* Right actions */}
         <div className="adm-topbar-right" style={{display:"flex",alignItems:"center",gap:6,paddingLeft:isMobile?0:12,borderLeft:isMobile?"none":"1px solid #f0f0f0",flexShrink:0,order:isMobile?1:0,marginLeft:isMobile?"auto":0}}>
 
-          {/* Date lore — visible sur desktop et mobile */}
-          <div style={{display:"flex",alignItems:"center",gap:5,background:"#f8fafc",border:"1px solid #e5e7eb",borderRadius:7,padding:"5px 9px"}}>
+          {/* Date lore */}
+          {!isMobile && <div style={{display:"flex",alignItems:"center",gap:5,background:"#f8fafc",border:"1px solid #e5e7eb",borderRadius:7,padding:"5px 9px"}}>
             <span style={{fontSize:12}}>📅</span>
             <input type="date" value={loreDate} onChange={e=>onLoreDateChange(e.target.value)}
-              style={{background:"transparent",border:"none",color:"#6366f1",fontSize:11,cursor:"pointer",outline:"none",fontFamily:"monospace",fontWeight:600,width:isMobile?100:110}}/>
-          </div>
-
-          {/* Réinitialiser */}
-          <button onClick={()=>{if(window.confirm("Réinitialiser toutes les données ?")){ window.location.reload(); }}}
-            style={{background:"#f8fafc",border:"1px solid #e5e7eb",color:"#ef4444",padding:"6px 11px",borderRadius:7,fontSize:12,cursor:"pointer",fontWeight:500}}>
-            🗑 Réinitialiser
-          </button>
+              style={{background:"transparent",border:"none",color:"#6366f1",fontSize:11,cursor:"pointer",outline:"none",fontFamily:"monospace",fontWeight:600,width:110}}/>
+          </div>}
 
           {/* Back */}
           <button onClick={onExit}
@@ -21664,6 +21598,8 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
 // ─── SYNC BADGE ───────────────────────────────────────────────────────────────
 // Petit indicateur discret de l'état de la synchro multi-appareils (coin haut-droit).
 const SyncBadge = ({status}) => {
+  const [dismissed, setDismissed] = useState(false);
+  if(dismissed) return null;
   const cfg = {
     synced:     {color:"#1fa855", label:"Synchronisé",      dot:"#2ecc71"},
     connecting: {color:"#b8860b", label:"Connexion…",       dot:"#f1c40f"},
@@ -21671,14 +21607,14 @@ const SyncBadge = ({status}) => {
     offline:    {color:"#6b7280", label:"Mode local",       dot:"#9ca3af"},
   }[status] || {color:"#6b7280", label:status, dot:"#9ca3af"};
   return (
-    <div title={cfg.label} style={{
+    <div title={`${cfg.label} (clic pour masquer)`} onClick={()=>setDismissed(true)} style={{
       position:"fixed", top:8, right:8, zIndex:9999,
       display:"flex", alignItems:"center", gap:5,
       background:"rgba(255,255,255,0.92)", borderRadius:20,
       padding:"4px 10px 4px 8px", fontSize:10, fontWeight:600,
       color:cfg.color, boxShadow:"0 1px 4px rgba(0,0,0,0.25)",
       fontFamily:"Verdana, Tahoma, Arial, sans-serif",
-      pointerEvents:"none",
+      cursor:"pointer",
     }}>
       <span style={{width:7,height:7,borderRadius:"50%",background:cfg.dot,flexShrink:0,
         animation:status==="connecting"?"sparkle 1s infinite":"none"}}/>
@@ -21822,14 +21758,6 @@ export default function App() {
         patch[other] = next[other];
       }
       queueFirebaseUpdate(patch);
-      // Propager profileTweets dans sharedThreads._sharedProfileTweets[key] pour les autres persos
-      if(merged.profileTweets !== undefined) {
-        const prevShared = prev.sharedThreads || {};
-        const prevPT = prevShared._sharedProfileTweets || {};
-        const nextPT = {...prevPT, [key]: merged.profileTweets};
-        next = {...next, sharedThreads: {...prevShared, _sharedProfileTweets: nextPT}};
-        queueFirebaseUpdate({ [`sharedThreads/_sharedProfileTweets/${key}`]: merged.profileTweets });
-      }
       return next;
     });
 
@@ -22229,7 +22157,7 @@ const CalendarScreen = ({data, isIos, accent, admin=false, update=()=>{}}) => {
           <div style={{color:SUB,fontSize:11,fontWeight:600}}>
             {selectedDay===6 ? "Samedi 6 octobre 2012 🏈" : `${selectedDay} octobre 2012`}
           </div>
-          {admin&&<button onClick={()=>{setEditing({day:selectedDay,id:null});setDraft("");}} style={{background:ACC,border:"none",color:"#fff",borderRadius:14,minWidth:32,minHeight:32,width:32,height:32,fontSize:18,lineHeight:1,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",touchAction:"manipulation",WebkitTapHighlightColor:"transparent"}}>+</button>}
+          {admin&&<button onClick={()=>{setEditing({day:selectedDay,id:null});setDraft("");}} style={{background:ACC,border:"none",color:"#fff",borderRadius:14,width:24,height:24,fontSize:16,lineHeight:1,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>+</button>}
         </div>
         {admin&&editing&&editing.day===selectedDay&&editing.id===null&&(
           <div style={{display:"flex",gap:6}}>
