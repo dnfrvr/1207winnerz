@@ -6982,18 +6982,22 @@ const IOSPhone = ({data,admin,onUpdate,onUpdateShared=()=>{},loreDate:loreDatePr
           </div>}
           <div style={{flex:1,background:"#f2f2f7",overflowY:"auto"}}>
             {hasDates ? (
-              // Vue groupée par année (lecture seule pour l'ordre — il suit les dates)
+              // Vue groupée par mois+année (lecture seule pour l'ordre — il suit les dates)
               (()=>{
+                const MONTHS_EN_FULL = ["","January","February","March","April","May","June","July","August","September","October","November","December"];
                 const groups = [];
                 list.forEach(photo=>{
-                  const year = photo.dateISO ? photo.dateISO.slice(0,4) : "Sans date";
-                  if(!groups.length || groups[groups.length-1].year!==year) groups.push({year, photos:[]});
+                  const monthKey = photo.dateISO ? photo.dateISO.slice(0,7) : "0000-00"; // "YYYY-MM"
+                  const label = photo.dateISO
+                    ? `${MONTHS_EN_FULL[parseInt(photo.dateISO.slice(5,7))||0]||""} ${photo.dateISO.slice(0,4)}`
+                    : "Sans date";
+                  if(!groups.length || groups[groups.length-1].key!==monthKey) groups.push({key:monthKey, label, photos:[]});
                   groups[groups.length-1].photos.push(photo);
                 });
                 return groups.map(g=>(
-                  <div key={g.year}>
-                    <div style={{padding:"8px 12px 4px",fontSize:13,fontWeight:700,color:"#3a3a3c"}}>{g.year}</div>
-                    <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:6,padding:"0 8px 8px"}}>
+                  <div key={g.key}>
+                    <div style={{padding:"10px 12px 4px",fontSize:14,fontWeight:700,color:"#3a3a3c",letterSpacing:-0.3}}>{g.label}</div>
+                    <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:2,padding:"0 0 8px"}}>
                       {g.photos.map(photo=>{
                         const i = list.indexOf(photo);
                         return (
@@ -7822,45 +7826,61 @@ const AndroidPhone = ({data,admin,onUpdate,sharedAndroidIcons={},onUpdateShared=
       <AppShell>
         <AndroidStatusBar notifApps={notifApps} accent={accent}/><ActionBar title="Camera Roll" back={()=>setGalleryView("albums")} overflow/>
         <div style={{flex:1,background:"#111",overflowY:"auto"}}>
-          <div style={{padding:"6px 10px 3px",color:"#555",fontSize:11}}>{activeGallery.length} photo{activeGallery.length!==1?"s":""}{admin&&<span style={{color:"#ffc10788",marginLeft:6}}>· drag to reorder</span>}</div>
-          <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:1}}>
-            {activeGallery.map((photo,i)=>{
-              const onDragStart_g=()=>{window.__galleryDrag=i;};
-              const onDragOver_g=(e)=>{e.preventDefault();window.__galleryOver=i;};
-              const onDrop_g=()=>{
-                const from=window.__galleryDrag, to=window.__galleryOver;
-                if(from===undefined||from===to) return;
-                const reorderable=[...activeGallery];
-                const [moved]=reorderable.splice(from,1);
-                reorderable.splice(to,0,moved);
-                update("gallery",[...reorderable,...deletedGallery]);
-                window.__galleryDrag=undefined; window.__galleryOver=undefined;
-              };
-              return (
-              <div key={photo.id}
-                draggable={admin}
-                onDragStart={onDragStart_g}
-                onDragOver={onDragOver_g}
-                onDrop={onDrop_g}
-                style={{aspectRatio:"1",background:"#222",display:"flex",alignItems:"center",justifyContent:"center",position:"relative",cursor:admin?"grab":"pointer"}}
-                onClick={()=>{ if(admin){ setPhotoModal({type:"gallery",index:allGallery.indexOf(photo)}); } else { setPhotoDetail(i); } }}>
-                {photo.src?<img src={photo.src} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:<span style={{color:"#444",fontSize:20}}>🏔️</span>}
-                {admin&&<AdminBadge label="🗑" onClick={e=>{e.stopPropagation();update("gallery",allGallery.map(p=>p.id===photo.id?{...p,deleted:true}:p));}} color="#f44" style={{position:"absolute",top:2,right:2}}/>}
+          <div style={{padding:"6px 10px 3px",color:"#555",fontSize:11}}>{activeGallery.length} photo{activeGallery.length!==1?"s":""}</div>
+          {(()=>{
+            const MONTHS_EN_FULL = ["","January","February","March","April","May","June","July","August","September","October","November","December"];
+            const hasDates = activeGallery.some(p=>p.dateISO);
+            const sorted = hasDates
+              ? [...activeGallery].sort((a,b)=>(b.dateISO||"0000-00-00").localeCompare(a.dateISO||"0000-00-00"))
+              : activeGallery;
+            if(!hasDates) return (
+              <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:1}}>
+                {sorted.map((photo,i)=>(
+                  <div key={photo.id} style={{aspectRatio:"1",background:"#222",position:"relative",cursor:"pointer",overflow:"hidden"}}
+                    onClick={()=>{ if(admin){ setPhotoModal({type:"gallery",index:allGallery.indexOf(photo)}); } else { setPhotoDetail(i); } }}>
+                    {photo.src?<img src={photo.src} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:<span style={{color:"#444",fontSize:20}}>🏔️</span>}
+                    {admin&&<AdminBadge label="🗑" onClick={e=>{e.stopPropagation();update("gallery",allGallery.map(p=>p.id===photo.id?{...p,deleted:true}:p));}} color="#f44" style={{position:"absolute",top:2,right:2}}/>}
+                  </div>
+                ))}
+                {admin&&<label style={{aspectRatio:"1",background:"#1a1a1a",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",cursor:"pointer",color:"#ffc107",fontSize:22,border:"1px dashed #ffc107",gap:3}}>
+                  <span>+</span><span style={{fontSize:8,opacity:0.7}}>multi</span>
+                  <input type="file" accept="image/*" multiple style={{display:"none"}} onChange={e=>{const files=Array.from(e.target.files||[]);if(!files.length)return;let loaded=0;const np=[];files.forEach((f,fi)=>{const r=new UploadReader();r.onload=ev=>{np.push({id:Date.now()+fi,src:ev.target.result,date:"Oct 2012"});loaded++;if(loaded===files.length)update("gallery",[...activeGallery,...deletedGallery,...np]);};r.readAsDataURL(f);});e.target.value="";}}/>
+                </label>}
               </div>
-            );})}
-            {admin&&<label style={{aspectRatio:"1",background:"#1a1a1a",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",cursor:"pointer",color:"#ffc107",fontSize:22,border:"1px dashed #ffc107",gap:3}}>
-              <span style={{lineHeight:1}}>+</span>
-              <span style={{fontSize:8,opacity:0.7,fontFamily:FF_IOS}}>multi</span>
-              <input type="file" accept="image/*" multiple style={{display:"none"}} onChange={e=>{
-                const files=Array.from(e.target.files||[]);
-                if(!files.length) return;
-                let loaded=0;
-                const newPhotos=[];
-                files.forEach((f,fi)=>{const r=new UploadReader();r.onload=ev=>{newPhotos.push({id:Date.now()+fi,src:ev.target.result,date:"Oct 2012"});loaded++;if(loaded===files.length)update("gallery",[...activeGallery.filter(p=>p.src),...deletedGallery,...newPhotos]);};r.readAsDataURL(f);});
-                e.target.value="";
-              }}/>
-            </label>}
-          </div>
+            );
+            // Groupage par mois+année
+            const groups = [];
+            sorted.forEach(photo=>{
+              const monthKey = photo.dateISO ? photo.dateISO.slice(0,7) : "0000-00";
+              const label = photo.dateISO
+                ? `${MONTHS_EN_FULL[parseInt(photo.dateISO.slice(5,7))||0]||""} ${photo.dateISO.slice(0,4)}`
+                : "Sans date";
+              if(!groups.length || groups[groups.length-1].key!==monthKey) groups.push({key:monthKey, label, photos:[]});
+              groups[groups.length-1].photos.push(photo);
+            });
+            return (<>
+              {groups.map(g=>(
+                <div key={g.key}>
+                  <div style={{padding:"10px 12px 5px",fontSize:13,fontWeight:700,color:"#aaa",letterSpacing:-0.2}}>{g.label}</div>
+                  <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:1}}>
+                    {g.photos.map((photo,i)=>{
+                      const globalIdx = sorted.indexOf(photo);
+                      return (
+                      <div key={photo.id} style={{aspectRatio:"1",background:"#222",position:"relative",cursor:"pointer",overflow:"hidden"}}
+                        onClick={()=>{ if(admin){ setPhotoModal({type:"gallery",index:allGallery.indexOf(photo)}); } else { setPhotoDetail(globalIdx); } }}>
+                        {photo.src?<img src={photo.src} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:<span style={{color:"#444",fontSize:20}}>🏔️</span>}
+                        {admin&&<AdminBadge label="🗑" onClick={e=>{e.stopPropagation();update("gallery",allGallery.map(p=>p.id===photo.id?{...p,deleted:true}:p));}} color="#f44" style={{position:"absolute",top:2,right:2}}/>}
+                      </div>
+                    );})}
+                  </div>
+                </div>
+              ))}
+              {admin&&<label style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",cursor:"pointer",color:"#ffc107",fontSize:22,border:"1px dashed #ffc107",gap:3,padding:16,margin:"8px 10px",borderRadius:8}}>
+                <span>+</span><span style={{fontSize:10,opacity:0.7}}>Ajouter des photos</span>
+                <input type="file" accept="image/*" multiple style={{display:"none"}} onChange={e=>{const files=Array.from(e.target.files||[]);if(!files.length)return;let loaded=0;const np=[];files.forEach((f,fi)=>{const r=new UploadReader();r.onload=ev=>{np.push({id:Date.now()+fi,src:ev.target.result,date:"Oct 2012"});loaded++;if(loaded===files.length)update("gallery",[...activeGallery,...deletedGallery,...np]);};r.readAsDataURL(f);});e.target.value="";}}/>
+              </label>}
+            </>);
+          })()}
         </div>
       </AppShell>
     );
@@ -19747,13 +19767,16 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
             </label>
           </div>
           <div style={{padding:"6px 8px",display:"flex",flexDirection:"column",gap:4}}>
-            <input type="date" value={photo.dateISO||""} onChange={e=>{
-                const iso = e.target.value;
-                if(!iso){ updPhoto(photo.id,{dateISO:null}); return; }
-                const [y,m,dd] = iso.split('-').map(Number);
-                updPhoto(photo.id,{dateISO:iso, date:`${dd} ${LORE_MONTHS_FR[m]} ${y}`});
-              }}
-              className="adm-input" style={{width:"100%",background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.08)",color:"#6b7280",padding:"4px 7px",fontSize:10,borderRadius:6}}/>
+            <div style={{display:"flex",flexDirection:"column",gap:2}}>
+              <span style={{fontSize:9,color:"#9ca3af",fontWeight:600,textTransform:"uppercase",letterSpacing:0.5}}>Date</span>
+              <input type="date" value={photo.dateISO||""} onChange={e=>{
+                  const iso = e.target.value;
+                  if(!iso){ updPhoto(photo.id,{dateISO:null}); return; }
+                  const [y,m,dd] = iso.split('-').map(Number);
+                  updPhoto(photo.id,{dateISO:iso, date:`${dd} ${LORE_MONTHS_FR[m]} ${y}`});
+                }}
+                className="adm-input" style={{width:"100%",background:"rgba(255,255,255,0.9)",border:"1px solid rgba(0,0,0,0.12)",color:photo.dateISO?"#1a1a2e":"#9ca3af",padding:"4px 7px",fontSize:10,borderRadius:6}}/>
+            </div>
             <div style={{display:"flex",gap:4}}>
               {activeTab==="deleted"
                 ? <button onClick={()=>updPhoto(photo.id,{deleted:false})} style={{flex:1,background:"rgba(16,185,129,0.07)",border:"1px solid rgba(16,185,129,0.2)",color:"#059669",borderRadius:6,padding:"3px 0",cursor:"pointer",fontSize:10}}>↩</button>
@@ -19814,21 +19837,28 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
             );
           })()}
 
-          {/* Grille de photos */}
-          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(130px,1fr))",gap:10}}>
-            {currentPhotos.map(photo=><PhotoCard key={photo.id} photo={photo}/>)}
-            <label style={{
-              aspectRatio:"1",background:"rgba(99,102,241,0.05)",border:"2px dashed rgba(99,102,241,0.25)",
-              borderRadius:10,display:"flex",alignItems:"center",justifyContent:"center",
-              cursor:"pointer",color:"#6366f1",fontSize:28,fontWeight:300,minHeight:80
-            }}>
-              +
-              <input type="file" accept="image/*" multiple style={{display:"none"}} onChange={e=>{
-                addPhotosFromFiles(e.target.files, activeTab);
-                e.target.value="";
-              }}/>
-            </label>
-          </div>
+          {/* Grille de photos — triées par date décroissante si dateISO dispo, sinon ordre manuel */}
+          {(()=>{
+            const sortedPhotos = currentPhotos.some(p=>p.dateISO)
+              ? [...currentPhotos].sort((a,b)=>(b.dateISO||"0000-00-00").localeCompare(a.dateISO||"0000-00-00"))
+              : currentPhotos;
+            return (
+              <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(130px,1fr))",gap:10}}>
+                {sortedPhotos.map(photo=><PhotoCard key={photo.id} photo={photo}/>)}
+                <label style={{
+                  aspectRatio:"1",background:"rgba(99,102,241,0.05)",border:"2px dashed rgba(99,102,241,0.25)",
+                  borderRadius:10,display:"flex",alignItems:"center",justifyContent:"center",
+                  cursor:"pointer",color:"#6366f1",fontSize:28,fontWeight:300,minHeight:80
+                }}>
+                  +
+                  <input type="file" accept="image/*" multiple style={{display:"none"}} onChange={e=>{
+                    addPhotosFromFiles(e.target.files, activeTab);
+                    e.target.value="";
+                  }}/>
+                </label>
+              </div>
+            );
+          })()}
         </div>
       );
     }
