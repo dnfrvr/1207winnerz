@@ -19323,16 +19323,16 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
       <div style={{display:"flex",flexDirection:"column",gap:10}}>
 
         <div style={{display:"flex",gap:12,alignItems:"center",background:"rgba(255,255,255,0.85)",padding:12,borderRadius:10,border:"1px solid rgba(0,0,0,0.07)"}}>
-          <label htmlFor={`playlist-cover-${tab}`}
+          <label
             style={{width:64,height:64,borderRadius:8,background:"rgba(99,102,241,0.08)",border:"2px dashed rgba(99,102,241,0.35)",overflow:"hidden",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer"}}>
             {d.playlistCover
               ? <img src={d.playlistCover} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
               : <span style={{fontSize:24}}>🖼</span>}
+            <input type="file" accept="image/*" style={{display:"none"}} onChange={e=>{
+              const f=e.target.files?.[0]; if(!f)return;
+              const r=new UploadReader(); r.onload=ev=>upd("playlistCover",ev.target.result); r.readAsDataURL(f); e.target.value="";
+            }}/>
           </label>
-          <input id={`playlist-cover-${tab}`} type="file" accept="image/*" style={{display:"none"}} onChange={e=>{
-            const f=e.target.files?.[0]; if(!f)return;
-            const r=new UploadReader(); r.onload=ev=>upd("playlistCover",ev.target.result); r.readAsDataURL(f); e.target.value="";
-          }}/>
           <div style={{flex:1}}>
             <div style={{fontSize:12,fontWeight:600,color:"#374151"}}>Cover de la playlist</div>
             <div style={{fontSize:11,color:"#9ca3af"}}>S'affiche dans le lecteur quand rien ne joue</div>
@@ -19352,32 +19352,30 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
           }
           return music.map((track,i)=>{
             const stableId = track.id || `tmp_${i}`;
-            const inputDomId = `track-cover-${tab}-${stableId}`;
           return (
           <div key={stableId} className="adm-card" style={{display:"flex",gap:8,alignItems:"center",background:"rgba(255,255,255,0.85)",padding:10,borderRadius:10,border:"1px solid rgba(0,0,0,0.07)",flexWrap:"wrap"}}>
-            {/* Pochette — label natif : clic sur l'image ouvre directement le sélecteur de fichier */}
-            <label htmlFor={inputDomId} style={{width:40,height:40,borderRadius:6,background:"rgba(99,102,241,0.08)",border:"1px dashed rgba(99,102,241,0.3)",overflow:"hidden",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer"}}>
+            {/* Pochette — input à l'intérieur du label, comme tous les autres uploads */}
+            <label style={{width:40,height:40,borderRadius:6,background:"rgba(99,102,241,0.08)",border:"1px dashed rgba(99,102,241,0.3)",overflow:"hidden",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer"}}>
               {track.cover
                 ? <img src={track.cover} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
                 : <span style={{fontSize:16}}>🎵</span>}
+              <input type="file" accept="image/*" style={{display:"none"}} onChange={e=>{
+                const f=e.target.files?.[0]; if(!f) return;
+                const capturedIndex = i;
+                const capturedId = stableId;
+                const r = new UploadReader();
+                r.onload = ev => {
+                  const freshMusic = [...(dataRef.current[tab]?.music||[])];
+                  const idx = freshMusic.findIndex(t => t.id === capturedId);
+                  const target = idx >= 0 ? idx : capturedIndex;
+                  if(target < 0 || target >= freshMusic.length) return;
+                  freshMusic[target] = {...freshMusic[target], cover: ev.target.result};
+                  onUpdate(tab, {...dataRef.current[tab], music: freshMusic});
+                };
+                r.readAsDataURL(f);
+                e.target.value = "";
+              }}/>
             </label>
-            <input id={inputDomId} type="file" accept="image/*" style={{display:"none"}} onChange={e=>{
-              const f=e.target.files?.[0]; if(!f) return;
-              const capturedIndex = i;
-              const r = new UploadReader();
-              r.onload = ev => {
-                // Lit dataRef.current au moment du callback pour avoir la liste la plus fraîche
-                const freshMusic = [...(dataRef.current[tab]?.music||[])];
-                // Cherche d'abord par id stable, sinon par index capturé
-                const idx = freshMusic.findIndex(t => t.id === stableId);
-                const target = idx >= 0 ? idx : capturedIndex;
-                if(target < 0 || target >= freshMusic.length) return;
-                freshMusic[target] = {...freshMusic[target], cover: ev.target.result};
-                onUpdate(tab, {...dataRef.current[tab], music: freshMusic});
-              };
-              r.readAsDataURL(f);
-              e.target.value = "";
-            }}/>
             <input value={track.title||""} onChange={e=>{const m=[...d.music];m[i]={...m[i],title:e.target.value};upd("music",m);}}
               placeholder="Titre" className="adm-input" style={{flex:2,background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#1a1a2e",padding:"7px 10px",fontSize:12,borderRadius:7}}/>
             <input value={track.artist||""} onChange={e=>{const m=[...d.music];m[i]={...m[i],artist:e.target.value};upd("music",m);}}
