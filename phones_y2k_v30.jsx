@@ -17837,12 +17837,11 @@ const withSocialSeeds = (d) => {
     }
   });
 
-  // feedPosts Tumblr par perso : injecter les décoratifs si vide
+  // feedPosts Tumblr par perso : toujours injecter les seeds déco corrects (sans posts de joueurs)
   const USERNAME_MAP = {glinda:"glindatheverygood",eoghan:"eoghan_masuda",drew:"dreww_orms",elias:"noteliasgreen"};
   ["glinda","eoghan","drew","elias"].forEach(k=>{
     const username = USERNAME_MAP[k];
-    const existingFeedPosts = patched[k]?.tumblr?.feedPosts;
-    if(patched[k] && (!existingFeedPosts || existingFeedPosts.length === 0)) {
+    if(patched[k]) {
       patched[k] = {...patched[k], tumblr:{...(patched[k].tumblr||{}), feedPosts: SEED_FEED_TUMBLR[username]||[]}};
     }
   });
@@ -19471,7 +19470,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
         <div style={{display:"flex",flexDirection:"column",gap:12}}>
           {/* Tab bar */}
           <div className="adm-subtabs" style={{display:"flex",gap:0,background:"rgba(0,0,0,0.05)",borderRadius:8,padding:2,alignSelf:"flex-start"}}>
-            {[["users","👥 Utilisateurs"],["shared","🐦 Mes tweets (partagés)"],["tweets","🗒 Tweets de fond (déco)"]].map(([k,label])=>(
+            {[["users","👥 Mon profil"],["shared","🐦 Mes tweets (partagés)"],["tweets","🗒 Timeline (déco)"]].map(([k,label])=>(
               <button key={k} onClick={()=>setTwTab(k)} style={{
                 padding:"6px 14px",border:"none",borderRadius:6,cursor:"pointer",fontSize:11,
                 fontWeight:twTab===k?700:400,
@@ -19610,7 +19609,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
             return (
             <div style={{display:"flex",flexDirection:"column",gap:10}}>
               <div style={{background:"rgba(29,161,242,0.06)",border:"1px solid rgba(29,161,242,0.15)",borderRadius:8,padding:"8px 12px",fontSize:11,color:"#374151"}}>
-                <span style={{fontWeight:700,color:"#1da1f2"}}>Fil de fond de {CHAR_NAMES[tab]||tab}</span> — Ces tweets décoratifs remplissent la TL de ce perso. Ils peuvent être écrits par n'importe quel compte (y compris les autres joueurs). Ils sont <strong>propres à ce perso</strong> et non partagés. Pour qu'un tweet soit visible par tous les persos, utilise l'onglet "Mes tweets (partagés)".
+                <span style={{fontWeight:700,color:"#1da1f2"}}>Timeline de {CHAR_NAMES[tab]||tab}</span> — Tweets décoratifs de comptes fictifs qui remplissent la TL de ce perso. <strong>Propres à ce perso</strong>, non partagés. Pour qu'un tweet soit visible par tous, utilise l'onglet "Mes tweets (partagés)".
               </div>
 
               {effectiveTweets.map((t,i)=>{
@@ -19981,7 +19980,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
       const tbProfile = d.tumblr || {};
       const updTbProfile = (patch) => upd("tumblr", {...tbProfile, ...patch});
 
-      const SubTabs = [["users","👤 Mon profil"],["shared","📝 Mes posts (partagés)"],["feed","🎨 Fil décoratif"]];
+      const SubTabs = [["users","👤 Mon profil"],["shared","📝 Mes posts (partagés)"],["feed","🗒 Timeline (déco)"]];
       return (
         <div style={{display:"flex",flexDirection:"column",gap:12}}>
           {/* Tab bar */}
@@ -20048,7 +20047,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
             const updFeed = (list) => upd("tumblr",{...(d.tumblr||{}),feedPosts:list});
             return (
               <div style={{display:"flex",flexDirection:"column",gap:8}}>
-                <div style={{fontSize:11,color:"#6b7280",lineHeight:1.5}}>Posts de comptes fictifs visibles dans le fil de <strong>{CHAR_NAMES[tab]||tab}</strong> uniquement — non partagés entre persos.</div>
+                <div style={{fontSize:11,color:"#6b7280",lineHeight:1.5}}>Tweets décoratifs de comptes fictifs visibles dans la timeline de <strong>{CHAR_NAMES[tab]||tab}</strong> uniquement — non partagés entre persos.</div>
                 {effectiveFeed.map((post,i)=>(
                   <div key={post.id??i} className="adm-card" style={{background:"rgba(255,255,255,0.85)",borderRadius:10,padding:"10px 12px",border:"1px solid rgba(0,0,0,0.07)",display:"flex",flexDirection:"column",gap:6}}>
                     <div style={{display:"flex",gap:6,flexWrap:"wrap",alignItems:"flex-end"}}>
@@ -20949,14 +20948,13 @@ export default function App() {
               }
             }
 
-            // homeBaseTweets par perso : toujours remplacer (séparation corrigée)
+            // homeBaseTweets + feedPosts Tumblr par perso : toujours remplacer (séparation corrigée)
             const USERNAME_MAP = {glinda:"glindatheverygood",eoghan:"eoghan_masuda",drew:"dreww_orms",elias:"noteliasgreen"};
             ["glinda","eoghan","drew","elias"].forEach(k => {
               patches[`${k}/homeBaseTweets`] = SEED_HOME_BASE_TWEETS[k] || [];
               const username = USERNAME_MAP[k];
-              if (!remote[k]?.tumblr?.feedPosts?.length) {
-                patches[`${k}/tumblr`] = {...(remote[k]?.tumblr||{}), feedPosts: SEED_FEED_TUMBLR[username]||[]};
-              }
+              // Toujours remplacer feedPosts pour éliminer les posts de joueurs mal placés
+              patches[`${k}/tumblr`] = {...(remote[k]?.tumblr||{}), feedPosts: SEED_FEED_TUMBLR[username]||[]};
             });
 
             update(ref(firebaseDb), patches).catch(e => console.error("[seed] Erreur migration seeds :", e));
