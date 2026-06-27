@@ -8915,7 +8915,8 @@ const mkData = () => ({
       "polyvore",
       "kik",
       "askfm",
-      "pou"
+      "pou",
+      "files"
     ],
     "dock": [
       "messages",
@@ -11318,7 +11319,8 @@ const mkData = () => ({
       "vine",
       "askfm",
       "pou",
-      "candycrush"
+      "candycrush",
+      "files"
     ],
     "dock": [
       "messages",
@@ -13259,7 +13261,8 @@ const mkData = () => ({
       "messenger",
       "wordswfriends",
       "pou",
-      "candycrush"
+      "candycrush",
+      "files"
     ],
     "dock": [
       "phone",
@@ -15742,7 +15745,8 @@ const mkData = () => ({
       "messenger",
       "reminders",
       "pou",
-      "candycrush"
+      "candycrush",
+      "files"
     ],
     "dock": [
       "messages",
