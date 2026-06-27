@@ -2,19 +2,14 @@
 import React, { useState, useRef, useEffect, useCallback, memo, createContext, useContext } from "react";
 import { initializeApp } from "firebase/app";
 import { getDatabase, ref, onValue, update, set } from "firebase/database";
-// Supabase Storage — remplace Firebase Storage (payant)
 import { createClient } from "@supabase/supabase-js";
 
 // ─── FIREBASE (sync multi-appareils + stockage des images) ───────────────────
-// Toutes les variables VITE_FIREBASE_* sont à définir dans Netlify (Site settings → Environment variables)
-// et dans un fichier .env.local en local. Voir SYNC_SETUP.md pour la procédure complète.
-// Si aucune config n'est fournie, l'app fonctionne quand même en local uniquement (db/storage = null).
 const firebaseConfig = {
   apiKey:       import.meta.env.VITE_FIREBASE_API_KEY,
   authDomain:   import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
   databaseURL:  import.meta.env.VITE_FIREBASE_DATABASE_URL,
   projectId:    import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  // storageBucket n'est plus utilisé (remplacé par Supabase Storage)
 };
 let firebaseDb = null;
 try {
@@ -28,9 +23,7 @@ try {
   console.error("[sync] Échec d'initialisation Firebase :", e);
 }
 
-// ─── SUPABASE STORAGE (remplace Firebase Storage) ────────────────────────────
-// Variables VITE_SUPABASE_URL et VITE_SUPABASE_ANON_KEY à définir dans Netlify
-// et dans .env.local. Le bucket public "uploads" doit exister dans Supabase.
+// ─── SUPABASE STORAGE ────────────────────────────
 let supabaseClient = null;
 try {
   const supabaseUrl  = import.meta.env.VITE_SUPABASE_URL;
@@ -2451,7 +2444,6 @@ const TumblrScreen = ({data,admin,update,onUpdateShared=()=>{},accent}) => {
     const following = iFollowTb(pKey);
     return (
       <div style={{flex:1,background:"#ebe9e4",overflowY:"auto",minHeight:0}}>
-        <div onClick={()=>setViewProfile(null)} style={{padding:"8px 12px",color:TB,fontSize:12,fontWeight:600,cursor:"pointer",background:"#fff",borderBottom:`1px solid ${SEP}`}}>‹ Back</div>
         <div style={{position:"relative",height:100,background:"#2c3e50",flexShrink:0,overflow:"visible"}}>
           <div style={{width:"100%",height:"100%",background:"linear-gradient(135deg,#2c3e50,#1a252f)"}}/>
           <div style={{position:"absolute",bottom:-28,left:12,width:56,height:56,borderRadius:8,border:"3px solid #fff",overflow:"hidden",background:"#8e7cc3",boxShadow:"0 2px 6px rgba(0,0,0,0.25)",zIndex:10,display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontWeight:700,fontSize:22}}>
@@ -2504,7 +2496,7 @@ const TumblrScreen = ({data,admin,update,onUpdateShared=()=>{},accent}) => {
 
   return (
     <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden",fontFamily:FF_IOS}}>
-      {viewProfile ? <ViewedProfile/> : <ActiveTab/>}
+      {viewProfile ? <ViewedProfile key={viewProfile}/> : <ActiveTab/>}
 
       
       <div style={{
@@ -2514,10 +2506,10 @@ const TumblrScreen = ({data,admin,update,onUpdateShared=()=>{},accent}) => {
         boxShadow:"inset 0 1px 0 rgba(255,255,255,0.7)",
       }}>
         {tabDefs.map((icon,i)=>(
-          <div key={i} onClick={()=>setActiveTab(i)}
+          <div key={i} onClick={()=>{setViewProfile(null);setActiveTab(i);}}
             style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",cursor:"pointer",gap:3}}>
-            {icon(activeTab===i)}
-            {activeTab===i&&<div style={{width:4,height:4,borderRadius:"50%",background:TB,marginTop:-1}}/>}
+            {icon(activeTab===i&&!viewProfile)}
+            {activeTab===i&&!viewProfile&&<div style={{width:4,height:4,borderRadius:"50%",background:TB,marginTop:-1}}/>}
           </div>
         ))}
         
@@ -4313,6 +4305,37 @@ const TWITTER_HOME_BASE = {
 };
 
 // Override tweet display info
+// Tweets de profil statiques — au niveau module pour que l'admin y accède
+const TWITTER_PROFILE_TWEETS = {
+  glinda:[
+    {h:"@glindarvf",name:"Glinda R.",text:"bibliothèque UMA = mon nouveau chez moi ☕📚 #UMA #Économie",time:"2m",rp:3,rt:7,fav:24},
+    {h:"@glindarvf",name:"Glinda R.",text:"quelqu'un a des notes du cours de macro de hier ? j'étais… indisponible 😬",time:"1:00am",rp:8,rt:2,fav:31},
+    {h:"@glindarvf",name:"Glinda R.",text:"Gee par SNSD en boucle depuis 3h. pas de regrets. #SNSD #GirlsGeneration",time:"3:00am",rp:5,rt:12,fav:47},
+    {h:"@glindarvf",name:"Glinda R.",text:"pourquoi les gens jouent aux échecs en silence ???? c'est un SPORT 🎲",time:"5:00am",rp:14,rt:28,fav:102},
+    {h:"@glindarvf",name:"Glinda R.",text:"déjà un mois à UMA et la bibli me connaît par mon prénom ☕📚 #UMA",time:"1d",rp:6,rt:9,fav:58},
+  ],
+  eoghan:[
+    {h:"@eoghan_m",name:"Eoghan M.",text:"nouveau son en ligne soundcloud.com/eoghan_m #Rush #indierock",time:"15m",rp:2,rt:4,fav:18},
+    {h:"@eoghan_m",name:"Eoghan M.",text:"les égouts de derry sont plus grands que vous ne le pensez. je dis ça je dis rien.",time:"2:00am",rp:7,rt:15,fav:43},
+    {h:"@eoghan_m",name:"Eoghan M.",text:"asra et ilya encore fourrés ensemble. cool. tout va bien. je gère.",time:"4:00am",rp:1,rt:0,fav:9},
+    {h:"@eoghan_m",name:"Eoghan M.",text:"\"This is the end, beautiful friend\" - The Doors. citation du jour.",time:"6:00am",rp:3,rt:8,fav:29},
+    {h:"@eoghan_m",name:"Eoghan M.",text:"UMA est une école comme les autres. les secrets en plus. #UMA",time:"1d",rp:11,rt:22,fav:67},
+  ],
+  drew:[
+    {h:"@dreww_orms",name:"Drew B.",text:"TP bio terminé. les vers de terre n'ont aucun secret pour moi 🪱 #Sciences #UMA",time:"30m",rp:4,rt:6,fav:22},
+    {h:"@dreww_orms",name:"Drew B.",text:"1812 elo. je suis un humble joueur d'échecs. c'est tout. ♟️",time:"2:00am",rp:2,rt:3,fav:17},
+    {h:"@dreww_orms",name:"Drew B.",text:"quelqu'un peut m'expliquer pourquoi je me souviens pas du mois de juillet ?",time:"3:00am",rp:9,rt:14,fav:38},
+    {h:"@dreww_orms",name:"Drew B.",text:"Weird Fishes by Radiohead hits different à 2h du mat. #Radiohead",time:"5:00am",rp:5,rt:11,fav:44},
+    {h:"@dreww_orms",name:"Drew B.",text:"maine → maine's university at augusta. upgrade en cours 🌿",time:"2d",rp:7,rt:19,fav:81},
+  ],
+  elias:[
+    {h:"@noteliasgreen",name:"Elias G.",text:"je sais des choses sur ce qui se passe à Augusta. personne ne me croit. c'est ok.",time:"23m",rp:6,rt:12,fav:34},
+    {h:"@noteliasgreen",name:"Elias G.",text:"il y a des disparitions non résolues à Derry depuis 27 ans. cherchez.",time:"1:00am",rp:18,rt:41,fav:127},
+    {h:"@noteliasgreen",name:"Elias G.",text:"Can You Feel My Heart — BMTH. c'est tout ce que j'ai à dire.",time:"3:00am",rp:3,rt:5,fav:21},
+    {h:"@noteliasgreen",name:"Elias G.",text:"\"The truth is out there\" mais personne cherche vraiment #conspi #Derry",time:"5:00am",rp:9,rt:23,fav:76},
+    {h:"@noteliasgreen",name:"Elias G.",text:"nouveau chapitre de Five Nights posté. oui c'est de la fanfic. non j'ai pas honte.",time:"1d",rp:2,rt:4,fav:16},
+  ],
+};
 // Twitter (Elias)
 const TwitterScreen = ({data, isIos, accent, onBack=null, sharedTweets=[], twitterUsers={}, homeBaseTweets=[], onUpdateShared=()=>{}}) => {
   const loreDateStr = useContext(LoreDateCtx);
@@ -4354,50 +4377,25 @@ const TwitterScreen = ({data, isIos, accent, onBack=null, sharedTweets=[], twitt
     onUpdateShared("_twitterFollows", {...twitterFollows, [charKey]:next});
   };
 
-  // ── Profile tweets (static) ──
-  const PROFILE_TWEETS = {
-    glinda:[
-      {h:"@glindarvf",name:"Glinda R.",text:"bibliothèque UMA = mon nouveau chez moi ☕📚 #UMA #Économie",time:"2m",rp:3,rt:7,fav:24},
-      {h:"@glindarvf",name:"Glinda R.",text:"quelqu'un a des notes du cours de macro de hier ? j'étais… indisponible 😬",time:"1:00am",rp:8,rt:2,fav:31},
-      {h:"@glindarvf",name:"Glinda R.",text:"Gee par SNSD en boucle depuis 3h. pas de regrets. #SNSD #GirlsGeneration",time:"3:00am",rp:5,rt:12,fav:47},
-      {h:"@glindarvf",name:"Glinda R.",text:"pourquoi les gens jouent aux échecs en silence ???? c'est un SPORT 🎲",time:"5:00am",rp:14,rt:28,fav:102},
-      {h:"@glindarvf",name:"Glinda R.",text:"déjà un mois à UMA et la bibli me connaît par mon prénom ☕📚 #UMA",time:"1d",rp:6,rt:9,fav:58},
-    ],
-    eoghan:[
-      {h:"@eoghan_m",name:"Eoghan M.",text:"nouveau son en ligne soundcloud.com/eoghan_m #Rush #indierock",time:"15m",rp:2,rt:4,fav:18},
-      {h:"@eoghan_m",name:"Eoghan M.",text:"les égouts de derry sont plus grands que vous ne le pensez. je dis ça je dis rien.",time:"2:00am",rp:7,rt:15,fav:43},
-      {h:"@eoghan_m",name:"Eoghan M.",text:"asra et ilya encore fourrés ensemble. cool. tout va bien. je gère.",time:"4:00am",rp:1,rt:0,fav:9},
-      {h:"@eoghan_m",name:"Eoghan M.",text:"\"This is the end, beautiful friend\" - The Doors. citation du jour.",time:"6:00am",rp:3,rt:8,fav:29},
-      {h:"@eoghan_m",name:"Eoghan M.",text:"UMA est une école comme les autres. les secrets en plus. #UMA",time:"1d",rp:11,rt:22,fav:67},
-    ],
-    drew:[
-      {h:"@dreww_orms",name:"Drew B.",text:"TP bio terminé. les vers de terre n'ont aucun secret pour moi 🪱 #Sciences #UMA",time:"30m",rp:4,rt:6,fav:22},
-      {h:"@dreww_orms",name:"Drew B.",text:"1812 elo. je suis un humble joueur d'échecs. c'est tout. ♟️",time:"2:00am",rp:2,rt:3,fav:17},
-      {h:"@dreww_orms",name:"Drew B.",text:"quelqu'un peut m'expliquer pourquoi je me souviens pas du mois de juillet ?",time:"3:00am",rp:9,rt:14,fav:38},
-      {h:"@dreww_orms",name:"Drew B.",text:"Weird Fishes by Radiohead hits different à 2h du mat. #Radiohead",time:"5:00am",rp:5,rt:11,fav:44},
-      {h:"@dreww_orms",name:"Drew B.",text:"maine → maine's university at augusta. upgrade en cours 🌿",time:"2d",rp:7,rt:19,fav:81},
-    ],
-    elias:[
-      {h:"@noteliasgreen",name:"Elias G.",text:"je sais des choses sur ce qui se passe à Augusta. personne ne me croit. c'est ok.",time:"23m",rp:6,rt:12,fav:34},
-      {h:"@noteliasgreen",name:"Elias G.",text:"il y a des disparitions non résolues à Derry depuis 27 ans. cherchez.",time:"1:00am",rp:18,rt:41,fav:127},
-      {h:"@noteliasgreen",name:"Elias G.",text:"Can You Feel My Heart — BMTH. c'est tout ce que j'ai à dire.",time:"3:00am",rp:3,rt:5,fav:21},
-      {h:"@noteliasgreen",name:"Elias G.",text:"\"The truth is out there\" mais personne cherche vraiment #conspi #Derry",time:"5:00am",rp:9,rt:23,fav:76},
-      {h:"@noteliasgreen",name:"Elias G.",text:"nouveau chapitre de Five Nights posté. oui c'est de la fanfic. non j'ai pas honte.",time:"1d",rp:2,rt:4,fav:16},
-    ],
-  };
+  // ── Profile tweets (static) — référence la constante module TWITTER_PROFILE_TWEETS ──
+  const PROFILE_TWEETS = TWITTER_PROFILE_TWEETS;
 
   // ── Shared tweets injected into feeds ──
+  // Tri du plus récent au plus ancien, basé sur la vraie date/heure du tweet (lore) plutôt que sur
+  // l'ordre d'insertion ou un timestamp JS qui n'est jamais posé par les tweets créés en admin —
+  // c'est ce qui faisait qu'un nouveau tweet pouvait se retrouver invisible en bas de liste.
   const othersShared = sharedTweets.filter(t=>t.author!==charKey).map(t=>({
     h:handles[t.author]||"@?", name:names[t.author]||"?",
     text:t.text, time:t.time||"maintenant",
     av: effectiveTwUsers[CHAR_TWITTER_KEYS[t.author]?.key]?.av || (names[t.author]||"?")[0],
-    _shared:true, _ts:t.ts||0,
-  })).sort((a,b)=>(b._ts||0)-(a._ts||0));
+    _shared:true, _sort:loreSortKey(t.time),
+  })).sort((a,b)=>b._sort-a._sort);
 
   const myShared = sharedTweets.filter(t=>t.author===charKey).map(t=>({
     h:myHandle, name:names[charKey], text:t.text, time:t.time||"maintenant",
     av: effectiveTwUsers[CHAR_TWITTER_KEYS[charKey]?.key]?.av || names[charKey][0],
-  }));
+    _sort:loreSortKey(t.time),
+  })).sort((a,b)=>b._sort-a._sort);
 
   // ── Home feed base ──
   const HOME_BASE = TWITTER_HOME_BASE;
@@ -4409,7 +4407,16 @@ const TwitterScreen = ({data, isIos, accent, onBack=null, sharedTweets=[], twitt
     const u = effectiveTwUsers[key];
     return {...t, name: u.name||t.name, h: u.h||t.h, av: u.av||t.av};
   };
-  const homeFeed = [...myShared, ...othersShared, ...(homeBaseTweets.length ? homeBaseTweets : (HOME_BASE[charKey]||[]))].map(resolveTweet);
+  // Les tweets partagés (mes tweets + ceux des autres persos joueurs) passent en priorité —
+  // on les mêle aux tweets de fond et on trie par heure lore pour que les nouveaux tweets
+  // créés en admin remontent bien en tête de fil (et non enfoncés après les tweets de base).
+  const baseList = homeBaseTweets.length ? homeBaseTweets : (HOME_BASE[charKey]||[]);
+  const sharedList = [...myShared, ...othersShared];
+  const homeFeed = [
+    ...sharedList,
+    ...baseList.filter(t=>!sharedList.some(s=>s.text===t.text&&s.h===t.h)),
+  ].map(t=>({...resolveTweet(t), _sort:t._sort??loreSortKey(t.time)}))
+   .sort((a,b)=>b._sort-a._sort);
 
   // ── Connect ──
   const CONNECT = {
@@ -4518,27 +4525,32 @@ const TwitterScreen = ({data, isIos, accent, onBack=null, sharedTweets=[], twitt
   return (
     <div style={{flex:1,display:"flex",flexDirection:"column",background:isIos?"#c0cfd8":"#131619",overflow:"hidden",position:"relative"}}>
       <div style={{background:TW_BLUE,padding:"8px 12px",display:"flex",alignItems:"center",justifyContent:"space-between",flexShrink:0}}>
-        {isIos?<button onClick={onBack} style={{background:"linear-gradient(180deg,#1690d8,#1070b0)",border:"1px solid rgba(0,0,0,0.4)",borderRadius:6,color:"#fff",fontSize:11,fontWeight:600,cursor:"pointer",padding:"3px 8px",display:"flex",alignItems:"center",gap:2,textShadow:"0 -1px 0 rgba(0,0,0,0.4)",boxShadow:"inset 0 1px 0 rgba(255,255,255,0.2)",flexShrink:0}}>
+        {isIos?<button onClick={viewProfile ? ()=>setViewProfile(null) : onBack} style={{background:"linear-gradient(180deg,#1690d8,#1070b0)",border:"1px solid rgba(0,0,0,0.4)",borderRadius:6,color:"#fff",fontSize:11,fontWeight:600,cursor:"pointer",padding:"3px 8px",display:"flex",alignItems:"center",gap:2,textShadow:"0 -1px 0 rgba(0,0,0,0.4)",boxShadow:"inset 0 1px 0 rgba(255,255,255,0.2)",flexShrink:0}}>
           <svg width="8" height="14" viewBox="0 0 8 14" fill="none"><path d="M7 1L1 7l6 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
-        </button>:<span style={{width:28}}/>}
+        </button>:<span style={{width:28}}>{viewProfile&&<button onClick={()=>setViewProfile(null)} style={{background:"none",border:"none",color:"#fff",cursor:"pointer",padding:0,display:"flex",alignItems:"center"}}><svg width="10" height="16" viewBox="0 0 8 14" fill="none"><path d="M7 1L1 7l6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg></button>}</span>}
         <svg width="22" height="18" viewBox="0 0 24 20" fill="#fff"><path d="M24 2.4c-.9.4-1.8.7-2.8.8 1-.6 1.8-1.6 2.2-2.8-.9.6-2 1-3.1 1.2C19.4.6 18.1 0 16.7 0c-2.7 0-4.9 2.3-4.9 5.1 0 .4 0 .8.1 1.1C8 6 4.4 4 1.9.9c-.4.8-.6 1.6-.6 2.6 0 1.7.9 3.3 2.2 4.2-.8 0-1.6-.2-2.3-.6 0 2.4 1.6 4.4 3.8 4.9-.4.1-.8.2-1.3.2-.3 0-.6 0-.9-.1.6 2 2.3 3.4 4.4 3.4-1.6 1.3-3.6 2.1-5.8 2.1-.4 0-.7 0-1.1-.1C2.3 18.6 4.9 19.4 7.6 19.4c9 0 13.9-7.7 13.9-14.4v-.7c1-.7 1.8-1.6 2.5-2.6"/></svg>
         <span style={{width:28}}/>
       </div>
       {!isIos&&<div style={{background:"#1a1a1a",borderBottom:"1px solid #2a2a2a",display:"flex",flexShrink:0}}>
-        {tabs.map(t=><button key={t.id} onClick={()=>setTab(t.id)} style={{flex:1,padding:"10px 0 8px",border:"none",background:"transparent",color:tab===t.id?"#fff":subCol,cursor:"pointer",fontSize:11,fontWeight:tab===t.id?"700":"400",borderBottom:`3px solid ${tab===t.id?TW_BLUE:"transparent"}`,display:"flex",flexDirection:"column",alignItems:"center",gap:2,transition:"border-color 0.15s",fontFamily:FF_IOS}}>{typeof t.icon==="function" ? t.icon(tab===t.id) : <span style={{fontSize:16}}>{t.icon}</span>}</button>)}
+        {tabs.map(t=><button key={t.id} onClick={()=>{setViewProfile(null);setTab(t.id);}} style={{flex:1,padding:"10px 0 8px",border:"none",background:"transparent",color:tab===t.id&&!viewProfile?"#fff":subCol,cursor:"pointer",fontSize:11,fontWeight:tab===t.id&&!viewProfile?"700":"400",borderBottom:`3px solid ${tab===t.id&&!viewProfile?TW_BLUE:"transparent"}`,display:"flex",flexDirection:"column",alignItems:"center",gap:2,transition:"border-color 0.15s",fontFamily:FF_IOS}}>{typeof t.icon==="function" ? t.icon(tab===t.id&&!viewProfile) : <span style={{fontSize:16}}>{t.icon}</span>}</button>)}
       </div>}
       <div style={{flex:1,overflowY:"auto",background:isIos?"#e8ecef":"#131619"}}>
         {viewProfile ? (()=>{
           const pKey = viewProfile;
           const pInfo = CHAR_TWITTER_KEYS[pKey];
           const pUser = effectiveTwUsers[pInfo.key] || {};
-          const pTweets = sharedTweets.filter(t=>t.author===pKey).map(t=>({
-            h:handles[pKey], name:names[pKey], text:t.text, time:t.time||"maintenant", av:pUser.av||names[pKey][0],
-          })).reverse();
+          // Tweets visibles sur le profil = tweets partagés + tweets de profil statiques
+          const pShared = sharedTweets.filter(t=>t.author===pKey).map(t=>({
+            h:handles[pKey], name:pUser.name||names[pKey], text:t.text, time:t.time||"maintenant", av:pUser.av||names[pKey][0],
+            _sort:loreSortKey(t.time),
+          }));
+          const pStatic = (PROFILE_TWEETS[pKey]||[]).map(t=>({...t, av:pUser.av||t.av||names[pKey][0], _sort:loreSortKey(t.time)}));
+          const pTweets = [...pShared, ...pStatic].sort((a,b)=>b._sort-a._sort);
           const following = iFollow(pKey);
+          const followingCount = {glinda:"312",eoghan:"891",drew:"156",elias:"89"}[pKey]||"—";
+          const followersCount = {glinda:"847",eoghan:"2.1K",drew:"234",elias:"445"}[pKey]||"—";
           return (
             <>
-              <div onClick={()=>setViewProfile(null)} style={{padding:"8px 12px",color:TW_BLUE,fontSize:12,fontWeight:600,cursor:"pointer",background:rowBg,borderBottom:rowBorder}}>‹ Back</div>
               <div style={{
                 background:pUser.bannerImg ? `url(${pUser.bannerImg}) center/cover` : (pUser.bannerColor||TW_BLUE),
                 padding:"14px 12px 10px",display:"flex",gap:10,alignItems:"flex-end"}}>
@@ -4557,7 +4569,7 @@ const TwitterScreen = ({data, isIos, accent, onBack=null, sharedTweets=[], twitt
               </div>
               {followsMe(pKey) && <div style={{padding:"4px 12px",background:rowBg,borderBottom:rowBorder}}><span style={{fontSize:10,color:subCol,fontWeight:600,background:isIos?"#e1e8ed":"#22303c",borderRadius:3,padding:"2px 6px"}}>Follows you</span></div>}
               <div style={{background:rowBg,padding:"8px 12px",borderBottom:rowBorder,display:"flex",gap:20}}>
-                {[["Tweets",pTweets.length]].map(([l,v])=>(
+                {[["Tweets",pTweets.length],["Following",followingCount],["Followers",followersCount]].map(([l,v])=>(
                   <div key={l} style={{textAlign:"center"}}><div style={{color:textCol,fontWeight:700,fontSize:13}}>{v}</div><div style={{color:subCol,fontSize:10}}>{l}</div></div>
                 ))}
               </div>
@@ -4597,7 +4609,7 @@ const TwitterScreen = ({data, isIos, accent, onBack=null, sharedTweets=[], twitt
               <div key={l} style={{textAlign:"center"}}><div style={{color:textCol,fontWeight:700,fontSize:13}}>{v}</div><div style={{color:subCol,fontSize:10}}>{l}</div></div>
             ))}
           </div>
-          {[...myShared.slice().reverse(),...(PROFILE_TWEETS[charKey]||[])].map(resolveTweet).map((t,i)=><Tweet key={i} t={{...t,av:effectiveTwUsers[CHAR_TWITTER_KEYS[charKey].key]?.av||charKey[0].toUpperCase()}}/>)}
+          {[...myShared,...(PROFILE_TWEETS[charKey]||[])].map(resolveTweet).map((t,i)=><Tweet key={i} t={{...t,av:effectiveTwUsers[CHAR_TWITTER_KEYS[charKey].key]?.av||charKey[0].toUpperCase()}}/>)}
         </>}
         </>}
       </div>
@@ -17936,9 +17948,7 @@ const MoveButtons = ({index, length, onMoveUp, onMoveDown}) => (
 // la section d'ouverture par défaut de l'admin (la première par ordre alphabétique).
 const APP_SECTIONS = {
   messages:   {icon:"💬", label:"Messages"},
-  calls:      {icon:"📞", label:"Appels"},
-  contacts:   {icon:"👥", label:"Contacts"},
-  voicemail:  {icon:"📼", label:"Messages vocaux"},
+  phone:      {icon:"📞", label:"Téléphone"},   // Regroupe appels + contacts + messages vocaux
   notes:      {icon:"📝", label:"Notes"},
   gallery:    {icon:"🖼", label:"Galerie"},
   photos:     {icon:"🖼", label:"Galerie"},   // iOS alias → même section "gallery"
@@ -17968,15 +17978,10 @@ const APP_SECTIONS = {
   youtube:    {icon:"▶️", label:"YouTube"},
 };
 
-// L'app "Téléphone" du portable couvre en réalité 3 sections admin distinctes (Appels, Contacts,
-// Messages vocaux). Toutes les autres apps sont 1-pour-1 (id d'app = clé de section), donc on
-// centralise ce cas particulier ici plutôt que de le dupliquer partout où on construit la nav.
+// L'app "Téléphone" regroupe désormais Appels, Contacts et Messages vocaux dans un seul onglet admin.
 const expandAppSections = (id) => {
-  if(id==="phone") return [
-    {key:"calls",     ...APP_SECTIONS.calls},
-    {key:"contacts",  ...APP_SECTIONS.contacts},
-    {key:"voicemail", ...APP_SECTIONS.voicemail},
-  ];
+  // "phone", "contacts" → tous redirigés vers l'onglet fusionné "phone"
+  if(id==="phone" || id==="contacts") return [{key:"phone", ...APP_SECTIONS.phone}];
   const key = id==="photos" ? "gallery" : id==="gmail" ? "mail" : id==="safari" ? "browser" : id;
   return APP_SECTIONS[key] ? [{key, ...APP_SECTIONS[key]}] : [];
 };
@@ -18013,6 +18018,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
   const toggleGrindrDm = (id) => setGrindrOpenDms(prev => { const n=new Set(prev); n.has(id)?n.delete(id):n.add(id); return n; });
   const [msgAdminTab, setMsgAdminTab] = useState("inbox"); // "inbox" | "deleted"
   const [twTab, setTwTab] = useState("users"); // "users" | "tweets"
+  const [phoneSubTab, setPhoneSubTab] = useState("calls"); // "calls" | "contacts" | "voicemail"
   const [grindrTab, setGrindrTab] = useState("grid"); // "grid" | "dms" | "profile"
   const [galSection, setGalSection] = useState("roll"); // "roll" | "deleted" | "albums"
   const [calCollapsedSet, setCalCollapsedSet] = useState(new Set()); // togglable day groups
@@ -18712,132 +18718,160 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
       );
     }
 
-    case "calls": return (
-      <div style={{display:"flex",flexDirection:"column",gap:8}}>
-        {(d.calls||[]).map((call,i)=>(
-          <div key={call.id} className="adm-card" style={{display:"flex",gap:8,alignItems:"center",background:"rgba(255,255,255,0.85)",padding:10,borderRadius:10,border:"1px solid rgba(0,0,0,0.07)",flexWrap:"wrap"}}>
-            <input value={call.contact} onChange={e=>{const c=[...d.calls];c[i]={...c[i],contact:e.target.value};upd("calls",c);}}
-              placeholder="Contact" className="adm-input" style={{flex:1,background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#1a1a2e",padding:"7px 10px",fontSize:12,borderRadius:7}}/>
-            <select value={call.type} onChange={e=>{const c=[...d.calls];c[i]={...c[i],type:e.target.value};upd("calls",c);}}
-              className="adm-input" style={{background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#374151",padding:"7px 8px",fontSize:11,borderRadius:7}}>
-              <option value="incoming">incoming</option><option value="outgoing">outgoing</option><option value="missed">missed (entrant)</option><option value="outgoing_missed">outgoing sans réponse</option>
-            </select>
-            <LoreDateTimeInput value={call.time} onChange={v=>{const c=[...d.calls];c[i]={...c[i],time:v};upd("calls",c);}} width="190px" showLabel={false}/>
-            <input value={call.duration||""} onChange={e=>{const c=[...d.calls];c[i]={...c[i],duration:e.target.value||null};upd("calls",c);}}
-              placeholder="Duration" className="adm-input" style={{width:90,background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#6b7280",padding:"7px 8px",fontSize:11,borderRadius:7}}/>
-            <button onClick={()=>upd("calls",d.calls.filter((_,j)=>j!==i))}
-              className="adm-del-btn" style={{background:"none",border:"none",color:"#d1d5db",cursor:"pointer",fontSize:16,padding:"2px 6px",borderRadius:5,transition:"all 0.15s"}}>×</button>
-          </div>
-        ))}
-        <button onClick={()=>upd("calls",[{id:Date.now(),contact:"",type:"outgoing",time:"1 oct",duration:null},...(d.calls||[])])}
-          style={{background:"rgba(99,102,241,0.08)",border:"1px dashed rgba(99,102,241,0.4)",color:"#6366f1",borderRadius:8,padding:"10px 18px",cursor:"pointer",fontSize:12,fontWeight:600}}>+ Call</button>
-      </div>
-    );
-
-    case "contacts": {
-      // Renomme un contact partout où son nom est référencé (appels + messages 1-à-1, pas les groupes)
-      // pour que les deux écrans restent synchronisés sans devoir tout refaire en sous-main.
-      const updContact = (id, field, val) => {
-        const contacts = d.contacts||[];
-        const idx = contacts.findIndex(c=>c.id===id);
-        if(idx<0) return;
-        const oldName = contacts[idx].name;
-        const newContacts = contacts.map(c=>c.id===id?{...c,[field]:val}:c);
-        if(field==="name" && oldName && oldName!==val){
-          const newCalls = (d.calls||[]).map(c=>c.contact===oldName?{...c,contact:val}:c);
-          const newMessages = (d.messages||[]).map(m=>(!m.isGroup && m.contact===oldName)?{...m,contact:val}:m);
-          onUpdate(tab, {...d, contacts:newContacts, calls:newCalls, messages:newMessages});
-        } else {
-          onUpdate(tab, {...d, contacts:newContacts});
-        }
-      };
-      const addContact = () => onUpdate(tab, {...d, contacts:[{id:Date.now(), name:"Nouveau contact", phone:"", photo:null}, ...(d.contacts||[])]});
-      const deleteContact = (id) => onUpdate(tab, {...d, contacts:(d.contacts||[]).filter(c=>c.id!==id)});
-      const seedContacts = () => {
-        const names = new Set();
-        (d.calls||[]).forEach(c=>c.contact && names.add(c.contact));
-        (d.messages||[]).forEach(m=>!m.isGroup && m.contact && names.add(m.contact));
-        const existing = new Set((d.contacts||[]).map(c=>c.name));
-        const toAdd = [...names].filter(n=>!existing.has(n)).map((n,i)=>({id:Date.now()+i, name:n, phone:"", photo:null}));
-        if(toAdd.length===0){ alert("Aucun nouveau contact à importer — tout est déjà dans la liste."); return; }
-        onUpdate(tab, {...d, contacts:[...(d.contacts||[]), ...toAdd]});
-      };
+    case "phone": {
+      // ── Sous-onglets : Appels | Contacts | Messages vocaux ──
+      const phoneSubTabs = [["calls","📞 Appels"],["contacts","👥 Contacts"],["voicemail","📼 Messages vocaux"]];
       return (
-        <div style={{display:"flex",flexDirection:"column",gap:8}}>
-          <div style={{fontSize:11,color:"#6b7280",lineHeight:1.5}}>
-            Renommer un contact ici met aussi à jour son nom dans les Appels et les Messages de ce perso.
+        <div style={{display:"flex",flexDirection:"column",gap:12}}>
+          {/* Sub-tab bar */}
+          <div className="adm-subtabs" style={{display:"flex",gap:0,background:"rgba(0,0,0,0.05)",borderRadius:8,padding:2,alignSelf:"flex-start"}}>
+            {phoneSubTabs.map(([k,label])=>(
+              <button key={k} onClick={()=>setPhoneSubTab(k)} style={{
+                padding:"6px 14px",border:"none",borderRadius:6,cursor:"pointer",fontSize:11,
+                fontWeight:phoneSubTab===k?700:400,
+                background:phoneSubTab===k?"#fff":"transparent",
+                color:phoneSubTab===k?charColor:"#6b7280",
+                boxShadow:phoneSubTab===k?"0 1px 3px rgba(0,0,0,0.1)":"none",
+                transition:"all 0.15s",whiteSpace:"nowrap",
+              }}>{label}</button>
+            ))}
           </div>
-          <button onClick={seedContacts}
-            style={{alignSelf:"flex-start",background:"rgba(16,185,129,0.08)",border:"1px dashed rgba(16,185,129,0.4)",color:"#059669",borderRadius:8,padding:"8px 14px",cursor:"pointer",fontSize:11,fontWeight:600}}>
-            ⇩ Importer les noms depuis Appels / Messages
-          </button>
-          {(d.contacts||[]).map((c,i)=>(
-            <div key={c.id} className="adm-card" style={{display:"flex",gap:8,alignItems:"center",background:"rgba(255,255,255,0.85)",padding:10,borderRadius:10,border:"1px solid rgba(0,0,0,0.07)",flexWrap:"wrap"}}>
-              <div onClick={()=>document.getElementById(`contact-photo-${tab}-${c.id}`).click()}
-                style={{width:40,height:40,borderRadius:"50%",background:"rgba(99,102,241,0.08)",border:"1px dashed rgba(99,102,241,0.3)",overflow:"hidden",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer"}}>
-                {c.photo ? <img src={c.photo} style={{width:"100%",height:"100%",objectFit:"cover"}}/> : <span style={{fontSize:16}}>👤</span>}
-              </div>
-              <input id={`contact-photo-${tab}-${c.id}`} type="file" accept="image/*" style={{display:"none"}} onChange={e=>{
-                const f=e.target.files?.[0]; if(!f)return;
-                const r=new UploadReader(); r.onload=ev=>updContact(c.id,"photo",ev.target.result); r.readAsDataURL(f); e.target.value="";
-              }}/>
-              <input value={c.name} onChange={e=>updContact(c.id,"name",e.target.value)}
-                placeholder="Nom" className="adm-input" style={{flex:"1 1 140px",minWidth:0,background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#1a1a2e",padding:"7px 10px",fontSize:12,borderRadius:7,fontWeight:600}}/>
-              <input value={c.phone||""} onChange={e=>updContact(c.id,"phone",e.target.value)}
-                placeholder="Téléphone (optionnel)" className="adm-input" style={{flex:"1 1 120px",minWidth:0,background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#6b7280",padding:"7px 10px",fontSize:12,borderRadius:7}}/>
-              <button onClick={()=>deleteContact(c.id)}
-                className="adm-del-btn" style={{background:"none",border:"none",color:"#d1d5db",cursor:"pointer",fontSize:16,padding:"2px 6px",flexShrink:0,borderRadius:5,transition:"all 0.15s"}}>×</button>
+
+          {/* ── Appels ── */}
+          {phoneSubTab==="calls" && (
+            <div style={{display:"flex",flexDirection:"column",gap:8}}>
+              {(d.calls||[]).map((call,i)=>(
+                <div key={call.id} className="adm-card" style={{display:"flex",gap:8,alignItems:"center",background:"rgba(255,255,255,0.85)",padding:10,borderRadius:10,border:"1px solid rgba(0,0,0,0.07)",flexWrap:"wrap"}}>
+                  <input value={call.contact} onChange={e=>{const c=[...d.calls];c[i]={...c[i],contact:e.target.value};upd("calls",c);}}
+                    placeholder="Contact" className="adm-input" style={{flex:1,background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#1a1a2e",padding:"7px 10px",fontSize:12,borderRadius:7}}/>
+                  <select value={call.type} onChange={e=>{const c=[...d.calls];c[i]={...c[i],type:e.target.value};upd("calls",c);}}
+                    className="adm-input" style={{background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#374151",padding:"7px 8px",fontSize:11,borderRadius:7}}>
+                    <option value="incoming">incoming</option><option value="outgoing">outgoing</option><option value="missed">missed (entrant)</option><option value="outgoing_missed">outgoing sans réponse</option>
+                  </select>
+                  <LoreDateTimeInput value={call.time} onChange={v=>{const c=[...d.calls];c[i]={...c[i],time:v};upd("calls",c);}} width="190px" showLabel={false}/>
+                  <input value={call.duration||""} onChange={e=>{const c=[...d.calls];c[i]={...c[i],duration:e.target.value||null};upd("calls",c);}}
+                    placeholder="Duration" className="adm-input" style={{width:90,background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#6b7280",padding:"7px 8px",fontSize:11,borderRadius:7}}/>
+                  <button onClick={()=>upd("calls",d.calls.filter((_,j)=>j!==i))}
+                    className="adm-del-btn" style={{background:"none",border:"none",color:"#d1d5db",cursor:"pointer",fontSize:16,padding:"2px 6px",borderRadius:5,transition:"all 0.15s"}}>×</button>
+                </div>
+              ))}
+              <button onClick={()=>upd("calls",[{id:Date.now(),contact:"",type:"outgoing",time:"1 oct",duration:null},...(d.calls||[])])}
+                style={{background:"rgba(99,102,241,0.08)",border:"1px dashed rgba(99,102,241,0.4)",color:"#6366f1",borderRadius:8,padding:"10px 18px",cursor:"pointer",fontSize:12,fontWeight:600}}>+ Call</button>
             </div>
-          ))}
-          <button onClick={addContact}
-            style={{background:"rgba(99,102,241,0.08)",border:"1px dashed rgba(99,102,241,0.4)",color:"#6366f1",borderRadius:8,padding:"10px 18px",cursor:"pointer",fontSize:12,fontWeight:600,alignSelf:"flex-start"}}>+ Contact</button>
+          )}
+
+          {/* ── Contacts ── */}
+          {phoneSubTab==="contacts" && (()=>{
+            const updContact = (id, field, val) => {
+              const contacts = d.contacts||[];
+              const idx = contacts.findIndex(c=>c.id===id);
+              if(idx<0) return;
+              const oldName = contacts[idx].name;
+              const newContacts = contacts.map(c=>c.id===id?{...c,[field]:val}:c);
+              if(field==="name" && oldName && oldName!==val){
+                const newCalls = (d.calls||[]).map(c=>c.contact===oldName?{...c,contact:val}:c);
+                const newMessages = (d.messages||[]).map(m=>(!m.isGroup && m.contact===oldName)?{...m,contact:val}:m);
+                onUpdate(tab, {...d, contacts:newContacts, calls:newCalls, messages:newMessages});
+              } else {
+                onUpdate(tab, {...d, contacts:newContacts});
+              }
+            };
+            const addContact = () => onUpdate(tab, {...d, contacts:[{id:Date.now(), name:"Nouveau contact", phone:"", photo:null}, ...(d.contacts||[])]});
+            const deleteContact = (id) => onUpdate(tab, {...d, contacts:(d.contacts||[]).filter(c=>c.id!==id)});
+            const seedContacts = () => {
+              const names = new Set();
+              (d.calls||[]).forEach(c=>c.contact && names.add(c.contact));
+              (d.messages||[]).forEach(m=>!m.isGroup && m.contact && names.add(m.contact));
+              const existing = new Set((d.contacts||[]).map(c=>c.name));
+              const toAdd = [...names].filter(n=>!existing.has(n)).map((n,i)=>({id:Date.now()+i, name:n, phone:"", photo:null}));
+              if(toAdd.length===0){ alert("Aucun nouveau contact à importer — tout est déjà dans la liste."); return; }
+              onUpdate(tab, {...d, contacts:[...(d.contacts||[]), ...toAdd]});
+            };
+            return (
+              <div style={{display:"flex",flexDirection:"column",gap:8}}>
+                <div style={{fontSize:11,color:"#6b7280",lineHeight:1.5}}>
+                  Renommer un contact ici met aussi à jour son nom dans les Appels et les Messages de ce perso.
+                </div>
+                <button onClick={seedContacts}
+                  style={{alignSelf:"flex-start",background:"rgba(16,185,129,0.08)",border:"1px dashed rgba(16,185,129,0.4)",color:"#059669",borderRadius:8,padding:"8px 14px",cursor:"pointer",fontSize:11,fontWeight:600}}>
+                  ⇩ Importer les noms depuis Appels / Messages
+                </button>
+                {(d.contacts||[]).map((c)=>(
+                  <div key={c.id} className="adm-card" style={{display:"flex",gap:8,alignItems:"center",background:"rgba(255,255,255,0.85)",padding:10,borderRadius:10,border:"1px solid rgba(0,0,0,0.07)",flexWrap:"wrap"}}>
+                    <div onClick={()=>document.getElementById(`contact-photo-${tab}-${c.id}`).click()}
+                      style={{width:40,height:40,borderRadius:"50%",background:"rgba(99,102,241,0.08)",border:"1px dashed rgba(99,102,241,0.3)",overflow:"hidden",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer"}}>
+                      {c.photo ? <img src={c.photo} style={{width:"100%",height:"100%",objectFit:"cover"}}/> : <span style={{fontSize:16}}>👤</span>}
+                    </div>
+                    <input id={`contact-photo-${tab}-${c.id}`} type="file" accept="image/*" style={{display:"none"}} onChange={e=>{
+                      const f=e.target.files?.[0]; if(!f)return;
+                      const r=new UploadReader(); r.onload=ev=>updContact(c.id,"photo",ev.target.result); r.readAsDataURL(f); e.target.value="";
+                    }}/>
+                    <input value={c.name} onChange={e=>updContact(c.id,"name",e.target.value)}
+                      placeholder="Nom" className="adm-input" style={{flex:"1 1 140px",minWidth:0,background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#1a1a2e",padding:"7px 10px",fontSize:12,borderRadius:7,fontWeight:600}}/>
+                    <input value={c.phone||""} onChange={e=>updContact(c.id,"phone",e.target.value)}
+                      placeholder="Téléphone (optionnel)" className="adm-input" style={{flex:"1 1 120px",minWidth:0,background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#6b7280",padding:"7px 10px",fontSize:12,borderRadius:7}}/>
+                    <button onClick={()=>deleteContact(c.id)}
+                      className="adm-del-btn" style={{background:"none",border:"none",color:"#d1d5db",cursor:"pointer",fontSize:16,padding:"2px 6px",flexShrink:0,borderRadius:5,transition:"all 0.15s"}}>×</button>
+                  </div>
+                ))}
+                <button onClick={addContact}
+                  style={{background:"rgba(99,102,241,0.08)",border:"1px dashed rgba(99,102,241,0.4)",color:"#6366f1",borderRadius:8,padding:"10px 18px",cursor:"pointer",fontSize:12,fontWeight:600,alignSelf:"flex-start"}}>+ Contact</button>
+              </div>
+            );
+          })()}
+
+          {/* ── Messages vocaux ── */}
+          {phoneSubTab==="voicemail" && (()=>{
+            const updVm = (id, field, val) => {
+              const list = (d.voicemails||[]).map(v=>v.id===id?{...v,[field]:val}:v);
+              upd("voicemails", list);
+            };
+            const addVm = () => upd("voicemails",[{id:Date.now(), contact:"", time:"1 oct, 9:00am", duration:"0:08", transcript:""},...(d.voicemails||[])]);
+            const deleteVm = (id) => upd("voicemails", (d.voicemails||[]).filter(v=>v.id!==id));
+            const seedVm = () => {
+              const missed = (d.calls||[]).filter(c=>c.type==="missed");
+              if(missed.length===0){ alert("Aucun appel manqué à importer."); return; }
+              const toAdd = missed.map((c,i)=>({id:Date.now()+i, contact:c.contact, time:c.time, duration:"0:08", transcript:""}));
+              upd("voicemails",[...(d.voicemails||[]), ...toAdd]);
+            };
+            return (
+              <div style={{display:"flex",flexDirection:"column",gap:8}}>
+                <div style={{fontSize:11,color:"#6b7280",lineHeight:1.5}}>
+                  Sans message vocal ajouté ici, l'onglet "Voicemail" du téléphone affiche par défaut les 3 derniers appels manqués (sans texte).
+                </div>
+                <button onClick={seedVm}
+                  style={{alignSelf:"flex-start",background:"rgba(16,185,129,0.08)",border:"1px dashed rgba(16,185,129,0.4)",color:"#059669",borderRadius:8,padding:"8px 14px",cursor:"pointer",fontSize:11,fontWeight:600}}>
+                  ⇩ Importer les appels manqués
+                </button>
+                {(d.voicemails||[]).map((vm)=>(
+                  <div key={vm.id} className="adm-card" style={{display:"flex",flexDirection:"column",gap:6,background:"rgba(255,255,255,0.85)",padding:10,borderRadius:10,border:"1px solid rgba(0,0,0,0.07)"}}>
+                    <div style={{display:"flex",gap:8,flexWrap:"wrap",alignItems:"center"}}>
+                      <input value={vm.contact} onChange={e=>updVm(vm.id,"contact",e.target.value)}
+                        placeholder="Contact" className="adm-input" style={{flex:"1 1 120px",minWidth:0,background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#1a1a2e",padding:"7px 10px",fontSize:12,borderRadius:7,fontWeight:600}}/>
+                      <LoreDateTimeInput value={vm.time} onChange={v=>updVm(vm.id,"time",v)} width="190px" showLabel={false}/>
+                      <input value={vm.duration||""} onChange={e=>updVm(vm.id,"duration",e.target.value)}
+                        placeholder="Durée" className="adm-input" style={{width:70,flexShrink:0,background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#6b7280",padding:"7px 8px",fontSize:11,borderRadius:7}}/>
+                      <button onClick={()=>deleteVm(vm.id)}
+                        className="adm-del-btn" style={{background:"none",border:"none",color:"#d1d5db",cursor:"pointer",fontSize:16,padding:"2px 6px",flexShrink:0,borderRadius:5}}>×</button>
+                    </div>
+                    <textarea value={vm.transcript||""} onChange={e=>updVm(vm.id,"transcript",e.target.value)}
+                      placeholder="Texte du message vocal (ce que la personne dit)…" className="adm-input"
+                      style={{width:"100%",minHeight:50,background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#1a1a2e",padding:"7px 10px",fontSize:12,borderRadius:7,resize:"vertical",boxSizing:"border-box"}}/>
+                  </div>
+                ))}
+                <button onClick={addVm}
+                  style={{background:"rgba(99,102,241,0.08)",border:"1px dashed rgba(99,102,241,0.4)",color:"#6366f1",borderRadius:8,padding:"10px 18px",cursor:"pointer",fontSize:12,fontWeight:600,alignSelf:"flex-start"}}>+ Message vocal</button>
+              </div>
+            );
+          })()}
         </div>
       );
     }
 
-    case "voicemail": {
-      const updVm = (id, field, val) => {
-        const list = (d.voicemails||[]).map(v=>v.id===id?{...v,[field]:val}:v);
-        upd("voicemails", list);
-      };
-      const addVm = () => upd("voicemails",[{id:Date.now(), contact:"", time:"1 oct, 9:00am", duration:"0:08", transcript:""},...(d.voicemails||[])]);
-      const deleteVm = (id) => upd("voicemails", (d.voicemails||[]).filter(v=>v.id!==id));
-      const seedVm = () => {
-        const missed = (d.calls||[]).filter(c=>c.type==="missed");
-        if(missed.length===0){ alert("Aucun appel manqué à importer."); return; }
-        const toAdd = missed.map((c,i)=>({id:Date.now()+i, contact:c.contact, time:c.time, duration:"0:08", transcript:""}));
-        upd("voicemails",[...(d.voicemails||[]), ...toAdd]);
-      };
-      return (
-        <div style={{display:"flex",flexDirection:"column",gap:8}}>
-          <div style={{fontSize:11,color:"#6b7280",lineHeight:1.5}}>
-            Sans message vocal ajouté ici, l'onglet "Voicemail" du téléphone affiche par défaut les 3 derniers appels manqués (sans texte).
-          </div>
-          <button onClick={seedVm}
-            style={{alignSelf:"flex-start",background:"rgba(16,185,129,0.08)",border:"1px dashed rgba(16,185,129,0.4)",color:"#059669",borderRadius:8,padding:"8px 14px",cursor:"pointer",fontSize:11,fontWeight:600}}>
-            ⇩ Importer les appels manqués
-          </button>
-          {(d.voicemails||[]).map((vm,i)=>(
-            <div key={vm.id} className="adm-card" style={{display:"flex",flexDirection:"column",gap:6,background:"rgba(255,255,255,0.85)",padding:10,borderRadius:10,border:"1px solid rgba(0,0,0,0.07)"}}>
-              <div style={{display:"flex",gap:8,flexWrap:"wrap",alignItems:"center"}}>
-                <input value={vm.contact} onChange={e=>updVm(vm.id,"contact",e.target.value)}
-                  placeholder="Contact" className="adm-input" style={{flex:"1 1 120px",minWidth:0,background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#1a1a2e",padding:"7px 10px",fontSize:12,borderRadius:7,fontWeight:600}}/>
-                <LoreDateTimeInput value={vm.time} onChange={v=>updVm(vm.id,"time",v)} width="190px" showLabel={false}/>
-                <input value={vm.duration||""} onChange={e=>updVm(vm.id,"duration",e.target.value)}
-                  placeholder="Durée" className="adm-input" style={{width:70,flexShrink:0,background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#6b7280",padding:"7px 8px",fontSize:11,borderRadius:7}}/>
-                <button onClick={()=>deleteVm(vm.id)}
-                  className="adm-del-btn" style={{background:"none",border:"none",color:"#d1d5db",cursor:"pointer",fontSize:16,padding:"2px 6px",flexShrink:0,borderRadius:5}}>×</button>
-              </div>
-              <textarea value={vm.transcript||""} onChange={e=>updVm(vm.id,"transcript",e.target.value)}
-                placeholder="Texte du message vocal (ce que la personne dit)…" className="adm-input"
-                style={{width:"100%",minHeight:50,background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#1a1a2e",padding:"7px 10px",fontSize:12,borderRadius:7,resize:"vertical",boxSizing:"border-box"}}/>
-            </div>
-          ))}
-          <button onClick={addVm}
-            style={{background:"rgba(99,102,241,0.08)",border:"1px dashed rgba(99,102,241,0.4)",color:"#6366f1",borderRadius:8,padding:"10px 18px",cursor:"pointer",fontSize:12,fontWeight:600,alignSelf:"flex-start"}}>+ Message vocal</button>
-        </div>
-      );
-    }
+    case "calls": return null; // Fusionné dans "phone"
+    case "contacts": return null; // Fusionné dans "phone"
+    case "voicemail": return null; // Fusionné dans "phone"
+
 
     case "notes": return (
       <div style={{display:"flex",flexDirection:"column",gap:12}}>
@@ -19160,34 +19194,53 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
           </div>
         </div>
 
-        
-        {(d.music||[]).map((track,i)=>(
-          <div key={track.id} className="adm-card" style={{display:"flex",gap:8,alignItems:"center",background:"rgba(255,255,255,0.85)",padding:10,borderRadius:10,border:"1px solid rgba(0,0,0,0.07)",flexWrap:"wrap"}}>
+        {/* S'assurer que toutes les tracks ont un id stable avant de rendre — évite le bug d'upload
+            où l'id dans le DOM (basé sur l'index) ne correspond plus à la track après un tri ou ajout. */}
+        {(()=>{
+          const music = d.music||[];
+          // Auto-assigner un id aux tracks qui n'en ont pas (données importées depuis un ancien format)
+          const needsId = music.some(t=>!t.id);
+          if(needsId) {
+            const fixed = music.map((t,j)=>t.id?t:{...t,id:Date.now()+j});
+            // Mise à jour silencieuse sans attendre le prochain render pour éviter la boucle
+            setTimeout(()=>upd("music",fixed),0);
+          }
+          return music.map((track,i)=>{
+            // Garantit un id stable pour cet item même si le timeout n'a pas encore tourné
+            const stableId = track.id || `tmp_${i}`;
+            const inputDomId = `track-cover-${tab}-${stableId}`;
+          return (
+          <div key={stableId} className="adm-card" style={{display:"flex",gap:8,alignItems:"center",background:"rgba(255,255,255,0.85)",padding:10,borderRadius:10,border:"1px solid rgba(0,0,0,0.07)",flexWrap:"wrap"}}>
             
-            <div onClick={()=>document.getElementById(`track-cover-${tab}-${i}`).click()}
+            <div onClick={()=>document.getElementById(inputDomId)?.click()}
               style={{width:40,height:40,borderRadius:6,background:"rgba(99,102,241,0.08)",border:"1px dashed rgba(99,102,241,0.3)",overflow:"hidden",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer"}}>
               {track.cover
                 ? <img src={track.cover} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
                 : <span style={{fontSize:16}}>🎵</span>}
             </div>
-            <input id={`track-cover-${tab}-${i}`} type="file" accept="image/*" style={{display:"none"}} onChange={e=>{
+            <input id={inputDomId} type="file" accept="image/*" style={{display:"none"}} onChange={e=>{
               const f=e.target.files?.[0]; if(!f)return;
-              const trackId=track.id;
+              const trackId=stableId;
               const r=new UploadReader(); r.onload=ev=>{
                 const freshMusic=[...(dataRef.current[tab]?.music||[])];
-                const idx=freshMusic.findIndex(t=>t.id===trackId);
-                if(idx<0) return;
+                const idx=freshMusic.findIndex(t=>(t.id||`tmp_${freshMusic.indexOf(t)}`)===trackId);
+                if(idx<0){
+                  // Fallback : apply cover par index si l'id n'est pas encore présent
+                  const byIndex=[...(dataRef.current[tab]?.music||[])];
+                  if(byIndex[i]) { byIndex[i]={...byIndex[i],cover:ev.target.result}; onUpdate(tab,{...dataRef.current[tab],music:byIndex}); }
+                  return;
+                }
                 freshMusic[idx]={...freshMusic[idx],cover:ev.target.result};
                 onUpdate(tab,{...dataRef.current[tab],music:freshMusic});
               }; r.readAsDataURL(f); e.target.value="";
             }}/>
-            <input value={track.title} onChange={e=>{const m=[...d.music];m[i]={...m[i],title:e.target.value};upd("music",m);}}
+            <input value={track.title||""} onChange={e=>{const m=[...d.music];m[i]={...m[i],title:e.target.value};upd("music",m);}}
               placeholder="Titre" className="adm-input" style={{flex:2,background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#1a1a2e",padding:"7px 10px",fontSize:12,borderRadius:7}}/>
-            <input value={track.artist} onChange={e=>{const m=[...d.music];m[i]={...m[i],artist:e.target.value};upd("music",m);}}
+            <input value={track.artist||""} onChange={e=>{const m=[...d.music];m[i]={...m[i],artist:e.target.value};upd("music",m);}}
               placeholder="Artiste" className="adm-input" style={{flex:2,background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#6b7280",padding:"7px 10px",fontSize:12,borderRadius:7}}/>
             <input value={track.album||""} onChange={e=>{const m=[...d.music];m[i]={...m[i],album:e.target.value};upd("music",m);}}
               placeholder="Album" className="adm-input" style={{flex:2,background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#6b7280",padding:"7px 10px",fontSize:12,borderRadius:7}}/>
-            <input value={track.duration} onChange={e=>{const m=[...d.music];m[i]={...m[i],duration:e.target.value};upd("music",m);}}
+            <input value={track.duration||""} onChange={e=>{const m=[...d.music];m[i]={...m[i],duration:e.target.value};upd("music",m);}}
               placeholder="3:00" className="adm-input" style={{width:60,background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#6b7280",padding:"7px 8px",fontSize:11,borderRadius:7}}/>
             <MoveButtons
               index={i}
@@ -19198,7 +19251,9 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
             <button onClick={()=>upd("music",d.music.filter((_,j)=>j!==i))}
               className="adm-del-btn" style={{background:"none",border:"none",color:"#d1d5db",cursor:"pointer",fontSize:16,padding:"2px 6px",borderRadius:5,transition:"all 0.15s"}}>×</button>
           </div>
-        ))}
+          );
+          });
+        })()}
         <button onClick={()=>upd("music",[{id:Date.now(),title:"",artist:"",duration:"3:00"},...(d.music||[])])}
           style={{background:"rgba(99,102,241,0.08)",border:"1px dashed rgba(99,102,241,0.4)",color:"#6366f1",borderRadius:8,padding:"10px 18px",cursor:"pointer",fontSize:12,fontWeight:600}}>+ Add manually</button>
       </div>
@@ -19366,14 +19421,31 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
           {twTab==="shared" && (()=>{
             const allShared = data.sharedThreads?._sharedTweets || [];
             const updAllShared = (list) => onUpdate("_sharedTweets", list);
+            // Tweets statiques de ce perso (lecture seule — pas encore "partagés")
+            const staticProfileTweets = (TWITTER_PROFILE_TWEETS[tab]||[]);
+            const mySharedCount = allShared.filter(t=>t.author===tab).length;
             return (
-              <SharedPostsEditor
-                posts={allShared} onChange={updAllShared} tab={tab} accent="#1da1f2"
-                fieldMap={{text:"text", img:"photo", time:"time"}}
-                statFields={[{key:"rp",label:"💬"},{key:"rt",label:"🔁"},{key:"fav",label:"❤"}]}
-                addLabel="+ Tweet" textLabel="Texte"
-                hint="Ces tweets sont réellement partagés : ils apparaissent dans le fil des autres persos et sur ton profil, comme un vrai tweet posté depuis l'app. Tu ne peux modifier que les tiens."
-              />
+              <div style={{display:"flex",flexDirection:"column",gap:10}}>
+                <SharedPostsEditor
+                  posts={allShared} onChange={updAllShared} tab={tab} accent="#1da1f2"
+                  fieldMap={{text:"text", img:"photo", time:"time"}}
+                  statFields={[{key:"rp",label:"💬"},{key:"rt",label:"🔁"},{key:"fav",label:"❤"}]}
+                  addLabel="+ Tweet" textLabel="Texte"
+                  hint="Ces tweets sont réellement partagés : ils apparaissent dans le fil des autres persos et sur le profil du personnage. Tu ne peux modifier que les tiens."
+                />
+                {mySharedCount===0 && staticProfileTweets.length>0 && (
+                  <div style={{background:"rgba(29,161,242,0.06)",border:"1px solid rgba(29,161,242,0.2)",borderRadius:8,padding:"10px 14px"}}>
+                    <div style={{fontSize:11,fontWeight:700,color:"#1da1f2",marginBottom:6}}>📌 Tweets de profil statiques (non partagés)</div>
+                    <div style={{fontSize:10,color:"#6b7280",marginBottom:8}}>Ces tweets s'affichent sur l'onglet "Me" de {CHAR_NAMES[tab]||tab} mais ne sont pas visibles par les autres persos. Pour les rendre partagés, clique "+ Tweet" ci-dessus et recopie leur contenu.</div>
+                    {staticProfileTweets.map((t,i)=>(
+                      <div key={i} style={{background:"rgba(255,255,255,0.7)",borderRadius:6,padding:"6px 10px",marginBottom:4,fontSize:11,color:"#374151",borderLeft:"2px solid rgba(29,161,242,0.3)"}}>
+                        <span style={{color:"#1da1f2",fontWeight:600}}>{t.h}</span> · <span style={{color:"#9ca3af"}}>{t.time}</span>
+                        <div style={{marginTop:2}}>{t.text}</div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             );
           })()}
 
@@ -19384,6 +19456,9 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
             const updEffective = (newList) => upd("homeBaseTweets", newList);
             return (
             <div style={{display:"flex",flexDirection:"column",gap:10}}>
+              <div style={{background:"rgba(29,161,242,0.06)",border:"1px solid rgba(29,161,242,0.15)",borderRadius:8,padding:"8px 12px",fontSize:11,color:"#374151"}}>
+                <span style={{fontWeight:700,color:"#1da1f2"}}>Fil de fond de {CHAR_NAMES[tab]||tab}</span> — Ces tweets décoratifs remplissent la TL de ce perso. Ils peuvent être écrits par n'importe quel compte (y compris les autres joueurs). Ils sont <strong>propres à ce perso</strong> et non partagés. Pour qu'un tweet soit visible par tous les persos, utilise l'onglet "Mes tweets (partagés)".
+              </div>
 
               {effectiveTweets.map((t,i)=>{
                 const upTw = (patch) => updEffective(effectiveTweets.map((t2,j)=>j===i?{...t2,...patch,id:t2.id||Date.now()+j}:{...t2,id:t2.id||Date.now()+j}));
@@ -19792,7 +19867,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                 <div style={{display:"flex",gap:8,marginBottom:8,alignItems:"center",flexWrap:"wrap"}}>
                   <Field label="Pseudo de l'auteur" value={post.username||""} onChange={v=>{const p=[...effectiveFeed];p[i]={...p[i],username:v};updFeed(p);}} width="140px"/>
                   <Field label="Titre (opt.)" value={post.title||""} onChange={v=>{const p=[...effectiveFeed];p[i]={...p[i],title:v};updFeed(p);}} width="140px"/>
-                  <Field label="Date" value={post.date||""} onChange={v=>{const p=[...effectiveFeed];p[i]={...p[i],date:v};updFeed(p);}} width="90px"/>
+                  <LoreDateTimeInput value={post.date||""} onChange={v=>{const p=[...effectiveFeed];p[i]={...p[i],date:v};updFeed(p);}} width="190px" showLabel={true}/>
                   <Field label="Notes" value={String(post.notes||0)} onChange={v=>{const p=[...effectiveFeed];p[i]={...p[i],notes:parseInt(v)||0};updFeed(p);}} width="70px"/>
                   <button onClick={()=>updFeed(effectiveFeed.filter((_,j)=>j!==i))}
                     className="adm-del-btn" style={{background:"rgba(239,68,68,0.06)",border:"1px solid rgba(239,68,68,0.2)",color:"#ef4444",borderRadius:6,padding:"4px 8px",cursor:"pointer",fontSize:11,marginTop:18}}>✕</button>
@@ -20465,7 +20540,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
             const emoji = c.key==="glinda"?"🌸":c.key==="eoghan"?"🌈":c.key==="drew"?"🪱":"🖤";
             return (
               <button key={c.key} className="char-tab"
-                onClick={()=>{ const firstSection = (()=>{ const apps=[...(data[c.key]?.apps||[]),...(data[c.key]?.dock||[])]; const AS={messages:1,calls:1,notes:1,gallery:1,music:1,twitter:1,pinterest:1,browser:1,snapchat:1,grindr:1,tumblr:1,reddit:1,contacts:1,calendar:1,weather:1,settings:1,wikipedia:1,kindle:1,vpn:1,inaturalist:1}; return apps.find(id=>AS[id]) || 'apparence'; })(); setTab(c.key); setSection(firstSection); }}
+                onClick={()=>{ const firstSection = (()=>{ const apps=[...(data[c.key]?.apps||[]),...(data[c.key]?.dock||[])]; const AS={messages:1,phone:1,notes:1,gallery:1,music:1,twitter:1,pinterest:1,browser:1,snapchat:1,grindr:1,tumblr:1,reddit:1,contacts:1,calendar:1,weather:1,settings:1,wikipedia:1,kindle:1,vpn:1,inaturalist:1}; const key=apps.find(id=>AS[id]); return key==="contacts"?"phone":key || 'apparence'; })(); setTab(c.key); setSection(firstSection); }}
                 style={{
                   display:"flex",alignItems:"center",gap:7,padding:"0 16px",
                   border:"none",borderBottom:`3px solid ${isActive?c.color:"transparent"}`,
