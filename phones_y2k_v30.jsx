@@ -7401,7 +7401,8 @@ const AndroidPhone = ({data,admin,onUpdate,sharedAndroidIcons={},onUpdateShared=
   if(app==="kindle")    return <AppShell><AndroidStatusBar notifApps={notifApps} accent={accent}/><ActionBar title="Kindle" back={goHome}/><KindleScreen isIos={false} accent={accent} data={data}/></AppShell>;
   if(app==="inaturalist")return <AppShell><AndroidStatusBar notifApps={notifApps} accent={accent}/><ActionBar title="iNaturalist" back={goHome}/><INaturalistScreen data={data} isIos={false} accent={accent}/></AppShell>;
   if(app==="soundhound")return <AppShell><AndroidStatusBar notifApps={notifApps} accent={accent}/><ActionBar title="SoundHound" back={goHome}/><SoundHoundScreen isIos={false} accent={accent}/></AppShell>;
-  if(app==="reddit")    return <AppShell><AndroidStatusBar notifApps={notifApps} accent={accent}/><ActionBar title="Reddit" back={goHome}/><RedditScreen data={data} isIos={false} accent={accent}/></AppShell>;  if(app==="twitter")   return <AppShell><AndroidStatusBar notifApps={notifApps} accent={accent}/><TwitterScreen data={data} isIos={false} accent={accent} onBack={goHome} sharedTweets={data.sharedThreads?._sharedTweets||[]} twitterUsers={{...(data.sharedThreads?._sharedTwitterUsers||{}),...(data.twitterUsers||{})}} homeBaseTweets={data.homeBaseTweets||[]} onUpdateShared={onUpdateSharedThread}/></AppShell>;
+  if(app==="reddit")    return <AppShell><AndroidStatusBar notifApps={notifApps} accent={accent}/><ActionBar title="Reddit" back={goHome}/><RedditScreen data={data} isIos={false} accent={accent}/></AppShell>;
+  if(app==="twitter")   return <AppShell><AndroidStatusBar notifApps={notifApps} accent={accent}/><TwitterScreen data={data} isIos={false} accent={accent} onBack={goHome} sharedTweets={data.sharedThreads?._sharedTweets||[]} twitterUsers={{...(data.sharedThreads?._sharedTwitterUsers||{}),...(data.twitterUsers||{})}} homeBaseTweets={data.homeBaseTweets||[]} onUpdateShared={onUpdateSharedThread}/></AppShell>;
   if(app==="vpn")       return <AppShell><AndroidStatusBar notifApps={notifApps} accent={accent}/><ActionBar title="VPN" back={goHome}/><VPNScreen isIos={false} accent={accent}/></AppShell>;
   if(app==="contacts")  return <AppShell><AndroidStatusBar notifApps={notifApps} accent={accent}/><ActionBar title="Contacts" back={goHome}/><ContactsScreen data={data} isIos={false} accent={accent}/></AppShell>;
   if(app==="files")      return <AppShell><AndroidStatusBar notifApps={notifApps} accent={accent}/><FilesScreen data={data} isIos={false} accent={accent} onBack={goHome}/></AppShell>;
@@ -22097,7 +22098,7 @@ const MAIL_DELETED_BY_CHAR = {
 
 const GmailScreen = ({data, isIos, accent, onBack}) => {
   const loreDateStr = useContext(LoreDateCtx);
-  const [mailbox, setMailbox] = useState(null);
+  const [mailbox, setMailbox] = useState(isIos ? "inbox" : null); // iOS ouvre direct inbox, Android ouvre mailboxes
   const [openMail, setOpenMail] = useState(null);
   const [showMenu, setShowMenu] = useState(false); // Android drawer
 
@@ -22158,34 +22159,58 @@ const GmailScreen = ({data, isIos, accent, onBack}) => {
       <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden"}}>
         {isIos ? (
           <>
-            <div style={{background:"linear-gradient(180deg,#6a8fc0,#3d5f8a)",padding:"6px 10px",display:"flex",alignItems:"center",flexShrink:0,boxShadow:"0 1px 3px rgba(0,0,0,0.4)"}}>
-              <button onClick={()=>setMailbox(null)} style={{background:"linear-gradient(180deg,#6a8fc0,#3d5f8a)",border:"1px solid #2a4a70",color:"#fff",fontSize:11,fontWeight:600,padding:"3px 10px",borderRadius:5,cursor:"pointer",display:"flex",alignItems:"center",gap:3}}>
-                <span style={{fontSize:10}}>◀</span> Mailboxes
+            {/* Header iOS 6 Mail */}
+            <div style={{background:"linear-gradient(180deg,#6a8fc0 0%,#4a6fa0 50%,#3d5f8a 100%)",padding:"6px 10px",display:"flex",alignItems:"center",flexShrink:0,boxShadow:"0 1px 3px rgba(0,0,0,0.5)"}}>
+              <button onClick={()=>setMailbox(null)} style={{background:"linear-gradient(180deg,#5a8fc0,#3a5f90)",border:"1px solid #2a4a70",borderRadius:5,color:"#fff",fontSize:11,fontWeight:600,padding:"3px 10px",cursor:"pointer",boxShadow:"0 1px 0 rgba(255,255,255,0.2) inset",display:"flex",alignItems:"center",gap:3}}>
+                <span style={{fontSize:9}}>◀</span> Mailboxes
               </button>
-              <span style={{flex:1,textAlign:"center",color:"#fff",fontSize:14,fontWeight:700,textShadow:"0 1px 1px rgba(0,0,0,0.4)"}}>{folder?.label}</span>
-              <span style={{width:70}}/>
+              <span style={{flex:1,textAlign:"center",color:"#fff",fontSize:14,fontWeight:700,textShadow:"0 -1px 0 rgba(0,0,0,0.3)"}}>
+                {folder?.label}{list.filter(m=>m.unread).length>0?` (${list.filter(m=>m.unread).length})`:""}
+              </span>
+              <span style={{width:80}}/>
             </div>
-            <div style={{flex:1,overflowY:"auto",background:"#c8c8c8"}}>
-              {list.length===0 && <div style={{padding:"40px 24px",textAlign:"center",color:"#888",fontSize:13}}>Aucun message</div>}
-              {list.map((m,i)=>(
-                <div key={i} onClick={()=>setOpenMail(m)} style={{background:i%2===0?"#fff":"#f7f7f7",borderBottom:"1px solid #c8c8c8",padding:"8px 10px",display:"flex",gap:8,alignItems:"flex-start",minHeight:64,cursor:"pointer"}}>
-                  <div style={{width:10,height:10,borderRadius:"50%",background:m.unread?"#4a7ab5":"transparent",flexShrink:0,marginTop:5}}/>
-                  <div style={{flex:1,minWidth:0}}>
-                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",marginBottom:1}}>
-                      <span style={{color:"#000",fontSize:13,fontWeight:m.unread?700:600,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",maxWidth:"65%"}}>{m.from}</span>
-                      <span style={{color:IOS_BLUE,fontSize:11,flexShrink:0}}>{loreRelativeLabel(m.time,loreDateStr)}</span>
+            {/* Barre recherche */}
+            <div style={{background:"linear-gradient(180deg,#b8c0cf,#a8b0bf)",padding:"5px 8px",flexShrink:0,borderBottom:"1px solid #8a9aaa"}}>
+              <div style={{background:"rgba(255,255,255,0.88)",borderRadius:8,padding:"4px 10px",display:"flex",alignItems:"center",gap:6,border:"1px solid #9aa0aa",boxShadow:"inset 0 1px 3px rgba(0,0,0,0.15)"}}>
+                <span style={{color:"#8a9aaa",fontSize:12}}>🔍</span>
+                <span style={{color:"#aab0ba",fontSize:13}}>Search</span>
+              </div>
+            </div>
+            {/* Liste iOS 6 */}
+            <div style={{flex:1,overflowY:"auto",background:"#c8ccd4"}}>
+              {list.length===0 && (
+                <div style={{padding:"40px 24px",textAlign:"center",color:"#6a7a8a",fontSize:13}}>No messages</div>
+              )}
+              <div style={{background:"#fff",borderTop:"0.5px solid #b0bac8",borderBottom:"0.5px solid #b0bac8",marginTop:list.length?0:0}}>
+                {list.map((m,i)=>(
+                  <div key={i} onClick={()=>setOpenMail(m)}
+                    style={{background:"#fff",borderBottom:i<list.length-1?"0.5px solid #c8ccd4":"none",padding:"9px 12px 9px 8px",display:"flex",gap:8,alignItems:"stretch",minHeight:62,cursor:"pointer",position:"relative"}}>
+                    {/* Pastille non-lu */}
+                    <div style={{width:12,height:12,borderRadius:"50%",background:m.unread?"#4a7ab5":"transparent",flexShrink:0,marginTop:6,boxShadow:m.unread?"0 0 0 1px #2a5a95":"none"}}/>
+                    <div style={{flex:1,minWidth:0}}>
+                      <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",marginBottom:2}}>
+                        <span style={{color:"#000",fontSize:14,fontWeight:m.unread?700:600,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",maxWidth:"62%"}}>{m.from}</span>
+                        <span style={{color:"#6a7a9a",fontSize:11,flexShrink:0,letterSpacing:-0.2}}>{loreRelativeLabel(m.time,loreDateStr)}</span>
+                      </div>
+                      <div style={{color:m.unread?"#000":"#1a1a2e",fontSize:12,fontWeight:m.unread?600:500,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",marginBottom:3}}>{m.subj}</div>
+                      <div style={{color:"#8a9aaa",fontSize:11,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",lineHeight:1.3}}>{m.preview}</div>
                     </div>
-                    <div style={{color:"#000",fontSize:12,fontWeight:m.unread?600:400,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",marginBottom:2}}>{m.subj}</div>
-                    <div style={{color:"#888",fontSize:11,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{m.preview}</div>
+                    {/* Flèche iOS 6 */}
+                    <div style={{display:"flex",alignItems:"center",paddingLeft:4,flexShrink:0}}>
+                      <svg width="8" height="13" viewBox="0 0 8 13"><polyline points="1,1 7,6.5 1,12" fill="none" stroke="#c0c8d8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                    </div>
                   </div>
-                  <span style={{color:"#c0c0c0",fontSize:16,flexShrink:0,marginTop:8}}>›</span>
-                </div>
-              ))}
+                ))}
+              </div>
+              {/* Footer iOS 6 */}
+              <div style={{padding:"8px 0",textAlign:"center"}}>
+                <span style={{color:"#7a8a9a",fontSize:10}}>{list.length} message{list.length!==1?"s":""}</span>
+              </div>
             </div>
           </>
         ) : (
           <>
-            <div style={{background:"#1976D2",padding:"10px 14px",display:"flex",alignItems:"center",gap:10,flexShrink:0,boxShadow:"0 2px 4px rgba(0,0,0,0.2)"}}>
+            <div style={{background:"#C62828",padding:"10px 14px",display:"flex",alignItems:"center",gap:10,flexShrink:0,boxShadow:"0 2px 4px rgba(0,0,0,0.2)"}}>
               <button onClick={()=>setMailbox(null)} style={{background:"none",border:"none",color:"#fff",cursor:"pointer",padding:0,fontSize:20,display:"flex",alignItems:"center"}}>←</button>
               <span style={{color:"#fff",fontSize:16,fontWeight:500,flex:1}}>{folder?.label}</span>
             </div>
@@ -22197,7 +22222,7 @@ const GmailScreen = ({data, isIos, accent, onBack}) => {
                   <div style={{flex:1,minWidth:0}}>
                     <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",marginBottom:2}}>
                       <span style={{color:m.unread?"#202124":"#5f6368",fontSize:13,fontWeight:m.unread?"700":"400",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",maxWidth:"65%"}}>{m.from}</span>
-                      <span style={{color:m.unread?"#202124":"#5f6368",fontSize:11,fontWeight:m.unread?"600":"400",flexShrink:0,marginLeft:4}}>{loreRelativeLabel(m.time,loreDateStr)}</span>
+                      <span style={{color:m.unread?"#202124":"#5f6368",fontSize:11,flexShrink:0,marginLeft:4}}>{loreRelativeLabel(m.time,loreDateStr)}</span>
                     </div>
                     <div style={{color:m.unread?"#202124":"#5f6368",fontSize:12,fontWeight:m.unread?"500":"400",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",marginBottom:1}}>{m.subj}</div>
                     <div style={{color:"#9aa0a6",fontSize:11,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{m.preview}</div>
