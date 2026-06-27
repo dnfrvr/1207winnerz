@@ -2,14 +2,19 @@
 import React, { useState, useRef, useEffect, useCallback, memo, createContext, useContext } from "react";
 import { initializeApp } from "firebase/app";
 import { getDatabase, ref, onValue, update, set } from "firebase/database";
+// Supabase Storage — remplace Firebase Storage (payant)
 import { createClient } from "@supabase/supabase-js";
 
 // ─── FIREBASE (sync multi-appareils + stockage des images) ───────────────────
+// Toutes les variables VITE_FIREBASE_* sont à définir dans Netlify (Site settings → Environment variables)
+// et dans un fichier .env.local en local. Voir SYNC_SETUP.md pour la procédure complète.
+// Si aucune config n'est fournie, l'app fonctionne quand même en local uniquement (db/storage = null).
 const firebaseConfig = {
   apiKey:       import.meta.env.VITE_FIREBASE_API_KEY,
   authDomain:   import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
   databaseURL:  import.meta.env.VITE_FIREBASE_DATABASE_URL,
   projectId:    import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  // storageBucket n'est plus utilisé (remplacé par Supabase Storage)
 };
 let firebaseDb = null;
 try {
@@ -23,7 +28,9 @@ try {
   console.error("[sync] Échec d'initialisation Firebase :", e);
 }
 
-// ─── SUPABASE STORAGE ────────────────────────────
+// ─── SUPABASE STORAGE (remplace Firebase Storage) ────────────────────────────
+// Variables VITE_SUPABASE_URL et VITE_SUPABASE_ANON_KEY à définir dans Netlify
+// et dans .env.local. Le bucket public "uploads" doit exister dans Supabase.
 let supabaseClient = null;
 try {
   const supabaseUrl  = import.meta.env.VITE_SUPABASE_URL;
@@ -2243,7 +2250,7 @@ const TUMBLR_FEED_POSTS_DEFAULT = {
   ],
 };
 
-const TumblrScreen = ({data,admin,update,onUpdateShared=()=>{},accent}) => {
+const TumblrScreen = ({data,admin,update,onUpdateShared=()=>{},accent,onBack=null}) => {
   const [activeTab, setActiveTab] = React.useState(0);
   const [viewProfile, setViewProfile] = React.useState(null); // charKey d'un autre perso, ou null
   const posts = data.tumblr?.posts||[];
@@ -2346,23 +2353,24 @@ const TumblrScreen = ({data,admin,update,onUpdateShared=()=>{},accent}) => {
     );
   };
 
-  // feedPosts est éditable depuis l'admin (data.tumblr.feedPosts) ; sinon on retombe sur les valeurs par défaut.
-  const feedPosts = data.tumblr?.feedPosts || TUMBLR_FEED_POSTS_DEFAULT[data.username] || [];
+  // Posts décoratifs du fil — propres à ce perso, éditables depuis l'admin. Plus de valeurs par défaut hardcodées.
+  const feedPosts = data.tumblr?.feedPosts || [];
 
   /* ── Tabs ── */
   const Dashboard = () => (
     <div style={{flex:1,overflowY:"auto",minHeight:0,WebkitOverflowScrolling:"touch",background:"#ebe9e4"}}>
       <div style={{padding:"8px 8px 0"}}>
-        {/* Posts perso (legacy) + posts partagés (les vrais, qui apparaissent chez tout le monde) + feed décoratif */}
-        {[
-          ...posts.map(p=>({...p,_kind:"own"})),
-          ...sharedTumblrPosts.map(p=>({...p,_kind:"shared"})),
-          ...feedPosts.map(p=>({...p,_kind:"feed"})),
-        ]
-          .sort((a,b)=>loreSortKey(b.date)-loreSortKey(a.date))
-          .map((post,i)=>(
-            <PostCard key={post.id??i} post={post} isFeed={post._kind==="feed"}/>
-          ))}
+        {sharedTumblrPosts.length === 0 && feedPosts.length === 0
+          ? <div style={{padding:"32px 16px",textAlign:"center",color:GRAY,fontSize:13}}>
+              Aucun post pour l'instant.<br/>
+              <span style={{fontSize:11,marginTop:6,display:"block"}}>Les posts des personnages apparaîtront ici une fois créés depuis l'admin.</span>
+            </div>
+          : [...sharedTumblrPosts, ...feedPosts]
+              .sort((a,b)=>loreSortKey(b.date)-loreSortKey(a.date))
+              .map((post,i)=>(
+                <PostCard key={post.id??i} post={post} isFeed={!post.author}/>
+              ))
+        }
       </div>
       <div style={{height:8}}/>
     </div>
@@ -2393,12 +2401,7 @@ const TumblrScreen = ({data,admin,update,onUpdateShared=()=>{},accent}) => {
   );
 
   const Profile = () => {
-    // Glinda posts under "glindarvf" — match either username or the tumblr-specific handle
-    const tumblrHandle = data.tumblr?.handle || data.username;
-    const myPosts = [
-      ...posts.filter(p=>(!p.username||p.username===data.username||p.username===tumblrHandle)).map(p=>({...p,_kind:"own"})),
-      ...myShared.map(p=>({...p,_kind:"shared"})),
-    ].sort((a,b)=>loreSortKey(b.date)-loreSortKey(a.date));
+    const myPosts = [...myShared].sort((a,b)=>loreSortKey(b.date)-loreSortKey(a.date));
     const coverColor = data.tumblr?.coverColor || "#2c3e50";
     return (
       <div style={{flex:1,background:"#ebe9e4",overflowY:"auto",minHeight:0}}>
@@ -2429,7 +2432,9 @@ const TumblrScreen = ({data,admin,update,onUpdateShared=()=>{},accent}) => {
         </div>
         
         <div style={{padding:"8px 8px 0"}}>
-          {myPosts.map((post,i)=><PostCard key={post.id} post={post}/>)}
+          {myPosts.length === 0
+            ? <div style={{padding:"24px 16px",textAlign:"center",color:GRAY,fontSize:12}}>Aucun post pour l'instant.</div>
+            : myPosts.map((post,i)=><PostCard key={post.id??i} post={post}/>)}
         </div>
         <div style={{height:8}}/>
       </div>
@@ -2496,6 +2501,18 @@ const TumblrScreen = ({data,admin,update,onUpdateShared=()=>{},accent}) => {
 
   return (
     <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden",fontFamily:FF_IOS}}>
+      {/* Header iOS style — la flèche revient à la TL si un profil est ouvert, sinon quitte l'app */}
+      {onBack && (
+        <div style={{background:`linear-gradient(180deg,#4a6a8a,${TB})`,padding:"0 8px",display:"flex",alignItems:"center",height:44,flexShrink:0,borderBottom:"1px solid #1e3347",boxShadow:"0 1px 3px rgba(0,0,0,0.35)",position:"relative"}}>
+          <button onClick={viewProfile ? ()=>setViewProfile(null) : onBack}
+            style={{background:`linear-gradient(180deg,${TB},#1e3347)`,border:"1px solid rgba(0,0,0,0.45)",borderRadius:6,color:"#fff",fontSize:11,fontWeight:600,cursor:"pointer",padding:"3px 10px 3px 7px",display:"flex",alignItems:"center",gap:2,textShadow:"0 -1px 0 rgba(0,0,0,0.5)",boxShadow:"inset 0 1px 0 rgba(255,255,255,0.2)",zIndex:1,flexShrink:0,fontFamily:FF_IOS}}>
+            <svg width="8" height="14" viewBox="0 0 8 14" fill="none"><path d="M7 1L1 7l6 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
+          </button>
+          <span style={{position:"absolute",left:0,right:0,textAlign:"center",color:"#fff",fontWeight:700,fontSize:17,textShadow:"0 1px 2px rgba(0,0,0,0.5)",letterSpacing:-0.3,fontFamily:FF_IOS,pointerEvents:"none"}}>
+            {viewProfile ? (CHAR_NAMES_TB[viewProfile]||viewProfile) : "Tumblr"}
+          </span>
+        </div>
+      )}
       {viewProfile ? <ViewedProfile key={viewProfile}/> : <ActiveTab/>}
 
       
@@ -4377,9 +4394,6 @@ const TwitterScreen = ({data, isIos, accent, onBack=null, sharedTweets=[], twitt
     onUpdateShared("_twitterFollows", {...twitterFollows, [charKey]:next});
   };
 
-  // ── Profile tweets (static) — référence la constante module TWITTER_PROFILE_TWEETS ──
-  const PROFILE_TWEETS = TWITTER_PROFILE_TWEETS;
-
   // ── Shared tweets injected into feeds ──
   // Tri du plus récent au plus ancien, basé sur la vraie date/heure du tweet (lore) plutôt que sur
   // l'ordre d'insertion ou un timestamp JS qui n'est jamais posé par les tweets créés en admin —
@@ -4539,13 +4553,11 @@ const TwitterScreen = ({data, isIos, accent, onBack=null, sharedTweets=[], twitt
           const pKey = viewProfile;
           const pInfo = CHAR_TWITTER_KEYS[pKey];
           const pUser = effectiveTwUsers[pInfo.key] || {};
-          // Tweets visibles sur le profil = tweets partagés + tweets de profil statiques
-          const pShared = sharedTweets.filter(t=>t.author===pKey).map(t=>({
+          // Tweets du profil = uniquement les tweets partagés (pas de tweets statiques)
+          const pTweets = sharedTweets.filter(t=>t.author===pKey).map(t=>({
             h:handles[pKey], name:pUser.name||names[pKey], text:t.text, time:t.time||"maintenant", av:pUser.av||names[pKey][0],
             _sort:loreSortKey(t.time),
-          }));
-          const pStatic = (PROFILE_TWEETS[pKey]||[]).map(t=>({...t, av:pUser.av||t.av||names[pKey][0], _sort:loreSortKey(t.time)}));
-          const pTweets = [...pShared, ...pStatic].sort((a,b)=>b._sort-a._sort);
+          })).sort((a,b)=>b._sort-a._sort);
           const following = iFollow(pKey);
           const followingCount = {glinda:"312",eoghan:"891",drew:"156",elias:"89"}[pKey]||"—";
           const followersCount = {glinda:"847",eoghan:"2.1K",drew:"234",elias:"445"}[pKey]||"—";
@@ -4605,11 +4617,13 @@ const TwitterScreen = ({data, isIos, accent, onBack=null, sharedTweets=[], twitt
             <div><div style={{color:"#fff",fontWeight:700,fontSize:14}}>{data.name?.split(" ")[0]}</div><div style={{color:"rgba(255,255,255,0.8)",fontSize:12}}>{myHandle}</div></div>
           </div>
           <div style={{background:rowBg,padding:"8px 12px",borderBottom:rowBorder,display:"flex",gap:20}}>
-            {[["Tweets",(PROFILE_TWEETS[charKey]||[]).length+myShared.length],["Following",charKey==="glinda"?"312":charKey==="eoghan"?"891":charKey==="drew"?"156":"89"],["Followers",charKey==="glinda"?"847":charKey==="eoghan"?"2.1K":charKey==="drew"?"234":"445"]].map(([l,v])=>(
+            {[["Tweets",myShared.length],["Following",charKey==="glinda"?"312":charKey==="eoghan"?"891":charKey==="drew"?"156":"89"],["Followers",charKey==="glinda"?"847":charKey==="eoghan"?"2.1K":charKey==="drew"?"234":"445"]].map(([l,v])=>(
               <div key={l} style={{textAlign:"center"}}><div style={{color:textCol,fontWeight:700,fontSize:13}}>{v}</div><div style={{color:subCol,fontSize:10}}>{l}</div></div>
             ))}
           </div>
-          {[...myShared,...(PROFILE_TWEETS[charKey]||[])].map(resolveTweet).map((t,i)=><Tweet key={i} t={{...t,av:effectiveTwUsers[CHAR_TWITTER_KEYS[charKey].key]?.av||charKey[0].toUpperCase()}}/>)}
+          {myShared.length===0
+            ? <div style={{padding:24,textAlign:"center",color:subCol,fontSize:12}}>Aucun tweet partagé pour l'instant.</div>
+            : myShared.map(resolveTweet).map((t,i)=><Tweet key={i} t={{...t,av:effectiveTwUsers[CHAR_TWITTER_KEYS[charKey].key]?.av||charKey[0].toUpperCase()}}/>)}
         </>}
         </>}
       </div>
@@ -6566,7 +6580,7 @@ const IOSPhone = ({data,admin,onUpdate,onUpdateShared=()=>{},loreDate:loreDatePr
   if(app==="safari"||app==="browser") return <Shell><IOSStatusBar/><NavBar title="Safari" back={goHome}/><BrowserScreen data={data} admin={admin} update={update} accent={accent} isIos={true} tab={browserTab} setTab={setBrowserTab}/></Shell>;
   if(app==="phone") return <Shell><IOSStatusBar/><PhoneScreen data={data} admin={admin} update={update} accent={accent} isIos={true} panel={phonePanel} setPanel={setPhonePanel}/></Shell>;
   if(app==="notes") return <Shell><IOSStatusBar/><NotesScreen data={data} admin={admin} update={update} accent={accent} isIos={true} noteOpen={noteOpen} setNoteOpen={setNoteOpen} goHome={goHome}/></Shell>;
-  if(app==="tumblr")    return <Shell><IOSStatusBar/><NavBar title="Tumblr" back={goHome}/><TumblrScreen data={data} admin={admin} update={update} onUpdateShared={onUpdateShared} accent={accent}/></Shell>;
+  if(app==="tumblr")    return <Shell><IOSStatusBar/><TumblrScreen data={data} admin={admin} update={update} onUpdateShared={onUpdateShared} accent={accent} onBack={goHome}/></Shell>;
   if(app==="twitter")   return <Shell><IOSStatusBar/><TwitterScreen data={data} isIos={true} accent={accent} onBack={goHome} sharedTweets={data.sharedThreads?._sharedTweets||[]} twitterUsers={{...(data.sharedThreads?._sharedTwitterUsers||{}),...(data.twitterUsers||{})}} homeBaseTweets={data.homeBaseTweets||[]} onUpdateShared={onUpdateShared}/></Shell>;
   if(app==="nikeplus")  return <Shell><IOSStatusBar/><NavBar title="Nike+" back={goHome}/><NikeplusScreen data={data} accent={accent}/></Shell>;
   if(app==="youtube")   return <Shell><IOSStatusBar/><YouTubeScreen isIos={true} charKey={charKey} data={data} onBack={goHome}/></Shell>;
@@ -19421,31 +19435,14 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
           {twTab==="shared" && (()=>{
             const allShared = data.sharedThreads?._sharedTweets || [];
             const updAllShared = (list) => onUpdate("_sharedTweets", list);
-            // Tweets statiques de ce perso (lecture seule — pas encore "partagés")
-            const staticProfileTweets = (TWITTER_PROFILE_TWEETS[tab]||[]);
-            const mySharedCount = allShared.filter(t=>t.author===tab).length;
             return (
-              <div style={{display:"flex",flexDirection:"column",gap:10}}>
-                <SharedPostsEditor
-                  posts={allShared} onChange={updAllShared} tab={tab} accent="#1da1f2"
-                  fieldMap={{text:"text", img:"photo", time:"time"}}
-                  statFields={[{key:"rp",label:"💬"},{key:"rt",label:"🔁"},{key:"fav",label:"❤"}]}
-                  addLabel="+ Tweet" textLabel="Texte"
-                  hint="Ces tweets sont réellement partagés : ils apparaissent dans le fil des autres persos et sur le profil du personnage. Tu ne peux modifier que les tiens."
-                />
-                {mySharedCount===0 && staticProfileTweets.length>0 && (
-                  <div style={{background:"rgba(29,161,242,0.06)",border:"1px solid rgba(29,161,242,0.2)",borderRadius:8,padding:"10px 14px"}}>
-                    <div style={{fontSize:11,fontWeight:700,color:"#1da1f2",marginBottom:6}}>📌 Tweets de profil statiques (non partagés)</div>
-                    <div style={{fontSize:10,color:"#6b7280",marginBottom:8}}>Ces tweets s'affichent sur l'onglet "Me" de {CHAR_NAMES[tab]||tab} mais ne sont pas visibles par les autres persos. Pour les rendre partagés, clique "+ Tweet" ci-dessus et recopie leur contenu.</div>
-                    {staticProfileTweets.map((t,i)=>(
-                      <div key={i} style={{background:"rgba(255,255,255,0.7)",borderRadius:6,padding:"6px 10px",marginBottom:4,fontSize:11,color:"#374151",borderLeft:"2px solid rgba(29,161,242,0.3)"}}>
-                        <span style={{color:"#1da1f2",fontWeight:600}}>{t.h}</span> · <span style={{color:"#9ca3af"}}>{t.time}</span>
-                        <div style={{marginTop:2}}>{t.text}</div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
+              <SharedPostsEditor
+                posts={allShared} onChange={updAllShared} tab={tab} accent="#1da1f2"
+                fieldMap={{text:"text", img:"photo", time:"time"}}
+                statFields={[{key:"rp",label:"💬"},{key:"rt",label:"🔁"},{key:"fav",label:"❤"}]}
+                addLabel="+ Tweet" textLabel="Texte"
+                hint="Ces tweets sont partagés entre tous les persos : ils apparaissent dans les fils et sur le profil du personnage. Tu ne peux modifier que les tiens."
+              />
             );
           })()}
 
@@ -19857,9 +19854,9 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
           hint="Seul toi peux modifier ou supprimer tes propres posts ici."
         />
 
-        <div style={{color:"#888",fontSize:10,letterSpacing:1,textTransform:"uppercase",margin:"16px 0 8px"}}>Fil d'accueil (posts décoratifs des comptes suivis — pas partagés, propres à ce perso)</div>
+        <div style={{color:"#888",fontSize:10,letterSpacing:1,textTransform:"uppercase",margin:"16px 0 8px"}}>Fil d'accueil (posts de comptes suivis — propres à ce perso, non partagés)</div>
         {(()=>{
-          const effectiveFeed = d.tumblr?.feedPosts || TUMBLR_FEED_POSTS_DEFAULT[d.username] || [];
+          const effectiveFeed = d.tumblr?.feedPosts || [];
           const updFeed = (list) => upd("tumblr",{...(d.tumblr||{}),feedPosts:list});
           return (<>
             {effectiveFeed.map((post,i)=>(
@@ -20327,11 +20324,11 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
       // perso) — on les fait correspondre une fois ici, pour que tout passe par le même mécanisme
       // que Twitter/Tumblr. Dès qu'un post est ré-enregistré, il prend author=tab durablement.
       const nameToKey = Object.fromEntries(Object.entries(CHAR_NAMES).map(([k,v])=>[v,k]));
-      const sharedFeed = (data.sharedThreads?._sharedFacebookPosts || FACEBOOK_FRIENDS_FEED_DEFAULT)
+      const sharedFeed = (data.sharedThreads?._sharedFacebookPosts || [])
         .map(p => p.author ? p : {...p, author: nameToKey[p.name] || p.author});
       const updFeed = (list) => onUpdate("_sharedFacebookPosts", list);
 
-      const pages = d.facebookPages?.[tab] || FACEBOOK_PAGES_DEFAULT[tab] || [];
+      const pages = d.facebookPages?.[tab] || [];
       const updPages = (list) => upd("facebookPages", {...(d.facebookPages||{}), [tab]: list});
       const addPage = () => updPages([...pages, {name:"", time:"à l'instant", text:"", likes:0, comments:0}]);
 
@@ -21330,8 +21327,8 @@ const FacebookScreen = ({data, isIos, accent}) => {
   const FB_BG   = "#e8eaf0";
 
   const me = FACEBOOK_PROFILES_DEFAULT[charKey];
-  const friendsFeed = data.sharedThreads?._sharedFacebookPosts || FACEBOOK_FRIENDS_FEED_DEFAULT;
-  const pagePosts   = data.facebookPages?.[charKey] || FACEBOOK_PAGES_DEFAULT[charKey] || [];
+  const friendsFeed = data.sharedThreads?._sharedFacebookPosts || [];
+  const pagePosts   = data.facebookPages?.[charKey] || [];
   // Tri approximatif par ancienneté relative ("2 minutes ago" < "3 hours ago" < "1 day ago"...) pour mélanger
   // naturellement le fil d'amis (partagé) et les pages suivies (propres à ce perso) comme un vrai fil Facebook.
   const relAgeToMinutes = (t) => {
@@ -21385,6 +21382,12 @@ const FacebookScreen = ({data, isIos, accent}) => {
       </div>
       {/* Feed */}
       <div style={{flex:1,overflowY:"auto",padding:"10px 10px 0"}}>
+        {posts.length === 0 && (
+          <div style={{padding:"32px 16px",textAlign:"center",color:"#90949c",fontSize:13}}>
+            Aucun post pour l'instant.<br/>
+            <span style={{fontSize:11,marginTop:6,display:"block"}}>Les posts des personnages apparaîtront ici une fois créés depuis l'admin.</span>
+          </div>
+        )}
         {posts.map((p,i)=>(
           <div key={i} style={{background:"#fff",marginBottom:8,borderTop:"1px solid #dde3ea",borderBottom:"1px solid #dde3ea"}}>
             {/* Post header */}
