@@ -1854,15 +1854,23 @@ const IOSPhoneApp = ({data,admin,update,panel,setPanel}) => {
     </div>
   )));
 
-  const favorites = list(uniqContacts.slice(0,4).map((c,i)=>(
-    <div key={i} style={{padding:"11px 12px",borderBottom:"1px solid #d9d8d2",display:"flex",alignItems:"center",gap:10,background:"linear-gradient(180deg,#ffffff,#f6f5f0)"}}>
-      <span style={{color:"#ffcc00",lineHeight:1}}><svg width="22" height="20" viewBox="0 0 24 22" fill="none"><path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round"/></svg></span>
-      <div style={{flex:1,color:"#000",fontSize:14,fontWeight:600}}>{c.contact}</div>
-      <span style={{color:"#007aff",lineHeight:1}}><svg width="16" height="16" viewBox="0 0 18 18" fill="none"><path d="M3.5 2h3l1.5 4-2 1.5A12 12 0 009.5 11l1.5-2 4 1.5v3A2 2 0 0113 16 12 12 0 012 5a2 2 0 011.5-3z" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/></svg></span>
-    </div>
-  )));
+  const favoriteNames = data.phoneFavorites && data.phoneFavorites.length > 0
+    ? data.phoneFavorites
+    : uniqContacts.slice(0, 4).map(c => c.contact);
+  const favoriteContacts = favoriteNames.map(name => uniqContacts.find(c => c.contact === name) || {contact: name, photo: null});
+  const favorites = list(favoriteContacts.length === 0
+    ? [<div key="empty" style={{padding:"40px 24px",textAlign:"center",color:"#8e8e93",fontSize:13}}>Aucun favori</div>]
+    : favoriteContacts.map((c,i)=>(
+      <div key={i} style={{padding:"11px 12px",borderBottom:"1px solid #d9d8d2",display:"flex",alignItems:"center",gap:10,background:"linear-gradient(180deg,#ffffff,#f6f5f0)"}}>
+        <span style={{color:"#ffcc00",lineHeight:1}}><svg width="22" height="20" viewBox="0 0 24 22" fill="none"><path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round"/></svg></span>
+        <div style={{width:32,height:32,borderRadius:"50%",background:"#c8c7c2",display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontWeight:700,fontSize:13,flexShrink:0,overflow:"hidden"}}>{c.photo?<img src={c.photo} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:(c.contact||"?")[0]}</div>
+        <div style={{flex:1,color:"#000",fontSize:14,fontWeight:600}}>{c.contact}</div>
+        <span style={{color:"#007aff",lineHeight:1}}><svg width="16" height="16" viewBox="0 0 18 18" fill="none"><path d="M3.5 2h3l1.5 4-2 1.5A12 12 0 009.5 11l1.5-2 4 1.5v3A2 2 0 0113 16 12 12 0 012 5a2 2 0 011.5-3z" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/></svg></span>
+      </div>
+    ))
+  );
 
-  const voicemailList = (data.voicemails && data.voicemails.length>0)
+
     ? data.voicemails
     : (calls.filter(c=>c.type==="missed")).slice(0,3).map((c,i)=>({id:"mc"+i, contact:c.contact, time:c.time, duration:`0:0${i+3}`, transcript:""}));
   const voicemail = list(
@@ -19117,7 +19125,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
 
     case "phone": {
       // ── Sous-onglets : Appels | Contacts | Messages vocaux ──
-      const phoneSubTabs = [["calls","📞 Appels"],["contacts","👥 Contacts"],["voicemail","📼 Messages vocaux"]];
+      const phoneSubTabs = [["calls","📞 Appels"],["contacts","👥 Contacts"],["favorites","⭐ Favoris"],["voicemail","📼 Messages vocaux"]];
       return (
         <div style={{display:"flex",flexDirection:"column",gap:12}}>
           {/* Sub-tab bar */}
@@ -19213,6 +19221,86 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                 ))}
                 <button onClick={addContact}
                   style={{background:"rgba(99,102,241,0.08)",border:"1px dashed rgba(99,102,241,0.4)",color:"#6366f1",borderRadius:8,padding:"10px 18px",cursor:"pointer",fontSize:12,fontWeight:600,alignSelf:"flex-start"}}>+ Contact</button>
+              </div>
+            );
+          })()}
+
+          {/* ── Favoris ── */}
+          {phoneSubTab==="favorites" && (()=>{
+            const allContacts = d.contacts || [];
+            const currentFavs = d.phoneFavorites || [];
+            const isFav = (name) => currentFavs.includes(name);
+            const toggleFav = (name) => {
+              const next = isFav(name)
+                ? currentFavs.filter(n => n !== name)
+                : [...currentFavs, name];
+              upd("phoneFavorites", next);
+            };
+            const moveFav = (idx, dir) => {
+              const next = [...currentFavs];
+              const swap = idx + dir;
+              if(swap < 0 || swap >= next.length) return;
+              [next[idx], next[swap]] = [next[swap], next[idx]];
+              upd("phoneFavorites", next);
+            };
+            const contactsWithPhoto = Object.fromEntries((allContacts).map(c=>[c.name, c.photo]));
+
+            return (
+              <div style={{display:"flex",flexDirection:"column",gap:10}}>
+                <div style={{fontSize:11,color:"#6b7280",lineHeight:1.5,background:"rgba(255,193,7,0.07)",border:"1px solid rgba(255,193,7,0.2)",borderRadius:8,padding:"8px 12px"}}>
+                  Les favoris apparaissent dans l'onglet ⭐ du téléphone iOS. Cochez les contacts à afficher, et réordonnez-les par glisser ou avec les flèches.
+                </div>
+
+                {/* Favoris actifs — réordonnables */}
+                {currentFavs.length > 0 && (
+                  <div style={{display:"flex",flexDirection:"column",gap:4}}>
+                    <div style={{fontSize:11,fontWeight:700,color:"#374151",letterSpacing:0.3,marginBottom:2}}>⭐ Favoris ({currentFavs.length})</div>
+                    {currentFavs.map((name, idx) => {
+                      const photo = contactsWithPhoto[name] || null;
+                      return (
+                        <div key={name} style={{display:"flex",alignItems:"center",gap:8,background:"rgba(255,255,255,0.9)",borderRadius:8,padding:"7px 10px",border:"1px solid rgba(255,193,7,0.25)",boxShadow:"0 1px 3px rgba(255,193,7,0.08)"}}>
+                          <span style={{color:"#ffc107",lineHeight:1,flexShrink:0}}>
+                            <svg width="16" height="15" viewBox="0 0 24 22" fill="currentColor"><path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6z"/></svg>
+                          </span>
+                          <div style={{width:28,height:28,borderRadius:"50%",background:"rgba(99,102,241,0.1)",display:"flex",alignItems:"center",justifyContent:"center",color:"#6366f1",fontWeight:700,fontSize:12,flexShrink:0,overflow:"hidden"}}>
+                            {photo ? <img src={photo} style={{width:"100%",height:"100%",objectFit:"cover"}}/> : (name||"?")[0]}
+                          </div>
+                          <span style={{flex:1,fontSize:13,color:"#1a1a2e",fontWeight:600}}>{name}</span>
+                          <div style={{display:"flex",gap:2,flexShrink:0}}>
+                            <button onClick={()=>moveFav(idx,-1)} disabled={idx===0} style={{background:"none",border:"none",color:idx===0?"#d1d5db":"#9ca3af",cursor:idx===0?"default":"pointer",fontSize:14,padding:"2px 4px",lineHeight:1}}>▲</button>
+                            <button onClick={()=>moveFav(idx,1)} disabled={idx===currentFavs.length-1} style={{background:"none",border:"none",color:idx===currentFavs.length-1?"#d1d5db":"#9ca3af",cursor:idx===currentFavs.length-1?"default":"pointer",fontSize:14,padding:"2px 4px",lineHeight:1}}>▼</button>
+                          </div>
+                          <button onClick={()=>toggleFav(name)} style={{background:"rgba(239,68,68,0.07)",border:"1px solid rgba(239,68,68,0.2)",color:"#ef4444",borderRadius:5,padding:"4px 8px",cursor:"pointer",fontSize:10,fontWeight:600,flexShrink:0}}>Retirer</button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {/* Tous les contacts — toggle favori */}
+                {allContacts.length > 0 ? (
+                  <div style={{display:"flex",flexDirection:"column",gap:4}}>
+                    <div style={{fontSize:11,fontWeight:700,color:"#374151",letterSpacing:0.3,marginBottom:2}}>Contacts disponibles</div>
+                    {allContacts.map(c => {
+                      const active = isFav(c.name);
+                      return (
+                        <div key={c.id} onClick={()=>toggleFav(c.name)} style={{display:"flex",alignItems:"center",gap:8,background:"rgba(255,255,255,0.85)",borderRadius:8,padding:"8px 10px",border:`1px solid ${active?"rgba(255,193,7,0.35)":"rgba(0,0,0,0.07)"}`,cursor:"pointer",transition:"border-color 0.15s,background 0.15s",userSelect:"none"}}>
+                          <div style={{width:28,height:28,borderRadius:"50%",background:"rgba(99,102,241,0.08)",display:"flex",alignItems:"center",justifyContent:"center",color:"#6366f1",fontWeight:700,fontSize:12,flexShrink:0,overflow:"hidden"}}>
+                            {c.photo ? <img src={c.photo} style={{width:"100%",height:"100%",objectFit:"cover"}}/> : (c.name||"?")[0]}
+                          </div>
+                          <span style={{flex:1,fontSize:13,color:"#1a1a2e",fontWeight:active?700:400}}>{c.name}</span>
+                          <div style={{width:20,height:20,borderRadius:"50%",border:`2px solid ${active?"#ffc107":"#d1d5db"}`,background:active?"#ffc107":"transparent",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,transition:"all 0.15s"}}>
+                            {active && <svg width="10" height="9" viewBox="0 0 24 22" fill="white"><path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6z"/></svg>}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div style={{fontSize:11,color:"#9ca3af",textAlign:"center",padding:"20px 0"}}>
+                    Ajoutez d'abord des contacts dans l'onglet 👥 Contacts.
+                  </div>
+                )}
               </div>
             );
           })()}
@@ -19480,10 +19568,14 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                   if(d.os==="android"){
                     onUpdateShared({...(data._sharedAndroidIcons||{}),[appId]:re.target.result});
                   } else {
-                    const newIcons={...(d.appIcons||{}),[appId]:re.target.result};
-                    upd("appIcons",newIcons);
-                    ["glinda","eoghan","elias"].filter(k=>k!==tab&&data[k]?.os==="ios").forEach(k=>{
-                      onUpdate(k,{...data[k],appIcons:{...(data[k].appIcons||{}),[appId]:re.target.result}});
+                    // dataRef.current : toujours à jour même après un re-render survenu pendant
+                    // l'upload asynchrone — évite d'écraser les modifications récentes avec d périmé.
+                    const freshTab = dataRef.current[tab] || {};
+                    const newIcons = {...(freshTab.appIcons||{}),[appId]:re.target.result};
+                    onUpdate(tab, {...freshTab, appIcons:newIcons});
+                    ["glinda","eoghan","elias"].filter(k=>k!==tab&&dataRef.current[k]?.os==="ios").forEach(k=>{
+                      const freshK = dataRef.current[k] || {};
+                      onUpdate(k,{...freshK,appIcons:{...(freshK.appIcons||{}),[appId]:re.target.result}});
                     });
                   }
                 };
@@ -20568,7 +20660,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                             className="adm-input" style={{width:72,background:"rgba(255,255,255,0.9)",border:"1px solid rgba(0,0,0,0.1)",color:"#374151",padding:"5px 4px",fontSize:11,borderRadius:6,cursor:"pointer"}}>
                             {FILE_EXTS.map(e=><option key={e} value={e}>{e.toUpperCase()}</option>)}
                           </select>
-                          <input type="date" value={parseDateVal(file.date)} min="2012-01-01" max="2012-12-31"
+                          <input type="date" value={parseDateVal(file.date)} 
                             onChange={e=>updFile({date:buildDate(e.target.value)})}
                             className="adm-input" style={{flex:1,minWidth:110,background:"rgba(255,255,255,0.9)",border:"1px solid rgba(0,0,0,0.1)",color:"#1a1a2e",padding:"5px 6px",fontSize:11,borderRadius:6}}/>
                           <input value={file.size||""} onChange={e=>updFile({size:e.target.value})}
@@ -20611,7 +20703,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                       className="adm-input" style={{width:72,background:"rgba(255,255,255,0.9)",border:"1px solid rgba(0,0,0,0.1)",color:"#374151",padding:"6px 4px",fontSize:11,borderRadius:7,cursor:"pointer"}}>
                       {FILE_EXTS.map(e=><option key={e} value={e}>{e.toUpperCase()}</option>)}
                     </select>
-                    <input type="date" value={parseDateVal(file.date)} min="2012-01-01" max="2012-12-31"
+                    <input type="date" value={parseDateVal(file.date)} 
                       onChange={e=>updFile({date:buildDate(e.target.value)})}
                       className="adm-input" style={{flex:1,minWidth:110,background:"rgba(255,255,255,0.9)",border:"1px solid rgba(0,0,0,0.1)",color:"#1a1a2e",padding:"6px 6px",fontSize:11,borderRadius:7}}/>
                     <input value={file.size||""} onChange={e=>updFile({size:e.target.value})}
@@ -22158,33 +22250,103 @@ const GmailScreen = ({data, isIos, accent, onBack}) => {
   const gmAvatar = (name) => GM_AVATAR_COLORS[(name||" ").charCodeAt(0) % GM_AVATAR_COLORS.length];
 
   // ── Rendu d'un mail ouvert ──
+
+
+  // Nom affiché du perso courant pour le champ "À"
+  const CHAR_DISPLAY = {
+    glindatheverygood: "Glinda Rosalind <glindatheverygood@uma.edu>",
+    eoghan_masuda:     "Eoghan Masuda <eoghan_masuda@uma.edu>",
+    dreww_orms:        "Drew B. <dreww_orms@uma.edu>",
+    noteliasgreen:     "Elias Green <noteliasgreen@uma.edu>",
+  };
+  const toAddress = m => m.to || CHAR_DISPLAY[charUsername] || charUsername;
+  const fromAddress = m => m.fromFull || m.from || "";
+  const dateLabel = m => {
+    const rel = loreRelativeLabel(m.time, loreDateStr);
+    // Si la date relative est courte (ex: "9:30am"), on ajoute "Aujourd'hui"
+    const abs = m.time || "";
+    return abs && !abs.match(/^\d+:\d+/) ? abs : rel;
+  };
+
   const MailDetail = ({m, onBack}) => (
     <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden"}}>
+      {/* ── Barre de navigation ── */}
       {isIos ? (
         <div style={{background:"linear-gradient(180deg,#6a8fc0,#3d5f8a)",padding:"6px 10px",display:"flex",alignItems:"center",gap:8,flexShrink:0,boxShadow:"0 1px 3px rgba(0,0,0,0.4)"}}>
           <button onClick={onBack} style={{background:`linear-gradient(180deg,#6a8fc0,#3d5f8a)`,border:"1px solid rgba(0,0,0,0.45)",borderRadius:6,color:"#fff",fontSize:11,fontWeight:"600",cursor:"pointer",padding:"3px 10px 3px 7px",display:"flex",alignItems:"center",gap:2,textShadow:"0 -1px 0 rgba(0,0,0,0.5)",boxShadow:"inset 0 1px 0 rgba(255,255,255,0.2)"}}>
             <svg width="8" height="14" viewBox="0 0 8 14" fill="none"><path d="M7 1L1 7l6 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
             <span style={{fontSize:12,marginLeft:2}}>{curFolder?.label||"Inbox"}</span>
           </button>
-          <span style={{flex:1}}/>
+          <span style={{flex:1,textAlign:"center",color:"#fff",fontSize:13,fontWeight:600,textShadow:"0 1px 1px rgba(0,0,0,0.4)"}}>{curFolder?.label||"Inbox"}</span>
+          <span style={{width:70}}/>
         </div>
       ) : (
-        <div style={{background:"#C62828",borderBottom:"none",padding:"10px 14px",display:"flex",alignItems:"center",gap:10,flexShrink:0,boxShadow:"0 2px 4px rgba(0,0,0,0.2)"}}>
+        <div style={{background:"#C62828",padding:"10px 14px",display:"flex",alignItems:"center",gap:10,flexShrink:0,boxShadow:"0 2px 4px rgba(0,0,0,0.2)"}}>
           <button onClick={onBack} style={{background:"none",border:"none",cursor:"pointer",color:"#fff",padding:0,display:"flex",alignItems:"center"}}>
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M19 12H5M12 19l-7-7 7-7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
           </button>
+          <span style={{flex:1,color:"#fff",fontSize:16,fontWeight:500,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{m.subj}</span>
         </div>
       )}
-      <div style={{flex:1,overflowY:"auto",padding:"16px 14px",background:isIos?"#fff":"#fff"}}>
-        <div style={{fontSize:17,fontWeight:700,color:"#1a1a2e",marginBottom:6,lineHeight:1.3}}>{m.subj}</div>
-        <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:12,paddingBottom:12,borderBottom:`1px solid ${isIos?"#e8e8e8":"#e0e0e0"}`}}>
-          {!isIos && <div style={{width:36,height:36,borderRadius:"50%",background:gmAvatar(m.from),display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontWeight:700,fontSize:15,flexShrink:0}}>{(m.from||"?")[0]}</div>}
-          <div style={{flex:1,minWidth:0}}>
-            <div style={{fontSize:13,fontWeight:600,color:"#1a1a2e"}}>{m.from}</div>
-            <div style={{fontSize:11,color:"#888"}}>{loreRelativeLabel(m.time,loreDateStr)}</div>
-          </div>
-        </div>
-        <div style={{fontSize:13,color:"#333",lineHeight:1.6,whiteSpace:"pre-wrap"}}>{m.preview}</div>
+
+      <div style={{flex:1,overflowY:"auto",background:"#fff"}}>
+        {isIos ? (
+          /* ── iOS 6 Mail — header style natif ── */
+          <>
+            {/* Objet en grand */}
+            <div style={{padding:"12px 14px 10px",borderBottom:"1px solid #e0dfe0"}}>
+              <div style={{fontSize:16,fontWeight:700,color:"#1a1a1a",lineHeight:1.3,fontFamily:"Helvetica,'Helvetica Neue',Arial,sans-serif"}}>{m.subj}</div>
+            </div>
+            {/* Champs header : De, À, Date */}
+            <div style={{background:"#f7f6f1",borderBottom:"1px solid #d9d8d2"}}>
+              {[
+                ["De", fromAddress(m)],
+                ["À",  toAddress(m)],
+                ["Date", m.time || ""],
+              ].map(([label, value], i, arr) => (
+                <div key={label} style={{display:"flex",alignItems:"flex-start",padding:"7px 14px",borderBottom:i<arr.length-1?"1px solid #e0dfe0":"none",gap:8,minHeight:30}}>
+                  <span style={{fontSize:12,fontWeight:600,color:"#888",width:36,flexShrink:0,paddingTop:1,fontFamily:"Helvetica,'Helvetica Neue',Arial,sans-serif"}}>{label}</span>
+                  <span style={{fontSize:12,color:"#1a1a1a",flex:1,lineHeight:1.4,wordBreak:"break-word",fontFamily:"Helvetica,'Helvetica Neue',Arial,sans-serif"}}>{value}</span>
+                </div>
+              ))}
+            </div>
+            {/* Corps */}
+            <div style={{padding:"14px 14px",fontSize:13,color:"#1a1a1a",lineHeight:1.7,whiteSpace:"pre-wrap",fontFamily:"Helvetica,'Helvetica Neue',Arial,sans-serif"}}>
+              {m.preview}
+            </div>
+          </>
+        ) : (
+          /* ── Android Gmail — header Material ── */
+          <>
+            {/* Objet */}
+            <div style={{padding:"16px 16px 0"}}>
+              <div style={{fontSize:20,fontWeight:400,color:"#202124",lineHeight:1.3,marginBottom:16}}>{m.subj}</div>
+            </div>
+            {/* Bloc expéditeur */}
+            <div style={{padding:"0 16px 12px",display:"flex",gap:12,alignItems:"flex-start"}}>
+              <div style={{width:40,height:40,borderRadius:"50%",background:gmAvatar(m.from),display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontWeight:700,fontSize:16,flexShrink:0}}>
+                {(m.from||"?")[0]}
+              </div>
+              <div style={{flex:1,minWidth:0}}>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",gap:8,flexWrap:"wrap"}}>
+                  <span style={{fontSize:14,fontWeight:600,color:"#202124"}}>{fromAddress(m)}</span>
+                  <span style={{fontSize:11,color:"#5f6368",flexShrink:0,whiteSpace:"nowrap"}}>{m.time||""}</span>
+                </div>
+                {/* Ligne À */}
+                <div style={{marginTop:2,fontSize:12,color:"#5f6368",display:"flex",gap:4,alignItems:"baseline"}}>
+                  <span style={{fontWeight:500}}>À</span>
+                  <span style={{flex:1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{toAddress(m)}</span>
+                </div>
+              </div>
+            </div>
+            {/* Séparateur */}
+            <div style={{height:1,background:"#e0e0e0",margin:"0 16px 14px"}}/>
+            {/* Corps */}
+            <div style={{padding:"0 16px 24px",fontSize:14,color:"#202124",lineHeight:1.7,whiteSpace:"pre-wrap"}}>
+              {m.preview}
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
