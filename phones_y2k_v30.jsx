@@ -17729,7 +17729,10 @@ const loadData = () => {
   return withSocialSeeds(d);
 };
 
-// ─── SOCIAL SEEDS ────────────────────────────────────────────────────────────
+// Version des seeds — incrémenter à chaque correction des données initiales pour forcer une re-migration.
+const SEED_VERSION = 2;
+
+
 // Injectés dans loadData() si les clés partagées sont absentes ou vides.
 // Tweets partagés des 4 persos — visibles dans toutes les TL et sur les profils.
 const SEED_SHARED_TWEETS = [
@@ -17757,6 +17760,14 @@ const SEED_SHARED_TWEETS = [
   {id:"tw_l3",author:"elias",text:"Can You Feel My Heart — BMTH. c'est tout ce que j'ai à dire.",time:"4 oct, 3:00am",rp:3,rt:5,fav:21},
   {id:"tw_l4",author:"elias",text:"\"The truth is out there\" mais personne cherche vraiment #conspi #Derry",time:"3 oct, 5:00am",rp:9,rt:23,fav:76},
   {id:"tw_l5",author:"elias",text:"nouveau chapitre de Five Nights posté. oui c'est de la fanfic. non j'ai pas honte.",time:"2 oct, 1:00am",rp:2,rt:4,fav:16},
+  // Tweets supplémentaires rapatriés depuis les feeds décoratifs
+  {id:"tw_e6",author:"eoghan",text:"la soirée de jackson le 15 sep était iconique jusqu'à ce qu'elle soit terrifiante. go Moose quand même 🏈",time:"4 oct, 1:00am",rp:4,rt:12,fav:38},
+  {id:"tw_e7",author:"eoghan",text:"quelqu'un sait lire dans les mains ? pas pour moi c'est pour un ami",time:"3 oct, 2:00am",rp:7,rt:14,fav:33},
+  {id:"tw_g6",author:"glinda",text:"poirier réussi du premier coup la nuit dernière. on ne mentionnera pas qui a échoué. (c'était pas moi)",time:"3 oct, 1:00am",rp:2,rt:8,fav:44},
+  {id:"tw_l6",author:"elias",text:"les enfants du quartier entendent des voix dans les canalisations. quelqu'un d'autre ?",time:"2 oct, 3:00am",rp:3,rt:9,fav:4},
+  {id:"tw_l7",author:"elias",text:"je sais des choses. personne ne me croit. c'est ok.",time:"5 oct, 2:00am",rp:7,rt:39,fav:90},
+  {id:"tw_l8",author:"elias",text:"les égouts de Derry sont plus grands que vous le pensez. il y a des choses dedans.",time:"4 oct, 1:00am",rp:3,rt:11,fav:8},
+  {id:"tw_l9",author:"elias",text:"update : ma soeur Anna a été retrouvée. catatonique. à l'hôpital. si vous savez quelque chose sur Derry ME écrivez-moi.",time:"2 oct, 1:00am",rp:82,rt:230,fav:541},
 ];
 
 // Tweets décoratifs (comptes fictifs) propres à chaque TL — restent dans homeBaseTweets.
@@ -17804,10 +17815,8 @@ const withSocialSeeds = (d) => {
   const st = d.sharedThreads || {};
   const patched = {...d, sharedThreads: {...st}};
 
-  // _sharedTweets : injecter si vide
-  if(!st._sharedTweets || st._sharedTweets.length === 0) {
-    patched.sharedThreads._sharedTweets = SEED_SHARED_TWEETS;
-  }
+  // _sharedTweets : toujours injecter les seeds corrects (joueurs uniquement, sans déco)
+  patched.sharedThreads._sharedTweets = SEED_SHARED_TWEETS;
 
   // _sharedTumblrPosts : injecter si vide
   if(!st._sharedTumblrPosts || st._sharedTumblrPosts.length === 0) {
@@ -17821,9 +17830,9 @@ const withSocialSeeds = (d) => {
     );
   }
 
-  // homeBaseTweets par perso : injecter les décoratifs si vide
+  // homeBaseTweets par perso : toujours injecter les seeds déco corrects (sans tweets de joueurs)
   ["glinda","eoghan","drew","elias"].forEach(k=>{
-    if(patched[k] && !patched[k].homeBaseTweets?.length) {
+    if(patched[k]) {
       patched[k] = {...patched[k], homeBaseTweets: SEED_HOME_BASE_TWEETS[k] || []};
     }
   });
@@ -20913,42 +20922,43 @@ export default function App() {
     const unsubscribe = onValue(rootRef, (snapshot) => {
       const remote = snapshot.val();
       if (remote && Object.keys(remote).length > 0) {
-        // Migration one-shot : injecte les seeds sociaux si absents de Firebase
-        // (base existante créée avant l'ajout des seeds — pas besoin de tout réécrire,
-        //  on pousse uniquement les clés manquantes via update() ciblé).
+        // Migration versionnée : si seedVersion < SEED_VERSION on réinjecte les seeds corrigés,
+        // même si les clés existent déjà (correction des données mal attribuées).
         if (!hasReceivedFirstSnapshot.current) {
-          const st = remote.sharedThreads || {};
-          const patches = {};
+          const remoteSeedVersion = remote._seedVersion || 0;
+          const needsMigration = remoteSeedVersion < SEED_VERSION;
 
-          if (!st._sharedTweets || st._sharedTweets.length === 0) {
+          if (needsMigration) {
+            const st = remote.sharedThreads || {};
+            const patches = { _seedVersion: SEED_VERSION };
+
+            // Toujours remplacer _sharedTweets et homeBaseTweets (séparation joueurs/déco corrigée)
             patches['sharedThreads/_sharedTweets'] = SEED_SHARED_TWEETS;
-          }
-          if (!st._sharedTumblrPosts || st._sharedTumblrPosts.length === 0) {
-            patches['sharedThreads/_sharedTumblrPosts'] = SEED_SHARED_TUMBLR_POSTS;
-          }
-          // _sharedFacebookPosts : ajouter author si posts existants sans author
-          if (st._sharedFacebookPosts) {
-            const needsAuthor = st._sharedFacebookPosts.some(p => !p.author);
-            if (needsAuthor) {
-              patches['sharedThreads/_sharedFacebookPosts'] = st._sharedFacebookPosts.map(p =>
-                p.author ? p : {...p, author: FB_NAME_TO_AUTHOR[p.name] || null}
-              );
-            }
-          }
 
-          // homeBaseTweets + feedPosts Tumblr par perso
-          const USERNAME_MAP = {glinda:"glindatheverygood",eoghan:"eoghan_masuda",drew:"dreww_orms",elias:"noteliasgreen"};
-          ["glinda","eoghan","drew","elias"].forEach(k => {
-            if (!remote[k]?.homeBaseTweets?.length) {
+            if (!st._sharedTumblrPosts || st._sharedTumblrPosts.length === 0) {
+              patches['sharedThreads/_sharedTumblrPosts'] = SEED_SHARED_TUMBLR_POSTS;
+            }
+
+            // _sharedFacebookPosts : ajouter author si manquant
+            if (st._sharedFacebookPosts) {
+              const needsAuthor = st._sharedFacebookPosts.some(p => !p.author);
+              if (needsAuthor) {
+                patches['sharedThreads/_sharedFacebookPosts'] = st._sharedFacebookPosts.map(p =>
+                  p.author ? p : {...p, author: FB_NAME_TO_AUTHOR[p.name] || null}
+                );
+              }
+            }
+
+            // homeBaseTweets par perso : toujours remplacer (séparation corrigée)
+            const USERNAME_MAP = {glinda:"glindatheverygood",eoghan:"eoghan_masuda",drew:"dreww_orms",elias:"noteliasgreen"};
+            ["glinda","eoghan","drew","elias"].forEach(k => {
               patches[`${k}/homeBaseTweets`] = SEED_HOME_BASE_TWEETS[k] || [];
-            }
-            const username = USERNAME_MAP[k];
-            if (!remote[k]?.tumblr?.feedPosts?.length) {
-              patches[`${k}/tumblr`] = {...(remote[k]?.tumblr||{}), feedPosts: SEED_FEED_TUMBLR[username]||[]};
-            }
-          });
+              const username = USERNAME_MAP[k];
+              if (!remote[k]?.tumblr?.feedPosts?.length) {
+                patches[`${k}/tumblr`] = {...(remote[k]?.tumblr||{}), feedPosts: SEED_FEED_TUMBLR[username]||[]};
+              }
+            });
 
-          if (Object.keys(patches).length > 0) {
             update(ref(firebaseDb), patches).catch(e => console.error("[seed] Erreur migration seeds :", e));
           }
         }
