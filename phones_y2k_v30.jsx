@@ -4411,7 +4411,7 @@ const FilesScreen = ({data, isIos, accent, onBack}) => {
         {/* Nav bar iOS 6 */}
         <div style={{background:IOS6_HDR,borderBottom:`1px solid ${IOS6_SEP}`,padding:"8px 12px",display:"flex",alignItems:"center",gap:8,flexShrink:0,boxShadow:"0 1px 2px rgba(0,0,0,0.15)"}}>
           <button onClick={()=>folder ? setFolder(null) : onBack?.()} style={{background:"linear-gradient(180deg,#5a9fd4,#3a7bc8)",border:"1px solid #2060a0",borderRadius:6,color:"#fff",fontSize:11,fontWeight:600,padding:"4px 10px",cursor:"pointer",boxShadow:"0 1px 0 rgba(255,255,255,0.3) inset",textShadow:"0 -1px 0 rgba(0,0,0,0.3)",display:"flex",alignItems:"center",gap:3}}>
-            <span style={{fontSize:10}}>◀</span> {folder ? "Fichiers" : "Home"}
+            <span style={{fontSize:10}}>◀</span>
           </button>
           <span style={{flex:1,textAlign:"center",fontWeight:700,fontSize:17,color:"#1a1a1a",textShadow:"0 1px 0 rgba(255,255,255,0.8)"}}>
             {folder ? (currentFolder?.name||"Dossier") : "Fichiers"}
@@ -6810,7 +6810,7 @@ const IOSPhone = ({data,admin,onUpdate,onUpdateShared=()=>{},loreDate:loreDatePr
   if(app==="settings")  return <Shell><IOSStatusBar/><NavBar title="Settings" back={goHome}/><SettingsScreen data={data} isIos={true} accent={accent}/></Shell>;
   if(app==="weather")   return <Shell><IOSStatusBar/><NavBar title="Weather" back={goHome}/><WeatherScreen isIos={true} accent={accent} data={data} update={update} admin={admin}/></Shell>;
   if(app==="facebook")  return <Shell><IOSStatusBar/><NavBar title="Facebook" back={goHome}/><FacebookScreen data={data} isIos={true} accent={accent}/></Shell>;
-  if(app==="gmail")     return <Shell><IOSStatusBar/><GmailScreen data={data} isIos={true} accent={accent}/></Shell>;
+  if(app==="gmail")     return <Shell><IOSStatusBar/><GmailScreen data={data} isIos={true} accent={accent} onBack={goHome}/></Shell>;
   if(app==="pinterest") return <Shell><IOSStatusBar/><PinterestScreen isIos={true} data={data} admin={admin} update={update}/></Shell>;
   if(app==="groupme")   return <Shell><IOSStatusBar/><NavBar title="GroupMe" back={goHome}/><GroupMeScreen data={data} isIos={true} accent={accent}/></Shell>;
   if(app==="starbucks") return <Shell><IOSStatusBar/><NavBar title="Starbucks" back={goHome}/><StarbucksScreen isIos={true} charKey={charKey}/></Shell>;
@@ -7128,7 +7128,7 @@ const AndroidPhone = ({data,admin,onUpdate,sharedAndroidIcons={},onUpdateShared=
     <Chassis>
       <AndroidStatusBar notifApps={notifApps} accent={accent}/>
       <DraggableHomescreen data={data} update={update} appIcon={appIcon} badge={badge} goApp={id=>{
-        const AND_APPS=['browser','calculator','calendar','facebook','gallery','gmail','inaturalist','kindle','messages','music','notes','pandora','phone','reddit','settings','soundhound','twitter','vpn','weather','wikipedia','youtube'];
+        const AND_APPS=['browser','calculator','calendar','facebook','files','gallery','gmail','inaturalist','kindle','messages','music','notes','pandora','phone','reddit','settings','soundhound','twitter','vpn','weather','wikipedia','youtube'];
         if(AND_APPS.includes(id)){setThread(null);setApp(id);if(id==="gallery"){setGalleryView("albums");setPhotoDetail(null);}}
       }} os="android" accent={accent} admin={admin} charKey={charKey}/>
       <SoftKeys onBack={()=>setScreen("lock")}/>
@@ -7395,7 +7395,7 @@ const AndroidPhone = ({data,admin,onUpdate,sharedAndroidIcons={},onUpdateShared=
   if(app==="settings")  return <AppShell><AndroidStatusBar notifApps={notifApps} accent={accent}/><ActionBar title="Settings" back={goHome}/><SettingsScreen data={data} isIos={false} accent={accent}/></AppShell>;
   if(app==="weather")   return <AppShell><AndroidStatusBar notifApps={notifApps} accent={accent}/><ActionBar title="Weather" back={goHome}/><WeatherScreen isIos={false} accent={accent} data={data} update={update} admin={admin}/></AppShell>;
   if(app==="facebook")  return <AppShell><AndroidStatusBar notifApps={notifApps} accent={accent}/><ActionBar title="Facebook" back={goHome}/><FacebookScreen data={data} isIos={false} accent={accent}/></AppShell>;
-  if(app==="gmail")     return <AppShell><AndroidStatusBar notifApps={notifApps} accent={accent}/><ActionBar title="Gmail" back={goHome}/><GmailScreen data={data} isIos={false} accent={accent}/></AppShell>;
+  if(app==="gmail")     return <AppShell><AndroidStatusBar notifApps={notifApps} accent={accent}/><GmailScreen data={data} isIos={false} accent={accent} onBack={goHome}/></AppShell>;
   if(app==="wikipedia") return <AppShell><AndroidStatusBar notifApps={notifApps} accent={accent}/><ActionBar title="Wikipedia" back={goHome}/><WikipediaScreen isIos={false} accent={accent} charKey={charKey} data={data}/></AppShell>;
   if(app==="pandora")   return <AppShell><AndroidStatusBar notifApps={notifApps} accent={accent}/><ActionBar title="Pandora" back={goHome}/><PandoraScreen data={data} isIos={false} accent={accent}/></AppShell>;
   if(app==="kindle")    return <AppShell><AndroidStatusBar notifApps={notifApps} accent={accent}/><ActionBar title="Kindle" back={goHome}/><KindleScreen isIos={false} accent={accent} data={data}/></AppShell>;
@@ -20174,22 +20174,51 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
             </>}
 
             {/* Profil */}
-            {gTab==="profile" && <>
-              <div style={{display:"flex",gap:12,alignItems:"flex-start",flexWrap:"wrap"}}>
-                <label style={{width:72,height:72,borderRadius:8,overflow:"hidden",cursor:"pointer",flexShrink:0,background:"#1a1a1a",border:`2px solid ${OR}55`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:28}}>
-                  {myP.photo?<img src={myP.photo} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:<span style={{color:"#555"}}>📷</span>}
-                  <input type="file" accept="image/*" style={{display:"none"}} onChange={e=>{const f=e.target.files?.[0];if(!f)return;const r=new UploadReader();r.onload=ev=>upd("grindrProfile",{...myP,photo:ev.target.result});r.readAsDataURL(f);e.target.value="";}}/>
-                </label>
-                <div style={{flex:1,display:"flex",flexDirection:"column",gap:6}}>
-                  <div style={{display:"flex",gap:6}}>
-                    <Field label="Nom affiché" value={myP.name||""} onChange={v=>upd("grindrProfile",{...myP,name:v})} style={{flex:1}}/>
-                    <Field label="Âge" value={myP.age||""} onChange={v=>upd("grindrProfile",{...myP,age:v})} width="60px"/>
+            {gTab==="profile" && (()=>{
+              const updP = (patch) => upd("grindrProfile", {...myP, ...patch});
+              const photos = myP.photos || [null,null,null,null,null];
+              const setPhoto = (idx, val) => {
+                const ph = [...photos]; ph[idx] = val; updP({photos:ph});
+              };
+              return (
+              <div style={{display:"flex",flexDirection:"column",gap:10}}>
+                {/* Grille 5 photos — comme dans l'app */}
+                <div style={{fontSize:11,color:"#9ca3af",marginBottom:2}}>Photos du profil (1 principale + 4 secondaires)</div>
+                <div style={{display:"flex",gap:6}}>
+                  {/* Photo principale */}
+                  <label style={{flex:2,aspectRatio:"1",borderRadius:8,overflow:"hidden",cursor:"pointer",background:"#1a1a1a",border:`2px solid ${OR}55`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:32,minHeight:100}}>
+                    {photos[0]?<img src={photos[0]} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:<span style={{color:"#555",opacity:0.5}}>📷</span>}
+                    <input type="file" accept="image/*" style={{display:"none"}} onChange={e=>{const f=e.target.files?.[0];if(!f)return;const r=new UploadReader();r.onload=ev=>setPhoto(0,ev.target.result);r.readAsDataURL(f);e.target.value="";}}/>
+                  </label>
+                  {/* 4 photos secondaires */}
+                  <div style={{flex:1,display:"grid",gridTemplateColumns:"1fr 1fr",gridTemplateRows:"1fr 1fr",gap:4}}>
+                    {[1,2,3,4].map(idx=>(
+                      <label key={idx} style={{borderRadius:6,overflow:"hidden",cursor:"pointer",background:"#1a1a1a",border:`1px solid ${OR}33`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,aspectRatio:"1"}}>
+                        {photos[idx]?<img src={photos[idx]} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:<span style={{color:"#555",opacity:0.4}}>📷</span>}
+                        <input type="file" accept="image/*" style={{display:"none"}} onChange={e=>{const f=e.target.files?.[0];if(!f)return;const r=new UploadReader();r.onload=ev=>setPhoto(idx,ev.target.result);r.readAsDataURL(f);e.target.value="";}}/>
+                      </label>
+                    ))}
                   </div>
-                  <Field label="Headline" value={myP.headline||""} onChange={v=>upd("grindrProfile",{...myP,headline:v})}/>
-                  <Field label="À propos" value={myP.about||""} onChange={v=>upd("grindrProfile",{...myP,about:v})} textarea/>
+                </div>
+                {/* Champs texte */}
+                <div style={{display:"flex",gap:6}}>
+                  <Field label="Display Name (15 car. max)" value={myP.name||""} onChange={v=>updP({name:v.slice(0,15)})} style={{flex:1}}/>
+                  <Field label="Âge" value={myP.age||""} onChange={v=>updP({age:v})} width="60px"/>
+                </div>
+                <Field label="About Me (255 car. max)" value={myP.about||""} onChange={v=>updP({about:v.slice(0,255)})} textarea/>
+                <Field label="My Tags (séparés par des virgules)" value={myP.tags||""} onChange={v=>updP({tags:v})} textarea/>
+                {/* Supprimer les photos */}
+                <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+                  {photos.map((ph,idx)=>ph?(
+                    <button key={idx} onClick={()=>setPhoto(idx,null)}
+                      style={{background:"rgba(239,68,68,0.07)",border:"1px solid rgba(239,68,68,0.2)",color:"#ef4444",borderRadius:5,padding:"3px 8px",cursor:"pointer",fontSize:10}}>
+                      ✕ Photo {idx===0?"principale":idx}
+                    </button>
+                  ):null)}
                 </div>
               </div>
-            </>}
+              );
+            })()}
           </>);
         })()}
       </div>
@@ -22066,10 +22095,11 @@ const MAIL_DELETED_BY_CHAR = {
   ],
 };
 
-const GmailScreen = ({data, isIos, accent}) => {
+const GmailScreen = ({data, isIos, accent, onBack}) => {
   const loreDateStr = useContext(LoreDateCtx);
-  const [mailbox, setMailbox] = useState(null); // null=liste boîtes, "inbox"|"drafts"|"deleted"=vue liste, "open"=mail ouvert
+  const [mailbox, setMailbox] = useState(null);
   const [openMail, setOpenMail] = useState(null);
+  const [showMenu, setShowMenu] = useState(false); // Android drawer
 
   const charUsername = data.username || "glindatheverygood";
   const inbox   = data.mail_override?.[charUsername] ?? EMAILS_BY_CHAR[charUsername] ?? EMAILS_BY_CHAR.glindatheverygood;
@@ -22186,8 +22216,12 @@ const GmailScreen = ({data, isIos, accent}) => {
   const unreadTotal = inbox.filter(e=>e.unread).length;
   if(isIos) return (
     <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden"}}>
-      <div style={{background:"linear-gradient(180deg,#6a8fc0,#3d5f8a)",padding:"6px 10px",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,boxShadow:"0 1px 3px rgba(0,0,0,0.4)"}}>
-        <span style={{color:"#fff",fontSize:14,fontWeight:700,textShadow:"0 1px 1px rgba(0,0,0,0.4)"}}>Mailboxes</span>
+      <div style={{background:"linear-gradient(180deg,#6a8fc0,#3d5f8a)",padding:"6px 10px",display:"flex",alignItems:"center",flexShrink:0,boxShadow:"0 1px 3px rgba(0,0,0,0.4)"}}>
+        <button onClick={()=>onBack?.()} style={{background:"linear-gradient(180deg,#6a8fc0,#3d5f8a)",border:"1px solid #2a4a70",color:"#fff",fontSize:11,fontWeight:600,padding:"3px 10px",borderRadius:5,cursor:"pointer",display:"flex",alignItems:"center"}}>
+          <span style={{fontSize:10}}>◀</span>
+        </button>
+        <span style={{flex:1,textAlign:"center",color:"#fff",fontSize:14,fontWeight:700,textShadow:"0 1px 1px rgba(0,0,0,0.4)"}}>Mailboxes</span>
+        <span style={{width:44}}/>
       </div>
       <div style={{background:"linear-gradient(180deg,#b0b8c8,#a0a8b8)",padding:"5px 8px",flexShrink:0}}>
         <div style={{background:"rgba(255,255,255,0.85)",borderRadius:8,padding:"4px 10px",display:"flex",alignItems:"center",gap:6,border:"1px solid #888",boxShadow:"inset 0 1px 2px rgba(0,0,0,0.1)"}}>
@@ -22213,17 +22247,50 @@ const GmailScreen = ({data, isIos, accent}) => {
     </div>
   );
 
-  // Android mailboxes
+  // ── Android — header rouge Gmail + drawer hamburger ──
   return (
-    <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden",background:"#f1f1f1"}}>
-      {FOLDERS.map((f,i)=>(
-        <div key={f.key} onClick={()=>setMailbox(f.key)} style={{display:"flex",alignItems:"center",gap:14,padding:"14px 16px",borderBottom:"1px solid #e0e0e0",cursor:"pointer",background:"#fff"}}>
-          <span style={{fontSize:24}}>{f.icon}</span>
-          <span style={{flex:1,fontSize:15,color:"#212121"}}>{f.label}</span>
-          {f.badge && f.count>0 && <span style={{background:"#1976D2",color:"#fff",borderRadius:10,padding:"1px 8px",fontSize:12,fontWeight:700}}>{f.count}</span>}
-          <span style={{color:"#9aa0a6",fontSize:16}}>›</span>
+    <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden",background:"#f1f1f1",position:"relative"}}>
+      {/* Header */}
+      <div style={{background:"#C62828",padding:"10px 14px",display:"flex",alignItems:"center",gap:12,flexShrink:0,boxShadow:"0 2px 4px rgba(0,0,0,0.2)"}}>
+        <button onClick={()=>setShowMenu(m=>!m)} style={{background:"none",border:"none",color:"#fff",cursor:"pointer",padding:"2px 0",display:"flex",flexDirection:"column",gap:4,alignItems:"center",width:20}}>
+          <span style={{display:"block",width:18,height:2,background:"#fff",borderRadius:1}}/>
+          <span style={{display:"block",width:18,height:2,background:"#fff",borderRadius:1}}/>
+          <span style={{display:"block",width:18,height:2,background:"#fff",borderRadius:1}}/>
+        </button>
+        <span style={{color:"#fff",fontSize:18,fontWeight:500,flex:1}}>Gmail</span>
+        {unreadTotal>0&&<span style={{background:"rgba(255,255,255,0.25)",color:"#fff",borderRadius:10,padding:"1px 8px",fontSize:12,fontWeight:700}}>{unreadTotal}</span>}
+      </div>
+      {/* Drawer overlay */}
+      {showMenu&&<>
+        <div onClick={()=>setShowMenu(false)} style={{position:"absolute",inset:0,background:"rgba(0,0,0,0.4)",zIndex:10}}/>
+        <div style={{position:"absolute",top:0,left:0,bottom:0,width:"72%",background:"#fff",zIndex:11,boxShadow:"2px 0 8px rgba(0,0,0,0.3)",display:"flex",flexDirection:"column"}}>
+          <div style={{background:"#C62828",padding:"14px 16px",color:"#fff",fontSize:16,fontWeight:500}}>Gmail</div>
+          {FOLDERS.map(f=>(
+            <div key={f.key} onClick={()=>{setMailbox(f.key);setShowMenu(false);}} style={{display:"flex",alignItems:"center",gap:14,padding:"13px 16px",cursor:"pointer",borderBottom:"1px solid #f5f5f5"}}>
+              <span style={{fontSize:20}}>{f.icon}</span>
+              <span style={{flex:1,fontSize:14,color:"#212121"}}>{f.label}</span>
+              {f.badge&&f.count>0&&<span style={{background:"#C62828",color:"#fff",borderRadius:10,padding:"1px 8px",fontSize:11,fontWeight:700}}>{f.count}</span>}
+            </div>
+          ))}
         </div>
-      ))}
+      </>}
+      {/* Inbox par défaut */}
+      <div style={{flex:1,overflowY:"auto"}}>
+        {inbox.map((m,i)=>(
+          <div key={i} onClick={()=>{setMailbox("inbox");setOpenMail(m);}} style={{background:m.unread?"#fff":"#fafafa",borderBottom:"1px solid #e5e5e5",padding:"10px 12px",display:"flex",gap:10,alignItems:"center",cursor:"pointer"}}>
+            <div style={{width:40,height:40,borderRadius:"50%",background:gmAvatar(m.from),display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontWeight:700,fontSize:16,flexShrink:0}}>{(m.from||"?")[0]}</div>
+            <div style={{flex:1,minWidth:0}}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",marginBottom:2}}>
+                <span style={{color:m.unread?"#202124":"#5f6368",fontSize:13,fontWeight:m.unread?"700":"400",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",maxWidth:"65%"}}>{m.from}</span>
+                <span style={{color:"#5f6368",fontSize:11,flexShrink:0,marginLeft:4}}>{loreRelativeLabel(m.time,loreDateStr)}</span>
+              </div>
+              <div style={{color:m.unread?"#202124":"#5f6368",fontSize:12,fontWeight:m.unread?"500":"400",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",marginBottom:1}}>{m.subj}</div>
+              <div style={{color:"#9aa0a6",fontSize:11,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{m.preview}</div>
+            </div>
+            <span style={{color:"#bdc1c6",fontSize:16,flexShrink:0}}>☆</span>
+          </div>
+        ))}
+      </div>
     </div>
   );
 };
