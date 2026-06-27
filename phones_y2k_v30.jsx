@@ -4578,7 +4578,7 @@ const FilesScreen = ({data, isIos, accent, onBack}) => {
 
 // ─── END FILES SCREEN ──────────────────────────────────────────────────────────
 // Twitter (Elias)
-  const TwitterScreen = ({data, isIos, accent, onBack=null, sharedTweets=[], twitterUsers={}, homeBaseTweets=[], onUpdateShared=()=>{}}) => {
+const TwitterScreen = ({data, isIos, accent, onBack=null, sharedTweets=[], twitterUsers={}, homeBaseTweets=[], onUpdateShared=()=>{}}) => {
   const [tab, setTab] = useState("home");
   const [viewProfile, setViewProfile] = useState(null);
   const scrollRef = useRef(null);
@@ -19454,74 +19454,70 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
         {d.os==="ios"&&<div style={{background:"rgba(99,102,241,0.08)",border:"1px solid rgba(99,102,241,0.2)",borderRadius:8,padding:"10px 14px",fontSize:11,color:"#6366f1",fontWeight:500}}>
           🍎 These icons apply to all iOS phones (Glinda, Eoghan & Elias)
         </div>}
-        <div style={{color:"#9ca3af",fontSize:11}}>Drag an image directement sur une icône pour la remplacer, ou clique sur le bouton.</div>
-        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(110px,1fr))",gap:10}}>
-          {(d.apps||[]).concat(d.dock||[]).filter((v,i,a)=>a.indexOf(v)===i).map(appId=>{
-            const meta    = APP_META[appId]||{label:appId,iosIcon:"📱"};
-            const isAndroid = d.os==="android";
-            const cur     = isAndroid ? (data._sharedAndroidIcons?.[appId]) : (d.appIcons?.[appId]);
-            const appName = d.appNames?.[appId] ?? meta.label;
-            const readFile = f => {
-              if(!f||!f.type.startsWith("image/")) return;
-              const r=new UploadReader();
-              r.onload=re=>{
-              if(d.os==="android"){
-                // Android : met à jour sharedAndroidIcons uniquement
-                onUpdateShared({...(data._sharedAndroidIcons||{}),[appId]:re.target.result});
-              } else {
-                // iOS : met à jour appIcons + propage aux autres iOS
-                const newIcons={...(d.appIcons||{}),[appId]:re.target.result};
-                upd("appIcons",newIcons);
-                ["glinda","eoghan","elias"].filter(k=>k!==tab&&data[k]?.os==="ios").forEach(k=>{
-                  onUpdate(k,{...data[k],appIcons:{...(data[k].appIcons||{}),[appId]:re.target.result}});
-                });
-              }
-            };
-              r.readAsDataURL(f);
-            };
-            return (
-              <div key={appId}
-                onDragOver={e=>{e.preventDefault();e.currentTarget.style.borderColor="#ffc107";e.currentTarget.style.background="#ffc10710";}}
-                onDragLeave={e=>{e.currentTarget.style.borderColor="#2a2a2a";e.currentTarget.style.background="#1e1e1e";}}
-                onDrop={e=>{
-                  e.preventDefault();
-                  e.currentTarget.style.borderColor="#2a2a2a";e.currentTarget.style.background="#1e1e1e";
-                  readFile(e.dataTransfer.files?.[0]);
-                }}
-                className="adm-card" style={{background:"rgba(255,255,255,0.85)",borderRadius:10,padding:10,display:"flex",flexDirection:"column",alignItems:"center",gap:6,border:"1px solid rgba(0,0,0,0.07)",transition:"box-shadow 0.15s,border-color 0.15s",boxShadow:"0 1px 4px rgba(0,0,0,0.04)"}}>
-                <div style={{width:52,height:52,background:"#f3f4f6",borderRadius:8,overflow:"hidden",display:"flex",alignItems:"center",justifyContent:"center",fontSize:26,position:"relative"}}>
-                  {cur?<img src={cur} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:meta.iosIcon||"📱"}
-                  {!cur&&<div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",opacity:0.3,fontSize:10,color:"#ffc107",pointerEvents:"none"}}>⬇</div>}
+
+        {/* ── Apps principales ── */}
+        {[["apps","📱 Apps (grille)"],["dock","⬛ Dock"]].map(([listKey, listLabel])=>(
+          <div key={listKey} style={{display:"flex",flexDirection:"column",gap:6}}>
+            <div style={{fontSize:12,fontWeight:700,color:"#374151",letterSpacing:0.3}}>{listLabel}</div>
+            {(d[listKey]||[]).map((appId,i)=>{
+              const meta    = APP_META[appId]||{label:appId,iosIcon:"📱"};
+              const isAndroid = d.os==="android";
+              const cur     = isAndroid ? (data._sharedAndroidIcons?.[appId]) : (d.appIcons?.[appId]);
+              const appName = d.appNames?.[appId] ?? meta.label;
+              const list    = d[listKey]||[];
+              const moveUp   = () => { const l=[...list]; [l[i-1],l[i]]=[l[i],l[i-1]]; upd(listKey,l); };
+              const moveDown = () => { const l=[...list]; [l[i+1],l[i]]=[l[i],l[i+1]]; upd(listKey,l); };
+              const remove   = () => upd(listKey, list.filter((_,j)=>j!==i));
+              const readFile = f => {
+                if(!f||!f.type.startsWith("image/")) return;
+                const r=new UploadReader();
+                r.onload=re=>{
+                  if(d.os==="android"){
+                    onUpdateShared({...(data._sharedAndroidIcons||{}),[appId]:re.target.result});
+                  } else {
+                    const newIcons={...(d.appIcons||{}),[appId]:re.target.result};
+                    upd("appIcons",newIcons);
+                    ["glinda","eoghan","elias"].filter(k=>k!==tab&&data[k]?.os==="ios").forEach(k=>{
+                      onUpdate(k,{...data[k],appIcons:{...(data[k].appIcons||{}),[appId]:re.target.result}});
+                    });
+                  }
+                };
+                r.readAsDataURL(f);
+              };
+              return (
+                <div key={appId+i} style={{display:"flex",alignItems:"center",gap:8,background:"rgba(255,255,255,0.85)",borderRadius:8,padding:"7px 10px",border:"1px solid rgba(0,0,0,0.07)"}}>
+                  {/* Flèches réordonnement */}
+                  <div style={{display:"flex",flexDirection:"column",gap:1,flexShrink:0}}>
+                    <button onClick={moveUp} disabled={i===0} style={{background:"none",border:"none",cursor:i===0?"default":"pointer",color:i===0?"#d1d5db":"#6b7280",fontSize:14,padding:"0 2px",lineHeight:1,opacity:i===0?0.3:1}}>▲</button>
+                    <button onClick={moveDown} disabled={i===list.length-1} style={{background:"none",border:"none",cursor:i===list.length-1?"default":"pointer",color:i===list.length-1?"#d1d5db":"#6b7280",fontSize:14,padding:"0 2px",lineHeight:1,opacity:i===list.length-1?0.3:1}}>▼</button>
+                  </div>
+                  {/* Icône */}
+                  <label style={{width:36,height:36,background:"#f3f4f6",borderRadius:7,overflow:"hidden",display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,flexShrink:0,cursor:"pointer",border:"1px solid rgba(0,0,0,0.06)"}}>
+                    {cur?<img src={cur} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:meta.iosIcon||"📱"}
+                    <input type="file" accept="image/*" style={{display:"none"}} onChange={e=>readFile(e.target.files?.[0])}/>
+                  </label>
+                  {/* Nom */}
+                  <input value={appName} onChange={e=>upd("appNames",{...(d.appNames||{}),[appId]:e.target.value})}
+                    className="adm-input" style={{flex:1,background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#374151",fontSize:12,padding:"5px 8px",borderRadius:6}}/>
+                  <span style={{fontSize:11,color:"#9ca3af",flexShrink:0,minWidth:40}}>{appId}</span>
+                  {/* Suppr icône custom */}
+                  {cur&&<button onClick={()=>{if(d.os==="android"){const si={...(data._sharedAndroidIcons||{})};delete si[appId];onUpdateShared(si);}else{const ic={...(d.appIcons||{})};delete ic[appId];upd("appIcons",ic);["glinda","eoghan","elias"].filter(k=>k!==tab&&data[k]?.os==="ios").forEach(k=>{const kic={...(data[k].appIcons||{})};delete kic[appId];onUpdate(k,{...data[k],appIcons:kic});});} }} style={{background:"none",border:"none",color:"#9ca3af",cursor:"pointer",fontSize:10,flexShrink:0}}>✕ ico</button>}
+                  {/* Retirer l'app */}
+                  <button onClick={remove} className="adm-del-btn" style={{background:"rgba(239,68,68,0.07)",border:"1px solid rgba(239,68,68,0.2)",color:"#ef4444",borderRadius:5,padding:"4px 8px",cursor:"pointer",fontSize:10,fontWeight:600,flexShrink:0}}>🗑</button>
                 </div>
-                <input
-                  value={appName}
-                  onChange={e=>upd("appNames",{...(d.appNames||{}),[appId]:e.target.value})}
-                  className="adm-input" style={{background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#374151",fontSize:10,textAlign:"center",width:"100%",padding:"3px 5px",fontFamily:"inherit",borderRadius:5}}
-                />
-                <button style={{background:"rgba(99,102,241,0.08)",border:"1px solid rgba(99,102,241,0.2)",color:"#6366f1",padding:"4px 8px",cursor:"pointer",fontSize:9,borderRadius:5,fontWeight:600}} onClick={()=>{
-                  const _i=document.createElement("input");
-                  _i.type="file";_i.accept="image/*";
-                  _i.onchange=ev=>readFile(ev.target.files?.[0]);
-                  _i.click();
-                }}>{cur?"Change":"Import"}</button>
-                {cur&&<button onClick={()=>{if(d.os==="android"){const si={...(data._sharedAndroidIcons||{})};delete si[appId];onUpdateShared(si);}else{const ic={...(d.appIcons||{})};delete ic[appId];upd("appIcons",ic);["glinda","eoghan","elias"].filter(k=>k!==tab&&data[k]?.os==="ios").forEach(k=>{const kic={...(data[k].appIcons||{})};delete kic[appId];onUpdate(k,{...data[k],appIcons:kic});});}}} className="adm-del-btn" style={{background:"none",border:"none",color:"#d1d5db",cursor:"pointer",fontSize:10,padding:0,transition:"color 0.15s"}}>✕ Suppr. icône</button>}
-                <button onClick={()=>{
-                  const newApps = (d.apps||[]).filter(a=>a!==appId);
-                  const newDock = (d.dock||[]).filter(a=>a!==appId);
-                  upd("apps", newApps);
-                  if(newDock.length !== (d.dock||[]).length) upd("dock", newDock);
-                }} className="adm-del-btn" style={{background:"rgba(239,68,68,0.07)",border:"1px solid rgba(239,68,68,0.2)",color:"#ef4444",borderRadius:5,padding:"3px 8px",cursor:"pointer",fontSize:9,fontWeight:600,transition:"all 0.15s"}}>🗑 Remove</button>
-              </div>
-            );
-          })}
-        </div>
+              );
+            })}
+          </div>
+        ))}
+
+        {/* ── Ajouter une app ── */}
         {(()=>{
           const allAppIds = Object.keys(APP_META);
           const current = new Set([...(d.apps||[]),...(d.dock||[])]);
           const available = allAppIds.filter(id=>!current.has(id));
           return (
-            <div style={{display:"flex",flexDirection:"column",gap:8,paddingTop:4,borderTop:"1px solid rgba(0,0,0,0.06)",marginTop:4}}>
-              <span style={{color:"#9ca3af",fontSize:11,fontWeight:600}}>Add an app</span>
+            <div style={{display:"flex",flexDirection:"column",gap:8,paddingTop:8,borderTop:"1px solid rgba(0,0,0,0.06)",marginTop:4}}>
+              <span style={{color:"#9ca3af",fontSize:11,fontWeight:600}}>Ajouter une app</span>
               <div style={{display:"flex",gap:8,flexWrap:"wrap",alignItems:"center"}}>
                 <select className="adm-input" onChange={e=>{
                   if(!e.target.value) return;
@@ -19532,30 +19528,11 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                   {available.map(id=><option key={id} value={id}>{APP_META[id]?.label||id}</option>)}
                 </select>
                 <span style={{color:"#9ca3af",fontSize:11}}>ou</span>
-                <input
-                  className="adm-input"
-                  placeholder="Nom de l'app custom…"
-                  value={customAppName}
-                  onChange={e=>setCustomAppName(e.target.value)}
-                  onKeyDown={e=>{
-                    if(e.key==="Enter"&&customAppName.trim()){
-                      const newId = "custom_"+Date.now();
-                      upd("apps",[...(d.apps||[]),newId]);
-                      upd("appNames",{...(d.appNames||{}),[newId]:customAppName.trim()});
-                      setCustomAppName("");
-                    }
-                  }}
-                  style={{background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#374151",fontSize:11,borderRadius:7,padding:"5px 10px",width:160}}
-                />
-                <button className="adm-btn-primary" onClick={()=>{
-                  if(!customAppName.trim()) return;
-                  const newId = "custom_"+Date.now();
-                  upd("apps",[...(d.apps||[]),newId]);
-                  upd("appNames",{...(d.appNames||{}),[newId]:customAppName.trim()});
-                  setCustomAppName("");
-                }} style={{background:"linear-gradient(135deg,#6366f1,#8b5cf6)",border:"none",color:"#fff",padding:"6px 14px",borderRadius:7,fontWeight:600,fontSize:11,cursor:"pointer"}}>
-                  + Créer
-                </button>
+                <input className="adm-input" placeholder="Nom de l'app custom…" value={customAppName} onChange={e=>setCustomAppName(e.target.value)}
+                  onKeyDown={e=>{if(e.key==="Enter"&&customAppName.trim()){const newId="custom_"+Date.now();upd("apps",[...(d.apps||[]),newId]);upd("appNames",{...(d.appNames||{}),[newId]:customAppName.trim()});setCustomAppName("");}}}
+                  style={{background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#374151",fontSize:11,borderRadius:7,padding:"5px 10px",width:160}}/>
+                <button className="adm-btn-primary" onClick={()=>{if(!customAppName.trim())return;const newId="custom_"+Date.now();upd("apps",[...(d.apps||[]),newId]);upd("appNames",{...(d.appNames||{}),[newId]:customAppName.trim()});setCustomAppName("");}}
+                  style={{background:"linear-gradient(135deg,#6366f1,#8b5cf6)",border:"none",color:"#fff",padding:"6px 14px",borderRadius:7,fontWeight:600,fontSize:11,cursor:"pointer"}}>+ Créer</button>
               </div>
               <div style={{color:"#9ca3af",fontSize:10}}>Les apps custom s'affichent avec l'icône que tu importes, sans écran derrière.</div>
             </div>
