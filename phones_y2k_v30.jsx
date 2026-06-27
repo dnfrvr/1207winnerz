@@ -17918,7 +17918,7 @@ const LoreDateTimeInput = ({value, onChange, width="100%", showLabel=true}) => {
     <div style={{display:"flex",flexDirection:"column",gap:5,width}}>
       {showLabel && <label style={{color:"#9ca3af",fontSize:10,letterSpacing:0.8,textTransform:"uppercase",fontWeight:600}}>Date / heure</label>}
       <div style={{display:"flex",gap:4,flexWrap:"wrap"}}>
-        <input type="date" value={dateVal} min="2012-01-01" max="2012-12-31"
+        <input type="date" value={dateVal}
           onChange={e=>onChange(build(e.target.value, timeVal))}
           className="adm-input" style={{flex:"1 1 120px",minWidth:0,background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#1a1a2e",padding:"7px 8px",fontSize:11,borderRadius:7}}/>
         <input type="time" value={timeVal}
@@ -19008,7 +19008,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
               <Field label="Titre" value={note.title} onChange={v=>{const n=[...d.notes];n[i]={...n[i],title:v};upd("notes",n);}} width="60%"/>
               <div style={{display:"flex",flexDirection:"column",gap:5,width:"30%"}}>
                 <label style={{color:"#9ca3af",fontSize:10,letterSpacing:0.8,textTransform:"uppercase",fontWeight:600}}>Date</label>
-                <input type="date" min="2012-01-01" max="2012-12-31"
+                <input type="date"
                   value={(()=>{const p=parseLoreTime(note.date); return p?.day?`2012-${String(p.month).padStart(2,'0')}-${String(p.day).padStart(2,'0')}`:LORE_DATE_DEFAULT;})()}
                   onChange={e=>{
                     const n=[...d.notes];
@@ -19303,13 +19303,12 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
       <div style={{display:"flex",flexDirection:"column",gap:10}}>
 
         <div style={{display:"flex",gap:12,alignItems:"center",background:"rgba(255,255,255,0.85)",padding:12,borderRadius:10,border:"1px solid rgba(0,0,0,0.07)"}}>
-          <div
-            onClick={()=>document.getElementById(`playlist-cover-${tab}`).click()}
+          <label htmlFor={`playlist-cover-${tab}`}
             style={{width:64,height:64,borderRadius:8,background:"rgba(99,102,241,0.08)",border:"2px dashed rgba(99,102,241,0.35)",overflow:"hidden",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer"}}>
             {d.playlistCover
               ? <img src={d.playlistCover} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
               : <span style={{fontSize:24}}>🖼</span>}
-          </div>
+          </label>
           <input id={`playlist-cover-${tab}`} type="file" accept="image/*" style={{display:"none"}} onChange={e=>{
             const f=e.target.files?.[0]; if(!f)return;
             const r=new UploadReader(); r.onload=ev=>upd("playlistCover",ev.target.result); r.readAsDataURL(f); e.target.value="";
@@ -19325,41 +19324,39 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
             où l'id dans le DOM (basé sur l'index) ne correspond plus à la track après un tri ou ajout. */}
         {(()=>{
           const music = d.music||[];
-          // Auto-assigner un id aux tracks qui n'en ont pas (données importées depuis un ancien format)
+          // Auto-assigner un id aux tracks qui n'en ont pas
           const needsId = music.some(t=>!t.id);
           if(needsId) {
             const fixed = music.map((t,j)=>t.id?t:{...t,id:Date.now()+j});
-            // Mise à jour silencieuse sans attendre le prochain render pour éviter la boucle
             setTimeout(()=>upd("music",fixed),0);
           }
           return music.map((track,i)=>{
-            // Garantit un id stable pour cet item même si le timeout n'a pas encore tourné
             const stableId = track.id || `tmp_${i}`;
             const inputDomId = `track-cover-${tab}-${stableId}`;
           return (
           <div key={stableId} className="adm-card" style={{display:"flex",gap:8,alignItems:"center",background:"rgba(255,255,255,0.85)",padding:10,borderRadius:10,border:"1px solid rgba(0,0,0,0.07)",flexWrap:"wrap"}}>
-            
-            <div onClick={()=>document.getElementById(inputDomId)?.click()}
-              style={{width:40,height:40,borderRadius:6,background:"rgba(99,102,241,0.08)",border:"1px dashed rgba(99,102,241,0.3)",overflow:"hidden",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer"}}>
+            {/* Pochette — label natif : clic sur l'image ouvre directement le sélecteur de fichier */}
+            <label htmlFor={inputDomId} style={{width:40,height:40,borderRadius:6,background:"rgba(99,102,241,0.08)",border:"1px dashed rgba(99,102,241,0.3)",overflow:"hidden",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer"}}>
               {track.cover
                 ? <img src={track.cover} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
                 : <span style={{fontSize:16}}>🎵</span>}
-            </div>
+            </label>
             <input id={inputDomId} type="file" accept="image/*" style={{display:"none"}} onChange={e=>{
-              const f=e.target.files?.[0]; if(!f)return;
-              const trackId=stableId;
-              const r=new UploadReader(); r.onload=ev=>{
-                const freshMusic=[...(dataRef.current[tab]?.music||[])];
-                const idx=freshMusic.findIndex(t=>(t.id||`tmp_${freshMusic.indexOf(t)}`)===trackId);
-                if(idx<0){
-                  // Fallback : apply cover par index si l'id n'est pas encore présent
-                  const byIndex=[...(dataRef.current[tab]?.music||[])];
-                  if(byIndex[i]) { byIndex[i]={...byIndex[i],cover:ev.target.result}; onUpdate(tab,{...dataRef.current[tab],music:byIndex}); }
-                  return;
-                }
-                freshMusic[idx]={...freshMusic[idx],cover:ev.target.result};
-                onUpdate(tab,{...dataRef.current[tab],music:freshMusic});
-              }; r.readAsDataURL(f); e.target.value="";
+              const f=e.target.files?.[0]; if(!f) return;
+              const capturedIndex = i;
+              const r = new UploadReader();
+              r.onload = ev => {
+                // Lit dataRef.current au moment du callback pour avoir la liste la plus fraîche
+                const freshMusic = [...(dataRef.current[tab]?.music||[])];
+                // Cherche d'abord par id stable, sinon par index capturé
+                const idx = freshMusic.findIndex(t => t.id === stableId);
+                const target = idx >= 0 ? idx : capturedIndex;
+                if(target < 0 || target >= freshMusic.length) return;
+                freshMusic[target] = {...freshMusic[target], cover: ev.target.result};
+                onUpdate(tab, {...dataRef.current[tab], music: freshMusic});
+              };
+              r.readAsDataURL(f);
+              e.target.value = "";
             }}/>
             <input value={track.title||""} onChange={e=>{const m=[...d.music];m[i]={...m[i],title:e.target.value};upd("music",m);}}
               placeholder="Titre" className="adm-input" style={{flex:2,background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#1a1a2e",padding:"7px 10px",fontSize:12,borderRadius:7}}/>
@@ -20031,7 +20028,6 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
             else { updList(defaults.map((e,j)=>j===i?{...e,...patch,id:Date.now()+j}:{...e,id:Date.now()+j})); }
           };
           const MONTHS = ["Jan","Fév","Mar","Avr","Mai","Jun","Jul","Aoû","Sep","Oct","Nov","Déc"];
-          const daysInMonth = (m,y) => new Date(y,m,0).getDate();
           // Group by day key
           const grouped = effective.reduce((acc,ev,i)=>{
             const k=`${ev.year||2012}-${String(ev.month||10).padStart(2,"0")}-${String(ev.day||1).padStart(2,"0")}`;
@@ -20059,28 +20055,22 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
 
                   {isOpen && indices.map(i=>{
                     const ev = effective[i];
-                    const mo = ev.month||10, yr = ev.year||2012;
                     return (
                     <div key={ev.id??i} className="adm-card" style={{background:"rgba(255,255,255,0.9)",borderRadius:"0 0 10px 10px",padding:"10px 12px",border:"1px solid rgba(0,0,0,0.07)",borderTop:"none",display:"flex",flexDirection:"column",gap:7,marginTop:0}}>
                       <Field label="Titre" value={ev.title||""} onChange={v=>ensureCustom(i,{title:v})}/>
                       <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
-                        {/* Date picker : mois / jour / année */}
+                        {/* Date picker — même input type=date que partout ailleurs, s'ouvre sur oct 2012 */}
                         <div style={{display:"flex",flexDirection:"column",gap:2}}>
                           <label style={{color:"#9ca3af",fontSize:10,letterSpacing:0.6,fontWeight:600,textTransform:"uppercase"}}>Date</label>
-                          <div style={{display:"flex",gap:4}}>
-                            <select value={mo} onChange={e=>ensureCustom(i,{month:parseInt(e.target.value)})}
-                              style={{background:"rgba(255,255,255,0.9)",border:"1px solid rgba(0,0,0,0.1)",color:"#1a1a2e",padding:"5px 6px",fontSize:11,borderRadius:7}}>
-                              {MONTHS.map((m,idx)=><option key={idx+1} value={idx+1}>{m}</option>)}
-                            </select>
-                            <select value={ev.day||1} onChange={e=>ensureCustom(i,{day:parseInt(e.target.value)})}
-                              style={{background:"rgba(255,255,255,0.9)",border:"1px solid rgba(0,0,0,0.1)",color:"#1a1a2e",padding:"5px 6px",fontSize:11,borderRadius:7,width:60}}>
-                              {Array.from({length:daysInMonth(mo,yr)},(_,k)=>k+1).map(n=><option key={n} value={n}>{n}</option>)}
-                            </select>
-                            <select value={yr} onChange={e=>ensureCustom(i,{year:parseInt(e.target.value)})}
-                              style={{background:"rgba(255,255,255,0.9)",border:"1px solid rgba(0,0,0,0.1)",color:"#1a1a2e",padding:"5px 6px",fontSize:11,borderRadius:7,width:66}}>
-                              {[2011,2012,2013].map(y=><option key={y} value={y}>{y}</option>)}
-                            </select>
-                          </div>
+                          <input type="date"
+                            value={`${ev.year||2012}-${String(ev.month||10).padStart(2,"0")}-${String(ev.day||1).padStart(2,"0")}`}
+                            onChange={e=>{
+                              if(!e.target.value) return;
+                              const [y,m,dd]=e.target.value.split("-").map(Number);
+                              ensureCustom(i,{year:y,month:m,day:dd});
+                            }}
+                            className="adm-input"
+                            style={{background:"rgba(255,255,255,0.9)",border:"1px solid rgba(0,0,0,0.1)",color:"#1a1a2e",padding:"5px 8px",fontSize:11,borderRadius:7}}/>
                         </div>
                         <div style={{display:"flex",flexDirection:"column",gap:5,width:"90px"}}>
                           <label style={{color:"#9ca3af",fontSize:10,letterSpacing:0.8,textTransform:"uppercase",fontWeight:600}}>Heure</label>
@@ -20813,6 +20803,45 @@ export default function App() {
     const unsubscribe = onValue(rootRef, (snapshot) => {
       const remote = snapshot.val();
       if (remote && Object.keys(remote).length > 0) {
+        // Migration one-shot : injecte les seeds sociaux si absents de Firebase
+        // (base existante créée avant l'ajout des seeds — pas besoin de tout réécrire,
+        //  on pousse uniquement les clés manquantes via update() ciblé).
+        if (!hasReceivedFirstSnapshot.current) {
+          const st = remote.sharedThreads || {};
+          const patches = {};
+
+          if (!st._sharedTweets || st._sharedTweets.length === 0) {
+            patches['sharedThreads/_sharedTweets'] = SEED_SHARED_TWEETS;
+          }
+          if (!st._sharedTumblrPosts || st._sharedTumblrPosts.length === 0) {
+            patches['sharedThreads/_sharedTumblrPosts'] = SEED_SHARED_TUMBLR_POSTS;
+          }
+          // _sharedFacebookPosts : ajouter author si posts existants sans author
+          if (st._sharedFacebookPosts) {
+            const needsAuthor = st._sharedFacebookPosts.some(p => !p.author);
+            if (needsAuthor) {
+              patches['sharedThreads/_sharedFacebookPosts'] = st._sharedFacebookPosts.map(p =>
+                p.author ? p : {...p, author: FB_NAME_TO_AUTHOR[p.name] || null}
+              );
+            }
+          }
+
+          // homeBaseTweets + feedPosts Tumblr par perso
+          const USERNAME_MAP = {glinda:"glindatheverygood",eoghan:"eoghan_masuda",drew:"dreww_orms",elias:"noteliasgreen"};
+          ["glinda","eoghan","drew","elias"].forEach(k => {
+            if (!remote[k]?.homeBaseTweets?.length) {
+              patches[`${k}/homeBaseTweets`] = SEED_HOME_BASE_TWEETS[k] || [];
+            }
+            const username = USERNAME_MAP[k];
+            if (!remote[k]?.tumblr?.feedPosts?.length) {
+              patches[`${k}/tumblr`] = {...(remote[k]?.tumblr||{}), feedPosts: SEED_FEED_TUMBLR[username]||[]};
+            }
+          });
+
+          if (Object.keys(patches).length > 0) {
+            update(ref(firebaseDb), patches).catch(e => console.error("[seed] Erreur migration seeds :", e));
+          }
+        }
         setData(() => {
           // Ré-applique par-dessus le snapshot reçu toute écriture locale pas encore envoyée à
           // Firebase (encore dans le buffer de debounce ~600ms). Sans ça, un changement fait par un
