@@ -2328,7 +2328,9 @@ const TumblrScreen = ({data,admin,update,onUpdateShared=()=>{},accent,onBack=nul
               // Résout l'avatar : priorité au champ propre au post, sinon à l'avatar partagé du vrai
               // perso (s'il s'agit bien de l'un des 4, identifié par username), sinon initiale.
               const sharedAvatars = data.sharedThreads?._sharedAvatars || {};
-              const resolvedAvatar = post.avatar || (!isFeed && data.avatar) || sharedAvatars[charKeyOfUsername];
+              // Si le post appartient au perso courant → data.avatar, sinon → _sharedAvatars[auteur]
+              const isCurrentChar = !charKeyOfUsername || charKeyOfUsername === charKey;
+              const resolvedAvatar = post.avatar || (isCurrentChar ? data.avatar : null) || sharedAvatars[charKeyOfUsername];
               return resolvedAvatar
                 ? <img src={resolvedAvatar} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
                 : (post.username||data.username||"?")[0].toUpperCase();
@@ -4405,35 +4407,35 @@ const FilesScreen = ({data, isIos, accent, onBack}) => {
   const displayFolders= folder ? [] : folders;
 
   if(isIos) {
-    // ── iOS 6 Files ──────────────────────────────────────────────────────────
+    // ── iOS 6 Files — header style Photos NavBar ────────────────────────────
+    const titleText = folder ? (currentFolder?.name||"Dossier") : "Fichiers";
+    const tSize = titleText.length > 16 ? 13 : titleText.length > 12 ? 15 : 18;
     return (
       <div style={{flex:1,background:IOS6_BG,display:"flex",flexDirection:"column",overflow:"hidden"}}>
-        {/* Nav bar iOS 6 */}
-        <div style={{background:IOS6_HDR,borderBottom:`1px solid ${IOS6_SEP}`,padding:"8px 12px",display:"flex",alignItems:"center",gap:8,flexShrink:0,boxShadow:"0 1px 2px rgba(0,0,0,0.15)"}}>
-          <button onClick={()=>folder ? setFolder(null) : onBack?.()} style={{background:"linear-gradient(180deg,#5a9fd4,#3a7bc8)",border:"1px solid #2060a0",borderRadius:6,color:"#fff",fontSize:11,fontWeight:600,padding:"4px 10px",cursor:"pointer",boxShadow:"0 1px 0 rgba(255,255,255,0.3) inset",textShadow:"0 -1px 0 rgba(0,0,0,0.3)",display:"flex",alignItems:"center",gap:3}}>
-            <span style={{fontSize:10}}>◀</span>
+        {/* Header style PhotosNavBar */}
+        <div style={{background:"linear-gradient(180deg,#b8b8b8 0%,#909090 45%,#7c7c7c 100%)",borderBottom:"1px solid #555",height:44,display:"flex",alignItems:"center",padding:"0 8px",flexShrink:0,fontFamily:"Helvetica,'Helvetica Neue',Arial,sans-serif"}}>
+          <button onClick={()=>folder ? setFolder(null) : onBack?.()} style={{background:"linear-gradient(180deg,#444,#222)",border:"1px solid rgba(255,255,255,0.25)",borderRadius:5,padding:"4px 8px",color:"#fff",fontSize:12,fontWeight:"600",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:3,flexShrink:0,width:70,boxSizing:"border-box",textShadow:"0 -1px 0 rgba(0,0,0,0.5)"}}>
+            <svg width="6" height="10" viewBox="0 0 7 12" fill="none"><path d="M6 1L1 6L6 11" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+            <span style={{fontSize:11}}>{folder?"Fichiers":""}</span>
           </button>
-          <span style={{flex:1,textAlign:"center",fontWeight:700,fontSize:17,color:"#1a1a1a",textShadow:"0 1px 0 rgba(255,255,255,0.8)"}}>
-            {folder ? (currentFolder?.name||"Dossier") : "Fichiers"}
-          </span>
-          {folder && <span style={{width:60}}/>}
+          <div style={{flex:1,textAlign:"center",color:"#fff",fontWeight:"700",fontSize:tSize,textShadow:"0 -1px 0 rgba(0,0,0,0.5)",pointerEvents:"none",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{titleText}</div>
+          <div style={{width:70}}/>
         </div>
 
-        {/* Barre de recherche iOS 6 */}
+        {/* Barre de recherche iOS 6 — collée au header, pas de gap */}
         {!folder && (
-          <div style={{background:"linear-gradient(180deg,#d0d0d4,#c0c0c4)",padding:"6px 10px",borderBottom:`1px solid ${IOS6_SEP}`,flexShrink:0}}>
+          <div style={{background:"linear-gradient(180deg,#d0d0d4,#c0c0c4)",padding:"5px 10px",flexShrink:0}}>
             <div style={{background:"rgba(255,255,255,0.85)",borderRadius:10,padding:"5px 10px",display:"flex",alignItems:"center",gap:6,border:"1px solid #aaa",boxShadow:"inset 0 1px 3px rgba(0,0,0,0.12)"}}>
-              <span style={{color:IOS6_GRAY,fontSize:13}}>🔍</span>
+              <svg width="13" height="13" viewBox="0 0 18 18" fill="none"><circle cx="8" cy="8" r="5.5" stroke={IOS6_GRAY} strokeWidth="1.6"/><path d="M13 13l3 3" stroke={IOS6_GRAY} strokeWidth="1.6" strokeLinecap="round"/></svg>
               <span style={{color:"#aaa",fontSize:14}}>Rechercher</span>
             </div>
           </div>
         )}
 
         <div style={{flex:1,overflowY:"auto"}}>
-          {/* Dossiers */}
+          {/* Dossiers — pas de marginTop, collé à la search bar */}
           {displayFolders.length > 0 && (
-            <div style={{marginTop:20}}>
-              <div style={{padding:"4px 14px 4px",fontSize:11,fontWeight:600,color:IOS6_GRAY,textTransform:"uppercase",letterSpacing:0.5}}>{folder?"":""}</div>
+            <div>
               <div style={{background:IOS6_CELL,borderTop:`1px solid ${IOS6_SEP}`,borderBottom:`1px solid ${IOS6_SEP}`}}>
                 {displayFolders.map((f,i)=>(
                   <div key={f.id||i} onClick={()=>setFolder(f.id)}
@@ -4466,7 +4468,7 @@ const FilesScreen = ({data, isIos, accent, onBack}) => {
 
           {/* Fichiers */}
           {displayFiles.length > 0 && (
-            <div style={{marginTop:displayFolders.length>0?16:20}}>
+            <div>
               <div style={{background:IOS6_CELL,borderTop:`1px solid ${IOS6_SEP}`,borderBottom:`1px solid ${IOS6_SEP}`}}>
                 {displayFiles.map((file,i)=>{
                   const ext = fileExt(file.name);
@@ -20545,26 +20547,39 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                 </div>
                 {/* Fichiers dans ce dossier */}
                 <div style={{padding:"8px 12px",display:"flex",flexDirection:"column",gap:6}}>
-                  {(folder.files||[]).map((file,fj)=>{
-                    const ext = (file.name||"").split(".").pop().toLowerCase();
-                    const meta = fileTypeMeta(ext);
-                    return (
-                      <div key={file.id||fj} style={{display:"flex",gap:6,alignItems:"center",background:"rgba(0,0,0,0.02)",borderRadius:7,padding:"6px 8px",border:"1px solid rgba(0,0,0,0.05)"}}>
-                        <span style={{fontSize:16,flexShrink:0}}>{meta.icon}</span>
-                        <input value={file.name||""} onChange={e=>{const f=[...folders];const fs=[...f[fi].files];fs[fj]={...fs[fj],name:e.target.value};f[fi]={...f[fi],files:fs};updFiles({folders:f});}}
-                          placeholder="nom.pdf" className="adm-input"
-                          style={{flex:2,background:"rgba(255,255,255,0.9)",border:"1px solid rgba(0,0,0,0.1)",color:"#1a1a2e",padding:"5px 8px",fontSize:12,borderRadius:6}}/>
-                        <input value={file.date||""} onChange={e=>{const f=[...folders];const fs=[...f[fi].files];fs[fj]={...fs[fj],date:e.target.value};f[fi]={...f[fi],files:fs};updFiles({folders:f});}}
-                          placeholder="Date (ex: 5 oct)" className="adm-input"
-                          style={{flex:1,background:"rgba(255,255,255,0.9)",border:"1px solid rgba(0,0,0,0.1)",color:"#6b7280",padding:"5px 8px",fontSize:11,borderRadius:6}}/>
-                        <input value={file.size||""} onChange={e=>{const f=[...folders];const fs=[...f[fi].files];fs[fj]={...fs[fj],size:e.target.value};f[fi]={...f[fi],files:fs};updFiles({folders:f});}}
-                          placeholder="Taille (ex: 4,7 MB)" className="adm-input"
-                          style={{width:90,background:"rgba(255,255,255,0.9)",border:"1px solid rgba(0,0,0,0.1)",color:"#6b7280",padding:"5px 8px",fontSize:11,borderRadius:6}}/>
-                        <button onClick={()=>{const f=[...folders];f[fi]={...f[fi],files:(f[fi].files||[]).filter((_,k)=>k!==fj)};updFiles({folders:f});}}
-                          style={{background:"none",border:"none",color:"#d1d5db",cursor:"pointer",fontSize:14,padding:"0 2px",flexShrink:0}}>×</button>
-                      </div>
-                    );
-                  })}
+                  {(()=>{
+                    const FILE_EXTS=["pdf","mp3","mp4","mov","jpg","png","doc","docx","xls","xlsx","ppt","zip","txt","other"];
+                    const LORE_MONTHS_SHORT=["","jan","fév","mar","avr","mai","juin","juil","août","sep","oct","nov","déc"];
+                    const buildDate=(v)=>{if(!v)return"";const[,mo,da]=v.split("-").map(Number);return`${da} ${LORE_MONTHS_SHORT[mo]}`;};
+                    const parseDateVal=(d)=>{const m=(d||"").match(/(\d+)\s+(\w+)/);if(m){const mn={jan:1,fév:2,mar:3,avr:4,mai:5,juin:6,juil:7,ao:8,sep:9,oct:10,nov:11,déc:12}[m[2].toLowerCase().slice(0,3)]||1;return`2012-${String(mn).padStart(2,"0")}-${String(m[1]).padStart(2,"0")}`;}return"2012-10-01";};
+                    return (folder.files||[]).map((file,fj)=>{
+                      const rawExt=(file.name||"").includes(".")?(file.name||"").split(".").pop().toLowerCase():(file.ext||"other");
+                      const ext=FILE_EXTS.includes(rawExt)?rawExt:"other";
+                      const baseName=(file.name||"").includes(".")?(file.name||"").replace(/\.[^.]+$/,""):(file.name||"");
+                      const meta=fileTypeMeta(ext);
+                      const updFile=(patch)=>{const f=[...folders];const fs=[...(f[fi].files||[])];fs[fj]={...fs[fj],...patch};f[fi]={...f[fi],files:fs};updFiles({folders:f});};
+                      return (
+                        <div key={file.id||fj} style={{display:"flex",gap:5,alignItems:"center",background:"rgba(0,0,0,0.02)",borderRadius:7,padding:"6px 8px",border:"1px solid rgba(0,0,0,0.05)",flexWrap:"wrap"}}>
+                          <span style={{fontSize:16,flexShrink:0}}>{meta.icon}</span>
+                          <input value={baseName} onChange={e=>updFile({name:ext&&ext!=="other"?`${e.target.value}.${ext}`:e.target.value})}
+                            placeholder="nom du fichier" className="adm-input"
+                            style={{flex:2,minWidth:80,background:"rgba(255,255,255,0.9)",border:"1px solid rgba(0,0,0,0.1)",color:"#1a1a2e",padding:"5px 8px",fontSize:12,borderRadius:6}}/>
+                          <select value={ext} onChange={e=>{const newExt=e.target.value;updFile({name:newExt&&newExt!=="other"?`${baseName}.${newExt}`:baseName,ext:newExt});}}
+                            className="adm-input" style={{width:72,background:"rgba(255,255,255,0.9)",border:"1px solid rgba(0,0,0,0.1)",color:"#374151",padding:"5px 4px",fontSize:11,borderRadius:6,cursor:"pointer"}}>
+                            {FILE_EXTS.map(e=><option key={e} value={e}>{e.toUpperCase()}</option>)}
+                          </select>
+                          <input type="date" value={parseDateVal(file.date)} min="2012-01-01" max="2012-12-31"
+                            onChange={e=>updFile({date:buildDate(e.target.value)})}
+                            className="adm-input" style={{flex:1,minWidth:110,background:"rgba(255,255,255,0.9)",border:"1px solid rgba(0,0,0,0.1)",color:"#1a1a2e",padding:"5px 6px",fontSize:11,borderRadius:6}}/>
+                          <input value={file.size||""} onChange={e=>updFile({size:e.target.value})}
+                            placeholder="4,7 MB" className="adm-input"
+                            style={{width:68,background:"rgba(255,255,255,0.9)",border:"1px solid rgba(0,0,0,0.1)",color:"#6b7280",padding:"5px 8px",fontSize:11,borderRadius:6}}/>
+                          <button onClick={()=>{const f=[...folders];f[fi]={...f[fi],files:(f[fi].files||[]).filter((_,k)=>k!==fj)};updFiles({folders:f});}}
+                            style={{background:"none",border:"none",color:"#d1d5db",cursor:"pointer",fontSize:14,padding:"0 2px",flexShrink:0}}>×</button>
+                        </div>
+                      );
+                    });
+                  })()}
                   <button onClick={()=>{const f=[...folders];f[fi]={...f[fi],files:[...(f[fi].files||[]),{id:Date.now(),name:"",date:"",size:""}]};updFiles({folders:f});}}
                     style={{background:"rgba(160,112,24,0.07)",border:"1px dashed rgba(160,112,24,0.35)",color:FOLDER_COLOR,borderRadius:7,padding:"6px 12px",cursor:"pointer",fontSize:11,fontWeight:600,alignSelf:"flex-start"}}>+ Fichier</button>
                 </div>
@@ -20575,26 +20590,39 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
 
             {/* Fichiers à la racine */}
             <div style={{fontSize:12,fontWeight:700,color:"#374151",letterSpacing:0.3,marginTop:8}}>📄 Fichiers à la racine</div>
-            {rootFiles.map((file,i)=>{
-              const ext = (file.name||"").split(".").pop().toLowerCase();
-              const meta = fileTypeMeta(ext);
-              return (
-                <div key={file.id||i} style={{display:"flex",gap:6,alignItems:"center",background:"rgba(255,255,255,0.85)",borderRadius:8,padding:"8px 10px",border:"1px solid rgba(0,0,0,0.07)"}}>
-                  <span style={{fontSize:18,flexShrink:0}}>{meta.icon}</span>
-                  <input value={file.name||""} onChange={e=>{const rf=[...rootFiles];rf[i]={...rf[i],name:e.target.value};updFiles({rootFiles:rf});}}
-                    placeholder="nom.pdf" className="adm-input"
-                    style={{flex:2,background:"rgba(255,255,255,0.9)",border:"1px solid rgba(0,0,0,0.1)",color:"#1a1a2e",padding:"6px 9px",fontSize:12,borderRadius:7}}/>
-                  <input value={file.date||""} onChange={e=>{const rf=[...rootFiles];rf[i]={...rf[i],date:e.target.value};updFiles({rootFiles:rf});}}
-                    placeholder="Date" className="adm-input"
-                    style={{flex:1,background:"rgba(255,255,255,0.9)",border:"1px solid rgba(0,0,0,0.1)",color:"#6b7280",padding:"6px 8px",fontSize:11,borderRadius:7}}/>
-                  <input value={file.size||""} onChange={e=>{const rf=[...rootFiles];rf[i]={...rf[i],size:e.target.value};updFiles({rootFiles:rf});}}
-                    placeholder="Taille" className="adm-input"
-                    style={{width:90,background:"rgba(255,255,255,0.9)",border:"1px solid rgba(0,0,0,0.1)",color:"#6b7280",padding:"6px 8px",fontSize:11,borderRadius:7}}/>
-                  <button onClick={()=>updFiles({rootFiles:rootFiles.filter((_,j)=>j!==i)})}
-                    style={{background:"none",border:"none",color:"#d1d5db",cursor:"pointer",fontSize:16,padding:"0 2px",flexShrink:0}}>×</button>
-                </div>
-              );
-            })}
+            {(()=>{
+              const FILE_EXTS=["pdf","mp3","mp4","mov","jpg","png","doc","docx","xls","xlsx","ppt","zip","txt","other"];
+              const LORE_MONTHS_SHORT=["","jan","fév","mar","avr","mai","juin","juil","août","sep","oct","nov","déc"];
+              const buildDate=(v)=>{if(!v)return"";const[,mo,da]=v.split("-").map(Number);return`${da} ${LORE_MONTHS_SHORT[mo]}`;};
+              const parseDateVal=(d)=>{const m=(d||"").match(/(\d+)\s+(\w+)/);if(m){const mn={jan:1,fév:2,mar:3,avr:4,mai:5,juin:6,juil:7,ao:8,sep:9,oct:10,nov:11,déc:12}[m[2].toLowerCase().slice(0,3)]||1;return`2012-${String(mn).padStart(2,"0")}-${String(m[1]).padStart(2,"0")}`;}return"2012-10-01";};
+              return rootFiles.map((file,i)=>{
+                const rawExt=(file.name||"").includes(".")?(file.name||"").split(".").pop().toLowerCase():(file.ext||"other");
+                const ext=FILE_EXTS.includes(rawExt)?rawExt:"other";
+                const baseName=(file.name||"").includes(".")?(file.name||"").replace(/\.[^.]+$/,""):(file.name||"");
+                const meta=fileTypeMeta(ext);
+                const updFile=(patch)=>{const rf=[...rootFiles];rf[i]={...rf[i],...patch};updFiles({rootFiles:rf});};
+                return (
+                  <div key={file.id||i} style={{display:"flex",gap:5,alignItems:"center",background:"rgba(255,255,255,0.85)",borderRadius:8,padding:"8px 10px",border:"1px solid rgba(0,0,0,0.07)",flexWrap:"wrap"}}>
+                    <span style={{fontSize:18,flexShrink:0}}>{meta.icon}</span>
+                    <input value={baseName} onChange={e=>updFile({name:ext&&ext!=="other"?`${e.target.value}.${ext}`:e.target.value})}
+                      placeholder="nom du fichier" className="adm-input"
+                      style={{flex:2,minWidth:80,background:"rgba(255,255,255,0.9)",border:"1px solid rgba(0,0,0,0.1)",color:"#1a1a2e",padding:"6px 9px",fontSize:12,borderRadius:7}}/>
+                    <select value={ext} onChange={e=>{const newExt=e.target.value;updFile({name:newExt&&newExt!=="other"?`${baseName}.${newExt}`:baseName,ext:newExt});}}
+                      className="adm-input" style={{width:72,background:"rgba(255,255,255,0.9)",border:"1px solid rgba(0,0,0,0.1)",color:"#374151",padding:"6px 4px",fontSize:11,borderRadius:7,cursor:"pointer"}}>
+                      {FILE_EXTS.map(e=><option key={e} value={e}>{e.toUpperCase()}</option>)}
+                    </select>
+                    <input type="date" value={parseDateVal(file.date)} min="2012-01-01" max="2012-12-31"
+                      onChange={e=>updFile({date:buildDate(e.target.value)})}
+                      className="adm-input" style={{flex:1,minWidth:110,background:"rgba(255,255,255,0.9)",border:"1px solid rgba(0,0,0,0.1)",color:"#1a1a2e",padding:"6px 6px",fontSize:11,borderRadius:7}}/>
+                    <input value={file.size||""} onChange={e=>updFile({size:e.target.value})}
+                      placeholder="Taille" className="adm-input"
+                      style={{width:68,background:"rgba(255,255,255,0.9)",border:"1px solid rgba(0,0,0,0.1)",color:"#6b7280",padding:"6px 8px",fontSize:11,borderRadius:7}}/>
+                    <button onClick={()=>updFiles({rootFiles:rootFiles.filter((_,j)=>j!==i)})}
+                      style={{background:"none",border:"none",color:"#d1d5db",cursor:"pointer",fontSize:16,padding:"0 2px",flexShrink:0}}>×</button>
+                  </div>
+                );
+              });
+            })()}
             <button onClick={()=>updFiles({rootFiles:[...rootFiles,{id:Date.now(),name:"",date:"",size:""}]})}
               style={{background:"rgba(99,102,241,0.08)",border:"1px dashed rgba(99,102,241,0.4)",color:"#6366f1",borderRadius:8,padding:"10px 18px",cursor:"pointer",fontSize:12,fontWeight:600}}>+ Fichier racine</button>
           </>);
@@ -22098,6 +22126,7 @@ const MAIL_DELETED_BY_CHAR = {
 
 const GmailScreen = ({data, isIos, accent, onBack}) => {
   const loreDateStr = useContext(LoreDateCtx);
+  // null = inbox (vue principale), "drafts"/"deleted" = sous-dossier, "inbox" jamais utilisé comme state
   const [mailbox, setMailbox] = useState(null);
   const [openMail, setOpenMail] = useState(null);
   const [showMenu, setShowMenu] = useState(false); // Android drawer
@@ -22108,11 +22137,20 @@ const GmailScreen = ({data, isIos, accent, onBack}) => {
   const deleted = data.mail_deleted?.[charUsername]  ?? MAIL_DELETED_BY_CHAR[charUsername]  ?? [];
 
   const FOLDERS = [
-    {key:"inbox",  label:"Inbox",    icon:"📥", count:inbox.filter(e=>e.unread).length,  list:inbox,   badge:true},
-    {key:"drafts", label:"Drafts",   icon:"📝", count:drafts.length,                     list:drafts,  badge:false},
-    {key:"deleted",label:"Deleted",  icon:"🗑", count:0,                                 list:deleted, badge:false},
+    {key:"inbox",  label:"Inbox",    icon:"inbox",  count:inbox.filter(e=>e.unread).length,  list:inbox,   badge:true},
+    {key:"drafts", label:"Drafts",   icon:"drafts", count:drafts.length,                     list:drafts,  badge:false},
+    {key:"deleted",label:"Deleted",  icon:"trash",  count:0,                                 list:deleted, badge:false},
   ];
-  const curFolder = FOLDERS.find(f=>f.key===mailbox);
+
+  // Icônes SVG pour les dossiers mail
+  const FolderIcon = ({type, color="#4a7ab5", size=20}) => {
+    if(type==="inbox") return <svg width={size} height={size} viewBox="0 0 24 24" fill="none"><path d="M2 12l4-8h12l4 8v6a2 2 0 01-2 2H4a2 2 0 01-2-2v-6z" stroke={color} strokeWidth="1.7" strokeLinejoin="round"/><path d="M2 12h5l2 3h6l2-3h5" stroke={color} strokeWidth="1.7" strokeLinejoin="round"/></svg>;
+    if(type==="drafts") return <svg width={size} height={size} viewBox="0 0 24 24" fill="none"><path d="M12 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10l4 4v3" stroke={color} strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"/><path d="M16 3v5h5M15.5 18.5l2-2 2 2-2 2-2-2zM17.5 16.5l2-2" stroke={color} strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"/></svg>;
+    if(type==="trash") return <svg width={size} height={size} viewBox="0 0 24 24" fill="none"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" stroke={color} strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"/><path d="M10 11v6M14 11v6" stroke={color} strokeWidth="1.7" strokeLinecap="round"/></svg>;
+    return null;
+  };
+  // null = inbox (vue principale Android/iOS), sinon le sous-dossier ouvert
+  const curFolder = mailbox ? FOLDERS.find(f=>f.key===mailbox) : FOLDERS[0];
 
   // ── styles partagés ──
   const IOS_BLUE = "#4a7ab5";
@@ -22124,14 +22162,17 @@ const GmailScreen = ({data, isIos, accent, onBack}) => {
     <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden"}}>
       {isIos ? (
         <div style={{background:"linear-gradient(180deg,#6a8fc0,#3d5f8a)",padding:"6px 10px",display:"flex",alignItems:"center",gap:8,flexShrink:0,boxShadow:"0 1px 3px rgba(0,0,0,0.4)"}}>
-          <button onClick={onBack} style={{background:"linear-gradient(180deg,#6a8fc0,#3d5f8a)",border:"1px solid #2a4a70",color:"#fff",fontSize:11,fontWeight:600,padding:"3px 10px",borderRadius:5,cursor:"pointer",display:"flex",alignItems:"center",gap:3}}>
-            <span style={{fontSize:10}}>◀</span> {curFolder?.label||"Back"}
+          <button onClick={onBack} style={{background:`linear-gradient(180deg,#6a8fc0,#3d5f8a)`,border:"1px solid rgba(0,0,0,0.45)",borderRadius:6,color:"#fff",fontSize:11,fontWeight:"600",cursor:"pointer",padding:"3px 10px 3px 7px",display:"flex",alignItems:"center",gap:2,textShadow:"0 -1px 0 rgba(0,0,0,0.5)",boxShadow:"inset 0 1px 0 rgba(255,255,255,0.2)"}}>
+            <svg width="8" height="14" viewBox="0 0 8 14" fill="none"><path d="M7 1L1 7l6 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
+            <span style={{fontSize:12,marginLeft:2}}>{curFolder?.label||"Inbox"}</span>
           </button>
           <span style={{flex:1}}/>
         </div>
       ) : (
-        <div style={{background:"#f1f1f1",borderBottom:"1px solid #e0e0e0",padding:"10px 14px",display:"flex",alignItems:"center",gap:10,flexShrink:0}}>
-          <button onClick={onBack} style={{background:"none",border:"none",cursor:"pointer",color:"#5f6368",fontSize:20,padding:0,display:"flex",alignItems:"center"}}>←</button>
+        <div style={{background:"#C62828",borderBottom:"none",padding:"10px 14px",display:"flex",alignItems:"center",gap:10,flexShrink:0,boxShadow:"0 2px 4px rgba(0,0,0,0.2)"}}>
+          <button onClick={onBack} style={{background:"none",border:"none",cursor:"pointer",color:"#fff",padding:0,display:"flex",alignItems:"center"}}>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M19 12H5M12 19l-7-7 7-7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+          </button>
         </div>
       )}
       <div style={{flex:1,overflowY:"auto",padding:"16px 14px",background:isIos?"#fff":"#fff"}}>
@@ -22151,7 +22192,7 @@ const GmailScreen = ({data, isIos, accent, onBack}) => {
   // ── Vue mail ouvert ──
   if(openMail) return <MailDetail m={openMail} onBack={()=>setOpenMail(null)}/>;
 
-  // ── Vue liste des mails d'un dossier ──
+  // ── Vue liste des mails d'un sous-dossier (drafts/deleted uniquement — inbox = vue principale) ──
   if(mailbox) {
     const folder = curFolder;
     const list = folder?.list || [];
@@ -22160,11 +22201,12 @@ const GmailScreen = ({data, isIos, accent, onBack}) => {
         {isIos ? (
           <>
             <div style={{background:"linear-gradient(180deg,#6a8fc0,#3d5f8a)",padding:"6px 10px",display:"flex",alignItems:"center",flexShrink:0,boxShadow:"0 1px 3px rgba(0,0,0,0.4)"}}>
-              <button onClick={()=>setMailbox(null)} style={{background:"linear-gradient(180deg,#6a8fc0,#3d5f8a)",border:"1px solid #2a4a70",color:"#fff",fontSize:11,fontWeight:600,padding:"3px 10px",borderRadius:5,cursor:"pointer",display:"flex",alignItems:"center",gap:3}}>
-                <span style={{fontSize:10}}>◀</span> Mailboxes
+              <button onClick={()=>setMailbox(null)} style={{background:`linear-gradient(180deg,#6a8fc0,#3d5f8a)`,border:"1px solid rgba(0,0,0,0.45)",borderRadius:6,color:"#fff",fontSize:11,fontWeight:"600",cursor:"pointer",padding:"3px 10px 3px 7px",display:"flex",alignItems:"center",gap:2,textShadow:"0 -1px 0 rgba(0,0,0,0.5)",boxShadow:"inset 0 1px 0 rgba(255,255,255,0.2)"}}>
+                <svg width="8" height="14" viewBox="0 0 8 14" fill="none"><path d="M7 1L1 7l6 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                <span style={{fontSize:12,marginLeft:2}}>Mailboxes</span>
               </button>
               <span style={{flex:1,textAlign:"center",color:"#fff",fontSize:14,fontWeight:700,textShadow:"0 1px 1px rgba(0,0,0,0.4)"}}>{folder?.label}</span>
-              <span style={{width:70}}/>
+              <span style={{width:80}}/>
             </div>
             <div style={{flex:1,overflowY:"auto",background:"#c8c8c8"}}>
               {list.length===0 && <div style={{padding:"40px 24px",textAlign:"center",color:"#888",fontSize:13}}>Aucun message</div>}
@@ -22186,8 +22228,10 @@ const GmailScreen = ({data, isIos, accent, onBack}) => {
           </>
         ) : (
           <>
-            <div style={{background:"#1976D2",padding:"10px 14px",display:"flex",alignItems:"center",gap:10,flexShrink:0,boxShadow:"0 2px 4px rgba(0,0,0,0.2)"}}>
-              <button onClick={()=>setMailbox(null)} style={{background:"none",border:"none",color:"#fff",cursor:"pointer",padding:0,fontSize:20,display:"flex",alignItems:"center"}}>←</button>
+            <div style={{background:"#C62828",padding:"10px 14px",display:"flex",alignItems:"center",gap:10,flexShrink:0,boxShadow:"0 2px 4px rgba(0,0,0,0.2)"}}>
+              <button onClick={()=>setMailbox(null)} style={{background:"none",border:"none",color:"#fff",cursor:"pointer",padding:0,display:"flex",alignItems:"center"}}>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M19 12H5M12 19l-7-7 7-7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+              </button>
               <span style={{color:"#fff",fontSize:16,fontWeight:500,flex:1}}>{folder?.label}</span>
             </div>
             <div style={{flex:1,overflowY:"auto",background:"#f1f1f1"}}>
@@ -22213,20 +22257,20 @@ const GmailScreen = ({data, isIos, accent, onBack}) => {
     );
   }
 
-  // ── Vue liste des boîtes (Mailboxes) ──
+  // ── Vue principale : iOS = liste Mailboxes / Android = inbox directement ──
   const unreadTotal = inbox.filter(e=>e.unread).length;
   if(isIos) return (
     <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden"}}>
       <div style={{background:"linear-gradient(180deg,#6a8fc0,#3d5f8a)",padding:"6px 10px",display:"flex",alignItems:"center",flexShrink:0,boxShadow:"0 1px 3px rgba(0,0,0,0.4)"}}>
-        <button onClick={()=>onBack?.()} style={{background:"linear-gradient(180deg,#6a8fc0,#3d5f8a)",border:"1px solid #2a4a70",color:"#fff",fontSize:11,fontWeight:600,padding:"3px 10px",borderRadius:5,cursor:"pointer",display:"flex",alignItems:"center"}}>
-          <span style={{fontSize:10}}>◀</span>
+        <button onClick={()=>onBack?.()} style={{background:`linear-gradient(180deg,#6a8fc0,#3d5f8a)`,border:"1px solid rgba(0,0,0,0.45)",borderRadius:6,color:"#fff",fontSize:11,fontWeight:"600",cursor:"pointer",padding:"3px 10px 3px 7px",display:"flex",alignItems:"center",gap:2,textShadow:"0 -1px 0 rgba(0,0,0,0.5)",boxShadow:"inset 0 1px 0 rgba(255,255,255,0.2)"}}>
+          <svg width="8" height="14" viewBox="0 0 8 14" fill="none"><path d="M7 1L1 7l6 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
         </button>
         <span style={{flex:1,textAlign:"center",color:"#fff",fontSize:14,fontWeight:700,textShadow:"0 1px 1px rgba(0,0,0,0.4)"}}>Mailboxes</span>
         <span style={{width:44}}/>
       </div>
       <div style={{background:"linear-gradient(180deg,#b0b8c8,#a0a8b8)",padding:"5px 8px",flexShrink:0}}>
         <div style={{background:"rgba(255,255,255,0.85)",borderRadius:8,padding:"4px 10px",display:"flex",alignItems:"center",gap:6,border:"1px solid #888",boxShadow:"inset 0 1px 2px rgba(0,0,0,0.1)"}}>
-          <span style={{color:"#888",fontSize:12}}>🔍</span>
+          <svg width="14" height="14" viewBox="0 0 20 20" fill="none"><circle cx="9" cy="9" r="6" stroke="#888" strokeWidth="1.7"/><path d="M15 15l3 3" stroke="#888" strokeWidth="1.7" strokeLinecap="round"/></svg>
           <span style={{color:"#aaa",fontSize:12}}>Search All Mailboxes</span>
         </div>
       </div>
@@ -22235,8 +22279,8 @@ const GmailScreen = ({data, isIos, accent, onBack}) => {
           <div style={{padding:"4px 14px",fontSize:11,fontWeight:600,color:"#555",textTransform:"uppercase",letterSpacing:0.5}}>Mailboxes</div>
           <div style={{background:"#fff",borderTop:"1px solid #c8c8c8",borderBottom:"1px solid #c8c8c8"}}>
             {FOLDERS.map((f,i)=>(
-              <div key={f.key} onClick={()=>setMailbox(f.key)} style={{display:"flex",alignItems:"center",gap:12,padding:"11px 14px",borderBottom:i<FOLDERS.length-1?"1px solid #c8c8c8":"none",cursor:"pointer",background:"#fff"}}>
-                <span style={{fontSize:20,width:28,textAlign:"center"}}>{f.icon}</span>
+              <div key={f.key} onClick={()=>{ if(f.key==="inbox") { setOpenMail(null); } else { setMailbox(f.key); } }} style={{display:"flex",alignItems:"center",gap:12,padding:"11px 14px",borderBottom:i<FOLDERS.length-1?"1px solid #c8c8c8":"none",cursor:"pointer",background:"#fff"}}>
+                <FolderIcon type={f.icon} color={IOS_BLUE} size={22}/>
                 <span style={{flex:1,fontSize:15,color:"#000"}}>{f.label}</span>
                 {f.badge && f.count>0 && <span style={{background:IOS_BLUE,color:"#fff",borderRadius:10,padding:"1px 8px",fontSize:12,fontWeight:700}}>{f.count}</span>}
                 <span style={{color:"#c0c0c5",fontSize:16}}>›</span>
@@ -22248,10 +22292,10 @@ const GmailScreen = ({data, isIos, accent, onBack}) => {
     </div>
   );
 
-  // ── Android — header rouge Gmail + drawer hamburger ──
+  // ── Android — header rouge Gmail fixe + drawer hamburger ──
   return (
     <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden",background:"#f1f1f1",position:"relative"}}>
-      {/* Header */}
+      {/* Header rouge — toujours visible */}
       <div style={{background:"#C62828",padding:"10px 14px",display:"flex",alignItems:"center",gap:12,flexShrink:0,boxShadow:"0 2px 4px rgba(0,0,0,0.2)"}}>
         <button onClick={()=>setShowMenu(m=>!m)} style={{background:"none",border:"none",color:"#fff",cursor:"pointer",padding:"2px 0",display:"flex",flexDirection:"column",gap:4,alignItems:"center",width:20}}>
           <span style={{display:"block",width:18,height:2,background:"#fff",borderRadius:1}}/>
@@ -22267,18 +22311,18 @@ const GmailScreen = ({data, isIos, accent, onBack}) => {
         <div style={{position:"absolute",top:0,left:0,bottom:0,width:"72%",background:"#fff",zIndex:11,boxShadow:"2px 0 8px rgba(0,0,0,0.3)",display:"flex",flexDirection:"column"}}>
           <div style={{background:"#C62828",padding:"14px 16px",color:"#fff",fontSize:16,fontWeight:500}}>Gmail</div>
           {FOLDERS.map(f=>(
-            <div key={f.key} onClick={()=>{setMailbox(f.key);setShowMenu(false);}} style={{display:"flex",alignItems:"center",gap:14,padding:"13px 16px",cursor:"pointer",borderBottom:"1px solid #f5f5f5"}}>
-              <span style={{fontSize:20}}>{f.icon}</span>
+            <div key={f.key} onClick={()=>{ if(f.key!=="inbox") setMailbox(f.key); setShowMenu(false); }} style={{display:"flex",alignItems:"center",gap:14,padding:"13px 16px",cursor:"pointer",borderBottom:"1px solid #f5f5f5"}}>
+              <FolderIcon type={f.icon} color="#5f6368" size={20}/>
               <span style={{flex:1,fontSize:14,color:"#212121"}}>{f.label}</span>
               {f.badge&&f.count>0&&<span style={{background:"#C62828",color:"#fff",borderRadius:10,padding:"1px 8px",fontSize:11,fontWeight:700}}>{f.count}</span>}
             </div>
           ))}
         </div>
       </>}
-      {/* Inbox par défaut */}
+      {/* Inbox — vue principale Android, jamais remplacée par un state mailbox */}
       <div style={{flex:1,overflowY:"auto"}}>
         {inbox.map((m,i)=>(
-          <div key={i} onClick={()=>{setMailbox("inbox");setOpenMail(m);}} style={{background:m.unread?"#fff":"#fafafa",borderBottom:"1px solid #e5e5e5",padding:"10px 12px",display:"flex",gap:10,alignItems:"center",cursor:"pointer"}}>
+          <div key={i} onClick={()=>setOpenMail(m)} style={{background:m.unread?"#fff":"#fafafa",borderBottom:"1px solid #e5e5e5",padding:"10px 12px",display:"flex",gap:10,alignItems:"center",cursor:"pointer"}}>
             <div style={{width:40,height:40,borderRadius:"50%",background:gmAvatar(m.from),display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontWeight:700,fontSize:16,flexShrink:0}}>{(m.from||"?")[0]}</div>
             <div style={{flex:1,minWidth:0}}>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",marginBottom:2}}>
