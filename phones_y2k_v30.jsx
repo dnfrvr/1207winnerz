@@ -4357,7 +4357,8 @@ const TWITTER_PROFILE_TWEETS = {
 const TwitterScreen = ({data, isIos, accent, onBack=null, sharedTweets=[], twitterUsers={}, homeBaseTweets=[], onUpdateShared=()=>{}}) => {
   const loreDateStr = useContext(LoreDateCtx);
   const [tab, setTab] = useState("home");
-  const [viewProfile, setViewProfile] = useState(null); // charKey d'un autre perso, ou null
+  const [viewProfile, setViewProfile] = useState(null);
+  const scrollRef = useRef(null);
   const charKey = data.username?.includes("glinda")?"glinda":data.username?.includes("eoghan")?"eoghan":data.username?.includes("drew")?"drew":"elias";
 
   // Auto-sync the 4 chars' twitter display info from their profile data
@@ -4486,9 +4487,9 @@ const TwitterScreen = ({data, isIos, accent, onBack=null, sharedTweets=[], twitt
   const Tweet = ({t}) => {
     const otherKey = handleToCharKey[t.h];
     const clickable = otherKey && otherKey!==charKey;
-    const goToProfile = clickable ? ()=>setViewProfile(otherKey) : undefined;
+    const goToProfile = clickable ? ()=>{ setViewProfile(otherKey); setTimeout(()=>scrollRef.current?.scrollTo({top:0,behavior:"instant"}),0); } : undefined;
     return (
-    <div style={{background:t._shared?`${TW_BLUE}14`:rowBg,padding:"10px 12px",borderBottom:rowBorder,display:"flex",gap:9,borderLeft:t._shared?`3px solid ${TW_BLUE}`:"none"}}>
+    <div style={{background:rowBg,padding:"10px 12px",borderBottom:rowBorder,display:"flex",gap:9}}>
       <Avatar av={t.av||"?"} onClick={goToProfile}/>
       <div style={{flex:1,minWidth:0}}>
         <div style={{display:"flex",alignItems:"baseline",gap:5,flexWrap:"wrap"}}>
@@ -4548,7 +4549,7 @@ const TwitterScreen = ({data, isIos, accent, onBack=null, sharedTweets=[], twitt
       {!isIos&&<div style={{background:"#1a1a1a",borderBottom:"1px solid #2a2a2a",display:"flex",flexShrink:0}}>
         {tabs.map(t=><button key={t.id} onClick={()=>{setViewProfile(null);setTab(t.id);}} style={{flex:1,padding:"10px 0 8px",border:"none",background:"transparent",color:tab===t.id&&!viewProfile?"#fff":subCol,cursor:"pointer",fontSize:11,fontWeight:tab===t.id&&!viewProfile?"700":"400",borderBottom:`3px solid ${tab===t.id&&!viewProfile?TW_BLUE:"transparent"}`,display:"flex",flexDirection:"column",alignItems:"center",gap:2,transition:"border-color 0.15s",fontFamily:FF_IOS}}>{typeof t.icon==="function" ? t.icon(tab===t.id&&!viewProfile) : <span style={{fontSize:16}}>{t.icon}</span>}</button>)}
       </div>}
-      <div style={{flex:1,overflowY:"auto",background:isIos?"#e8ecef":"#131619"}}>
+      <div ref={scrollRef} style={{flex:1,overflowY:"auto",background:isIos?"#e8ecef":"#131619"}}>
         {viewProfile ? (()=>{
           const pKey = viewProfile;
           const pInfo = CHAR_TWITTER_KEYS[pKey];
@@ -4579,7 +4580,8 @@ const TwitterScreen = ({data, isIos, accent, onBack=null, sharedTweets=[], twitt
                   {following?"Following":"Follow"}
                 </button>
               </div>
-              {followsMe(pKey) && <div style={{padding:"4px 12px",background:rowBg,borderBottom:rowBorder}}><span style={{fontSize:10,color:subCol,fontWeight:600,background:isIos?"#e1e8ed":"#22303c",borderRadius:3,padding:"2px 6px"}}>Follows you</span></div>}
+              {/* Tous les 4 persos se suivent mutuellement */}
+              <div style={{padding:"4px 12px",background:rowBg,borderBottom:rowBorder}}><span style={{fontSize:10,color:subCol,fontWeight:600,background:isIos?"#e1e8ed":"#22303c",borderRadius:3,padding:"2px 6px"}}>Follows you</span></div>
               <div style={{background:rowBg,padding:"8px 12px",borderBottom:rowBorder,display:"flex",gap:20}}>
                 {[["Tweets",pTweets.length],["Following",followingCount],["Followers",followersCount]].map(([l,v])=>(
                   <div key={l} style={{textAlign:"center"}}><div style={{color:textCol,fontWeight:700,fontSize:13}}>{v}</div><div style={{color:subCol,fontSize:10}}>{l}</div></div>
@@ -4592,7 +4594,6 @@ const TwitterScreen = ({data, isIos, accent, onBack=null, sharedTweets=[], twitt
           );
         })() : <>
         {tab==="home"&&<>
-          {othersShared.length>0&&<div style={{background:TW_BLUE,padding:"5px 12px"}}><span style={{color:"#fff",fontSize:10,fontWeight:700}}>NOUVEAU · {othersShared.length} tweet{othersShared.length>1?"s":""} de tes amis</span></div>}
           {homeFeed.map((t,i)=><Tweet key={i} t={t}/>)}
         </>}
         {tab==="connect"&&<>
@@ -17815,13 +17816,15 @@ const withSocialSeeds = (d) => {
   const st = d.sharedThreads || {};
   const patched = {...d, sharedThreads: {...st}};
 
-  // _sharedTweets : toujours injecter les seeds corrects (joueurs uniquement, sans déco)
+  // _sharedTweets + _sharedTumblrPosts : toujours injecter les seeds corrects
   patched.sharedThreads._sharedTweets = SEED_SHARED_TWEETS;
+  patched.sharedThreads._sharedTumblrPosts = SEED_SHARED_TUMBLR_POSTS;
 
-  // _sharedTumblrPosts : injecter si vide
-  if(!st._sharedTumblrPosts || st._sharedTumblrPosts.length === 0) {
-    patched.sharedThreads._sharedTumblrPosts = SEED_SHARED_TUMBLR_POSTS;
-  }
+  // Tous les persos se suivent mutuellement par défaut sur Twitter et Tumblr
+  const ALL_CHARS = ["glinda","eoghan","drew","elias"];
+  const mutualFollows = Object.fromEntries(ALL_CHARS.map(k=>[k, ALL_CHARS.filter(c=>c!==k)]));
+  if(!st._twitterFollows) patched.sharedThreads._twitterFollows = mutualFollows;
+  if(!st._tumblrFollows)  patched.sharedThreads._tumblrFollows  = mutualFollows;
 
   // _sharedFacebookPosts : ajouter author si manquant
   if(st._sharedFacebookPosts) {
@@ -20930,13 +20933,16 @@ export default function App() {
           if (needsMigration) {
             const st = remote.sharedThreads || {};
             const patches = { _seedVersion: SEED_VERSION };
+            const ALL_CHARS = ["glinda","eoghan","drew","elias"];
+            const mutualFollows = Object.fromEntries(ALL_CHARS.map(k=>[k, ALL_CHARS.filter(c=>c!==k)]));
 
-            // Toujours remplacer _sharedTweets et homeBaseTweets (séparation joueurs/déco corrigée)
+            // Toujours remplacer _sharedTweets et _sharedTumblrPosts (séparation joueurs/déco)
             patches['sharedThreads/_sharedTweets'] = SEED_SHARED_TWEETS;
+            patches['sharedThreads/_sharedTumblrPosts'] = SEED_SHARED_TUMBLR_POSTS;
 
-            if (!st._sharedTumblrPosts || st._sharedTumblrPosts.length === 0) {
-              patches['sharedThreads/_sharedTumblrPosts'] = SEED_SHARED_TUMBLR_POSTS;
-            }
+            // Follows mutuels par défaut si absents
+            if(!st._twitterFollows) patches['sharedThreads/_twitterFollows'] = mutualFollows;
+            if(!st._tumblrFollows)  patches['sharedThreads/_tumblrFollows']  = mutualFollows;
 
             // _sharedFacebookPosts : ajouter author si manquant
             if (st._sharedFacebookPosts) {
