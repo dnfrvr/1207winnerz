@@ -235,15 +235,22 @@ const sortGalleryPhotos = (list) => {
   if(!list.some(p=>p.dateISO)) return list;
   return [...list].sort((a,b)=>(b.dateISO||"0000-00-00").localeCompare(a.dateISO||"0000-00-00"));
 };
-const groupGalleryByYear = (sortedList) => {
+const GALLERY_MONTHS_FR = ["","Jan","Fév","Mar","Avr","Mai","Jun","Jul","Aoû","Sep","Oct","Nov","Déc"];
+const groupGalleryByMonth = (sortedList) => {
   const groups = [];
   sortedList.forEach(photo=>{
-    const year = photo.dateISO ? photo.dateISO.slice(0,4) : "Sans date";
-    if(!groups.length || groups[groups.length-1].year!==year) groups.push({year, photos:[]});
+    let label = "Sans date";
+    if(photo.dateISO) {
+      const [year, month] = photo.dateISO.split("-");
+      label = `${GALLERY_MONTHS_FR[parseInt(month)]||month} ${year}`;
+    }
+    if(!groups.length || groups[groups.length-1].label!==label) groups.push({label, photos:[]});
     groups[groups.length-1].photos.push(photo);
   });
   return groups;
 };
+// Alias pour ne pas casser d'éventuelles références externes
+const groupGalleryByYear = groupGalleryByMonth;
 
 // Tri des appels du plus récent au plus ancien — partagé entre iOS et Android.
 const sortCallsByDate = (calls) => [...calls].sort((a,b)=>loreSortKey(b.time)-loreSortKey(a.time));
@@ -6344,10 +6351,10 @@ const IOSPhone = ({data,admin,onUpdate,onUpdateShared=()=>{},loreDate:loreDatePr
             {hasDates ? (
               // Vue groupée par année (lecture seule pour l'ordre — il suit les dates)
               (()=>{
-                const groups = groupGalleryByYear(list);
+                const groups = groupGalleryByMonth(list);
                 return groups.map(g=>(
-                  <div key={g.year}>
-                    <div style={{padding:"8px 12px 4px",fontSize:13,fontWeight:700,color:"#3a3a3c"}}>{g.year}</div>
+                  <div key={g.label}>
+                    <div style={{padding:"8px 12px 4px",fontSize:13,fontWeight:700,color:"#3a3a3c"}}>{g.label}</div>
                     <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:6,padding:"0 8px 8px"}}>
                       {g.photos.map(photo=>{
                         const i = list.indexOf(photo);
@@ -7048,9 +7055,9 @@ const AndroidPhone = ({data,admin,onUpdate,sharedAndroidIcons={},onUpdateShared=
         <div style={{flex:1,background:"#111",overflowY:"auto"}}>
           <div style={{padding:"6px 10px 3px",color:"#555",fontSize:11}}>{activeGallery.length} photo{activeGallery.length!==1?"s":""}</div>
           {hasDatesAndroid ? (
-            groupGalleryByYear(sortedActive).map(g=>(
-              <div key={g.year}>
-                <div style={{padding:"6px 10px 2px",color:"#888",fontSize:12,fontWeight:700}}>{g.year}</div>
+            groupGalleryByMonth(sortedActive).map(g=>(
+              <div key={g.label}>
+                <div style={{padding:"6px 10px 2px",color:"#888",fontSize:12,fontWeight:700}}>{g.label}</div>
                 <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:1}}>
                   {g.photos.map(photo=>{
                     const i = sortedActive.indexOf(photo);
