@@ -18748,21 +18748,21 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
       <div style={{display:"flex",flexDirection:"column",gap:16}}>
 
         {/* ── Tab switcher inbox / supprimés ── */}
-        <div className="adm-subtabs" style={{display:"flex",gap:0,background:"rgba(0,0,0,0.05)",borderRadius:8,padding:2,alignSelf:"flex-start"}}>
+        <div className="adm-subtabs" style={{display:"flex",gap:0,background:"rgba(0,0,0,0.05)",borderRadius:10,padding:3,alignSelf:"stretch"}}>
           {[["inbox","📥 Boîte de réception",inboxMsgs.length],["deleted","🗑 Supprimés récemment",deletedMsgs.length]].map(([key,label,count])=>(
             <button key={key} onClick={()=>setMsgAdminTab(key)} style={{
-              padding:"6px 14px",border:"none",borderRadius:6,cursor:"pointer",fontSize:11,fontWeight:msgAdminTab===key?700:400,
+              flex:1,padding:"10px 16px",border:"none",borderRadius:8,cursor:"pointer",fontSize:13,fontWeight:msgAdminTab===key?700:400,
               background:msgAdminTab===key?"#fff":"transparent",
               color:msgAdminTab===key?charColor:"#6b7280",
               boxShadow:msgAdminTab===key?"0 1px 3px rgba(0,0,0,0.1)":"none",
               transition:"all 0.15s",
-              display:"flex",alignItems:"center",gap:5,
+              display:"flex",alignItems:"center",justifyContent:"center",gap:6,
             }}>
               {label}
               <span style={{
                 background:msgAdminTab===key?charColor+"22":"rgba(0,0,0,0.08)",
                 color:msgAdminTab===key?charColor:"#9ca3af",
-                borderRadius:10,padding:"1px 6px",fontSize:10,fontWeight:700,
+                borderRadius:10,padding:"2px 8px",fontSize:11,fontWeight:700,
               }}>{count}</span>
             </button>
           ))}
