@@ -4410,11 +4410,9 @@ const FilesScreen = ({data, isIos, accent, onBack}) => {
       <div style={{flex:1,background:IOS6_BG,display:"flex",flexDirection:"column",overflow:"hidden"}}>
         {/* Nav bar iOS 6 */}
         <div style={{background:IOS6_HDR,borderBottom:`1px solid ${IOS6_SEP}`,padding:"8px 12px",display:"flex",alignItems:"center",gap:8,flexShrink:0,boxShadow:"0 1px 2px rgba(0,0,0,0.15)"}}>
-          {folder && (
-            <button onClick={()=>setFolder(null)} style={{background:"linear-gradient(180deg,#5a9fd4,#3a7bc8)",border:"1px solid #2060a0",borderRadius:6,color:"#fff",fontSize:11,fontWeight:600,padding:"4px 10px",cursor:"pointer",boxShadow:"0 1px 0 rgba(255,255,255,0.3) inset",textShadow:"0 -1px 0 rgba(0,0,0,0.3)",display:"flex",alignItems:"center",gap:3}}>
-              <span style={{fontSize:10}}>◀</span> Fichiers
-            </button>
-          )}
+          <button onClick={()=>folder ? setFolder(null) : onBack?.()} style={{background:"linear-gradient(180deg,#5a9fd4,#3a7bc8)",border:"1px solid #2060a0",borderRadius:6,color:"#fff",fontSize:11,fontWeight:600,padding:"4px 10px",cursor:"pointer",boxShadow:"0 1px 0 rgba(255,255,255,0.3) inset",textShadow:"0 -1px 0 rgba(0,0,0,0.3)",display:"flex",alignItems:"center",gap:3}}>
+            <span style={{fontSize:10}}>◀</span> {folder ? "Fichiers" : "Home"}
+          </button>
           <span style={{flex:1,textAlign:"center",fontWeight:700,fontSize:17,color:"#1a1a1a",textShadow:"0 1px 0 rgba(255,255,255,0.8)"}}>
             {folder ? (currentFolder?.name||"Dossier") : "Fichiers"}
           </span>
@@ -4515,13 +4513,11 @@ const FilesScreen = ({data, isIos, accent, onBack}) => {
   // ── Android Files ─────────────────────────────────────────────────────────
   return (
     <div style={{flex:1,background:AND_BG,display:"flex",flexDirection:"column",overflow:"hidden"}}>
-      {/* Sub-header Android Material */}
-      {folder && (
-        <div style={{background:AND_HDR,padding:"10px 16px",display:"flex",alignItems:"center",gap:12,flexShrink:0,boxShadow:"0 2px 4px rgba(0,0,0,0.2)"}}>
-          <button onClick={()=>setFolder(null)} style={{background:"none",border:"none",color:"#fff",cursor:"pointer",padding:0,fontSize:20,display:"flex",alignItems:"center"}}>←</button>
-          <span style={{color:"#fff",fontSize:16,fontWeight:500}}>{currentFolder?.name||"Dossier"}</span>
-        </div>
-      )}
+      {/* Header Android permanent */}
+      <div style={{background:AND_HDR,padding:"10px 16px",display:"flex",alignItems:"center",gap:12,flexShrink:0,boxShadow:"0 2px 4px rgba(0,0,0,0.2)"}}>
+        <button onClick={()=>folder ? setFolder(null) : onBack?.()} style={{background:"none",border:"none",color:"#fff",cursor:"pointer",padding:0,fontSize:20,display:"flex",alignItems:"center"}}>←</button>
+        <span style={{color:"#fff",fontSize:16,fontWeight:500}}>{folder ? (currentFolder?.name||"Dossier") : "Fichiers"}</span>
+      </div>
 
       <div style={{flex:1,overflowY:"auto"}}>
         {/* Dossiers Android */}
@@ -6798,7 +6794,7 @@ const IOSPhone = ({data,admin,onUpdate,onUpdateShared=()=>{},loreDate:loreDatePr
   if(app==="grindr") return (
     <Shell><IOSStatusBar/><NavBar title="Grindr" back={goHome}/><GrindrScreen data={data} admin={admin} update={update}/></Shell>
   );
-  if(app==="files")     return <Shell><IOSStatusBar/><NavBar title="Fichiers" back={goHome}/><FilesScreen data={data} isIos={true} accent={accent} onBack={goHome}/></Shell>;
+  if(app==="files")     return <Shell><IOSStatusBar/><FilesScreen data={data} isIos={true} accent={accent} onBack={goHome}/></Shell>;
   if(app==="safari"||app==="browser") return <Shell><IOSStatusBar/><NavBar title="Safari" back={goHome}/><BrowserScreen data={data} admin={admin} update={update} accent={accent} isIos={true} tab={browserTab} setTab={setBrowserTab}/></Shell>;
   if(app==="phone") return <Shell><IOSStatusBar/><PhoneScreen data={data} admin={admin} update={update} accent={accent} isIos={true} panel={phonePanel} setPanel={setPhonePanel}/></Shell>;
   if(app==="notes") return <Shell><IOSStatusBar/><NotesScreen data={data} admin={admin} update={update} accent={accent} isIos={true} noteOpen={noteOpen} setNoteOpen={setNoteOpen} goHome={goHome}/></Shell>;
@@ -7408,7 +7404,7 @@ const AndroidPhone = ({data,admin,onUpdate,sharedAndroidIcons={},onUpdateShared=
   if(app==="reddit")    return <AppShell><AndroidStatusBar notifApps={notifApps} accent={accent}/><ActionBar title="Reddit" back={goHome}/><RedditScreen data={data} isIos={false} accent={accent}/></AppShell>;  if(app==="twitter")   return <AppShell><AndroidStatusBar notifApps={notifApps} accent={accent}/><TwitterScreen data={data} isIos={false} accent={accent} onBack={goHome} sharedTweets={data.sharedThreads?._sharedTweets||[]} twitterUsers={{...(data.sharedThreads?._sharedTwitterUsers||{}),...(data.twitterUsers||{})}} homeBaseTweets={data.homeBaseTweets||[]} onUpdateShared={onUpdateSharedThread}/></AppShell>;
   if(app==="vpn")       return <AppShell><AndroidStatusBar notifApps={notifApps} accent={accent}/><ActionBar title="VPN" back={goHome}/><VPNScreen isIos={false} accent={accent}/></AppShell>;
   if(app==="contacts")  return <AppShell><AndroidStatusBar notifApps={notifApps} accent={accent}/><ActionBar title="Contacts" back={goHome}/><ContactsScreen data={data} isIos={false} accent={accent}/></AppShell>;
-  if(app==="files")      return <AppShell><AndroidStatusBar notifApps={notifApps} accent={accent}/><ActionBar title="Fichiers" back={goHome}/><FilesScreen data={data} isIos={false} accent={accent} onBack={goHome}/></AppShell>;
+  if(app==="files")      return <AppShell><AndroidStatusBar notifApps={notifApps} accent={accent}/><FilesScreen data={data} isIos={false} accent={accent} onBack={goHome}/></AppShell>;
   if(app==="clock")     return <AppShell><AndroidStatusBar notifApps={notifApps} accent={accent}/><ActionBar title="Clock" back={goHome}/><ClockScreen isIos={false} accent={accent}/></AppShell>;
   if(app==="maps")      return <AppShell><AndroidStatusBar notifApps={notifApps} accent={accent}/><ActionBar title="Maps" back={goHome}/><MapsScreen isIos={false} accent={accent}/></AppShell>;
 
@@ -18368,6 +18364,7 @@ const APP_SECTIONS = {
   shazam:     {icon:"🎵", label:"Shazam"},
   groupme:    {icon:"💬", label:"GroupMe"},
   gmail:      {icon:"✉️", label:"Mails"},
+  mail:       {icon:"✉️", label:"Mails"},
   facebook:   {icon:"📘", label:"Facebook"},
   files:      {icon:"📁", label:"Fichiers"},
 };
@@ -18411,6 +18408,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
   const [grindrOpenDms, setGrindrOpenDms] = useState(new Set());
   const toggleGrindrDm = (id) => setGrindrOpenDms(prev => { const n=new Set(prev); n.has(id)?n.delete(id):n.add(id); return n; });
   const [msgAdminTab, setMsgAdminTab] = useState("inbox"); // "inbox" | "deleted"
+  const [mailAdmTab, setMailAdmTab] = useState("inbox"); // "inbox" | "drafts" | "deleted"
   const [twTab, setTwTab] = useState("users"); // "users" | "shared" | "tweets"
   const [tbTab, setTbTab] = useState("users"); // "users" | "shared" | "feed"
   const [fbTab, setFbTab] = useState("users"); // "users" | "shared" | "pages"
@@ -19460,18 +19458,18 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
         </div>}
 
         {/* ── Apps principales ── */}
-        {[["apps","📱 Apps (grille)"],["dock","⬛ Dock"]].map(([listKey, listLabel])=>(
+        {[["apps","📱 Apps (grille)"],["dock","⬛ Dock"]].map(([listKey, listLabel])=>{
+          const list = d[listKey]||[];
+          const dragIdx = React.useRef(null);
+          return (
           <div key={listKey} style={{display:"flex",flexDirection:"column",gap:6}}>
-            <div style={{fontSize:12,fontWeight:700,color:"#374151",letterSpacing:0.3}}>{listLabel}</div>
-            {(d[listKey]||[]).map((appId,i)=>{
+            <div style={{fontSize:12,fontWeight:700,color:"#374151",letterSpacing:0.3}}>{listLabel} <span style={{fontSize:10,color:"#9ca3af",fontWeight:400}}>— glisser-déposer pour réordonner</span></div>
+            {list.map((appId,i)=>{
               const meta    = APP_META[appId]||{label:appId,iosIcon:"📱"};
               const isAndroid = d.os==="android";
               const cur     = isAndroid ? (data._sharedAndroidIcons?.[appId]) : (d.appIcons?.[appId]);
               const appName = d.appNames?.[appId] ?? meta.label;
-              const list    = d[listKey]||[];
-              const moveUp   = () => { const l=[...list]; [l[i-1],l[i]]=[l[i],l[i-1]]; upd(listKey,l); };
-              const moveDown = () => { const l=[...list]; [l[i+1],l[i]]=[l[i],l[i+1]]; upd(listKey,l); };
-              const remove   = () => upd(listKey, list.filter((_,j)=>j!==i));
+              const remove  = () => upd(listKey, list.filter((_,j)=>j!==i));
               const readFile = f => {
                 if(!f||!f.type.startsWith("image/")) return;
                 const r=new UploadReader();
@@ -19489,12 +19487,26 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                 r.readAsDataURL(f);
               };
               return (
-                <div key={appId+i} style={{display:"flex",alignItems:"center",gap:8,background:"rgba(255,255,255,0.85)",borderRadius:8,padding:"7px 10px",border:"1px solid rgba(0,0,0,0.07)"}}>
-                  {/* Flèches réordonnement */}
-                  <div style={{display:"flex",flexDirection:"column",gap:1,flexShrink:0}}>
-                    <button onClick={moveUp} disabled={i===0} style={{background:"none",border:"none",cursor:i===0?"default":"pointer",color:i===0?"#d1d5db":"#6b7280",fontSize:14,padding:"0 2px",lineHeight:1,opacity:i===0?0.3:1}}>▲</button>
-                    <button onClick={moveDown} disabled={i===list.length-1} style={{background:"none",border:"none",cursor:i===list.length-1?"default":"pointer",color:i===list.length-1?"#d1d5db":"#6b7280",fontSize:14,padding:"0 2px",lineHeight:1,opacity:i===list.length-1?0.3:1}}>▼</button>
-                  </div>
+                <div key={appId+i}
+                  draggable
+                  onDragStart={()=>{ dragIdx.current=i; }}
+                  onDragOver={e=>{ e.preventDefault(); e.currentTarget.style.background="rgba(99,102,241,0.08)"; e.currentTarget.style.borderColor="rgba(99,102,241,0.35)"; }}
+                  onDragLeave={e=>{ e.currentTarget.style.background="rgba(255,255,255,0.85)"; e.currentTarget.style.borderColor="rgba(0,0,0,0.07)"; }}
+                  onDrop={e=>{
+                    e.preventDefault();
+                    e.currentTarget.style.background="rgba(255,255,255,0.85)";
+                    e.currentTarget.style.borderColor="rgba(0,0,0,0.07)";
+                    const from=dragIdx.current;
+                    if(from==null||from===i) return;
+                    const l=[...list];
+                    const [moved]=l.splice(from,1);
+                    l.splice(i,0,moved);
+                    upd(listKey,l);
+                    dragIdx.current=null;
+                  }}
+                  style={{display:"flex",alignItems:"center",gap:8,background:"rgba(255,255,255,0.85)",borderRadius:8,padding:"7px 10px",border:"1px solid rgba(0,0,0,0.07)",cursor:"grab",transition:"background 0.1s,border-color 0.1s,box-shadow 0.1s"}}>
+                  {/* Handle drag */}
+                  <span style={{color:"#d1d5db",fontSize:14,flexShrink:0,cursor:"grab",userSelect:"none"}}>⠿</span>
                   {/* Icône */}
                   <label style={{width:36,height:36,background:"#f3f4f6",borderRadius:7,overflow:"hidden",display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,flexShrink:0,cursor:"pointer",border:"1px solid rgba(0,0,0,0.06)"}}>
                     {cur?<img src={cur} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:meta.iosIcon||"📱"}
@@ -19504,15 +19516,14 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                   <input value={appName} onChange={e=>upd("appNames",{...(d.appNames||{}),[appId]:e.target.value})}
                     className="adm-input" style={{flex:1,background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#374151",fontSize:12,padding:"5px 8px",borderRadius:6}}/>
                   <span style={{fontSize:11,color:"#9ca3af",flexShrink:0,minWidth:40}}>{appId}</span>
-                  {/* Suppr icône custom */}
                   {cur&&<button onClick={()=>{if(d.os==="android"){const si={...(data._sharedAndroidIcons||{})};delete si[appId];onUpdateShared(si);}else{const ic={...(d.appIcons||{})};delete ic[appId];upd("appIcons",ic);["glinda","eoghan","elias"].filter(k=>k!==tab&&data[k]?.os==="ios").forEach(k=>{const kic={...(data[k].appIcons||{})};delete kic[appId];onUpdate(k,{...data[k],appIcons:kic});});} }} style={{background:"none",border:"none",color:"#9ca3af",cursor:"pointer",fontSize:10,flexShrink:0}}>✕ ico</button>}
-                  {/* Retirer l'app */}
                   <button onClick={remove} className="adm-del-btn" style={{background:"rgba(239,68,68,0.07)",border:"1px solid rgba(239,68,68,0.2)",color:"#ef4444",borderRadius:5,padding:"4px 8px",cursor:"pointer",fontSize:10,fontWeight:600,flexShrink:0}}>🗑</button>
                 </div>
               );
             })}
           </div>
-        ))}
+          );
+        })}
 
         {/* ── Ajouter une app ── */}
         {(()=>{
@@ -20724,7 +20735,6 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
         {key:"drafts",  label:"📝 Drafts",  color:"#6366f1", storageKey:"mail_drafts",    defaultFn:(un)=>MAIL_DRAFTS_BY_CHAR[un]||[]},
         {key:"deleted", label:"🗑 Deleted",  color:"#ef4444", storageKey:"mail_deleted",   defaultFn:(un)=>MAIL_DELETED_BY_CHAR[un]||[]},
       ];
-      const [mailAdmTab, setMailAdmTab] = useState("inbox");
       const curTabDef = MAIL_TAB_DEFS.find(t=>t.key===mailAdmTab);
       const un = d.username || "glindatheverygood";
       const mails = d[curTabDef.storageKey]?.[un] ?? curTabDef.defaultFn(un);
