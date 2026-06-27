@@ -18144,7 +18144,9 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
   const [grindrOpenDms, setGrindrOpenDms] = useState(new Set());
   const toggleGrindrDm = (id) => setGrindrOpenDms(prev => { const n=new Set(prev); n.has(id)?n.delete(id):n.add(id); return n; });
   const [msgAdminTab, setMsgAdminTab] = useState("inbox"); // "inbox" | "deleted"
-  const [twTab, setTwTab] = useState("users"); // "users" | "tweets"
+  const [twTab, setTwTab] = useState("users"); // "users" | "shared" | "tweets"
+  const [tbTab, setTbTab] = useState("users"); // "users" | "shared" | "feed"
+  const [fbTab, setFbTab] = useState("users"); // "users" | "shared" | "pages"
   const [phoneSubTab, setPhoneSubTab] = useState("calls"); // "calls" | "contacts" | "voicemail"
   const [grindrTab, setGrindrTab] = useState("grid"); // "grid" | "dms" | "profile"
   const [galSection, setGalSection] = useState("roll"); // "roll" | "deleted" | "albums"
@@ -19525,19 +19527,54 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                 </div>
               );
               return (<>
-                <div style={{background:"rgba(29,161,242,0.06)",border:"1px solid rgba(29,161,242,0.15)",borderRadius:8,padding:"7px 12px",fontSize:11,color:"#1da1f2"}}>
-                  🔄 Comptes communs — partagés et synchronisés pour les 4 personnages.
-                </div>
-                {COMMON_KNOWN_BASE.map(u=>renderUserCard(u, twUsers[u.key]||{}, null))}
-                {commonExtra.map(u=>renderUserCard(u, twUsers[u.key]||{}, ()=>removeCommonAccount(u.key)))}
-                <button onClick={addCommonAccount} style={{background:"rgba(29,161,242,0.08)",border:"1px dashed rgba(29,161,242,0.4)",color:"#1da1f2",borderRadius:8,padding:"10px 18px",cursor:"pointer",fontSize:12,fontWeight:600}}>+ Ajouter un compte commun</button>
-
-                <div style={{color:"#888",fontSize:10,letterSpacing:1,textTransform:"uppercase",margin:"16px 0 4px"}}>
-                  Comptes suivis uniquement par {CHAR_NAMES[tab]||tab}
-                </div>
-                {(SPECIFIC_KNOWN_BASE[tab]||[]).map(u=>renderUserCard(u, specificUsers[u.key]||{}, null))}
-                {specificExtra.map(u=>renderUserCard(u, specificUsers[u.key]||{}, ()=>removeSpecificAccount(u.key)))}
-                <button onClick={addSpecificAccount} style={{background:"rgba(124,159,201,0.1)",border:"1px dashed rgba(124,159,201,0.5)",color:"#5a7fa3",borderRadius:8,padding:"10px 18px",cursor:"pointer",fontSize:12,fontWeight:600}}>+ Ajouter un compte spécifique</button>
+                {/* Profil Twitter du perso courant uniquement — synchronisé via _sharedTwitterUsers */}
+                {(()=>{
+                  const myCharInfo = COMMON_KNOWN_BASE.find(u=>u.char===tab) || {};
+                  const ov = twUsers[myCharInfo.key] || {};
+                  return (
+                    <div className="adm-card" style={{background:"rgba(255,255,255,0.85)",borderRadius:10,padding:"14px 16px",border:"1px solid rgba(0,0,0,0.07)",display:"flex",flexDirection:"column",gap:10}}>
+                      <div style={{fontSize:10,fontWeight:700,color:"#9ca3af",letterSpacing:0.5,marginBottom:2}}>★ CE PERSO — synchronisé pour les 4</div>
+                      <div style={{display:"flex",gap:6}}>
+                        <Field label="Nom affiché" value={ov.name??myCharInfo.name??""} onChange={v=>updTwUser(myCharInfo.key,"name",v)} style={{flex:1}}/>
+                        <Field label="Handle" value={ov.h??myCharInfo.h??""} onChange={v=>updTwUser(myCharInfo.key,"h",v)} style={{flex:1}}/>
+                      </div>
+                      {/* Photo de profil */}
+                      <div style={{display:"flex",gap:10,alignItems:"center"}}>
+                        <label style={{width:48,height:48,borderRadius:6,overflow:"hidden",cursor:"pointer",flexShrink:0,background:"#f3f4f6",border:"1px solid rgba(0,0,0,0.08)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:20}}>
+                          {ov.av?<img src={ov.av} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:"🐦"}
+                          <input type="file" accept="image/*" style={{display:"none"}} onChange={e=>{
+                            const f=e.target.files?.[0]; if(!f) return;
+                            const r=new UploadReader(); r.onload=ev=>updTwUser(myCharInfo.key,"av",ev.target.result); r.readAsDataURL(f); e.target.value="";
+                          }}/>
+                        </label>
+                        <div style={{flex:1}}>
+                          <div style={{fontSize:11,fontWeight:600,color:"#374151"}}>Photo de profil</div>
+                          <div style={{fontSize:10,color:"#9ca3af"}}>Visible sur tous les profils et TL</div>
+                        </div>
+                        {ov.av && <button onClick={()=>updTwUser(myCharInfo.key,"av",null)} style={{fontSize:10,color:"#ef4444",background:"none",border:"none",cursor:"pointer",padding:0}}>Supprimer</button>}
+                      </div>
+                      {/* Banner */}
+                      <div style={{display:"flex",gap:10,alignItems:"center"}}>
+                        <label style={{width:80,height:40,borderRadius:6,overflow:"hidden",cursor:"pointer",flexShrink:0,background:ov.bannerImg?"transparent":(ov.bannerColor||"#1DA1F2"),border:"1px solid rgba(0,0,0,0.08)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,color:"#fff"}}>
+                          {ov.bannerImg?<img src={ov.bannerImg} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:"📷 Header"}
+                          <input type="file" accept="image/*" style={{display:"none"}} onChange={e=>{
+                            const f=e.target.files?.[0]; if(!f) return;
+                            const r=new UploadReader(); r.onload=ev=>updTwUser(myCharInfo.key,"bannerImg",ev.target.result); r.readAsDataURL(f); e.target.value="";
+                          }}/>
+                        </label>
+                        <div style={{flex:1}}>
+                          <div style={{fontSize:11,fontWeight:600,color:"#374151"}}>Image du header</div>
+                          <div style={{fontSize:10,color:"#9ca3af"}}>Remplace la couleur si présente</div>
+                        </div>
+                        {ov.bannerImg && <button onClick={()=>updTwUser(myCharInfo.key,"bannerImg",null)} style={{fontSize:10,color:"#ef4444",background:"none",border:"none",cursor:"pointer",padding:0}}>Supprimer</button>}
+                      </div>
+                      <div style={{display:"flex",gap:8,alignItems:"center"}}>
+                        <Field label="Couleur du header (si pas d'image)" value={ov.bannerColor||""} onChange={v=>updTwUser(myCharInfo.key,"bannerColor",v)} placeholder="#1DA1F2" style={{flex:1}}/>
+                        <div style={{width:28,height:28,borderRadius:6,background:ov.bannerColor||"#1DA1F2",border:"1px solid #e5e7eb",flexShrink:0,marginTop:18}}/>
+                      </div>
+                    </div>
+                  );
+                })()}
               </>);
             })()}
           </>}
@@ -19928,65 +19965,99 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
     );
 
     case "tumblr": {
+      const TB_COLOR = "#35465c";
       const sharedPosts = data.sharedThreads?._sharedTumblrPosts || [];
       const updShared = (list) => onUpdate("_sharedTumblrPosts", list);
+      // Profil Tumblr du perso courant — stocké dans data[tab] + partagé via _sharedAvatars
+      const tbProfile = d.tumblr || {};
+      const updTbProfile = (patch) => upd("tumblr", {...tbProfile, ...patch});
+
+      const SubTabs = [["users","👤 Mon profil"],["shared","📝 Mes posts (partagés)"],["feed","🎨 Fil décoratif"]];
       return (
-      <div style={{display:"flex",flexDirection:"column",gap:12}}>
-        <div style={{display:"flex",gap:10,flexWrap:"wrap"}}>
-          <Field label="Handle" value={d.tumblr?.handle||""} onChange={v=>upd("tumblr",{...(d.tumblr||{}),handle:v})}/>
-          <Field label="Followers" value={String(d.tumblr?.followers||"")} onChange={v=>upd("tumblr",{...(d.tumblr||{}),followers:parseInt(v)||0})}/>
-          <Field label="Following" value={String(d.tumblr?.following||"")} onChange={v=>upd("tumblr",{...(d.tumblr||{}),following:parseInt(v)||0})}/>
-        </div>
-        <Field label="Bio" value={d.tumblr?.bio||""} onChange={v=>upd("tumblr",{...(d.tumblr||{}),bio:v})} textarea/>
-        <div style={{display:"flex",gap:14,alignItems:"center",flexWrap:"wrap",background:"rgba(255,255,255,0.6)",borderRadius:10,padding:"10px 12px",border:"1px solid rgba(0,0,0,0.06)"}}>
-          <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:4}}>
-            <label style={{width:48,height:48,borderRadius:8,overflow:"hidden",background:d.tumblr?.avatarBg||"#8e7cc3",display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontWeight:700,fontSize:18,cursor:"pointer",border:"1px solid rgba(0,0,0,0.1)"}}>
-              {d.avatar?<img src={d.avatar} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:(d.username||"?")[0].toUpperCase()}
-              <input type="file" accept="image/*" style={{display:"none"}} onChange={e=>{const f=e.target.files?.[0];if(!f)return;const r=new UploadReader();r.onload=ev=>upd("avatar",ev.target.result);r.readAsDataURL(f);e.target.value="";}}/>
-            </label>
-            <span style={{fontSize:9,color:"#888"}}>Photo de profil</span>
-          </div>
-          <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:4,flex:"1 1 160px",minWidth:0}}>
-            <label style={{width:"100%",height:48,borderRadius:8,overflow:"hidden",background:d.tumblr?.coverColor||"#2c3e50",display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontSize:11,cursor:"pointer",border:"1px solid rgba(0,0,0,0.1)"}}>
-              {d.tumblr?.cover?<img src={d.tumblr.cover} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:"Cliquer pour importer"}
-              <input type="file" accept="image/*" style={{display:"none"}} onChange={e=>{const f=e.target.files?.[0];if(!f)return;const r=new UploadReader();r.onload=ev=>upd("tumblr",{...(d.tumblr||{}),cover:ev.target.result});r.readAsDataURL(f);e.target.value="";}}/>
-            </label>
-            <span style={{fontSize:9,color:"#888"}}>Bannière du header</span>
-          </div>
-        </div>
-
-        <div style={{color:"#888",fontSize:10,letterSpacing:1,textTransform:"uppercase",margin:"4px 0 0"}}>Mes posts (partagés — visibles par tout le monde, comme sur Twitter)</div>
-        <SharedPostsEditor
-          posts={sharedPosts} onChange={updShared} tab={tab} accent="#35465c"
-          fieldMap={{text:"body", img:"img", time:"date"}}
-          showTitle statFields={[{key:"notes",label:"Notes"}]}
-          addExtra={{username:d.tumblr?.handle||""}} addLabel="+ Post Tumblr" textLabel="Texte"
-          hint="Seul toi peux modifier ou supprimer tes propres posts ici."
-        />
-
-        <div style={{color:"#888",fontSize:10,letterSpacing:1,textTransform:"uppercase",margin:"16px 0 8px"}}>Fil d'accueil (posts de comptes suivis — propres à ce perso, non partagés)</div>
-        {(()=>{
-          const effectiveFeed = d.tumblr?.feedPosts || [];
-          const updFeed = (list) => upd("tumblr",{...(d.tumblr||{}),feedPosts:list});
-          return (<>
-            {effectiveFeed.map((post,i)=>(
-              <div key={post.id??i} className="adm-card" style={{background:"rgba(255,255,255,0.85)",borderRadius:12,padding:14,border:"1px solid rgba(0,0,0,0.07)",boxShadow:"0 2px 8px rgba(0,0,0,0.04)",marginTop:6}}>
-                <div style={{display:"flex",gap:8,marginBottom:8,alignItems:"center",flexWrap:"wrap"}}>
-                  <Field label="Pseudo de l'auteur" value={post.username||""} onChange={v=>{const p=[...effectiveFeed];p[i]={...p[i],username:v};updFeed(p);}} width="140px"/>
-                  <Field label="Titre (opt.)" value={post.title||""} onChange={v=>{const p=[...effectiveFeed];p[i]={...p[i],title:v};updFeed(p);}} width="140px"/>
-                  <LoreDateTimeInput value={post.date||""} onChange={v=>{const p=[...effectiveFeed];p[i]={...p[i],date:v};updFeed(p);}} width="190px" showLabel={true}/>
-                  <Field label="Notes" value={String(post.notes||0)} onChange={v=>{const p=[...effectiveFeed];p[i]={...p[i],notes:parseInt(v)||0};updFeed(p);}} width="70px"/>
-                  <button onClick={()=>updFeed(effectiveFeed.filter((_,j)=>j!==i))}
-                    className="adm-del-btn" style={{background:"rgba(239,68,68,0.06)",border:"1px solid rgba(239,68,68,0.2)",color:"#ef4444",borderRadius:6,padding:"4px 8px",cursor:"pointer",fontSize:11,marginTop:18}}>✕</button>
-                </div>
-                <Field label="Texte" value={post.body||""} onChange={v=>{const p=[...effectiveFeed];p[i]={...p[i],body:v};updFeed(p);}} textarea/>
-              </div>
+        <div style={{display:"flex",flexDirection:"column",gap:12}}>
+          {/* Tab bar */}
+          <div className="adm-subtabs" style={{display:"flex",gap:0,background:"rgba(0,0,0,0.05)",borderRadius:8,padding:2,alignSelf:"flex-start"}}>
+            {SubTabs.map(([k,label])=>(
+              <button key={k} onClick={()=>setTbTab(k)} style={{
+                padding:"6px 14px",border:"none",borderRadius:6,cursor:"pointer",fontSize:11,
+                fontWeight:tbTab===k?700:400,
+                background:tbTab===k?"#fff":"transparent",
+                color:tbTab===k?TB_COLOR:"#6b7280",
+                boxShadow:tbTab===k?"0 1px 3px rgba(0,0,0,0.1)":"none",
+                transition:"all 0.15s",whiteSpace:"nowrap",
+              }}>{label}</button>
             ))}
-            <button onClick={()=>updFeed([{id:Date.now(),username:"",avatarBg:"#8e7cc3",body:"",notes:0,date:"1 oct",type:"text"},...effectiveFeed])}
-              style={{background:"rgba(124,159,201,0.1)",border:"1px dashed rgba(124,159,201,0.5)",color:"#5a7fa3",borderRadius:8,padding:"10px 18px",cursor:"pointer",fontSize:12,fontWeight:600,marginTop:6}}>+ Post du fil</button>
-          </>);
-        })()}
-      </div>
+          </div>
+
+          {/* ── MON PROFIL ── */}
+          {tbTab==="users" && (
+            <div className="adm-card" style={{background:"rgba(255,255,255,0.85)",borderRadius:10,padding:"14px 16px",border:"1px solid rgba(0,0,0,0.07)",display:"flex",flexDirection:"column",gap:10}}>
+              <div style={{fontSize:10,fontWeight:700,color:"#9ca3af",letterSpacing:0.5,marginBottom:2}}>★ CE PERSO — synchronisé pour les 4</div>
+              {/* Avatar + Bannière */}
+              <div style={{display:"flex",gap:12,alignItems:"center",flexWrap:"wrap"}}>
+                <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:4}}>
+                  <label style={{width:56,height:56,borderRadius:8,overflow:"hidden",background:tbProfile.avatarBg||"#8e7cc3",display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontWeight:700,fontSize:20,cursor:"pointer",border:"1px solid rgba(0,0,0,0.1)"}}>
+                    {d.avatar?<img src={d.avatar} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:(d.username||"?")[0].toUpperCase()}
+                    <input type="file" accept="image/*" style={{display:"none"}} onChange={e=>{const f=e.target.files?.[0];if(!f)return;const r=new UploadReader();r.onload=ev=>{upd("avatar",ev.target.result);onUpdate("_sharedAvatars",{...(data.sharedThreads?._sharedAvatars||{}),[tab]:ev.target.result});};r.readAsDataURL(f);e.target.value="";}}/>
+                  </label>
+                  <span style={{fontSize:9,color:"#888"}}>Photo de profil</span>
+                </div>
+                <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:4,flex:"1 1 140px",minWidth:0}}>
+                  <label style={{width:"100%",height:48,borderRadius:8,overflow:"hidden",background:tbProfile.coverColor||"#2c3e50",display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontSize:11,cursor:"pointer",border:"1px solid rgba(0,0,0,0.1)"}}>
+                    {tbProfile.cover?<img src={tbProfile.cover} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:"📷 Bannière"}
+                    <input type="file" accept="image/*" style={{display:"none"}} onChange={e=>{const f=e.target.files?.[0];if(!f)return;const r=new UploadReader();r.onload=ev=>updTbProfile({cover:ev.target.result});r.readAsDataURL(f);e.target.value="";}}/>
+                  </label>
+                  <span style={{fontSize:9,color:"#888"}}>Bannière du header</span>
+                </div>
+                {d.avatar && <button onClick={()=>{upd("avatar",null);onUpdate("_sharedAvatars",{...(data.sharedThreads?._sharedAvatars||{}),[tab]:null});}} style={{fontSize:10,color:"#ef4444",background:"none",border:"none",cursor:"pointer",padding:0,alignSelf:"flex-start",marginTop:18}}>Suppr. avatar</button>}
+              </div>
+              {/* Champs */}
+              <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+                <Field label="Handle Tumblr" value={tbProfile.handle||""} onChange={v=>updTbProfile({handle:v})} style={{flex:"1 1 140px"}}/>
+                <Field label="Followers" value={String(tbProfile.followers||"")} onChange={v=>updTbProfile({followers:parseInt(v)||0})} width="80px"/>
+                <Field label="Following" value={String(tbProfile.following||"")} onChange={v=>updTbProfile({following:parseInt(v)||0})} width="80px"/>
+              </div>
+              <Field label="Bio" value={tbProfile.bio||""} onChange={v=>updTbProfile({bio:v})} textarea/>
+              {tbProfile.cover && <button onClick={()=>updTbProfile({cover:null})} style={{fontSize:10,color:"#ef4444",background:"none",border:"none",cursor:"pointer",padding:0,alignSelf:"flex-start"}}>× Supprimer la bannière</button>}
+            </div>
+          )}
+
+          {/* ── MES POSTS PARTAGÉS ── */}
+          {tbTab==="shared" && (
+            <SharedPostsEditor
+              posts={sharedPosts} onChange={updShared} tab={tab} accent={TB_COLOR}
+              fieldMap={{text:"body", img:"img", time:"date"}}
+              showTitle statFields={[{key:"notes",label:"Notes"}]}
+              addExtra={{username:tbProfile.handle||""}} addLabel="+ Post Tumblr" textLabel="Texte"
+              hint="Seul toi peux modifier ou supprimer tes propres posts. Ils apparaissent dans le fil de tous les persos."
+            />
+          )}
+
+          {/* ── FIL DÉCORATIF ── */}
+          {tbTab==="feed" && (()=>{
+            const effectiveFeed = d.tumblr?.feedPosts || [];
+            const updFeed = (list) => upd("tumblr",{...(d.tumblr||{}),feedPosts:list});
+            return (
+              <div style={{display:"flex",flexDirection:"column",gap:8}}>
+                <div style={{fontSize:11,color:"#6b7280",lineHeight:1.5}}>Posts de comptes fictifs visibles dans le fil de <strong>{CHAR_NAMES[tab]||tab}</strong> uniquement — non partagés entre persos.</div>
+                {effectiveFeed.map((post,i)=>(
+                  <div key={post.id??i} className="adm-card" style={{background:"rgba(255,255,255,0.85)",borderRadius:10,padding:"10px 12px",border:"1px solid rgba(0,0,0,0.07)",display:"flex",flexDirection:"column",gap:6}}>
+                    <div style={{display:"flex",gap:6,flexWrap:"wrap",alignItems:"flex-end"}}>
+                      <Field label="Pseudo" value={post.username||""} onChange={v=>{const p=[...effectiveFeed];p[i]={...p[i],username:v};updFeed(p);}} width="130px"/>
+                      <Field label="Titre (opt.)" value={post.title||""} onChange={v=>{const p=[...effectiveFeed];p[i]={...p[i],title:v};updFeed(p);}} style={{flex:1}}/>
+                      <LoreDateTimeInput value={post.date||""} onChange={v=>{const p=[...effectiveFeed];p[i]={...p[i],date:v};updFeed(p);}} width="190px" showLabel={true}/>
+                      <Field label="Notes" value={String(post.notes||0)} onChange={v=>{const p=[...effectiveFeed];p[i]={...p[i],notes:parseInt(v)||0};updFeed(p);}} width="70px"/>
+                      <button onClick={()=>updFeed(effectiveFeed.filter((_,j)=>j!==i))} className="adm-del-btn" style={{background:"rgba(239,68,68,0.06)",border:"1px solid rgba(239,68,68,0.2)",color:"#ef4444",borderRadius:6,padding:"5px 8px",cursor:"pointer",fontSize:11,marginTop:18}}>✕</button>
+                    </div>
+                    <Field label="Texte" value={post.body||""} onChange={v=>{const p=[...effectiveFeed];p[i]={...p[i],body:v};updFeed(p);}} textarea/>
+                  </div>
+                ))}
+                <button onClick={()=>updFeed([{id:Date.now(),username:"",avatarBg:"#8e7cc3",body:"",notes:0,date:"1 oct",type:"text"},...effectiveFeed])}
+                  style={{background:"rgba(53,70,92,0.08)",border:"1px dashed rgba(53,70,92,0.4)",color:TB_COLOR,borderRadius:8,padding:"10px 18px",cursor:"pointer",fontSize:12,fontWeight:600}}>+ Post du fil</button>
+              </div>
+            );
+          })()}
+        </div>
       );
     }
 
@@ -20423,57 +20494,96 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
     }
 
     case "facebook": {
-      // Anciens posts partagés identifiés par "name" (nom affiché) plutôt que par "author" (clé
-      // perso) — on les fait correspondre une fois ici, pour que tout passe par le même mécanisme
-      // que Twitter/Tumblr. Dès qu'un post est ré-enregistré, il prend author=tab durablement.
+      const FB_COLOR = "#3B5998";
       const nameToKey = Object.fromEntries(Object.entries(CHAR_NAMES).map(([k,v])=>[v,k]));
       const sharedFeed = (data.sharedThreads?._sharedFacebookPosts || [])
         .map(p => p.author ? p : {...p, author: nameToKey[p.name] || p.author});
       const updFeed = (list) => onUpdate("_sharedFacebookPosts", list);
-
       const pages = d.facebookPages?.[tab] || [];
       const updPages = (list) => upd("facebookPages", {...(d.facebookPages||{}), [tab]: list});
-      const addPage = () => updPages([...pages, {name:"", time:"à l'instant", text:"", likes:0, comments:0}]);
 
+      const SubTabs = [["users","👤 Mon profil"],["shared","📰 Mes posts (partagés)"],["pages","📄 Pages suivies"]];
       return (
         <div style={{display:"flex",flexDirection:"column",gap:12}}>
-          <SharedPostsEditor
-            posts={sharedFeed} onChange={updFeed} tab={tab} accent="#3B5998"
-            fieldMap={{text:"text", img:"img", time:"time"}}
-            statFields={[{key:"likes",label:"👍 Likes"},{key:"comments",label:"💬 Commentaires"}]}
-            addExtra={{name:d.name}} addLabel="+ Post d'ami (partagé)" textLabel="Texte du post"
-            hint="Fil d'amis partagé — visible depuis les 4 téléphones. Tu ne peux modifier que tes propres posts."
-          />
+          {/* Tab bar */}
+          <div className="adm-subtabs" style={{display:"flex",gap:0,background:"rgba(0,0,0,0.05)",borderRadius:8,padding:2,alignSelf:"flex-start"}}>
+            {SubTabs.map(([k,label])=>(
+              <button key={k} onClick={()=>setFbTab(k)} style={{
+                padding:"6px 14px",border:"none",borderRadius:6,cursor:"pointer",fontSize:11,
+                fontWeight:fbTab===k?700:400,
+                background:fbTab===k?"#fff":"transparent",
+                color:fbTab===k?FB_COLOR:"#6b7280",
+                boxShadow:fbTab===k?"0 1px 3px rgba(0,0,0,0.1)":"none",
+                transition:"all 0.15s",whiteSpace:"nowrap",
+              }}>{label}</button>
+            ))}
+          </div>
 
-          <div style={{color:"#888",fontSize:10,letterSpacing:1,textTransform:"uppercase",margin:"16px 0 8px"}}>Pages suivies par {CHAR_NAMES[tab]||tab} (propre à ce personnage)</div>
-          {pages.map((p,i)=>{
-            const updPage = (patch) => updPages(pages.map((p2,j)=>j===i?{...p2,...patch}:p2));
-            return (
-              <div key={i} className="adm-card" style={{background:"rgba(255,255,255,0.85)",borderRadius:10,padding:"10px 12px",border:"1px solid rgba(0,0,0,0.07)",display:"flex",flexDirection:"column",gap:6}}>
-                <div style={{display:"flex",gap:6}}>
-                  <Field label="Page" value={p.name||""} onChange={v=>updPage({name:v})} style={{flex:1}} placeholder="ex: Stephen King, Team Edward Official…"/>
-                  <Field label="Quand" value={p.time||""} onChange={v=>updPage({time:v})} style={{width:120}}/>
-                  <div style={{display:"flex",gap:6,alignItems:"flex-start"}}>
-                    <MoveButtons
-                      index={i}
-                      length={pages.length}
-                      onMoveUp={() => { const l=[...pages]; [l[i-1],l[i]]=[l[i],l[i-1]]; updPages(l); }}
-                      onMoveDown={() => { const l=[...pages]; [l[i+1],l[i]]=[l[i],l[i+1]]; updPages(l); }}
-                    />
-                    <button onClick={()=>updPages(pages.filter((_,j)=>j!==i))} className="adm-del-btn" style={{background:"rgba(239,68,68,0.07)",border:"1px solid rgba(239,68,68,0.2)",color:"#ef4444",borderRadius:6,padding:"5px 8px",cursor:"pointer",fontSize:11,marginTop:18}}>✕</button>
-                  </div>
-                </div>
-                <Field label="Texte du post" value={p.text||""} onChange={v=>updPage({text:v})} textarea/>
-                <div style={{display:"flex",gap:6}}>
-                  <Field label="👍 Likes" value={String(p.likes??0)} onChange={v=>updPage({likes:parseInt(v)||0})} style={{flex:1}}/>
-                  <Field label="💬 Commentaires" value={String(p.comments??0)} onChange={v=>updPage({comments:parseInt(v)||0})} style={{flex:1}}/>
+          {/* ── MON PROFIL ── */}
+          {fbTab==="users" && (
+            <div className="adm-card" style={{background:"rgba(255,255,255,0.85)",borderRadius:10,padding:"14px 16px",border:"1px solid rgba(0,0,0,0.07)",display:"flex",flexDirection:"column",gap:10}}>
+              <div style={{fontSize:10,fontWeight:700,color:"#9ca3af",letterSpacing:0.5,marginBottom:2}}>★ CE PERSO — synchronisé pour les 4</div>
+              {/* Photo de profil */}
+              <div style={{display:"flex",gap:12,alignItems:"center"}}>
+                <label style={{width:56,height:56,borderRadius:8,overflow:"hidden",background:FB_COLOR,display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontWeight:700,fontSize:20,cursor:"pointer",border:"1px solid rgba(0,0,0,0.1)"}}>
+                  {d.avatar?<img src={d.avatar} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:(CHAR_NAMES[tab]||tab)[0]}
+                  <input type="file" accept="image/*" style={{display:"none"}} onChange={e=>{const f=e.target.files?.[0];if(!f)return;const r=new UploadReader();r.onload=ev=>{upd("avatar",ev.target.result);onUpdate("_sharedAvatars",{...(data.sharedThreads?._sharedAvatars||{}),[tab]:ev.target.result});};r.readAsDataURL(f);e.target.value="";}}/>
+                </label>
+                <div style={{flex:1}}>
+                  <div style={{fontSize:12,fontWeight:600,color:"#374151"}}>Photo de profil Facebook</div>
+                  <div style={{fontSize:10,color:"#9ca3af"}}>Visible sur les posts et dans le fil des autres</div>
+                  {d.avatar && <button onClick={()=>{upd("avatar",null);onUpdate("_sharedAvatars",{...(data.sharedThreads?._sharedAvatars||{}),[tab]:null});}} style={{fontSize:10,color:"#ef4444",background:"none",border:"none",cursor:"pointer",padding:0,marginTop:2}}>Supprimer</button>}
                 </div>
               </div>
-            );
-          })}
+              {/* Nom affiché */}
+              <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+                <Field label="Nom affiché sur Facebook" value={d.name||CHAR_NAMES[tab]||""} onChange={v=>upd("name",v)} style={{flex:1}}/>
+                <Field label="Amis" value={String(d.facebookFriends||"")} onChange={v=>upd("facebookFriends",parseInt(v)||0)} width="80px"/>
+              </div>
+            </div>
+          )}
 
-          <button onClick={addPage}
-            style={{background:"rgba(124,159,201,0.1)",border:"1px dashed rgba(124,159,201,0.5)",color:"#5a7fa3",borderRadius:8,padding:"10px 18px",cursor:"pointer",fontSize:12,fontWeight:600}}>+ Page suivie</button>
+          {/* ── MES POSTS PARTAGÉS ── */}
+          {fbTab==="shared" && (
+            <SharedPostsEditor
+              posts={sharedFeed} onChange={updFeed} tab={tab} accent={FB_COLOR}
+              fieldMap={{text:"text", img:"img", time:"time"}}
+              statFields={[{key:"likes",label:"👍 Likes"},{key:"comments",label:"💬 Commentaires"}]}
+              addExtra={{name:d.name||CHAR_NAMES[tab]||""}} addLabel="+ Post Facebook" textLabel="Texte du post"
+              hint="Visible depuis les 4 téléphones dans le fil d'amis. Tu ne peux modifier que tes propres posts."
+            />
+          )}
+
+          {/* ── PAGES SUIVIES ── */}
+          {fbTab==="pages" && (
+            <div style={{display:"flex",flexDirection:"column",gap:8}}>
+              <div style={{fontSize:11,color:"#6b7280",lineHeight:1.5}}>Posts de pages suivies par <strong>{CHAR_NAMES[tab]||tab}</strong> uniquement — non partagés entre persos.</div>
+              {pages.map((p,i)=>{
+                const updPage = (patch) => updPages(pages.map((p2,j)=>j===i?{...p2,...patch}:p2));
+                return (
+                  <div key={i} className="adm-card" style={{background:"rgba(255,255,255,0.85)",borderRadius:10,padding:"10px 12px",border:"1px solid rgba(0,0,0,0.07)",display:"flex",flexDirection:"column",gap:6}}>
+                    <div style={{display:"flex",gap:6,flexWrap:"wrap",alignItems:"flex-end"}}>
+                      <Field label="Page" value={p.name||""} onChange={v=>updPage({name:v})} style={{flex:1}} placeholder="ex: Stephen King…"/>
+                      <Field label="Quand" value={p.time||""} onChange={v=>updPage({time:v})} width="130px"/>
+                      <div style={{display:"flex",gap:4,alignItems:"flex-start"}}>
+                        <MoveButtons index={i} length={pages.length}
+                          onMoveUp={()=>{const l=[...pages];[l[i-1],l[i]]=[l[i],l[i-1]];updPages(l);}}
+                          onMoveDown={()=>{const l=[...pages];[l[i+1],l[i]]=[l[i],l[i+1]];updPages(l);}}/>
+                        <button onClick={()=>updPages(pages.filter((_,j)=>j!==i))} className="adm-del-btn" style={{background:"rgba(239,68,68,0.07)",border:"1px solid rgba(239,68,68,0.2)",color:"#ef4444",borderRadius:6,padding:"5px 8px",cursor:"pointer",fontSize:11,marginTop:18}}>✕</button>
+                      </div>
+                    </div>
+                    <Field label="Texte du post" value={p.text||""} onChange={v=>updPage({text:v})} textarea/>
+                    <div style={{display:"flex",gap:6}}>
+                      <Field label="👍 Likes" value={String(p.likes??0)} onChange={v=>updPage({likes:parseInt(v)||0})} style={{flex:1}}/>
+                      <Field label="💬 Comm." value={String(p.comments??0)} onChange={v=>updPage({comments:parseInt(v)||0})} style={{flex:1}}/>
+                    </div>
+                  </div>
+                );
+              })}
+              <button onClick={()=>updPages([...pages,{name:"",time:"à l'instant",text:"",likes:0,comments:0}])}
+                style={{background:"rgba(59,89,152,0.08)",border:"1px dashed rgba(59,89,152,0.4)",color:FB_COLOR,borderRadius:8,padding:"10px 18px",cursor:"pointer",fontSize:12,fontWeight:600}}>+ Page suivie</button>
+            </div>
+          )}
         </div>
       );
     }
