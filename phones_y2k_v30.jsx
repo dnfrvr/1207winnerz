@@ -17725,7 +17725,120 @@ const withNotifs = (d) => {
 
 const loadData = () => {
   // Données fraîches à chaque chargement (pas de stockage persistant en artifact).
-  return withNotifs(withGroupThread(forcePlaylists(mkData())));
+  const d = withNotifs(withGroupThread(forcePlaylists(mkData())));
+  return withSocialSeeds(d);
+};
+
+// ─── SOCIAL SEEDS ────────────────────────────────────────────────────────────
+// Injectés dans loadData() si les clés partagées sont absentes ou vides.
+// Tweets partagés des 4 persos — visibles dans toutes les TL et sur les profils.
+const SEED_SHARED_TWEETS = [
+  // Glinda
+  {id:"tw_g1",author:"glinda",text:"bibliothèque UMA = mon nouveau chez moi ☕📚 #UMA #Économie",time:"6 oct, 2:00am",rp:3,rt:7,fav:24},
+  {id:"tw_g2",author:"glinda",text:"quelqu'un a des notes du cours de macro de hier ? j'étais… indisponible 😬",time:"6 oct, 1:00am",rp:8,rt:2,fav:31},
+  {id:"tw_g3",author:"glinda",text:"Gee par SNSD en boucle depuis 3h. pas de regrets. #SNSD #GirlsGeneration",time:"5 oct, 3:00am",rp:5,rt:12,fav:47},
+  {id:"tw_g4",author:"glinda",text:"pourquoi les gens jouent aux échecs en silence ???? c'est un SPORT 🎲",time:"4 oct, 5:00am",rp:14,rt:28,fav:102},
+  {id:"tw_g5",author:"glinda",text:"déjà un mois à UMA et la bibli me connaît par mon prénom ☕📚 #UMA",time:"3 oct, 1:00am",rp:6,rt:9,fav:58},
+  // Eoghan
+  {id:"tw_e1",author:"eoghan",text:"nouveau son en ligne soundcloud.com/eoghan_m #Rush #indierock",time:"6 oct, 12:15am",rp:2,rt:4,fav:18},
+  {id:"tw_e2",author:"eoghan",text:"les égouts de derry sont plus grands que vous ne le pensez. je dis ça je dis rien.",time:"5 oct, 2:00am",rp:7,rt:15,fav:43},
+  {id:"tw_e3",author:"eoghan",text:"asra et ilya encore fourrés ensemble. cool. tout va bien. je gère.",time:"4 oct, 4:00am",rp:1,rt:0,fav:9},
+  {id:"tw_e4",author:"eoghan",text:"\"This is the end, beautiful friend\" - The Doors. citation du jour.",time:"3 oct, 6:00am",rp:3,rt:8,fav:29},
+  {id:"tw_e5",author:"eoghan",text:"UMA est une école comme les autres. les secrets en plus. #UMA",time:"2 oct, 1:00am",rp:11,rt:22,fav:67},
+  // Drew
+  {id:"tw_d1",author:"drew",text:"TP bio terminé. les vers de terre n'ont aucun secret pour moi 🪱 #Sciences #UMA",time:"6 oct, 12:30am",rp:4,rt:6,fav:22},
+  {id:"tw_d2",author:"drew",text:"1812 elo. je suis un humble joueur d'échecs. c'est tout. ♟️",time:"5 oct, 2:00am",rp:2,rt:3,fav:17},
+  {id:"tw_d3",author:"drew",text:"quelqu'un peut m'expliquer pourquoi je me souviens pas du mois de juillet ?",time:"4 oct, 3:00am",rp:9,rt:14,fav:38},
+  {id:"tw_d4",author:"drew",text:"Weird Fishes by Radiohead hits different à 2h du mat. #Radiohead",time:"3 oct, 5:00am",rp:5,rt:11,fav:44},
+  {id:"tw_d5",author:"drew",text:"maine → maine's university at augusta. upgrade en cours 🌿",time:"2 oct, 1:00am",rp:7,rt:19,fav:81},
+  // Elias
+  {id:"tw_l1",author:"elias",text:"je sais des choses sur ce qui se passe à Augusta. personne ne me croit. c'est ok.",time:"6 oct, 12:23am",rp:6,rt:12,fav:34},
+  {id:"tw_l2",author:"elias",text:"il y a des disparitions non résolues à Derry depuis 27 ans. cherchez.",time:"5 oct, 1:00am",rp:18,rt:41,fav:127},
+  {id:"tw_l3",author:"elias",text:"Can You Feel My Heart — BMTH. c'est tout ce que j'ai à dire.",time:"4 oct, 3:00am",rp:3,rt:5,fav:21},
+  {id:"tw_l4",author:"elias",text:"\"The truth is out there\" mais personne cherche vraiment #conspi #Derry",time:"3 oct, 5:00am",rp:9,rt:23,fav:76},
+  {id:"tw_l5",author:"elias",text:"nouveau chapitre de Five Nights posté. oui c'est de la fanfic. non j'ai pas honte.",time:"2 oct, 1:00am",rp:2,rt:4,fav:16},
+];
+
+// Tweets décoratifs (comptes fictifs) propres à chaque TL — restent dans homeBaseTweets.
+const SEED_HOME_BASE_TWEETS = {
+  glinda: TWITTER_HOME_BASE.glinda.filter(t=>!["@eoghan_m","@dreww_orms","@noteliasgreen","@glindarvf"].includes(t.h)),
+  eoghan: TWITTER_HOME_BASE.eoghan.filter(t=>!["@eoghan_m","@dreww_orms","@noteliasgreen","@glindarvf"].includes(t.h)),
+  drew:   TWITTER_HOME_BASE.drew.filter(t=>!["@eoghan_m","@dreww_orms","@noteliasgreen","@glindarvf"].includes(t.h)),
+  elias:  TWITTER_HOME_BASE.elias.filter(t=>!["@eoghan_m","@dreww_orms","@noteliasgreen","@glindarvf"].includes(t.h)),
+};
+
+// Posts Tumblr partagés des 4 persos.
+const TUMBLR_PERSO_USERNAMES = new Set(["glindarvf","eoghan_masuda","dreww-orms","dreww_orms","noteliasgreen"]);
+const SEED_SHARED_TUMBLR_POSTS = (() => {
+  const AUTHOR_MAP = {glindarvf:"glinda",eoghan_masuda:"eoghan","dreww-orms":"drew",dreww_orms:"drew",noteliasgreen:"elias"};
+  const seen = new Set();
+  const posts = [];
+  Object.entries(TUMBLR_FEED_POSTS_DEFAULT).forEach(([feed, list])=>{
+    list.forEach((p,i)=>{
+      if(!TUMBLR_PERSO_USERNAMES.has(p.username)) return;
+      const key = p.username+"::"+p.body.slice(0,40);
+      if(seen.has(key)) return;
+      seen.add(key);
+      posts.push({...p, id:`tb_${p.username}_${i}`, author:AUTHOR_MAP[p.username]});
+    });
+  });
+  return posts;
+})();
+
+// Posts Tumblr décoratifs (comptes fictifs) propres à chaque perso.
+const SEED_FEED_TUMBLR = {
+  glindatheverygood: TUMBLR_FEED_POSTS_DEFAULT.glindatheverygood.filter(p=>!TUMBLR_PERSO_USERNAMES.has(p.username)),
+  eoghan_masuda:     TUMBLR_FEED_POSTS_DEFAULT.eoghan_masuda.filter(p=>!TUMBLR_PERSO_USERNAMES.has(p.username)),
+  dreww_orms:        TUMBLR_FEED_POSTS_DEFAULT.dreww_orms.filter(p=>!TUMBLR_PERSO_USERNAMES.has(p.username)),
+  noteliasgreen:     TUMBLR_FEED_POSTS_DEFAULT.noteliasgreen.filter(p=>!TUMBLR_PERSO_USERNAMES.has(p.username)),
+};
+
+// Facebook — séparation posts persos (partagés) vs décoratifs (propres au perso).
+const FB_PERSO_NAMES = new Set(["Glinda Ravingfool","Eoghan Masuda","Drew Buckley","Elias Green"]);
+const FB_NAME_TO_AUTHOR = {"Glinda Ravingfool":"glinda","Eoghan Masuda":"eoghan","Drew Buckley":"drew","Elias Green":"elias"};
+// Les posts Facebook partagés viennent du mkData (déjà dans _sharedFacebookPosts) — on leur ajoute juste author.
+// Les posts de Cynthia, Ilya etc. sont filtrés dans le rendu via pagePosts (propres au perso).
+
+// Injecte les seeds dans data si les clés partagées sont absentes.
+const withSocialSeeds = (d) => {
+  const st = d.sharedThreads || {};
+  const patched = {...d, sharedThreads: {...st}};
+
+  // _sharedTweets : injecter si vide
+  if(!st._sharedTweets || st._sharedTweets.length === 0) {
+    patched.sharedThreads._sharedTweets = SEED_SHARED_TWEETS;
+  }
+
+  // _sharedTumblrPosts : injecter si vide
+  if(!st._sharedTumblrPosts || st._sharedTumblrPosts.length === 0) {
+    patched.sharedThreads._sharedTumblrPosts = SEED_SHARED_TUMBLR_POSTS;
+  }
+
+  // _sharedFacebookPosts : ajouter author si manquant
+  if(st._sharedFacebookPosts) {
+    patched.sharedThreads._sharedFacebookPosts = st._sharedFacebookPosts.map(p=>
+      p.author ? p : {...p, author: FB_NAME_TO_AUTHOR[p.name] || null}
+    );
+  }
+
+  // homeBaseTweets par perso : injecter les décoratifs si vide
+  ["glinda","eoghan","drew","elias"].forEach(k=>{
+    if(patched[k] && !patched[k].homeBaseTweets?.length) {
+      patched[k] = {...patched[k], homeBaseTweets: SEED_HOME_BASE_TWEETS[k] || []};
+    }
+  });
+
+  // feedPosts Tumblr par perso : injecter les décoratifs si vide
+  const USERNAME_MAP = {glinda:"glindatheverygood",eoghan:"eoghan_masuda",drew:"dreww_orms",elias:"noteliasgreen"};
+  ["glinda","eoghan","drew","elias"].forEach(k=>{
+    const username = USERNAME_MAP[k];
+    const existingFeedPosts = patched[k]?.tumblr?.feedPosts;
+    if(patched[k] && (!existingFeedPosts || existingFeedPosts.length === 0)) {
+      patched[k] = {...patched[k], tumblr:{...(patched[k].tumblr||{}), feedPosts: SEED_FEED_TUMBLR[username]||[]}};
+    }
+  });
+
+  return patched;
 };
 
 const NOTIF_SEED = {
