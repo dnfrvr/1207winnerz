@@ -228,6 +228,26 @@ const loreSortKey = (timeStr) => {
   return (p.month||0)*1e6 + (p.day||0)*1e4 + (p.hour||0)*100 + (p.min||0);
 };
 
+// Tri/regroupement de la galerie photo — partagé entre iOS et Android pour que la grille et la vue
+// "photo en grand" utilisent TOUJOURS le même ordre (sinon l'index cliqué ne correspond plus à la
+// bonne photo). Tant qu'aucune photo n'a de dateISO, on garde l'ordre d'origine (manuel) tel quel.
+const sortGalleryPhotos = (list) => {
+  if(!list.some(p=>p.dateISO)) return list;
+  return [...list].sort((a,b)=>(b.dateISO||"0000-00-00").localeCompare(a.dateISO||"0000-00-00"));
+};
+const groupGalleryByYear = (sortedList) => {
+  const groups = [];
+  sortedList.forEach(photo=>{
+    const year = photo.dateISO ? photo.dateISO.slice(0,4) : "Sans date";
+    if(!groups.length || groups[groups.length-1].year!==year) groups.push({year, photos:[]});
+    groups[groups.length-1].photos.push(photo);
+  });
+  return groups;
+};
+
+// Tri des appels du plus récent au plus ancien — partagé entre iOS et Android.
+const sortCallsByDate = (calls) => [...calls].sort((a,b)=>loreSortKey(b.time)-loreSortKey(a.time));
+
 // Séparateurs de date dans les fils de discussion.
 const FULL_MONTHS_EN = {1:"January",2:"February",3:"March",4:"April",5:"May",6:"June",7:"July",8:"August",9:"September",10:"October",11:"November",12:"December"};
 const loreDayKey = (timeStr) => { const p = parseLoreTime(timeStr); return p ? p.month*100+p.day : null; };
@@ -249,14 +269,22 @@ const loreRelativeLabel = (timeStr, loreDateStr) => {
       const h12 = hour % 12 === 0 ? 12 : hour % 12;
       return `${h12}:${String(min).padStart(2,'0')}${period}`;
     }
-    return "Aujourd'hui";
+    return "Today";
   }
   const loreMs = new Date(2012, lm-1, ld).getTime();
   const itemMs = new Date(2012, month-1, day).getTime();
   const diffDays = Math.round((loreMs - itemMs) / 86400000);
-  if(diffDays > 0) return `${diffDays}j`;
-  if(diffDays < 0) return `dans ${-diffDays}j`;
+  if(diffDays > 0) return `${diffDays}d`;
+  if(diffDays < 0) return `in ${-diffDays}d`;
   return timeStr;
+};
+
+// Normalise l'affichage d'une date brute (ex: ancien stockage "6 oct" en français) en "6 Oct"
+// anglais, sans toucher à la donnée stockée — juste l'affichage, pour un format uniforme partout.
+const loreDateOnly = (dateStr) => {
+  const p = parseLoreTime(dateStr);
+  if(!p || !p.day) return dateStr;
+  return `${p.day} ${LORE_MONTHS[p.month]}`;
 };
 
 const LoreDateCtx = React.createContext(LORE_DATE_DEFAULT);
@@ -631,154 +659,10 @@ const WifiIcon = () => (
   </svg>
 );
 
-// ─── HELPERS ──────────────────────────────────────────────────────────────────
-const AdminBadge = ({label,onClick,color="#ffc107",style={}}) => (
-  <button onClick={onClick} style={{background:`${color}22`,border:`1px dashed ${color}`,color,borderRadius:3,fontSize:9,padding:"1px 5px",cursor:"pointer",...style}}>{label}</button>
-);
-const useFileUpload = onResult => {
-  const ref = useRef();
-  const trigger = () => ref.current?.click();
-  const el = <input ref={ref} type="file" accept="image/*" style={{display:"none"}} onChange={e=>{
-    const f=e.target.files?.[0]; if(!f) return;
-    const r=new UploadReader(); r.onload=ev=>onResult(ev.target.result); r.readAsDataURL(f); e.target.value="";
-  }}/>;
-  return [trigger,el];
-};
-
-// ─── ADD MODAL (admin) ────────────────────────────────────────────────────────
-// Generic modal for adding any item. Fields = [{key, label, type: 'text'|'textarea'|'select'|'image', options}]
-// onAdd receives the new item; parent is responsible for inserting+sorting
-const AddModal = ({title, fields, onAdd, onClose, accent="#e91e8c"}) => {
-  const init = Object.fromEntries(fields.map(f=>[f.key, f.default||""]));
-  const [vals, setVals] = useState(init);
-  const [imgSrc, setImgSrc] = useState({});
-  const set = (k,v) => setVals(p=>({...p,[k]:v}));
-
-  return (
-    <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.75)",zIndex:9000,display:"flex",alignItems:"center",justifyContent:"center",padding:16}} onClick={onClose}>
-      <div style={{background:"#1a1a1a",border:`1px solid ${accent}55`,borderRadius:10,padding:18,width:"100%",maxWidth:320,display:"flex",flexDirection:"column",gap:10}} onClick={e=>e.stopPropagation()}>
-        <div style={{color:"#ffc107",fontWeight:700,fontSize:13,marginBottom:2}}>➕ {title}</div>
-        {fields.map(f=>(
-          <div key={f.key} style={{display:"flex",flexDirection:"column",gap:3}}>
-            <label style={{color:"#888",fontSize:10,letterSpacing:0.5,textTransform:"uppercase"}}>{f.label}</label>
-            {f.type==="textarea"
-              ?<textarea value={vals[f.key]} onChange={e=>set(f.key,e.target.value)} rows={3} style={{background:"#2a2a2a",border:"1px solid #444",color:"#fff",padding:"5px 8px",fontSize:12,resize:"vertical",borderRadius:4}}/>
-              :f.type==="select"
-              ?<select value={vals[f.key]} onChange={e=>set(f.key,e.target.value)} style={{background:"#2a2a2a",border:"1px solid #444",color:"#fff",padding:"5px 8px",fontSize:12,borderRadius:4}}>
-                {f.options.map((o,oi)=><option key={o} value={o}>{f.optionLabels?.[oi]||o}</option>)}
-              </select>
-              :f.type==="image"
-              ?<label style={{background:"#ffc10722",border:"1px dashed #ffc107",color:"#ffc107",borderRadius:0,padding:"8px",cursor:"pointer",textAlign:"center",fontSize:11}}>
-                {imgSrc[f.key]?<img src={imgSrc[f.key]} style={{width:"100%",maxHeight:80,objectFit:"contain"}}/>:"📂 Choisir une image"}
-                <input type="file" accept="image/*" style={{display:"none"}} onChange={e=>{const file=e.target.files?.[0];if(!file)return;const r=new UploadReader();r.onload=ev=>{setImgSrc(p=>({...p,[f.key]:ev.target.result}));set(f.key,ev.target.result);};r.readAsDataURL(file);}}/>
-              </label>
-              :<input value={vals[f.key]} onChange={e=>set(f.key,e.target.value)} placeholder={f.placeholder||""} style={{background:"#2a2a2a",border:"1px solid #444",color:"#fff",padding:"5px 8px",fontSize:12,borderRadius:4}}/>
-            }
-          </div>
-        ))}
-        <div style={{display:"flex",gap:8,marginTop:4}}>
-          <button onClick={onClose} style={{flex:1,padding:"8px 0",background:"#2a2a2a",border:"1px solid #444",color:"#888",borderRadius:6,cursor:"pointer",fontSize:12}}>Cancel</button>
-          <button onClick={()=>{onAdd({...vals,...imgSrc,id:Date.now()});onClose();}} style={{flex:2,padding:"8px 0",background:accent,border:"none",color:"#fff",borderRadius:6,cursor:"pointer",fontSize:12,fontWeight:600}}>Ajouter</button>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-// Date-aware sort: insert item into sorted array (newest first)
-// Items have a .date string — we use insertion order heuristic based on string comparison
-// For simplicity: prepend (newest) or use provided index hint
-const insertSorted = (arr, item) => {
-  // Always insert at top (most recent) unless item has a clearly old date marker
-  const old = /\b(jul|aoû|jan|fév|mar|avr|mai|jun)\b/i.test(item.date||"") ||
-              /\b(sep|1[3-9] jul|[0-9]+ jul)\b/i.test(item.date||"");
-  if(old) return [...arr, item];
-  return [item, ...arr];
-};
-
-// ─── ADMIN ADD HELPERS ────────────────────────────────────────────────────────
-// Each screen gets a small inline add button that opens AddModal
-
-const NoteAddModal = ({update, data, accent, notes, setNoteOpen}) => {
-  const [open, setOpen] = useState(false);
-  return <>
-    {open&&<AddModal title="New note" accent={accent} onClose={()=>setOpen(false)}
-      fields={[
-        {key:"title", label:"Titre",   type:"text",     placeholder:"Titre (optionnel)"},
-        {key:"body",  label:"Contenu", type:"textarea"},
-        {key:"date",  label:"Date",    type:"text", placeholder:"ex: Today / 8 oct", default:"1 oct"},
-      ]}
-      onAdd={item=>{
-        const newNote = {id:item.id, title:item.title, body:item.body, date:item.date};
-        const newNotes = insertSorted(notes, newNote);
-        update("notes", newNotes);
-        setNoteOpen(0);
-      }}
-    />}
-    <div onClick={()=>setOpen(true)} style={{padding:12,textAlign:"center",color:"#ffc107",cursor:"pointer",borderTop:"1px dashed #ffc107",fontSize:12}}>+ New note</div>
-  </>;
-};
-
-const MsgReplyModal = ({update, data, updateMsg, threadIdx, conv, charKey}) => {
-  const [open, setOpen] = useState(false);
-  const isGroup = conv?.isGroup;
-  const groupSenderKeys = isGroup ? ["me",...(conv.sharedThreadId
-    ? Object.entries(CHAR_NAMES).filter(([k])=>k!==charKey).map(([k])=>k)
-    : [...new Set((conv.thread||[]).filter(m=>m.from!=="me").map(m=>m.senderKey).filter(Boolean))]
-  )] : ["me","them"];
-  const groupSenderLabels = isGroup ? groupSenderKeys.map(k=>k==="me"?"Moi":(CHAR_NAMES[k]||k)) : ["Moi","Eux"];
-  return <>
-    {open&&<AddModal title="Add a message" accent="#4cd964" onClose={()=>setOpen(false)}
-      fields={[
-        {key:"from",label:"De", type:"select", options:groupSenderKeys, optionLabels:groupSenderLabels, default:"me"},
-        {key:"text",label:"Texte",type:"text", placeholder:"Message... (optionnel si image)"},
-        {key:"img",label:"Image",type:"image"},
-        {key:"date",label:"Date", type:"text", placeholder:"ex: 1 oct, 14 janv (vide = aujourd'hui)"},
-        {key:"time",label:"Heure",type:"text", placeholder:"ex: 15h30"},
-      ]}
-      onAdd={item=>{
-        const d=(item.date||"").trim(), t=(item.time||"").trim();
-        const timeStr = d ? (t ? `${d}, ${t}` : d) : (t || "maintenant");
-        const from=item.from;
-        const extra=(isGroup&&from!=="me")?{from:"them",senderKey:from,senderName:CHAR_NAMES[from]||from}:{from};
-        const msgs = data.messages.map((mm,ii)=>ii!==threadIdx?mm:{...mm,thread:[...mm.thread,{...extra, text:item.text, img:item.img||null, time:timeStr}]});
-        updateMsg(msgs);
-      }}
-    />}
-    <div onClick={()=>setOpen(true)} style={{padding:8,textAlign:"center",color:"#ffc107",cursor:"pointer",borderTop:"1px dashed #ffc107",fontSize:11,marginTop:4}}>+ Ajouter un message</div>
-  </>;
-};
-
-const BrowserAddModal = ({update, data, accent, tab}) => {
-  const [open, setOpen] = useState(false);
-  const isBk = tab==="bookmarks";
-  return <>
-    {open&&<AddModal title={isBk?"New bookmark":"New history"} accent={accent} onClose={()=>setOpen(false)}
-      fields={[
-        {key:"title", label:"Titre", type:"text", placeholder:"Titre de la page"},
-        {key:"url",   label:"URL",   type:"text", placeholder:"exemple.com"},
-        ...(!isBk?[{key:"time", label:"Date", type:"text", placeholder:"ex: Today, 14h30", default:"1 oct"}]:[]),
-      ]}
-      onAdd={item=>{
-        if(isBk){
-          const bk = [{id:item.id, title:item.title, url:item.url}, ...(data.browser?.bookmarks||[])];
-          update("browser", {...data.browser, bookmarks:bk});
-        } else {
-          const hist = [{id:item.id, title:item.title, url:item.url, time:item.time}, ...(data.browser?.history||[])];
-          update("browser", {...data.browser, history:hist});
-        }
-      }}
-    />}
-    <div onClick={()=>setOpen(true)} style={{padding:12,textAlign:"center",color:"#ffc107",cursor:"pointer",borderTop:"1px dashed #ffc107",fontSize:12}}>+ {isBk?"Ajouter un favori":"Ajouter une entrée"}</div>
-  </>;
-};
 
 // ─── SHARED APP SCREENS ───────────────────────────────────────────────────────
 const MusicScreen = ({data,admin,update,accent,isIos=false,goHome=()=>{}}) => {
   const [playing,  setPlaying]  = useState(null);
-  const [query,    setQuery]    = useState("");
-  const [fetching, setFetching] = useState(false);
-  const [results,  setResults]  = useState([]);
   const [dragIdx,  setDragIdx]  = useState(null);
   const [overIdx,  setOverIdx]  = useState(null);
   const [musicTab, setMusicTab] = useState("songs");
@@ -789,30 +673,6 @@ const MusicScreen = ({data,admin,update,accent,isIos=false,goHome=()=>{}}) => {
   const music       = data.music       || [];
   const coverImg    = data.musicCover  || null;   // pochette album (grande)
   const playlistImg = data.playlistCover || null; // image playlist
-
-  // ── iTunes Search API ─────────────────────────────────────────────────────
-  const fetchTrack = async () => {
-    if(!query.trim()) return;
-    setFetching(true); setResults([]);
-    try {
-      const url = `https://itunes.apple.com/search?term=${encodeURIComponent(query)}&entity=song&limit=5&country=US`;
-      const r = await fetch(url);
-      const d = await r.json();
-      setResults(d.results.map(t => ({
-        id:       t.trackId,
-        title:    t.trackName,
-        artist:   t.artistName,
-        duration: `${Math.floor(t.trackTimeMillis/60000)}:${String(Math.floor((t.trackTimeMillis%60000)/1000)).padStart(2,"0")}`,
-        cover:    t.artworkUrl100,
-      })));
-    } catch { setResults([]); }
-    setFetching(false);
-  };
-
-  const addTrack = (t) => {
-    update("music", [...music, {id:t.id||Date.now(), title:t.title, artist:t.artist, duration:t.duration, cover:t.cover||null}]);
-    setResults([]); setQuery("");
-  };
 
   // ── Drag to reorder ───────────────────────────────────────────────────────
   const onDragStart = (i) => setDragIdx(i);
@@ -897,28 +757,6 @@ const MusicScreen = ({data,admin,update,accent,isIos=false,goHome=()=>{}}) => {
                   ))}
                 </React.Fragment>
               ))}
-              {admin&&<div style={{padding:'10px 14px',borderTop:'1px dashed #ffc10744',background:'#fafafa'}}>
-                <div style={{color:'#888',fontSize:11,fontWeight:600,marginBottom:6}}>🎵 Ajouter un morceau</div>
-                <div style={{display:'flex',gap:6,marginBottom:6}}>
-                  <input value={query} onChange={e=>setQuery(e.target.value)} onKeyDown={e=>e.key==='Enter'&&fetchTrack()} placeholder="Titre ou artiste…" style={{flex:1,border:'1px solid #c8c7cc',padding:'5px 8px',fontSize:11,borderRadius:4}}/>
-                  <button onClick={fetchTrack} disabled={fetching} style={{background:'#007aff',border:'none',color:'#fff',padding:'5px 10px',fontSize:11,borderRadius:4,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'}}>
-                  {fetching
-                    ? '…'
-                    : <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><circle cx="7" cy="7" r="5" stroke="currentColor" strokeWidth="1.8"/><path d="M13 13l-2.5-2.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/></svg>
-                  }</button>
-                </div>
-                {results.map(t=>(
-                  <div key={t.id} style={{display:'flex',gap:8,alignItems:'center',padding:'5px 0',borderBottom:'0.5px solid #e5e5ea'}}>
-                    {t.cover&&<img src={t.cover} style={{width:28,height:28,objectFit:'cover',flexShrink:0}}/>}
-                    <div style={{flex:1,minWidth:0}}>
-                      <div style={{fontSize:11,color:'#1a1a1a',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{t.title}</div>
-                      <div style={{fontSize:10,color:'#8e8e93'}}>{t.artist}·{t.duration}</div>
-                    </div>
-                    <button onClick={()=>addTrack(t)} style={{background:'#007aff',border:'none',color:'#fff',padding:'3px 8px',fontSize:10,borderRadius:4,cursor:'pointer'}}>+</button>
-                  </div>
-                ))}
-                <div onClick={()=>update('music',[...music,{id:Date.now(),title:'Nouveau titre',artist:'Artiste',duration:'0:00'}])} style={{marginTop:8,color:'#007aff',fontSize:11,cursor:'pointer'}}>+ Ajouter manuellement</div>
-              </div>}
             </>}
             {musicTab==='playlists'&&<div style={{padding:32,textAlign:'center',color:'#8e8e93',fontSize:13}}>No Playlists</div>}
             {musicTab==='artists'&&<>
@@ -1002,12 +840,10 @@ const MusicScreen = ({data,admin,update,accent,isIos=false,goHome=()=>{}}) => {
 
         <div style={{background:'linear-gradient(180deg,#e8e8ea,#cfcfd2)',borderTop:'1px solid #aaa',borderBottom:'1px solid #aaa',height:46,display:'flex',alignItems:'center',gap:10,padding:'0 10px',flexShrink:0}}>
           <div
-            style={{width:32,height:32,background:'#ddd',borderRadius:2,border:'1px solid rgba(0,0,0,0.25)',overflow:'hidden',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,boxShadow:'0 1px 2px rgba(0,0,0,0.15)',cursor:admin?'pointer':'default'}}
-            onClick={admin?()=>document.getElementById("music-cover-upload-ios").click():undefined}
+            style={{width:32,height:32,background:'#ddd',borderRadius:2,border:'1px solid rgba(0,0,0,0.25)',overflow:'hidden',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,boxShadow:'0 1px 2px rgba(0,0,0,0.15)'}}
           >
             {coverSrc?<img src={coverSrc} style={{width:'100%',height:'100%',objectFit:'cover'}}/>:<span style={{color:'#999',fontSize:14}}>♫</span>}
           </div>
-          {admin&&<input id="music-cover-upload-ios" type="file" accept="image/*" style={{display:'none'}} onChange={e=>{const f=e.target.files?.[0];if(!f)return;const r=new UploadReader();r.onload=ev=>update("musicCover",ev.target.result);r.readAsDataURL(f);e.target.value="";}}/>}
 
           <div style={{flex:1,minWidth:0}}>
             <div style={{color:'#1a1a1a',fontSize:13,fontWeight:'600',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{current?current.title:(data.playlistName||"No track selected")}</div>
@@ -1059,20 +895,18 @@ const MusicScreen = ({data,admin,update,accent,isIos=false,goHome=()=>{}}) => {
 
         
         {musicTab==="songs"&&<>
-          {((!admin)?[...music].sort((a,b)=>a.title.localeCompare(b.title,'fr',{sensitivity:'base'})):music).map((track,si)=>{
+          {[...music].sort((a,b)=>a.title.localeCompare(b.title,'fr',{sensitivity:'base'})).map((track,si)=>{
             const i=music.indexOf(track);
             return (
               <div key={track.id}
-                draggable={admin} onDragStart={()=>onDragStart(i)} onDragOver={e=>onDragOver(e,i)} onDrop={()=>onDrop(i)} onDragEnd={()=>{setDragIdx(null);setOverIdx(null);}}
                 onClick={()=>setPlaying(i)}
                 style={{
                   display:"flex",alignItems:"center",gap:12,padding:"10px 14px",
                   borderBottom:"1px solid #111",
-                  background:playing===i?`${accent}18`:overIdx===i?"#2a2a2a":"#1a1a1a",
+                  background:playing===i?`${accent}18`:"#1a1a1a",
                   borderLeft:playing===i?`3px solid ${accent}`:"3px solid transparent",
-                  cursor:"pointer",opacity:dragIdx===i?0.4:1,
+                  cursor:"pointer",
                 }}>
-                {admin&&<span style={{color:"#444",cursor:"grab",fontSize:13,flexShrink:0}}>⠿</span>}
                 {track.cover
                   ?<img src={track.cover} style={{width:36,height:36,objectFit:"cover",flexShrink:0,borderRadius:2}}/>
                   :<div style={{width:36,height:36,borderRadius:2,background:"#272727",border:`1px solid ${accent}22`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
@@ -1080,17 +914,11 @@ const MusicScreen = ({data,admin,update,accent,isIos=false,goHome=()=>{}}) => {
                   </div>
                 }
                 <div style={{flex:1,minWidth:0}}>
-                  {admin?<>
-                    <input value={track.title} onClick={e=>e.stopPropagation()} onChange={e=>{const m=[...music];m[i]={...m[i],title:e.target.value};update("music",m);}} style={{background:"rgba(255,200,0,0.12)",border:"1px dashed #ffc107",color:"#fff",fontSize:12,width:"90%",display:"block",fontFamily:FF_IOS}}/>
-                    <input value={track.artist} onClick={e=>e.stopPropagation()} onChange={e=>{const m=[...music];m[i]={...m[i],artist:e.target.value};update("music",m);}} style={{background:"rgba(255,200,0,0.08)",border:"1px dashed #ffc10788",color:accent,fontSize:10,width:"90%",marginTop:2,display:"block",fontFamily:FF_IOS}}/>
-                  </>:<>
-                    <div style={{color:playing===i?"#fff":"rgba(255,255,255,0.85)",fontSize:13,fontWeight:playing===i?500:400,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{track.title}</div>
-                    <div style={{color:playing===i?accent:"#666",fontSize:11,marginTop:1}}>{track.artist}</div>
-                  </>}
+                  <div style={{color:playing===i?"#fff":"rgba(255,255,255,0.85)",fontSize:13,fontWeight:playing===i?500:400,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{track.title}</div>
+                  <div style={{color:playing===i?accent:"#666",fontSize:11,marginTop:1}}>{track.artist}</div>
                 </div>
                 <div style={{display:"flex",alignItems:"center",gap:6,flexShrink:0}}>
                   <span style={{color:"#555",fontSize:10}}>{track.duration}</span>
-                  {admin&&<AdminBadge label="✕" onClick={e=>{e.stopPropagation();update("music",music.filter((_,j)=>j!==i));}} color="#f44"/>}
                 </div>
               </div>
             );
@@ -1156,38 +984,15 @@ const MusicScreen = ({data,admin,update,accent,isIos=false,goHome=()=>{}}) => {
           });
         })()}
 
-        
-        {admin&&<div style={{padding:"10px 14px",borderTop:"1px dashed #ffc10744",background:"#111"}}>
-          <div style={{color:"#ffc107",fontSize:11,marginBottom:6,fontWeight:600,fontFamily:FF_IOS}}>🎵 Add track</div>
-          <div style={{display:"flex",gap:6,marginBottom:6}}>
-            <input value={query} onChange={e=>setQuery(e.target.value)} onKeyDown={e=>e.key==="Enter"&&fetchTrack()} placeholder="Title or artist…" style={{flex:1,background:"#222",border:`1px solid ${accent}44`,color:"#fff",padding:"6px 8px",fontSize:11,fontFamily:FF_IOS,outline:"none"}}/>
-            <button onClick={fetchTrack} disabled={fetching} style={{background:accent,border:"none",color:"#000",padding:"6px 10px",fontSize:11,fontWeight:700,cursor:"pointer",flexShrink:0}}>{fetching?"…":"🔍"}</button>
-          </div>
-          {results.map(t=>(
-            <div key={t.id} style={{display:"flex",gap:8,alignItems:"center",padding:"5px 0",borderBottom:"1px solid #1a1a1a"}}>
-              {t.cover&&<img src={t.cover} style={{width:28,height:28,objectFit:"cover",flexShrink:0,borderRadius:2}}/>}
-              <div style={{flex:1,minWidth:0}}>
-                <div style={{color:"#fff",fontSize:10,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{t.title}</div>
-                <div style={{color:"#888",fontSize:9}}>{t.artist} · {t.duration}</div>
-              </div>
-              <button onClick={()=>addTrack(t)} style={{background:accent,border:"none",color:"#000",padding:"3px 8px",fontSize:10,fontWeight:700,cursor:"pointer",flexShrink:0}}>+</button>
-            </div>
-          ))}
-          <div style={{marginTop:8}} onClick={()=>update("music",[...music,{id:Date.now(),title:"New track",artist:"Artist",duration:"0:00"}])}>
-            <span style={{color:"#555",fontSize:10,cursor:"pointer",fontFamily:FF_IOS}}>+ Add manually</span>
-          </div>
-        </div>}
       </div>
 
       <div style={{background:"#111",borderTop:`2px solid ${accent}44`,padding:"10px 14px",display:"flex",alignItems:"center",gap:12,flexShrink:0}}>
 
         <div
-          style={{width:38,height:38,background:"#222",borderRadius:2,border:`1px solid ${accent}33`,overflow:"hidden",display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,flexShrink:0,cursor:admin?"pointer":"default"}}
-          onClick={admin?()=>document.getElementById("music-cover-upload").click():undefined}
+          style={{width:38,height:38,background:"#222",borderRadius:2,border:`1px solid ${accent}33`,overflow:"hidden",display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,flexShrink:0}}
         >
           {coverSrc?<img src={coverSrc} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:<span style={{color:accent,opacity:0.6}}>♫</span>}
         </div>
-        {admin&&<input id="music-cover-upload" type="file" accept="image/*" style={{display:"none"}} onChange={e=>{const f=e.target.files?.[0];if(!f)return;const r=new UploadReader();r.onload=ev=>update("musicCover",ev.target.result);r.readAsDataURL(f);e.target.value="";}}/>}
 
         <div style={{flex:1,minWidth:0}}>
           <div style={{color:"#fff",fontSize:13,fontWeight:500,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{current?current.title:(data.playlistName||"No track selected")}</div>
@@ -1325,10 +1130,6 @@ const SnapchatScreen = ({data,admin,update}) => {
             </div>
           );
         })}
-        {admin&&<div onClick={()=>update("snaps",[...(data.snaps||[]),{id:Date.now(),contact:"New",opened:false,sent:false,time:"now"}])}
-          style={{padding:14,textAlign:"center",color:"#71bf44",fontSize:13,cursor:"pointer",borderTop:"1px solid #eee"}}>
-          + Add snap
-        </div>}
       </div>
 
     </div>
@@ -1392,11 +1193,11 @@ const GrindrScreen = ({data,admin,update}) => {
       {from:"them", text:"idem ! on est peut-être voisins 😲",      time:"09:08 AM"},
     ]},
     {id:5, name:"Johnny",   distance:"2.1 km",  photo:null, online:false, thread:[
-      {from:"them", text:"yo",                                      time:"2j"},
-      {from:"me",   text:"yo, ça va ?",                             time:"2j"},
-      {from:"them", text:"ouais tranquille. t'aimes la musique ?",  time:"2j"},
-      {from:"me",   text:"un peu oui, pourquoi ?",                  time:"2j"},
-      {from:"them", text:"je fais des sets le week-end si tu veux passer", time:"2j"},
+      {from:"them", text:"yo",                                      time:"2d"},
+      {from:"me",   text:"yo, ça va ?",                             time:"2d"},
+      {from:"them", text:"ouais tranquille. t'aimes la musique ?",  time:"2d"},
+      {from:"me",   text:"un peu oui, pourquoi ?",                  time:"2d"},
+      {from:"them", text:"je fais des sets le week-end si tu veux passer", time:"2d"},
     ]},
     {id:6, name:"Gary",     distance:"850 m",   photo:null, online:true,  thread:[
       {from:"them", text:"salut 😌",                                time:"11:30 AM"},
@@ -1415,12 +1216,12 @@ const GrindrScreen = ({data,admin,update}) => {
       {from:"them", text:"architecture. 5 ans de souffrance 😭",   time:"09:03 AM"},
     ]},
     {id:8, name:"Rayan",    distance:"1.8 km",  photo:null, online:false, thread:[
-      {from:"them", text:"bonsoir",                                 time:"3j"},
-      {from:"me",   text:"bonsoir :)",                              time:"3j"},
-      {from:"them", text:"tu fais quoi ce soir ?",                  time:"3j"},
-      {from:"me",   text:"rien de spécial, toi ?",                  time:"3j"},
-      {from:"them", text:"idem. on pourrait se voir ?",             time:"3j"},
-      {from:"me",   text:"pourquoi pas, t'es dans quel coin ?",     time:"3j"},
+      {from:"them", text:"bonsoir",                                 time:"3d"},
+      {from:"me",   text:"bonsoir :)",                              time:"3d"},
+      {from:"them", text:"tu fais quoi ce soir ?",                  time:"3d"},
+      {from:"me",   text:"rien de spécial, toi ?",                  time:"3d"},
+      {from:"them", text:"idem. on pourrait se voir ?",             time:"3d"},
+      {from:"me",   text:"pourquoi pas, t'es dans quel coin ?",     time:"3d"},
     ]},
   ];
 
@@ -1541,23 +1342,6 @@ const GrindrScreen = ({data,admin,update}) => {
               </React.Fragment>
             );
           })}
-          {admin&&(
-            <div style={{marginTop:8,display:"flex",gap:6}}>
-              {[["them","Cyan"],["me","Yellow"]].map(([from,label])=>(
-                <button key={from} onClick={()=>{
-                  const text=window.prompt(`Message (${label})`,"");
-                  if(!text)return;
-                  const now=new Date();
-                  const h=now.getHours(),m=now.getMinutes();
-                  const t=`${h%12||12}:${String(m).padStart(2,"0")} ${h<12?"AM":"PM"}`;
-                  const newDms=(data.grindrDms||grindrDms).map((d,di)=>di!==activeDm?d:{...d,thread:[...d.thread,{from,text,time:t}]});
-                  update("grindrDms",newDms);
-                }} style={{background:from==="me"?"#f5b800":"#00bcd4",color:"#000",border:"none",borderRadius:4,padding:"4px 10px",fontSize:10,cursor:"pointer",fontWeight:700}}>
-                  + {label}
-                </button>
-              ))}
-            </div>
-          )}
         </div>
 
         
@@ -1729,15 +1513,9 @@ const BrowserScreen = ({data,admin,update,accent,isIos,tab,setTab}) => {
               <div key={b.id} style={rowStyle} onClick={()=>setTab("search")}>
                 <div style={{width:32,height:32,background:"linear-gradient(135deg,#6c7a89,#4a5568)",borderRadius:6,display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,flexShrink:0}}><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="#fff"/></svg></div>
                 <div style={{flex:1,minWidth:0}}>
-                  {admin?<>
-                    <input value={b.title} onChange={e=>{const x=[...bk];x[i]={...x[i],title:e.target.value};updBrowser("bookmarks",x);}} style={{background:"rgba(255,200,0,0.15)",border:"1px dashed #ffc107",color:"#000",fontSize:13,width:"90%",display:"block"}}/>
-                    <input value={b.url} onChange={e=>{const x=[...bk];x[i]={...x[i],url:e.target.value};updBrowser("bookmarks",x);}} style={{background:"rgba(255,200,0,0.15)",border:"1px dashed #ffc107",color:"#888",fontSize:10,width:"90%",display:"block",marginTop:2}}/>
-                  </>:<>
-                    <div style={{color:"#1a1a1a",fontSize:13,fontWeight:500,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{b.title}</div>
-                    <div style={{color:"#8e8e93",fontSize:10,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{b.url}</div>
-                  </>}
+                  <div style={{color:"#1a1a1a",fontSize:13,fontWeight:500,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{b.title}</div>
+                  <div style={{color:"#8e8e93",fontSize:10,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{b.url}</div>
                 </div>
-                {admin&&<AdminBadge label="✕" onClick={e=>{e.stopPropagation();updBrowser("bookmarks",bk.filter((_,j)=>j!==i));}} color="#f44"/>}
                 <span style={{color:"#c8c7cc",lineHeight:1}}><svg width="8" height="14" viewBox="0 0 8 14" fill="none"><path d="M1 1l6 6-6 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg></span>
               </div>
             ))}
@@ -1745,19 +1523,12 @@ const BrowserScreen = ({data,admin,update,accent,isIos,tab,setTab}) => {
               <div key={h.id} style={rowStyle} onClick={()=>setTab("search")}>
                 <div style={{width:32,height:32,background:"linear-gradient(135deg,#a0a0a8,#7a7a80)",borderRadius:6,display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,flexShrink:0,color:"#fff"}}><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="#fff" strokeWidth="1.8" fill="none"/><path d="M12 7v5l3.5 2" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg></div>
                 <div style={{flex:1,minWidth:0}}>
-                  {admin?<>
-                    <input value={h.title} onChange={e=>{const x=[...hist];x[i]={...x[i],title:e.target.value};updBrowser("history",x);}} style={{background:"rgba(255,200,0,0.15)",border:"1px dashed #ffc107",color:"#000",fontSize:12,width:"90%",display:"block"}}/>
-                    <input value={h.url} onChange={e=>{const x=[...hist];x[i]={...x[i],url:e.target.value};updBrowser("history",x);}} style={{background:"rgba(255,200,0,0.15)",border:"1px dashed #ffc107",color:"#888",fontSize:9,width:"90%",display:"block",marginTop:2}}/>
-                  </>:<>
-                    <div style={{color:"#1a1a1a",fontSize:12,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{h.title}</div>
-                    <div style={{color:"#8e8e93",fontSize:10,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{h.url} · {loreRelativeLabel(h.time,loreDateStr)}</div>
-                  </>}
+                  <div style={{color:"#1a1a1a",fontSize:12,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{h.title}</div>
+                  <div style={{color:"#8e8e93",fontSize:10,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{h.url} · {loreRelativeLabel(h.time,loreDateStr)}</div>
                 </div>
-                {admin&&<AdminBadge label="✕" onClick={e=>{e.stopPropagation();updBrowser("history",hist.filter((_,j)=>j!==i));}} color="#f44"/>}
                 <span style={{color:"#c8c7cc",lineHeight:1}}><svg width="8" height="14" viewBox="0 0 8 14" fill="none"><path d="M1 1l6 6-6 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg></span>
               </div>
             ))}
-            {admin&&<BrowserAddModal update={update} data={data} accent={accent} tab={tab}/>}
           </div>
         </div>
       );
@@ -1898,18 +1669,11 @@ const BrowserScreen = ({data,admin,update,accent,isIos,tab,setTab}) => {
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3-7 3V5z" stroke={andAccent} strokeWidth="1.8" strokeLinejoin="round"/></svg>
             </div>
             <div style={{flex:1,minWidth:0}}>
-              {admin?<>
-                <input value={b.title} onChange={e=>{const x=[...bk];x[i]={...x[i],title:e.target.value};updBrowser("bookmarks",x);}} style={{background:"rgba(255,200,0,0.15)",border:"1px dashed #ffc107",color:"#fff",fontSize:12,width:"90%",display:"block",fontFamily:FF_IOS}}/>
-                <input value={b.url} onChange={e=>{const x=[...bk];x[i]={...x[i],url:e.target.value};updBrowser("bookmarks",x);}} style={{background:"rgba(255,200,0,0.15)",border:"1px dashed #ffc107",color:"#444",fontSize:9,width:"90%",display:"block",marginTop:2}}/>
-              </>:<>
-                <div style={{color:"#ddd",fontSize:12,fontWeight:500,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",fontFamily:FF_IOS}}>{b.title}</div>
-                <div style={{color:"#444",fontSize:10,marginTop:1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",fontFamily:FF_IOS}}>{b.url}</div>
-              </>}
+              <div style={{color:"#ddd",fontSize:12,fontWeight:500,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",fontFamily:FF_IOS}}>{b.title}</div>
+              <div style={{color:"#444",fontSize:10,marginTop:1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",fontFamily:FF_IOS}}>{b.url}</div>
             </div>
-            {admin&&<AdminBadge label="✕" onClick={()=>updBrowser("bookmarks",bk.filter((_,j)=>j!==i))} color="#f44"/>}
           </div>
         ))}
-        {admin&&<BrowserAddModal update={update} data={data} accent={andAccent} tab="bookmarks"/>}
       </div>
       <JBBottomBar onMenu={()=>setAndBrowserView("history")}/>
     </div>
@@ -1938,18 +1702,11 @@ const BrowserScreen = ({data,admin,update,accent,isIos,tab,setTab}) => {
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="8" stroke="#555" strokeWidth="1.8"/><path d="M12 8v4l2.5 2.5" stroke="#555" strokeWidth="1.8" strokeLinecap="round"/></svg>
             </div>
             <div style={{flex:1,minWidth:0}}>
-              {admin?<>
-                <input value={h.title} onChange={e=>{const x=[...hist];x[i]={...x[i],title:e.target.value};updBrowser("history",x);}} style={{background:"rgba(255,200,0,0.15)",border:"1px dashed #ffc107",color:"#fff",fontSize:12,width:"90%",display:"block"}}/>
-                <input value={h.url} onChange={e=>{const x=[...hist];x[i]={...x[i],url:e.target.value};updBrowser("history",x);}} style={{background:"rgba(255,200,0,0.15)",border:"1px dashed #ffc107",color:"#444",fontSize:9,width:"90%",display:"block",marginTop:2}}/>
-              </>:<>
-                <div style={{color:"#ddd",fontSize:12,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",fontFamily:FF_IOS}}>{h.title}</div>
-                <div style={{color:"#444",fontSize:10,marginTop:1,fontFamily:FF_IOS}}>{h.url} · <span style={{color:"#333"}}>{loreRelativeLabel(h.time,loreDateStr)}</span></div>
-              </>}
+              <div style={{color:"#ddd",fontSize:12,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",fontFamily:FF_IOS}}>{h.title}</div>
+              <div style={{color:"#444",fontSize:10,marginTop:1,fontFamily:FF_IOS}}>{h.url} · <span style={{color:"#333"}}>{loreRelativeLabel(h.time,loreDateStr)}</span></div>
             </div>
-            {admin&&<AdminBadge label="✕" onClick={()=>updBrowser("history",hist.filter((_,j)=>j!==i))} color="#f44"/>}
           </div>
         ))}
-        {admin&&<BrowserAddModal update={update} data={data} accent={andAccent} tab="history"/>}
       </div>
       <JBBottomBar onMenu={()=>setAndBrowserView("bookmarks")}/>
     </div>
@@ -1963,7 +1720,7 @@ const IOSPhoneApp = ({data,admin,update,panel,setPanel}) => {
   const [dialed,setDialed] = useState("");
   const [balloons,setBalloons] = useState([]);
   const loreDateStr = useContext(LoreDateCtx);
-  const calls = data.calls||[];
+  const calls = sortCallsByDate(data.calls||[]);
   const charKey = data.username?.includes("glinda")?"glinda":data.username?.includes("eoghan")?"eoghan":data.username?.includes("drew")?"drew":"elias";
   const callColor = t => (t==="missed"||t==="outgoing_missed")?"#ff3b30":t==="incoming"?"#4cd964":"#8e8e93";
   const callArrow = t => t==="incoming"
@@ -2144,7 +1901,7 @@ const AndroidDialer = ({data,admin,update,panel,setPanel}) => {
   const [dialed,setDialed] = useState("");
   const [balloons,setBalloons] = useState([]);
   const loreDateStr = useContext(LoreDateCtx);
-  const calls = data.calls||[];
+  const calls = sortCallsByDate(data.calls||[]);
   const HOLO = "#33b5e5";
   const NUMC = "#7fb2dd";
   const callColor = t => (t==="missed"||t==="outgoing_missed")?"#ff5252":t==="incoming"?"#8bc34a":"#9aa0a6";
@@ -2358,7 +2115,7 @@ const NotesScreen = ({data,admin,update,accent,isIos,noteOpen,setNoteOpen,goHome
         </div>
 
         <div style={{padding:"6px 16px",borderBottom:"1px solid #2a2a2a",background:"#212121",flexShrink:0}}>
-          <span style={{color:"#999",fontSize:11,fontFamily:FF_IOS}}>{note.date}</span>
+          <span style={{color:"#999",fontSize:11,fontFamily:FF_IOS}}>{loreDateOnly(note.date)}</span>
         </div>
         
         <div style={{flex:1,padding:"16px",overflowY:"auto",background:"#1a1a1a"}}>
@@ -2382,7 +2139,7 @@ const NotesScreen = ({data,admin,update,accent,isIos,noteOpen,setNoteOpen,goHome
         
         <div style={{background:"#fef9c3",borderBottom:"1px solid #dddca0",padding:"5px 14px",display:"flex",justifyContent:"space-between",alignItems:"baseline",flexShrink:0}}>
           <span style={{color:"#8b2020",fontSize:12,fontWeight:"600",fontFamily:FF_IOS}}>Today</span>
-          <span style={{color:NOTE_GREY,fontSize:10,fontFamily:FF_IOS}}>{note.date}</span>
+          <span style={{color:NOTE_GREY,fontSize:10,fontFamily:FF_IOS}}>{loreDateOnly(note.date)}</span>
         </div>
         
         <div style={{flex:1,background:PAPER_BG,position:"relative",overflowY:"auto"}}>
@@ -2424,13 +2181,11 @@ const NotesScreen = ({data,admin,update,accent,isIos,noteOpen,setNoteOpen,goHome
           }}>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",gap:8}}>
               <div style={{color:"#e8e8e8",fontSize:14,fontWeight:500,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",flex:1,fontFamily:FF_IOS}}>{note.title||"Untitled"}</div>
-              <span style={{color:"#777",fontSize:10,flexShrink:0,fontFamily:FF_IOS}}>{note.date}</span>
+              <span style={{color:"#777",fontSize:10,flexShrink:0,fontFamily:FF_IOS}}>{loreDateOnly(note.date)}</span>
             </div>
             <div style={{color:"#999",fontSize:12,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",fontFamily:FF_IOS}}>{note.body?.split("\n")[0]||"No content"}</div>
-            {admin&&<AdminBadge label="✕" onClick={e=>{e.stopPropagation();update("notes",notes.filter((_,j)=>j!==i));}} color="#f44"/>}
           </div>
         ))}
-        {admin&&<NoteAddModal update={update} data={data} accent={accent} notes={notes} setNoteOpen={setNoteOpen}/>}
       </div>
     </div>
   );
@@ -2443,12 +2198,11 @@ const NotesScreen = ({data,admin,update,accent,isIos,noteOpen,setNoteOpen,goHome
           <div key={note.id} onClick={()=>setNoteOpen(i)} style={{padding:"10px 14px",borderBottom:"0.5px solid #e1dca6",cursor:"pointer",display:"flex",justifyContent:"space-between",alignItems:"center",minHeight:44,position:"relative",zIndex:2}}>
             <span style={{color:NOTE_BROWN,fontSize:14,fontFamily:NOTE_FONT,flex:1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{note.title||"Untitled"}</span>
             <div style={{display:"flex",alignItems:"center",gap:6,flexShrink:0,marginLeft:8}}>
-              <span style={{color:NOTE_GREY,fontSize:10,fontFamily:FF_IOS}}>{note.date}</span>
+              <span style={{color:NOTE_GREY,fontSize:10,fontFamily:FF_IOS}}>{loreDateOnly(note.date)}</span>
               <span style={{color:"#c8c7cc",lineHeight:1}}><svg width="8" height="14" viewBox="0 0 8 14" fill="none"><path d="M1 1l6 6-6 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg></span>
             </div>
           </div>
         ))}
-        {admin&&<NoteAddModal update={update} data={data} accent={accent} notes={notes} setNoteOpen={setNoteOpen}/>}
       </div>
     </div>
   );
@@ -2498,6 +2252,7 @@ const TUMBLR_FEED_POSTS_DEFAULT = {
 
 const TumblrScreen = ({data,admin,update,onUpdateShared=()=>{},accent}) => {
   const [activeTab, setActiveTab] = React.useState(0);
+  const [viewProfile, setViewProfile] = React.useState(null); // charKey d'un autre perso, ou null
   const posts = data.tumblr?.posts||[];
   const charKey = data.username?.includes("glinda")?"glinda":data.username?.includes("eoghan")?"eoghan":data.username?.includes("drew")?"drew":"elias";
   // Posts "réels" partagés entre persos (comme les tweets) : postés par un perso, visibles par tous,
@@ -2507,6 +2262,18 @@ const TumblrScreen = ({data,admin,update,onUpdateShared=()=>{},accent}) => {
   const myShared = sharedTumblrPosts.filter(p=>p.author===charKey);
   const othersShared = sharedTumblrPosts.filter(p=>p.author!==charKey);
   const updateSharedPosts = (newList) => onUpdateShared("_sharedTumblrPosts", newList);
+  const CHAR_NAMES_TB = {glinda:"Glinda R.",eoghan:"Eoghan M.",drew:"Drew B.",elias:"Elias G."};
+  const sharedAvatarsTb = data.sharedThreads?._sharedAvatars || {};
+
+  // Relations "follow" réelles entre les 4 persos, partagées comme pour Twitter.
+  const tumblrFollows = data.sharedThreads?._tumblrFollows || {};
+  const iFollowTb = (key) => (tumblrFollows[charKey]||[]).includes(key);
+  const followsMeTb = (key) => (tumblrFollows[key]||[]).includes(charKey);
+  const toggleFollowTb = (key) => {
+    const mine = tumblrFollows[charKey]||[];
+    const next = mine.includes(key) ? mine.filter(k=>k!==key) : [...mine, key];
+    onUpdateShared("_tumblrFollows", {...tumblrFollows, [charKey]:next});
+  };
   const TB    = "#35465c";
   const GRAY  = "#9b9b9b";
   const SEP   = "#e0deda";
@@ -2525,33 +2292,12 @@ const TumblrScreen = ({data,admin,update,onUpdateShared=()=>{},accent}) => {
     </svg>
   );
 
-  const PostCard = ({post, idx, isFeed=false, isShared=false}) => {
+  const PostCard = ({post, isFeed=false}) => {
     const isQuote = post.quote || post.type==="quote";
-    // Un post partagé ne peut être modifié que par son auteur — comme sur Twitter, on ne touche
-    // jamais aux posts des autres persos.
-    const canEdit = admin && (!isShared || post.author===charKey);
-    const savePost = (patch) => {
-      if(isShared) {
-        if(post.author!==charKey) return;
-        updateSharedPosts(sharedTumblrPosts.map(p=>p.id===post.id?{...p,...patch}:p));
-      } else if(isFeed) {
-        const fp = [...feedPosts]; fp[idx] = {...fp[idx], ...patch};
-        update("tumblr", {...data.tumblr, feedPosts: fp});
-      } else {
-        const p = [...posts]; p[idx] = {...p[idx], ...patch};
-        update("tumblr", {...data.tumblr, posts: p});
-      }
-    };
-    const deletePost = () => {
-      if(isShared) {
-        if(post.author!==charKey) return;
-        updateSharedPosts(sharedTumblrPosts.filter(p=>p.id!==post.id));
-      } else if(isFeed) {
-        update("tumblr", {...data.tumblr, feedPosts: feedPosts.filter((_,j)=>j!==idx)});
-      } else {
-        update("tumblr", {...data.tumblr, posts: posts.filter((_,j)=>j!==idx)});
-      }
-    };
+    const charKeyOfUsername = {glindatheverygood:"glinda",eoghan_masuda:"eoghan",dreww_orms:"drew","dreww-orms":"drew",noteliasgreen:"elias"}[post.username];
+    const otherKey = post.author || charKeyOfUsername;
+    const clickable = otherKey && otherKey!==charKey;
+    const goToProfile = clickable ? ()=>setViewProfile(otherKey) : undefined;
     return (
       <div style={{
         background:"#fff", marginBottom:8, borderRadius:2,
@@ -2560,12 +2306,11 @@ const TumblrScreen = ({data,admin,update,onUpdateShared=()=>{},accent}) => {
       }}>
         
         <div style={{display:"flex",alignItems:"center",padding:"9px 10px 8px",gap:8,borderBottom:`1px solid ${SEP}`}}>
-          <div style={{width:36,height:36,borderRadius:5,flexShrink:0,overflow:"hidden",background:post.avatarBg||TB,display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontWeight:700,fontSize:15}}>
+          <div onClick={goToProfile} style={{width:36,height:36,borderRadius:5,flexShrink:0,overflow:"hidden",background:post.avatarBg||TB,display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontWeight:700,fontSize:15,cursor:clickable?"pointer":"default"}}>
             {(()=>{
               // Résout l'avatar : priorité au champ propre au post, sinon à l'avatar partagé du vrai
               // perso (s'il s'agit bien de l'un des 4, identifié par username), sinon initiale.
               const sharedAvatars = data.sharedThreads?._sharedAvatars || {};
-              const charKeyOfUsername = {glindatheverygood:"glinda",eoghan_masuda:"eoghan",dreww_orms:"drew","dreww-orms":"drew",noteliasgreen:"elias"}[post.username];
               const resolvedAvatar = post.avatar || (!isFeed && data.avatar) || sharedAvatars[charKeyOfUsername];
               return resolvedAvatar
                 ? <img src={resolvedAvatar} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
@@ -2573,9 +2318,7 @@ const TumblrScreen = ({data,admin,update,onUpdateShared=()=>{},accent}) => {
             })()}
           </div>
           <div style={{flex:1,minWidth:0}}>
-            {canEdit
-              ?<input value={post.username||""} onChange={e=>savePost({username:e.target.value})} style={{background:"rgba(255,200,0,0.15)",border:"1px dashed #ffc107",fontSize:13,fontWeight:700,width:130,display:"block"}}/>
-              :<div style={{fontWeight:700,fontSize:(post.username||data.username||"").length>16?11:13,color:"#222",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{post.username||data.tumblr?.handle||data.username}</div>}
+            <div onClick={goToProfile} style={{fontWeight:700,fontSize:(post.username||data.username||"").length>16?11:13,color:"#222",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",cursor:clickable?"pointer":"default"}}>{post.username||data.tumblr?.handle||data.username}</div>
             {post.reblogFrom&&(
               <div style={{display:"flex",alignItems:"center",gap:3,marginTop:2}}>
                 <ReblogIcon size={10} color={GRAY}/>
@@ -2589,43 +2332,22 @@ const TumblrScreen = ({data,admin,update,onUpdateShared=()=>{},accent}) => {
         
         {post.img && <div style={{borderTop:`1px solid ${SEP}`}}><img src={post.img} style={{width:"100%",display:"block",maxHeight:340,objectFit:"cover"}}/></div>}
         <div style={{padding:"10px 10px 8px"}}>
-          {canEdit
-            ?<div style={{display:"flex",flexDirection:"column",gap:6}}>
-              {post.img && <div style={{position:"relative",alignSelf:"flex-start"}}>
-                <img src={post.img} style={{maxWidth:160,maxHeight:120,borderRadius:6,display:"block"}}/>
-                <button onClick={()=>savePost({img:null})} style={{position:"absolute",top:2,right:2,background:"rgba(0,0,0,0.6)",border:"none",color:"#fff",borderRadius:"50%",width:18,height:18,fontSize:11,cursor:"pointer",lineHeight:1}}>✕</button>
-              </div>}
-              <label style={{alignSelf:"flex-start",background:"rgba(0,122,255,0.12)",border:"1px dashed #007aff",color:"#007aff",borderRadius:6,padding:"3px 8px",fontSize:10,cursor:"pointer"}}>
-                {post.img?"Changer l'image":"+ Image"}
-                <input type="file" accept="image/*" style={{display:"none"}} onChange={e=>{
-                  const f=e.target.files?.[0]; if(!f) return;
-                  const r=new UploadReader(); r.onload=ev=>savePost({img:ev.target.result}); r.readAsDataURL(f); e.target.value="";
-                }}/>
-              </label>
-              <textarea value={post.body||""} rows={3} onChange={e=>savePost({body:e.target.value})} style={{width:"100%",background:"rgba(255,200,0,0.08)",border:"1px dashed #ffc107",fontSize:13,resize:"vertical",lineHeight:1.5,boxSizing:"border-box"}}/>
-            </div>
-            :isQuote
-              ?<div>
-                <div style={{fontSize:14,color:"#222",lineHeight:1.6,fontWeight:400}}>
-                  {"\u201c"}{post.body}{"\u201d"}
-                </div>
-                {post.source&&<div style={{fontSize:12,color:"#666",marginTop:5}}>{"\u2014"} {post.source}</div>}
+          {isQuote
+            ?<div>
+              <div style={{fontSize:14,color:"#222",lineHeight:1.6,fontWeight:400}}>
+                {"\u201c"}{post.body}{"\u201d"}
               </div>
-              :<div style={{fontSize:13,color:"#333",lineHeight:1.55,whiteSpace:"pre-wrap"}}>{post.body}</div>
+              {post.source&&<div style={{fontSize:12,color:"#666",marginTop:5}}>{"\u2014"} {post.source}</div>}
+            </div>
+            :<div style={{fontSize:13,color:"#333",lineHeight:1.55,whiteSpace:"pre-wrap"}}>{post.body}</div>
           }
         </div>
 
         
         <div style={{display:"flex",alignItems:"center",borderTop:`1px solid ${SEP}`,padding:"5px 10px",background:"#f9f8f6"}}>
-          <span style={{flex:1,fontSize:12,color:GRAY}}>
-            {canEdit
-              ?<input type="number" value={post.notes||0} onChange={e=>savePost({notes:Number(e.target.value)})} style={{background:"rgba(255,200,0,0.1)",border:"1px dashed #ffc107",fontSize:12,width:70}}/>
-              :<>{(post.notes||0).toLocaleString()} notes</>}
-          </span>
+          <span style={{flex:1,fontSize:12,color:GRAY}}>{(post.notes||0).toLocaleString()} notes</span>
           <div style={{padding:"3px 14px 3px 6px"}}><ReblogIcon/></div>
           <div style={{padding:"3px 4px"}}><HeartIcon/></div>
-          {canEdit&&<button onClick={deletePost} style={{background:"#f44",border:"none",color:"#fff",borderRadius:3,fontSize:8,padding:"2px 5px",cursor:"pointer",marginLeft:8}}>✕</button>}
-          {admin&&isShared&&post.author!==charKey&&<span style={{fontSize:9,color:GRAY,marginLeft:8,fontStyle:"italic"}}>post de {post.author}</span>}
         </div>
       </div>
     );
@@ -2646,26 +2368,9 @@ const TumblrScreen = ({data,admin,update,onUpdateShared=()=>{},accent}) => {
         ]
           .sort((a,b)=>loreSortKey(b.date)-loreSortKey(a.date))
           .map((post,i)=>(
-            post._kind==="shared"
-              ? <PostCard key={post.id??i} post={post} isShared/>
-              : <PostCard key={post.id??i} post={post} isFeed={post._kind==="feed"} idx={post._kind==="feed"?feedPosts.findIndex(fp=>fp.id===post.id):posts.findIndex(p=>p.id===post.id)}/>
+            <PostCard key={post.id??i} post={post} isFeed={post._kind==="feed"}/>
           ))}
       </div>
-      {admin&&(
-        <div style={{display:"flex",gap:6,margin:"0 8px 8px"}}>
-          <div onClick={()=>{
-            const np={id:Date.now(),author:charKey,username:data.tumblr?.handle||data.username,avatarBg:"#8e7cc3",body:"Nouveau post",notes:0,date:"1 oct",type:"text"};
-            updateSharedPosts([np,...sharedTumblrPosts]);
-          }}
-            style={{flex:1,padding:12,textAlign:"center",color:"#ffc107",cursor:"pointer",background:"#fff",borderRadius:2,fontSize:12,boxShadow:"0 1px 2px rgba(0,0,0,0.1)"}}>
-            + Nouveau post
-          </div>
-          <div onClick={()=>{const np={id:Date.now(),username:"",avatarBg:"#8e7cc3",body:"Nouveau post du fil",notes:0,date:"1 oct",type:"text"};update("tumblr",{...data.tumblr,feedPosts:[np,...feedPosts]});}}
-            style={{flex:1,padding:12,textAlign:"center",color:"#7c9fc9",cursor:"pointer",background:"#fff",borderRadius:2,fontSize:12,boxShadow:"0 1px 2px rgba(0,0,0,0.1)"}}>
-            + Post du fil (déco)
-          </div>
-        </div>
-      )}
       <div style={{height:8}}/>
     </div>
   );
@@ -2709,18 +2414,11 @@ const TumblrScreen = ({data,admin,update,onUpdateShared=()=>{},accent}) => {
           {data.tumblr?.cover
             ?<img src={data.tumblr.cover} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
             :<div style={{width:"100%",height:"100%",background:`linear-gradient(135deg,${coverColor},#1a252f)`}}/>}
-          {admin&&<label style={{position:"absolute",bottom:6,right:8,background:"rgba(0,0,0,0.5)",color:"#fff",fontSize:10,padding:"3px 7px",borderRadius:3,cursor:"pointer"}}>
-            📷 Cover
-            <input type="file" accept="image/*" style={{display:"none"}} onChange={e=>{const f=e.target.files?.[0];if(!f)return;const r=new UploadReader();r.onload=ev=>update("tumblr",{...data.tumblr,cover:ev.target.result});r.readAsDataURL(f);e.target.value="";}}/>
-          </label>}
           
           <div style={{position:"absolute",bottom:-28,left:12,width:56,height:56,borderRadius:8,border:"3px solid #fff",overflow:"hidden",background:data.tumblr?.avatarBg||"#8e7cc3",boxShadow:"0 2px 6px rgba(0,0,0,0.25)",zIndex:10,display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontWeight:700,fontSize:22}}>
             {data.avatar
               ?<img src={data.avatar} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
               :(data.username||"?")[0].toUpperCase()}
-            {admin&&<label style={{position:"absolute",inset:0,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",background:"rgba(0,0,0,0.35)",fontSize:14}}>
-              📷<input type="file" accept="image/*" style={{display:"none"}} onChange={e=>{const f=e.target.files?.[0];if(!f)return;const r=new UploadReader();r.onload=ev=>update("avatar",ev.target.result);r.readAsDataURL(f);e.target.value="";}}/>
-            </label>}
           </div>
         </div>
         
@@ -2735,15 +2433,45 @@ const TumblrScreen = ({data,admin,update,onUpdateShared=()=>{},accent}) => {
             ))}
           </div>
           {data.tumblr?.bio&&<div style={{fontSize:12,color:"#555",marginTop:8,lineHeight:1.5}}>{data.tumblr.bio}</div>}
-          {admin&&<textarea value={data.tumblr?.bio||""} onChange={e=>update("tumblr",{...data.tumblr,bio:e.target.value})} placeholder="Bio..." style={{marginTop:6,width:"100%",fontSize:12,background:"rgba(255,200,0,0.08)",border:"1px dashed #ffc107",resize:"vertical",lineHeight:1.5,boxSizing:"border-box"}}/>}
         </div>
         
         <div style={{padding:"8px 8px 0"}}>
-          {myPosts.map((post,i)=>
-            post._kind==="shared"
-              ? <PostCard key={post.id} post={post} isShared/>
-              : <PostCard key={post.id} post={post} idx={posts.indexOf(post)}/>
-          )}
+          {myPosts.map((post,i)=><PostCard key={post.id} post={post}/>)}
+        </div>
+        <div style={{height:8}}/>
+      </div>
+    );
+  };
+
+  const ViewedProfile = () => {
+    const pKey = viewProfile;
+    const pName = CHAR_NAMES_TB[pKey];
+    const pAvatar = sharedAvatarsTb[pKey];
+    const pPosts = othersShared.filter(p=>p.author===pKey).sort((a,b)=>loreSortKey(b.date)-loreSortKey(a.date));
+    const following = iFollowTb(pKey);
+    return (
+      <div style={{flex:1,background:"#ebe9e4",overflowY:"auto",minHeight:0}}>
+        <div onClick={()=>setViewProfile(null)} style={{padding:"8px 12px",color:TB,fontSize:12,fontWeight:600,cursor:"pointer",background:"#fff",borderBottom:`1px solid ${SEP}`}}>‹ Back</div>
+        <div style={{position:"relative",height:100,background:"#2c3e50",flexShrink:0,overflow:"visible"}}>
+          <div style={{width:"100%",height:"100%",background:"linear-gradient(135deg,#2c3e50,#1a252f)"}}/>
+          <div style={{position:"absolute",bottom:-28,left:12,width:56,height:56,borderRadius:8,border:"3px solid #fff",overflow:"hidden",background:"#8e7cc3",boxShadow:"0 2px 6px rgba(0,0,0,0.25)",zIndex:10,display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontWeight:700,fontSize:22}}>
+            {pAvatar ? <img src={pAvatar} style={{width:"100%",height:"100%",objectFit:"cover"}}/> : (pName||"?")[0].toUpperCase()}
+          </div>
+          <button onClick={()=>toggleFollowTb(pKey)} style={{position:"absolute",bottom:-22,right:12,background:following?"#fff":TB,color:following?TB:"#fff",border:`1.5px solid ${TB}`,borderRadius:16,padding:"5px 14px",fontSize:11,fontWeight:700,cursor:"pointer"}}>
+            {following?"Following":"Follow"}
+          </button>
+        </div>
+        <div style={{padding:"36px 12px 10px",background:"#fff",borderBottom:`1px solid ${SEP}`}}>
+          <div style={{fontWeight:700,fontSize:16,color:"#222"}}>{pName}</div>
+          {followsMeTb(pKey) && <span style={{display:"inline-block",marginTop:4,fontSize:10,color:GRAY,fontWeight:600,background:"#f0eee9",borderRadius:3,padding:"2px 6px"}}>Follows you</span>}
+          <div style={{display:"flex",gap:18,marginTop:6}}>
+            <div><div style={{fontWeight:700,fontSize:14,color:"#222"}}>{pPosts.length}</div><div style={{fontSize:10,color:GRAY}}>Posts</div></div>
+          </div>
+        </div>
+        <div style={{padding:"8px 8px 0"}}>
+          {pPosts.length===0
+            ? <div style={{padding:24,textAlign:"center",color:GRAY,fontSize:12}}>No posts yet.</div>
+            : pPosts.map((post,i)=><PostCard key={post.id} post={{...post,username:pName}}/>)}
         </div>
         <div style={{height:8}}/>
       </div>
@@ -2776,7 +2504,7 @@ const TumblrScreen = ({data,admin,update,onUpdateShared=()=>{},accent}) => {
 
   return (
     <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden",fontFamily:FF_IOS}}>
-      <ActiveTab/>
+      {viewProfile ? <ViewedProfile/> : <ActiveTab/>}
 
       
       <div style={{
@@ -3015,15 +2743,13 @@ const WEATHER_DEFAULTS = {
   ]
 };
 
-const WeatherScreen = ({isIos, accent, data, update, admin}) => {
+const WeatherScreen = ({isIos, accent, data, admin}) => {
   const wd = data?.weather || WEATHER_DEFAULTS;
   const cities = wd.cities && wd.cities.length ? wd.cities : WEATHER_DEFAULTS.cities;
   const [cityIdx, setCityIdx] = useState(0);
-  const [editing, setEditing] = useState(false);
   const sliderRef = useRef(null);
   const touchStartX = useRef(null);
   const city = cities[Math.min(cityIdx, cities.length-1)];
-  const upd = (newWd) => update && update("weather", newWd);
 
   // Horizontal swipe between cities
   const onTouchStart = e => { touchStartX.current = e.touches[0].clientX; };
@@ -3062,7 +2788,6 @@ const WeatherScreen = ({isIos, accent, data, update, admin}) => {
               display:"flex",flexDirection:"column",overflowY:"auto"}}>
               <div style={{padding:"12px 16px 8px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
                 <div style={{color:"rgba(255,255,255,0.85)",fontSize:14,fontWeight:400}}>{c.name}</div>
-                {admin&&ci===cityIdx&&<div onClick={()=>setEditing(e=>!e)} style={{color:"rgba(255,255,255,0.6)",fontSize:11,cursor:"pointer"}}>✏️</div>}
               </div>
               <div style={{display:"flex",flexDirection:"column",alignItems:"center",padding:"4px 0 14px"}}>
                 <div style={{fontSize:52}}>{c.condIcon||"🌤️"}</div>
@@ -3083,7 +2808,6 @@ const WeatherScreen = ({isIos, accent, data, update, admin}) => {
           ))}
         </div>
       </div>
-      {admin&&editing&&<WeatherAdminEditor wd={wd} cities={cities} cityIdx={cityIdx} setCityIdx={setCityIdx} upd={upd} onClose={()=>setEditing(false)}/>}
     </div>
   );
 
@@ -3144,8 +2868,6 @@ const WeatherScreen = ({isIos, accent, data, update, admin}) => {
                   <div style={{background:"#6001D3",borderRadius:3,padding:"1px 4px",color:"#fff",fontSize:9,fontWeight:700,letterSpacing:-0.5,marginRight:6,flexShrink:0}}>Y!</div>
                   <div style={{flex:1}}/>
                   <div style={{color:"rgba(255,255,255,0.5)",fontSize:8,flexShrink:0}}>Updated {c.updated}</div>
-                  {admin&&ci===cityIdx&&<div onClick={()=>setEditing(e=>!e)}
-                    style={{marginLeft:8,background:"rgba(255,255,255,0.15)",borderRadius:3,padding:"1px 6px",color:"#fff",fontSize:9,cursor:"pointer",flexShrink:0}}>✏️</div>}
                 </div>
               </div>
             </div>
@@ -3158,7 +2880,6 @@ const WeatherScreen = ({isIos, accent, data, update, admin}) => {
           <div key={i} onClick={()=>setCityIdx(i)} style={{width:6,height:6,borderRadius:"50%",background:i===cityIdx?"#fff":"rgba(255,255,255,0.25)",cursor:"pointer"}}/>
         ))}
       </div>
-      {admin&&editing&&<WeatherAdminEditor wd={wd} cities={cities} cityIdx={cityIdx} setCityIdx={setCityIdx} upd={upd} onClose={()=>setEditing(false)}/>}
     </div>
   );
 };
@@ -3215,116 +2936,6 @@ const WeatherCityCard = ({city, ci, COND_ICONS, DAY_OPTS, ensureCustom, updForec
   );
 };
 
-// Admin editor for weather cities/data
-const WeatherAdminEditor = ({wd, cities, cityIdx, setCityIdx, upd, onClose}) => {
-  const [lc, setLc] = useState(()=>JSON.parse(JSON.stringify(cities[cityIdx])));
-  React.useEffect(()=>{ setLc(JSON.parse(JSON.stringify(cities[cityIdx]))); },[cityIdx]);
-
-  const setLcAndSave = (updater) => {
-    setLc(prev => {
-      const next = typeof updater === "function" ? updater(prev) : updater;
-      upd({...wd, cities: cities.map((x,i) => i===cityIdx ? next : x)});
-      return next;
-    });
-  };
-
-  const addCity = () => {
-    const nc={name:"Nouvelle ville",current:20,condition:"Sunny",condIcon:"☀️",
-      forecast:[{day:"MON",icon:"☀️",hi:22,lo:14},{day:"TUE",icon:"🌤️",hi:21,lo:13},
-        {day:"WED",icon:"🌧️",hi:18,lo:12},{day:"THU",icon:"⛅",hi:20,lo:13},
-        {day:"FRI",icon:"☀️",hi:23,lo:15},{day:"SAT",icon:"☀️",hi:25,lo:16}],
-      updated:new Date().toLocaleDateString()};
-    const n2=[...cities,nc];
-    upd({...wd,cities:n2});
-    setCityIdx(n2.length-1);
-  };
-  const delCity = () => {
-    if(cities.length<=1)return;
-    const n=cities.filter((_,i)=>i!==cityIdx);
-    upd({...wd,cities:n});
-    setCityIdx(Math.max(0,cityIdx-1));
-  };
-
-  const inp=(s={})=>({...s,background:"rgba(255,255,255,0.12)",border:"1px solid rgba(255,255,255,0.25)",color:"#fff",borderRadius:4,padding:"4px 7px",fontSize:11,outline:"none"});
-
-  return (
-    <div style={{position:"absolute",inset:0,background:"rgba(0,0,20,0.95)",overflowY:"auto",zIndex:50,display:"flex",flexDirection:"column"}}>
-      
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 12px 8px",borderBottom:"1px solid rgba(255,255,255,0.1)",flexShrink:0}}>
-        <div style={{color:"#fff",fontWeight:700,fontSize:13}}>✏️ Météo</div>
-        <div onClick={()=>onClose&&onClose()} style={{background:"#4488ff",color:"#fff",borderRadius:5,padding:"4px 10px",fontSize:11,cursor:"pointer",fontWeight:600}}>✓ OK</div>
-      </div>
-
-      <div style={{flex:1,overflowY:"auto",padding:"10px 12px",display:"flex",flexDirection:"column",gap:10}}>
-
-        
-        <div style={{background:"rgba(255,255,255,0.07)",borderRadius:8,padding:"10px 10px 6px"}}>
-          <div style={{color:"rgba(255,255,255,0.5)",fontSize:9,letterSpacing:1,textTransform:"uppercase",marginBottom:8}}>Villes</div>
-          {cities.map((c,i)=>(
-            <div key={i} style={{display:"flex",alignItems:"center",gap:6,marginBottom:5}}>
-              <div onClick={()=>setCityIdx(i)} style={{
-                flex:1,padding:"5px 9px",borderRadius:5,cursor:"pointer",fontSize:12,
-                background:i===cityIdx?"#4488ff":"rgba(255,255,255,0.1)",
-                color:"#fff",fontWeight:i===cityIdx?600:400,
-                border:`1px solid ${i===cityIdx?"#4488ff":"rgba(255,255,255,0.15)"}`,
-              }}>
-                
-                {i===cityIdx ? lc.name : c.name}
-              </div>
-              {i===cityIdx&&cities.length>1&&(
-                <div onClick={delCity} style={{background:"rgba(200,50,50,0.7)",color:"#fff",borderRadius:5,padding:"4px 8px",fontSize:11,cursor:"pointer",flexShrink:0}}>🗑</div>
-              )}
-            </div>
-          ))}
-          <div onClick={addCity} style={{
-            display:"flex",alignItems:"center",justifyContent:"center",gap:5,
-            padding:"6px 0",borderRadius:5,border:"1px dashed rgba(100,180,100,0.5)",
-            color:"#6d6",fontSize:11,cursor:"pointer",marginTop:2,
-          }}>+ Ajouter une ville</div>
-        </div>
-
-        
-        <div style={{background:"rgba(255,255,255,0.07)",borderRadius:8,padding:"10px"}}>
-          <div style={{color:"rgba(255,255,255,0.5)",fontSize:9,letterSpacing:1,textTransform:"uppercase",marginBottom:8}}>
-            {lc.name || "Ville sélectionnée"}
-          </div>
-          <div style={{display:"flex",flexDirection:"column",gap:7}}>
-            {[["Nom","name","text"],["Temp actuelle (°C)","current","number"],["Emoji condition","condIcon","text"],["Condition texte","condition","text"],["Mis à jour","updated","text"]].map(([l,k,t])=>(
-              <div key={k} style={{display:"flex",alignItems:"center",gap:6}}>
-                <div style={{color:"rgba(255,255,255,0.5)",fontSize:9,width:90,flexShrink:0}}>{l}</div>
-                <input type={t} value={lc[k]??""} style={{...inp(),flex:1}}
-                  onChange={e=>setLcAndSave(p=>({...p,[k]:t==="number"?Number(e.target.value)||e.target.value:e.target.value}))}/>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        
-        <div style={{background:"rgba(255,255,255,0.07)",borderRadius:8,padding:"10px"}}>
-          <div style={{color:"rgba(255,255,255,0.5)",fontSize:9,letterSpacing:1,textTransform:"uppercase",marginBottom:8}}>Prévisions</div>
-          {(lc.forecast||[]).map((f,i)=>(
-            <div key={i} style={{display:"flex",gap:3,alignItems:"center",marginBottom:5}}>
-              <input value={f.day} placeholder="Jour" style={inp({flex:1,minWidth:0})}
-                onChange={e=>{const fc=[...lc.forecast];fc[i]={...fc[i],day:e.target.value};setLcAndSave(p=>({...p,forecast:fc}));}}/>
-              <input value={f.icon} placeholder="⛅" style={inp({width:32,textAlign:"center",padding:"4px 2px"})}
-                onChange={e=>{const fc=[...lc.forecast];fc[i]={...fc[i],icon:e.target.value};setLcAndSave(p=>({...p,forecast:fc}));}}/>
-              <input type="number" value={f.hi} placeholder="Hi" style={inp({width:36})}
-                onChange={e=>{const fc=[...lc.forecast];fc[i]={...fc[i],hi:Number(e.target.value)||0};setLcAndSave(p=>({...p,forecast:fc}));}}/>
-              <input type="number" value={f.lo} placeholder="Lo" style={inp({width:36})}
-                onChange={e=>{const fc=[...lc.forecast];fc[i]={...fc[i],lo:Number(e.target.value)||0};setLcAndSave(p=>({...p,forecast:fc}));}}/>
-              <div onClick={()=>{const fc=lc.forecast.filter((_,j)=>j!==i);setLcAndSave(p=>({...p,forecast:fc}));}}
-                style={{color:"#f66",fontSize:14,cursor:"pointer",flexShrink:0,padding:"0 2px"}}>✕</div>
-            </div>
-          ))}
-          <div onClick={()=>setLcAndSave(p=>({...p,forecast:[...(p.forecast||[]),{day:"NEW",icon:"☀️",hi:20,lo:12}]}))}
-            style={{color:"#4af",fontSize:10,cursor:"pointer",textAlign:"center",padding:"5px 0",
-              border:"1px dashed rgba(100,180,255,0.3)",borderRadius:4,marginTop:2}}>+ Ajouter un jour</div>
-        </div>
-
-      </div>
-    </div>
-  );
-};
 
 // Pinterest — faithful iOS 6 reproduction + full admin edit
 const PIN_DEFAULTS = [
@@ -3336,27 +2947,14 @@ const PIN_DEFAULTS = [
   {id:6,img:null,emoji:"🍰",repins:6500, board:"Recipes",      pinner:"BakingLover",        desc:"Raspberry layer cake 😍",tall:false},
 ];
 
-const PinterestScreen = ({isIos, data, admin, update}) => {
+const PinterestScreen = ({isIos, data}) => {
   const pins = data?.pinterest || PIN_DEFAULTS;
-  const [editingPin, setEditingPin] = useState(null); // id of pin being edited
-  const [localPin, setLocalPin]   = useState(null);
 
   const BG   = isIos ? "#f0f0f0" : "#1a1a1a";
   const CARD = isIos ? "#fff"    : "#2a2a2a";
   const TXT  = isIos ? "#222"    : "#eee";
   const SUB  = isIos ? "#888"    : "#999";
   const RED  = "#E60023";
-
-  const savePin = () => {
-    if(!localPin) return;
-    update&&update("pinterest", pins.map(p=>p.id===localPin.id?localPin:p));
-    setEditingPin(null); setLocalPin(null);
-  };
-  const deletePin = (id) => { update&&update("pinterest", pins.filter(p=>p.id!==id)); };
-  const addPin = () => {
-    const np={id:Date.now(),img:null,emoji:"📌",repins:0,board:"New Board",pinner:"",desc:"",tall:false};
-    update&&update("pinterest",[...pins,np]);
-  };
 
   const left  = pins.filter((_,i)=>i%2===0);
   const right = pins.filter((_,i)=>i%2===1);
@@ -3365,33 +2963,10 @@ const PinterestScreen = ({isIos, data, admin, update}) => {
     <div style={{background:CARD,borderRadius:isIos?6:2,overflow:"hidden",marginBottom:6,
       boxShadow:isIos?"0 1px 3px rgba(0,0,0,0.12)":"none",position:"relative"}}>
       {p.img
-        ? <div style={{position:"relative"}}>
-            <img src={p.img} style={{width:"100%",display:"block",objectFit:"cover"}}/>
-            {admin&&<label style={{position:"absolute",bottom:4,right:4,background:"rgba(0,0,0,0.55)",borderRadius:4,padding:"3px 5px",cursor:"pointer",display:"flex",alignItems:"center",gap:3,color:"#fff",fontSize:9}}>
-              <svg width="12" height="10" viewBox="0 0 24 20" fill="none"><path d="M23 17a2 2 0 01-2 2H3a2 2 0 01-2-2V6a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2v11z" stroke="currentColor" strokeWidth="2"/><circle cx="12" cy="12" r="3.5" stroke="currentColor" strokeWidth="2"/></svg>
-              Changer
-              <input type="file" accept="image/*" style={{display:"none"}} onChange={e=>{
-                const f=e.target.files?.[0]; if(!f) return;
-                const r=new UploadReader(); r.onload=ev=>update&&update("pinterest",pins.map(pin=>pin.id===p.id?{...pin,img:ev.target.result}:pin));
-                r.readAsDataURL(f); e.target.value="";
-              }}/>
-            </label>}
-          </div>
+        ? <img src={p.img} style={{width:"100%",display:"block",objectFit:"cover"}}/>
         : <div style={{height:p.tall?140:100,background:isIos?"#e8e8e8":"#333",
             display:"flex",alignItems:"center",justifyContent:"center",fontSize:36,position:"relative",overflow:"hidden"}}>
             {p.emoji}
-            {admin&&<label style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",background:"rgba(0,0,0,0.35)",cursor:"pointer",opacity:0,transition:"opacity 0.15s"}}
-              onMouseEnter={e=>e.currentTarget.style.opacity=1} onMouseLeave={e=>e.currentTarget.style.opacity=0}>
-              <svg width="22" height="18" viewBox="0 0 24 20" fill="none">
-                <path d="M23 17a2 2 0 01-2 2H3a2 2 0 01-2-2V6a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2v11z" stroke="#fff" strokeWidth="1.6"/>
-                <circle cx="12" cy="12" r="3.5" stroke="#fff" strokeWidth="1.6"/>
-              </svg>
-              <input type="file" accept="image/*" style={{display:"none"}} onChange={e=>{
-                const f=e.target.files?.[0]; if(!f) return;
-                const r=new UploadReader(); r.onload=ev=>update&&update("pinterest",pins.map(pin=>pin.id===p.id?{...pin,img:ev.target.result}:pin));
-                r.readAsDataURL(f); e.target.value="";
-              }}/>
-            </label>}
           </div>
       }
       <div style={{padding:"5px 7px 7px"}}>
@@ -3414,23 +2989,6 @@ const PinterestScreen = ({isIos, data, admin, update}) => {
           </div>
         </div>
       </div>
-      
-      {admin&&(
-        <div style={{display:"flex",borderTop:`1px solid ${isIos?"#eee":"#3a3a3a"}`}}>
-          <div onClick={()=>{setLocalPin({...p});setEditingPin(p.id);}}
-            style={{flex:1,background:"rgba(230,0,35,0.07)",color:RED,fontSize:8,textAlign:"center",padding:"4px 0",cursor:"pointer"}}>✏️ Éditer</div>
-          <div onClick={()=>{const el=document.getElementById(`pin-img-${p.id}`);el&&el.click();}}
-            style={{flex:1,background:"rgba(230,0,35,0.07)",color:RED,fontSize:8,textAlign:"center",padding:"4px 0",cursor:"pointer",borderLeft:`1px solid ${isIos?"#eee":"#3a3a3a"}`}}>📷</div>
-          <div onClick={()=>deletePin(p.id)}
-            style={{flex:1,background:"rgba(230,0,35,0.07)",color:"#c44",fontSize:8,textAlign:"center",padding:"4px 0",cursor:"pointer",borderLeft:`1px solid ${isIos?"#eee":"#3a3a3a"}`}}>🗑</div>
-        </div>
-      )}
-      {admin&&<input id={`pin-img-${p.id}`} type="file" accept="image/*" style={{display:"none"}} onChange={e=>{
-        const f=e.target.files?.[0];if(!f)return;
-        const r=new UploadReader();r.onload=ev=>{
-          update&&update("pinterest",pins.map(pp=>pp.id===p.id?{...pp,img:ev.target.result}:pp));
-        };r.readAsDataURL(f);e.target.value="";
-      }}/>}
     </div>
   );
 
@@ -3440,8 +2998,6 @@ const PinterestScreen = ({isIos, data, admin, update}) => {
       <div style={{background:isIos?"#fff":"#111",borderBottom:`1px solid ${isIos?"#ddd":"#333"}`,
         padding:"8px 12px",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,position:"relative"}}>
         <div style={{fontFamily:"Georgia,serif",fontSize:24,color:RED,fontStyle:"italic",letterSpacing:-0.5}}>Pinterest</div>
-        {admin&&<div onClick={addPin} style={{position:"absolute",right:10,top:"50%",transform:"translateY(-50%)",
-          background:RED,color:"#fff",borderRadius:4,padding:"2px 8px",fontSize:10,cursor:"pointer"}}>+ Pin</div>}
       </div>
 
       
@@ -3467,33 +3023,6 @@ const PinterestScreen = ({isIos, data, admin, update}) => {
           </div>
         ))}
       </div>
-
-      
-      {editingPin&&localPin&&(
-        <div style={{position:"absolute",inset:0,background:"rgba(0,0,0,0.88)",zIndex:50,padding:14,overflowY:"auto"}}>
-          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
-            <div style={{color:"#fff",fontWeight:700,fontSize:13}}>✏️ Éditer le pin</div>
-            <div style={{display:"flex",gap:6}}>
-              <div onClick={()=>{setEditingPin(null);setLocalPin(null);}} style={{background:"#555",color:"#fff",borderRadius:4,padding:"3px 8px",fontSize:10,cursor:"pointer"}}>Annuler</div>
-              <div onClick={savePin} style={{background:RED,color:"#fff",borderRadius:4,padding:"3px 8px",fontSize:10,cursor:"pointer"}}>✓ Sauver</div>
-            </div>
-          </div>
-          {[["Description","desc","text"],["Repins","repins","number"],["Tableau (board)","board","text"],["Pinner","pinner","text"],["Emoji (si pas de photo)","emoji","text"]].map(([l,k,t])=>(
-            <div key={k} style={{marginBottom:8}}>
-              <div style={{color:"rgba(255,255,255,0.55)",fontSize:9,marginBottom:3}}>{l}</div>
-              <input type={t} value={localPin[k]??""} onChange={e=>setLocalPin(p=>({...p,[k]:t==="number"?Number(e.target.value)||e.target.value:e.target.value}))}
-                style={{width:"100%",background:"rgba(255,255,255,0.12)",border:"1px solid rgba(255,255,255,0.25)",color:"#fff",borderRadius:4,padding:"4px 7px",fontSize:11,outline:"none"}}/>
-            </div>
-          ))}
-          <div style={{display:"flex",gap:8,alignItems:"center",marginTop:4}}>
-            <label style={{color:"rgba(255,255,255,0.55)",fontSize:9}}>Hauteur :</label>
-            {[["Normal",false],["Grand (tall)",true]].map(([l,v])=>(
-              <div key={l} onClick={()=>setLocalPin(p=>({...p,tall:v}))}
-                style={{background:localPin.tall===v?RED:"rgba(255,255,255,0.15)",color:"#fff",borderRadius:4,padding:"3px 8px",fontSize:10,cursor:"pointer"}}>{l}</div>
-            ))}
-          </div>
-        </div>
-      )}
     </div>
   );
 };
@@ -3795,29 +3324,9 @@ const SoundCloudScreen = ({data, isIos, accent, admin=false, update=null}) => {
                   ))}
                 </div>
               )}
-            {admin&&<div style={{marginTop:8,borderTop:"1px dashed rgba(255,85,0,0.3)",paddingTop:8,display:"flex",flexDirection:"column",gap:6}}>
-                <input value={tr.title} onChange={e=>update&&update("soundcloud",{...sc,tracks:sc.tracks.map(t=>t.id===tr.id?{...t,title:e.target.value}:t)})}
-                  style={{background:"rgba(255,85,0,0.1)",border:"1px solid rgba(255,85,0,0.4)",borderRadius:4,color:"#fff",fontSize:11,padding:"3px 7px",outline:"none",width:"100%"}} placeholder="Titre"/>
-                <input value={tr.tag||""} onChange={e=>update&&update("soundcloud",{...sc,tracks:sc.tracks.map(t=>t.id===tr.id?{...t,tag:e.target.value}:t)})}
-                  style={{background:"rgba(255,85,0,0.1)",border:"1px solid rgba(255,85,0,0.4)",borderRadius:4,color:"#fff",fontSize:11,padding:"3px 7px",outline:"none",width:"100%"}} placeholder="Genre / tag"/>
-                <textarea value={tr.desc||""} onChange={e=>update&&update("soundcloud",{...sc,tracks:sc.tracks.map(t=>t.id===tr.id?{...t,desc:e.target.value}:t)})}
-                  rows={2} style={{background:"rgba(255,85,0,0.1)",border:"1px solid rgba(255,85,0,0.4)",borderRadius:4,color:"#fff",fontSize:11,padding:"3px 7px",outline:"none",width:"100%",resize:"none",fontFamily:"inherit"}} placeholder="Description"/>
-                <div style={{display:"flex",gap:6}}>
-                  <input value={tr.dur||""} onChange={e=>update&&update("soundcloud",{...sc,tracks:sc.tracks.map(t=>t.id===tr.id?{...t,dur:e.target.value}:t)})}
-                    style={{flex:1,background:"rgba(255,85,0,0.1)",border:"1px solid rgba(255,85,0,0.4)",borderRadius:4,color:"#fff",fontSize:10,padding:"3px 5px",outline:"none"}} placeholder="Durée (ex: 3:42)"/>
-                  <button onClick={()=>update&&update("soundcloud",{...sc,tracks:sc.tracks.filter(t=>t.id!==tr.id)})}
-                    style={{background:"#c0392b",border:"none",color:"#fff",borderRadius:4,padding:"3px 8px",fontSize:10,cursor:"pointer"}}>Suppr.</button>
-                </div>
-              </div>}
             </div>
           );
         })}
-        {admin&&<div style={{padding:"10px 12px",borderTop:"1px dashed rgba(255,85,0,0.3)"}}>
-          <button onClick={()=>update&&update("soundcloud",{...sc,tracks:[...sc.tracks,{id:Date.now(),title:"Nouveau titre",tag:"electronic",desc:"",dur:"0:00",plays:0,likes:0,reposts:0,posted:"aujourd'hui",wave:[],comments:[]}]})}
-            style={{background:ORANGE,border:"none",color:"#fff",borderRadius:6,padding:"6px 14px",fontSize:11,cursor:"pointer",fontWeight:600,width:"100%"}}>
-            + Ajouter un track
-          </button>
-        </div>}
         <div style={{padding:"12px",textAlign:"center",color:"#aaa",fontSize:9}}>SoundCloud · soundcloud.com/{sc.handle||"eoghan_masuda"}</div>
       </div>
 
@@ -4224,51 +3733,51 @@ const SoundHoundScreen = ({isIos, accent}) => (
 // YouTube — feeds par défaut par perso, éditables depuis l'admin (clé: data.youtubeVideos[charKey])
 const YOUTUBE_FEEDS_DEFAULT = {
   elias: [
-    {id:1,  ch:"ViceNews",       chAvatar:"📰", age:"2j",   views:"1.2M vues",  dur:"18:02", thumb:"#0d1b2a", title:"Missing in Maine: Why Are Children Disappearing from Small Towns?"},
-    {id:2,  ch:"Nerdwriter1",    chAvatar:"📚", age:"3j",   views:"341k vues",  dur:"9:14",  thumb:"#1c1c1c", title:"Stephen King's IT: Why Derry Is the Perfect American Horror"},
-    {id:3,  ch:"PBS Space Time", chAvatar:"🔬", age:"5j",   views:"2.1M vues",  dur:"22:47", thumb:"#0a0a1a", title:"Can Memory Be Erased? The Science of Selective Amnesia"},
-    {id:4,  ch:"BuzzFeedUnsolved",chAvatar:"🕵️",age:"1sem", views:"4.8M vues",  dur:"31:22", thumb:"#1a0a0a", title:"The Derry Disappearances: 27 Cases, 27 Years — Unsolved"},
-    {id:5,  ch:"SciShow",        chAvatar:"🧠", age:"1sem", views:"980k vues",  dur:"11:30", thumb:"#1a1500", title:"Why Do Some People See Things That Aren't There?"},
-    {id:6,  ch:"MainePublicTV",  chAvatar:"🌊", age:"4j",   views:"12k vues",   dur:"6:18",  thumb:"#0a1a0a", title:"Kennebec River 2012: Environmental Concerns Grow Among Locals"},
-    {id:7,  ch:"CreepyReadings", chAvatar:"👻", age:"6j",   views:"89k vues",   dur:"14:05", thumb:"#1a0000", title:"10 Real Locations from Urban Legends You Can Actually Visit"},
-    {id:8,  ch:"IGN",            chAvatar:"🎮", age:"2sem", views:"1.7M vues",  dur:"12:34", thumb:"#001a1a", title:"Top 10 Scariest Games of 2012 — You Won't Finish These Alone"},
+    {id:1,  ch:"ViceNews",       chAvatar:"📰", age:"2d",   views:"1.2M vues",  dur:"18:02", thumb:"#0d1b2a", title:"Missing in Maine: Why Are Children Disappearing from Small Towns?"},
+    {id:2,  ch:"Nerdwriter1",    chAvatar:"📚", age:"3d",   views:"341k vues",  dur:"9:14",  thumb:"#1c1c1c", title:"Stephen King's IT: Why Derry Is the Perfect American Horror"},
+    {id:3,  ch:"PBS Space Time", chAvatar:"🔬", age:"5d",   views:"2.1M vues",  dur:"22:47", thumb:"#0a0a1a", title:"Can Memory Be Erased? The Science of Selective Amnesia"},
+    {id:4,  ch:"BuzzFeedUnsolved",chAvatar:"🕵️",age:"1w", views:"4.8M vues",  dur:"31:22", thumb:"#1a0a0a", title:"The Derry Disappearances: 27 Cases, 27 Years — Unsolved"},
+    {id:5,  ch:"SciShow",        chAvatar:"🧠", age:"1w", views:"980k vues",  dur:"11:30", thumb:"#1a1500", title:"Why Do Some People See Things That Aren't There?"},
+    {id:6,  ch:"MainePublicTV",  chAvatar:"🌊", age:"4d",   views:"12k vues",   dur:"6:18",  thumb:"#0a1a0a", title:"Kennebec River 2012: Environmental Concerns Grow Among Locals"},
+    {id:7,  ch:"CreepyReadings", chAvatar:"👻", age:"6d",   views:"89k vues",   dur:"14:05", thumb:"#1a0000", title:"10 Real Locations from Urban Legends You Can Actually Visit"},
+    {id:8,  ch:"IGN",            chAvatar:"🎮", age:"2w", views:"1.7M vues",  dur:"12:34", thumb:"#001a1a", title:"Top 10 Scariest Games of 2012 — You Won't Finish These Alone"},
   ],
   glinda: [
-    {id:1,  ch:"VogueTV",        chAvatar:"👗", age:"1j",   views:"2.3M vues",  dur:"8:22",  thumb:"#1a0a1a", title:"Fall 2012 Trends: Everything You Need to Know About This Season"},
-    {id:2,  ch:"PointsofLight",  chAvatar:"✨", age:"2j",   views:"456k vues",  dur:"15:44", thumb:"#1a1a0a", title:"The Psychology of Optimism — How to Stay Positive Through Anything"},
-    {id:3,  ch:"TaylorSwiftVEVO",chAvatar:"🎤", age:"3j",   views:"18M vues",   dur:"4:01",  thumb:"#0a0a1a", title:"Taylor Swift - We Are Never Ever Getting Back Together (Official)"},
-    {id:4,  ch:"DIYCrafters",    chAvatar:"🎨", age:"5j",   views:"223k vues",  dur:"11:30", thumb:"#0a1a0a", title:"DIY Room Décor for Fall — Cozy Aesthetic on a Budget"},
-    {id:5,  ch:"MinuteEarth",    chAvatar:"🌍", age:"1sem", views:"890k vues",  dur:"5:14",  thumb:"#001a0a", title:"Why Do Monarch Butterflies Always Find Their Way Back?"},
-    {id:6,  ch:"TedTalks",       chAvatar:"💬", age:"1sem", views:"3.1M vues",  dur:"18:05", thumb:"#0a0a0a", title:"The Art of Being Present: Brené Brown on Vulnerability and Joy"},
-    {id:7,  ch:"StyleByGlinda",  chAvatar:"💅", age:"3j",   views:"4.2k vues",  dur:"6:48",  thumb:"#1a0a0a", title:"GRWM: First Day of Fall Semester at UMA — Outfit + Makeup"},
-    {id:8,  ch:"KatyPerryVEVO",  chAvatar:"🎵", age:"2sem", views:"22M vues",   dur:"3:56",  thumb:"#1a001a", title:"Katy Perry - Roar (Official Music Video)"},
+    {id:1,  ch:"VogueTV",        chAvatar:"👗", age:"1d",   views:"2.3M vues",  dur:"8:22",  thumb:"#1a0a1a", title:"Fall 2012 Trends: Everything You Need to Know About This Season"},
+    {id:2,  ch:"PointsofLight",  chAvatar:"✨", age:"2d",   views:"456k vues",  dur:"15:44", thumb:"#1a1a0a", title:"The Psychology of Optimism — How to Stay Positive Through Anything"},
+    {id:3,  ch:"TaylorSwiftVEVO",chAvatar:"🎤", age:"3d",   views:"18M vues",   dur:"4:01",  thumb:"#0a0a1a", title:"Taylor Swift - We Are Never Ever Getting Back Together (Official)"},
+    {id:4,  ch:"DIYCrafters",    chAvatar:"🎨", age:"5d",   views:"223k vues",  dur:"11:30", thumb:"#0a1a0a", title:"DIY Room Décor for Fall — Cozy Aesthetic on a Budget"},
+    {id:5,  ch:"MinuteEarth",    chAvatar:"🌍", age:"1w", views:"890k vues",  dur:"5:14",  thumb:"#001a0a", title:"Why Do Monarch Butterflies Always Find Their Way Back?"},
+    {id:6,  ch:"TedTalks",       chAvatar:"💬", age:"1w", views:"3.1M vues",  dur:"18:05", thumb:"#0a0a0a", title:"The Art of Being Present: Brené Brown on Vulnerability and Joy"},
+    {id:7,  ch:"StyleByGlinda",  chAvatar:"💅", age:"3d",   views:"4.2k vues",  dur:"6:48",  thumb:"#1a0a0a", title:"GRWM: First Day of Fall Semester at UMA — Outfit + Makeup"},
+    {id:8,  ch:"KatyPerryVEVO",  chAvatar:"🎵", age:"2w", views:"22M vues",   dur:"3:56",  thumb:"#1a001a", title:"Katy Perry - Roar (Official Music Video)"},
   ],
   eoghan: [
-    {id:1,  ch:"NFLFilms",       chAvatar:"🏈", age:"1j",   views:"3.4M vues",  dur:"22:18", thumb:"#0a1a00", title:"The Greatest Fourth Quarter Comebacks in NFL History"},
-    {id:2,  ch:"AthleteInsider", chAvatar:"💪", age:"2j",   views:"780k vues",  dur:"14:33", thumb:"#001a00", title:"How to Train Like an NFL Wide Receiver: Speed, Routes, Hands"},
-    {id:3,  ch:"ESPN",           chAvatar:"⚡", age:"3j",   views:"1.1M vues",  dur:"7:45",  thumb:"#1a0a00", title:"Top 10 Most Unbelievable Catches of 2012 Season — So Far"},
-    {id:4,  ch:"PhilosophyTube", chAvatar:"🎭", age:"5j",   views:"234k vues",  dur:"19:02", thumb:"#0a001a", title:"The Trolley Problem and Real Decisions Under Pressure"},
-    {id:5,  ch:"CrashCourse",    chAvatar:"📖", age:"1sem", views:"620k vues",  dur:"16:44", thumb:"#001a1a", title:"Symbolism & Ritual in Pre-Modern Societies — What We Don't Understand"},
-    {id:6,  ch:"GordonRamsay",   chAvatar:"🍳", age:"4j",   views:"5.6M vues",  dur:"12:20", thumb:"#1a0800", title:"Gordon Ramsay's Perfect Pasta — Step by Step for Beginners"},
-    {id:7,  ch:"MooseFootball",  chAvatar:"🫎", age:"2j",   views:"8.2k vues",  dur:"4:15",  thumb:"#001a0a", title:"UMA Moose vs Vermont: Highlights — September 22, 2012"},
-    {id:8,  ch:"SciShow",        chAvatar:"🧠", age:"3j",   views:"1.3M vues",  dur:"9:58",  thumb:"#1a1a00", title:"What Does Fear Actually Do to Your Body? The Science Explained"},
+    {id:1,  ch:"NFLFilms",       chAvatar:"🏈", age:"1d",   views:"3.4M vues",  dur:"22:18", thumb:"#0a1a00", title:"The Greatest Fourth Quarter Comebacks in NFL History"},
+    {id:2,  ch:"AthleteInsider", chAvatar:"💪", age:"2d",   views:"780k vues",  dur:"14:33", thumb:"#001a00", title:"How to Train Like an NFL Wide Receiver: Speed, Routes, Hands"},
+    {id:3,  ch:"ESPN",           chAvatar:"⚡", age:"3d",   views:"1.1M vues",  dur:"7:45",  thumb:"#1a0a00", title:"Top 10 Most Unbelievable Catches of 2012 Season — So Far"},
+    {id:4,  ch:"PhilosophyTube", chAvatar:"🎭", age:"5d",   views:"234k vues",  dur:"19:02", thumb:"#0a001a", title:"The Trolley Problem and Real Decisions Under Pressure"},
+    {id:5,  ch:"CrashCourse",    chAvatar:"📖", age:"1w", views:"620k vues",  dur:"16:44", thumb:"#001a1a", title:"Symbolism & Ritual in Pre-Modern Societies — What We Don't Understand"},
+    {id:6,  ch:"GordonRamsay",   chAvatar:"🍳", age:"4d",   views:"5.6M vues",  dur:"12:20", thumb:"#1a0800", title:"Gordon Ramsay's Perfect Pasta — Step by Step for Beginners"},
+    {id:7,  ch:"MooseFootball",  chAvatar:"🫎", age:"2d",   views:"8.2k vues",  dur:"4:15",  thumb:"#001a0a", title:"UMA Moose vs Vermont: Highlights — September 22, 2012"},
+    {id:8,  ch:"SciShow",        chAvatar:"🧠", age:"3d",   views:"1.3M vues",  dur:"9:58",  thumb:"#1a1a00", title:"What Does Fear Actually Do to Your Body? The Science Explained"},
   ],
   drew: [
-    {id:1,  ch:"TheRootsVEVO",        chAvatar:"🎸", age:"1j",   views:"890k vues",  dur:"5:44",  thumb:"#0a0a1a", title:"The Roots - The Fire ft. John Legend (Official Video)"},
-    {id:2,  ch:"KendrickLamarVEVO",   chAvatar:"🎤", age:"1j",   views:"6.2M vues",  dur:"4:21",  thumb:"#0d0d1a", title:"Kendrick Lamar - Swimming Pools (Drank) [Official Video]"},
-    {id:3,  ch:"FrankOceanVEVO",      chAvatar:"🎵", age:"2j",   views:"3.8M vues",  dur:"5:02",  thumb:"#001020", title:"Frank Ocean - Thinkin Bout You (Official Video)"},
-    {id:4,  ch:"NatureLabsMaine",     chAvatar:"🌲", age:"2j",   views:"18k vues",   dur:"17:30", thumb:"#081808", title:"What Actually Lives in Maine Old Growth Forests — a Field Guide"},
-    {id:5,  ch:"DeepDivePodcast",     chAvatar:"🎙️", age:"2j",   views:"45k vues",   dur:"1:02:18",thumb:"#0a1010",title:"Ep. 47 — Le phénomène Derry : folklore ou quelque chose de plus ?"},
-    {id:6,  ch:"CrashCourse Biology", chAvatar:"🪱", age:"3j",   views:"1.4M vues",  dur:"11:22", thumb:"#001a08", title:"Oligochaeta: Why Earthworms Are the Most Underrated Organism on Earth"},
-    {id:7,  ch:"OffGridLiving",       chAvatar:"🔥", age:"3j",   views:"567k vues",  dur:"23:14", thumb:"#1a0800", title:"72 heures dans les bois avec rien — guide réaliste de survie"},
-    {id:8,  ch:"RadioheadOfficial",   chAvatar:"🎧", age:"4j",   views:"2.2M vues",  dur:"4:48",  thumb:"#101010", title:"Radiohead - Pyramid Song (Official Video)"},
-    {id:9,  ch:"ViceNews",            chAvatar:"📰", age:"4j",   views:"3.1M vues",  dur:"21:05", thumb:"#0a0a0a", title:"American Towns Are Dying — What's Really Killing Small Communities"},
-    {id:10, ch:"iNaturalistChannel",  chAvatar:"🔬", age:"5j",   views:"34k vues",   dur:"8:44",  thumb:"#001208", title:"iNaturalist Tips: How to Identify Invertebrates in the Field"},
-    {id:11, ch:"NasaJPL",             chAvatar:"🚀", age:"5j",   views:"4.4M vues",  dur:"9:12",  thumb:"#00000a", title:"What We Actually Know About the Dark Side of the Moon"},
-    {id:12, ch:"BraineScienceDaily",  chAvatar:"🧠", age:"6j",   views:"780k vues",  dur:"14:55", thumb:"#0a0010", title:"How Trauma Rewires the Brain — and Whether It Can Be Reversed"},
-    {id:13, ch:"GoldieVEVO",          chAvatar:"🎶", age:"6j",   views:"120k vues",  dur:"5:30",  thumb:"#080010", title:"Goldie - Inner City Life (Official Video)"},
-    {id:14, ch:"TheNationalVEVO",     chAvatar:"🎸", age:"1sem", views:"445k vues",  dur:"4:12",  thumb:"#0a0808", title:"The National - Bloodbuzz Ohio (Official Video)"},
-    {id:15, ch:"Maine Public",        chAvatar:"🌊", age:"1sem", views:"8.2k vues",  dur:"6:18",  thumb:"#060e06", title:"Kennebec River Levels — Environmental Update Summer 2012"},
+    {id:1,  ch:"TheRootsVEVO",        chAvatar:"🎸", age:"1d",   views:"890k vues",  dur:"5:44",  thumb:"#0a0a1a", title:"The Roots - The Fire ft. John Legend (Official Video)"},
+    {id:2,  ch:"KendrickLamarVEVO",   chAvatar:"🎤", age:"1d",   views:"6.2M vues",  dur:"4:21",  thumb:"#0d0d1a", title:"Kendrick Lamar - Swimming Pools (Drank) [Official Video]"},
+    {id:3,  ch:"FrankOceanVEVO",      chAvatar:"🎵", age:"2d",   views:"3.8M vues",  dur:"5:02",  thumb:"#001020", title:"Frank Ocean - Thinkin Bout You (Official Video)"},
+    {id:4,  ch:"NatureLabsMaine",     chAvatar:"🌲", age:"2d",   views:"18k vues",   dur:"17:30", thumb:"#081808", title:"What Actually Lives in Maine Old Growth Forests — a Field Guide"},
+    {id:5,  ch:"DeepDivePodcast",     chAvatar:"🎙️", age:"2d",   views:"45k vues",   dur:"1:02:18",thumb:"#0a1010",title:"Ep. 47 — Le phénomène Derry : folklore ou quelque chose de plus ?"},
+    {id:6,  ch:"CrashCourse Biology", chAvatar:"🪱", age:"3d",   views:"1.4M vues",  dur:"11:22", thumb:"#001a08", title:"Oligochaeta: Why Earthworms Are the Most Underrated Organism on Earth"},
+    {id:7,  ch:"OffGridLiving",       chAvatar:"🔥", age:"3d",   views:"567k vues",  dur:"23:14", thumb:"#1a0800", title:"72 heures dans les bois avec rien — guide réaliste de survie"},
+    {id:8,  ch:"RadioheadOfficial",   chAvatar:"🎧", age:"4d",   views:"2.2M vues",  dur:"4:48",  thumb:"#101010", title:"Radiohead - Pyramid Song (Official Video)"},
+    {id:9,  ch:"ViceNews",            chAvatar:"📰", age:"4d",   views:"3.1M vues",  dur:"21:05", thumb:"#0a0a0a", title:"American Towns Are Dying — What's Really Killing Small Communities"},
+    {id:10, ch:"iNaturalistChannel",  chAvatar:"🔬", age:"5d",   views:"34k vues",   dur:"8:44",  thumb:"#001208", title:"iNaturalist Tips: How to Identify Invertebrates in the Field"},
+    {id:11, ch:"NasaJPL",             chAvatar:"🚀", age:"5d",   views:"4.4M vues",  dur:"9:12",  thumb:"#00000a", title:"What We Actually Know About the Dark Side of the Moon"},
+    {id:12, ch:"BraineScienceDaily",  chAvatar:"🧠", age:"6d",   views:"780k vues",  dur:"14:55", thumb:"#0a0010", title:"How Trauma Rewires the Brain — and Whether It Can Be Reversed"},
+    {id:13, ch:"GoldieVEVO",          chAvatar:"🎶", age:"6d",   views:"120k vues",  dur:"5:30",  thumb:"#080010", title:"Goldie - Inner City Life (Official Video)"},
+    {id:14, ch:"TheNationalVEVO",     chAvatar:"🎸", age:"1w", views:"445k vues",  dur:"4:12",  thumb:"#0a0808", title:"The National - Bloodbuzz Ohio (Official Video)"},
+    {id:15, ch:"Maine Public",        chAvatar:"🌊", age:"1w", views:"8.2k vues",  dur:"6:18",  thumb:"#060e06", title:"Kennebec River Levels — Environmental Update Summer 2012"},
   ],
 };
 
@@ -4486,17 +3995,17 @@ const RedditScreen = ({data, isIos, accent}) => {
 
   const ALL_POSTS = (data?.reddit && data.reddit.length > 0) ? data.reddit : REDDIT_ALL_POSTS;
   const myPosts = [
-    {id:101, sub:"r/UFOs",       age:"3j",  pts:"47",  comm:12, title:"Symboles trouvés dans les égouts d'Augusta — quelqu'un reconnaît ? [photos]", domain:"i.imgur.com"},
-    {id:102, sub:"r/conspiracy", age:"1 sem", pts:"312", comm:89, title:"Enfants disparus selon un cycle de 27 ans — Derry ME. J'ai un tableur.", domain:"self.conspiracy"},
-    {id:103, sub:"r/Augusta_ME", age:"2 sem", pts:"28",  comm:9,  title:"Ma sœur Anna Green a été enlevée le 13 juillet. Je ne m'arrêterai pas avant de trouver des réponses.", domain:"self.Augusta_ME"},
+    {id:101, sub:"r/UFOs",       age:"3d",  pts:"47",  comm:12, title:"Symboles trouvés dans les égouts d'Augusta — quelqu'un reconnaît ? [photos]", domain:"i.imgur.com"},
+    {id:102, sub:"r/conspiracy", age:"1w", pts:"312", comm:89, title:"Enfants disparus selon un cycle de 27 ans — Derry ME. J'ai un tableur.", domain:"self.conspiracy"},
+    {id:103, sub:"r/Augusta_ME", age:"2w", pts:"28",  comm:9,  title:"Ma sœur Anna Green a été enlevée le 13 juillet. Je ne m'arrêterai pas avant de trouver des réponses.", domain:"self.Augusta_ME"},
   ];
 
   const inbox = [
     {user:"u/TruthSeeker99",     age:"2h",  preview:"re: disparitions de Derry — je documente ça depuis 2009. Il faut qu'on parle en privé.",           unread:true},
     {user:"u/MaineWatcher",      age:"5h",  preview:"re: symboles égouts Augusta — j'ai photographié les mêmes près du canal en 1985. Ils sont encore là.", unread:true},
-    {user:"u/AutoModerator",     age:"1j",  preview:"Votre post 'Enfants disparus selon un cycle de 27 ans' a été supprimé pour violation de la règle 4.", unread:false},
-    {user:"u/paranormal_Keene",  age:"2j",  preview:"re: clown — c'était près de la Neibolt House, je le jure. Cette maison n'existe pas sur les cartes.",  unread:false},
-    {user:"u/RedditCareResources",age:"3j", preview:"Quelqu'un nous a envoyé un rapport Reddit Cares vous concernant. On veut prendre de vos nouvelles.",   unread:false},
+    {user:"u/AutoModerator",     age:"1d",  preview:"Votre post 'Enfants disparus selon un cycle de 27 ans' a été supprimé pour violation de la règle 4.", unread:false},
+    {user:"u/paranormal_Keene",  age:"2d",  preview:"re: clown — c'était près de la Neibolt House, je le jure. Cette maison n'existe pas sur les cartes.",  unread:false},
+    {user:"u/RedditCareResources",age:"3d", preview:"Quelqu'un nous a envoyé un rapport Reddit Cares vous concernant. On veut prendre de vos nouvelles.",   unread:false},
   ];
 
   const subs = [
@@ -4761,10 +4270,10 @@ const TWITTER_HOME_BASE = {
     {h:"@boq_uma",name:"Boq 🌹",text:"bonne chance à @glindarvf et toute la squad pour le match aujourd'hui 🌹🏈",time:"1:00am",av:"B",rp:4,rt:11,fav:38},
     {h:"@boq_uma",name:"Boq 🌹",text:"j'ai relu mes notes de cours d'éco. en fait elles sont nulles 🙃 @glindarvf",time:"5:00am",av:"B",rp:0,rt:25,fav:66},
     {h:"@cynthia_k",name:"Cynthia K.",text:"club échecs UMA demain 14h salle B204! @glindarvf @dreww_orms",time:"6:00am",av:"C",rp:7,rt:25,fav:111},
-    {h:"@taylorswift13",name:"Taylor Swift",text:"sometimes the best way to get over someone is to write a really really really mean song about them",time:"1j",av:"T",rp:412,rt:1803,fav:6044},
-    {h:"@eoghan_m",name:"Eoghan M.",text:"la soirée de jackson le 15 sep était iconique jusqu'à ce qu'elle soit terrifiante. go Moose quand même 🏈",time:"2j",av:"E",rp:4,rt:12,fav:38},
-    {h:"@cynthia_k",name:"Cynthia K.",text:"quelqu'un sait où est Liam ? genre dans la vraie vie il a disparu de la soirée et personne répond",time:"2j",av:"C",rp:18,rt:44,fav:19},
-    {h:"@noteliasgreen",name:"Elias G.",text:"les enfants du quartier entendent des voix dans les canalisations. quelqu'un d'autre ?",time:"3j",av:"E",rp:3,rt:9,fav:4},
+    {h:"@taylorswift13",name:"Taylor Swift",text:"sometimes the best way to get over someone is to write a really really really mean song about them",time:"1d",av:"T",rp:412,rt:1803,fav:6044},
+    {h:"@eoghan_m",name:"Eoghan M.",text:"la soirée de jackson le 15 sep était iconique jusqu'à ce qu'elle soit terrifiante. go Moose quand même 🏈",time:"2d",av:"E",rp:4,rt:12,fav:38},
+    {h:"@cynthia_k",name:"Cynthia K.",text:"quelqu'un sait où est Liam ? genre dans la vraie vie il a disparu de la soirée et personne répond",time:"2d",av:"C",rp:18,rt:44,fav:19},
+    {h:"@noteliasgreen",name:"Elias G.",text:"les enfants du quartier entendent des voix dans les canalisations. quelqu'un d'autre ?",time:"3d",av:"E",rp:3,rt:9,fav:4},
   ],
   eoghan:[
     {h:"@glindarvf",name:"Glinda R.",text:"Gee par SNSD en boucle depuis 3h. pas de regrets. #SNSD",time:"30m",av:"G",rp:14,rt:1,fav:81},
@@ -4773,10 +4282,10 @@ const TWITTER_HOME_BASE = {
     {h:"@asra_k",name:"Asra K.",text:"@eoghan_m tu réponds plus aux snaps ou bien",time:"2:00am",av:"A",rp:1,rt:13,fav:50},
     {h:"@rihannaworld",name:"Rihanna",text:"We Found Love dropped 1 year ago today 🙌 @CalvinHarris",time:"3:00am",av:"R",rp:21,rt:6,fav:61},
     {h:"@dreww_orms",name:"Drew B.",text:"1812 elo. je suis un humble joueur d'échecs. c'est tout. ♟️",time:"4:00am",av:"D",rp:5,rt:3,fav:65},
-    {h:"@glindarvf",name:"Glinda R.",text:"poirier réussi du premier coup la nuit dernière. on ne mentionnera pas qui a échoué. (c'était pas moi)",time:"1j",av:"G",rp:2,rt:8,fav:44},
-    {h:"@ilya_beats",name:"Ilya 🔥",text:"@eoghan_m boude pas, viens plutôt",time:"1j",av:"I",rp:0,rt:3,fav:22},
-    {h:"@uma_football",name:"UMA Moose FB 🏈",text:"GO MOOSE 🫎 match samedi 6 oct contre Vermont Beavers. venez soutenir votre équipe !",time:"2j",av:"M",rp:9,rt:31,fav:87},
-    {h:"@asra_k",name:"Asra K.",text:"quelqu'un sait pourquoi il y avait une flaque de sang dans la chambre du fond chez Jackson ? la police a rien expliqué",time:"2j",av:"A",rp:44,rt:122,fav:67},
+    {h:"@glindarvf",name:"Glinda R.",text:"poirier réussi du premier coup la nuit dernière. on ne mentionnera pas qui a échoué. (c'était pas moi)",time:"1d",av:"G",rp:2,rt:8,fav:44},
+    {h:"@ilya_beats",name:"Ilya 🔥",text:"@eoghan_m boude pas, viens plutôt",time:"1d",av:"I",rp:0,rt:3,fav:22},
+    {h:"@uma_football",name:"UMA Moose FB 🏈",text:"GO MOOSE 🫎 match samedi 6 oct contre Vermont Beavers. venez soutenir votre équipe !",time:"2d",av:"M",rp:9,rt:31,fav:87},
+    {h:"@asra_k",name:"Asra K.",text:"quelqu'un sait pourquoi il y avait une flaque de sang dans la chambre du fond chez Jackson ? la police a rien expliqué",time:"2d",av:"A",rp:44,rt:122,fav:67},
   ],
   drew:[
     {h:"@glindarvf",name:"Glinda R.",text:"bibliothèque UMA = mon nouveau chez moi ☕📚 #UMA",time:"10m",av:"G",rp:8,rt:28,fav:30},
@@ -4786,9 +4295,9 @@ const TWITTER_HOME_BASE = {
     {h:"@cynthia_k",name:"Cynthia K.",text:"@dreww_orms t'as vu le classement des clubs ? on est PREMIERS 🏆",time:"3:00am",av:"C",rp:5,rt:0,fav:12},
     {h:"@fobofficiel",name:"Fall Out Boy",text:"NEW ALBUM FALL 2013 🔥 #FallOutBoy #Comeback",time:"4:00am",av:"F",rp:23,rt:35,fav:36},
     {h:"@inaturalist",name:"iNaturalist",text:"Species of the day: Lumbricus terrestris 🪱 #nature",time:"6:00am",av:"i",rp:8,rt:3,fav:71},
-    {h:"@noteliasgreen",name:"Elias G.",text:"les égouts de Derry sont plus grands que vous le pensez. il y a des choses dedans.",time:"1j",av:"E",rp:3,rt:11,fav:8},
-    {h:"@eoghan_m",name:"Eoghan M.",text:"quelqu'un sait lire dans les mains ? pas pour moi c'est pour un ami",time:"2j",av:"E",rp:7,rt:14,fav:33},
-    {h:"@nils_k",name:"Nils K.",text:"back in Derry for the weekend. cette ville ne change jamais.",time:"3j",av:"N",rp:0,rt:0,fav:3},
+    {h:"@noteliasgreen",name:"Elias G.",text:"les égouts de Derry sont plus grands que vous le pensez. il y a des choses dedans.",time:"1d",av:"E",rp:3,rt:11,fav:8},
+    {h:"@eoghan_m",name:"Eoghan M.",text:"quelqu'un sait lire dans les mains ? pas pour moi c'est pour un ami",time:"2d",av:"E",rp:7,rt:14,fav:33},
+    {h:"@nils_k",name:"Nils K.",text:"back in Derry for the weekend. cette ville ne change jamais.",time:"3d",av:"N",rp:0,rt:0,fav:3},
   ],
   elias:[
     {h:"@eoghan_m",name:"Eoghan M.",text:"les égouts de derry sont plus grands que vous ne le pensez.",time:"5m",av:"E",rp:24,rt:24,fav:58},
@@ -4797,17 +4306,18 @@ const TWITTER_HOME_BASE = {
     {h:"@dreww_orms",name:"Drew B.",text:"quelqu'un peut m'expliquer pourquoi je me souviens pas du mois de juillet ?",time:"2:00am",av:"D",rp:21,rt:30,fav:38},
     {h:"@creepypasta",name:"CreepyPasta",text:"The disappearances of Derry, Maine — thread 🧵 #derry #horror",time:"3:00am",av:"👻",rp:10,rt:1,fav:34},
     {h:"@radiohead",name:"Radiohead",text:"No surprises. No alarms. And no surprises.",time:"4:00am",av:"R",rp:22,rt:13,fav:100},
-    {h:"@noteliasgreen",name:"Elias G.",text:"update : ma soeur Anna a été retrouvée. catatonique. à l'hôpital. si vous savez quelque chose sur Derry ME écrivez-moi.",time:"1j",av:"E",rp:82,rt:230,fav:541},
-    {h:"@prof_hanlon",name:"Mike Hanlon",text:"les bibliothèques gardent la mémoire que les gens préfèrent oublier. #Derry",time:"2j",av:"H",rp:14,rt:7,fav:22},
-    {h:"@derrypolice",name:"Derry Police Dept",text:"L'enquête sur les disparitions de juillet est toujours ouverte. Merci au public pour sa patience.",time:"3j",av:"P",rp:33,rt:89,fav:12},
+    {h:"@noteliasgreen",name:"Elias G.",text:"update : ma soeur Anna a été retrouvée. catatonique. à l'hôpital. si vous savez quelque chose sur Derry ME écrivez-moi.",time:"1d",av:"E",rp:82,rt:230,fav:541},
+    {h:"@prof_hanlon",name:"Mike Hanlon",text:"les bibliothèques gardent la mémoire que les gens préfèrent oublier. #Derry",time:"2d",av:"H",rp:14,rt:7,fav:22},
+    {h:"@derrypolice",name:"Derry Police Dept",text:"L'enquête sur les disparitions de juillet est toujours ouverte. Merci au public pour sa patience.",time:"3d",av:"P",rp:33,rt:89,fav:12},
   ],
 };
 
 // Override tweet display info
 // Twitter (Elias)
-const TwitterScreen = ({data, isIos, accent, onBack=null, sharedTweets=[], twitterUsers={}, homeBaseTweets=[]}) => {
+const TwitterScreen = ({data, isIos, accent, onBack=null, sharedTweets=[], twitterUsers={}, homeBaseTweets=[], onUpdateShared=()=>{}}) => {
   const loreDateStr = useContext(LoreDateCtx);
   const [tab, setTab] = useState("home");
+  const [viewProfile, setViewProfile] = useState(null); // charKey d'un autre perso, ou null
   const charKey = data.username?.includes("glinda")?"glinda":data.username?.includes("eoghan")?"eoghan":data.username?.includes("drew")?"drew":"elias";
 
   // Auto-sync the 4 chars' twitter display info from their profile data
@@ -4832,6 +4342,17 @@ const TwitterScreen = ({data, isIos, accent, onBack=null, sharedTweets=[], twitt
   const handles = {glinda:"@glindarvf",eoghan:"@eoghan_m",drew:"@dreww_orms",elias:"@noteliasgreen"};
   const names   = {glinda:"Glinda R.",eoghan:"Eoghan M.",drew:"Drew B.",elias:"Elias G."};
   const myHandle = handles[charKey];
+  const handleToCharKey = Object.fromEntries(Object.entries(handles).map(([k,h])=>[h,k]));
+
+  // Relations "follow" réelles entre les 4 persos (qui suit qui), partagées comme le reste.
+  const twitterFollows = data.sharedThreads?._twitterFollows || {};
+  const iFollow = (key) => (twitterFollows[charKey]||[]).includes(key);
+  const followsMe = (key) => (twitterFollows[key]||[]).includes(charKey);
+  const toggleFollow = (key) => {
+    const mine = twitterFollows[charKey]||[];
+    const next = mine.includes(key) ? mine.filter(k=>k!==key) : [...mine, key];
+    onUpdateShared("_twitterFollows", {...twitterFollows, [charKey]:next});
+  };
 
   // ── Profile tweets (static) ──
   const PROFILE_TWEETS = {
@@ -4840,28 +4361,28 @@ const TwitterScreen = ({data, isIos, accent, onBack=null, sharedTweets=[], twitt
       {h:"@glindarvf",name:"Glinda R.",text:"quelqu'un a des notes du cours de macro de hier ? j'étais… indisponible 😬",time:"1:00am",rp:8,rt:2,fav:31},
       {h:"@glindarvf",name:"Glinda R.",text:"Gee par SNSD en boucle depuis 3h. pas de regrets. #SNSD #GirlsGeneration",time:"3:00am",rp:5,rt:12,fav:47},
       {h:"@glindarvf",name:"Glinda R.",text:"pourquoi les gens jouent aux échecs en silence ???? c'est un SPORT 🎲",time:"5:00am",rp:14,rt:28,fav:102},
-      {h:"@glindarvf",name:"Glinda R.",text:"déjà un mois à UMA et la bibli me connaît par mon prénom ☕📚 #UMA",time:"1j",rp:6,rt:9,fav:58},
+      {h:"@glindarvf",name:"Glinda R.",text:"déjà un mois à UMA et la bibli me connaît par mon prénom ☕📚 #UMA",time:"1d",rp:6,rt:9,fav:58},
     ],
     eoghan:[
       {h:"@eoghan_m",name:"Eoghan M.",text:"nouveau son en ligne soundcloud.com/eoghan_m #Rush #indierock",time:"15m",rp:2,rt:4,fav:18},
       {h:"@eoghan_m",name:"Eoghan M.",text:"les égouts de derry sont plus grands que vous ne le pensez. je dis ça je dis rien.",time:"2:00am",rp:7,rt:15,fav:43},
       {h:"@eoghan_m",name:"Eoghan M.",text:"asra et ilya encore fourrés ensemble. cool. tout va bien. je gère.",time:"4:00am",rp:1,rt:0,fav:9},
       {h:"@eoghan_m",name:"Eoghan M.",text:"\"This is the end, beautiful friend\" - The Doors. citation du jour.",time:"6:00am",rp:3,rt:8,fav:29},
-      {h:"@eoghan_m",name:"Eoghan M.",text:"UMA est une école comme les autres. les secrets en plus. #UMA",time:"1j",rp:11,rt:22,fav:67},
+      {h:"@eoghan_m",name:"Eoghan M.",text:"UMA est une école comme les autres. les secrets en plus. #UMA",time:"1d",rp:11,rt:22,fav:67},
     ],
     drew:[
       {h:"@dreww_orms",name:"Drew B.",text:"TP bio terminé. les vers de terre n'ont aucun secret pour moi 🪱 #Sciences #UMA",time:"30m",rp:4,rt:6,fav:22},
       {h:"@dreww_orms",name:"Drew B.",text:"1812 elo. je suis un humble joueur d'échecs. c'est tout. ♟️",time:"2:00am",rp:2,rt:3,fav:17},
       {h:"@dreww_orms",name:"Drew B.",text:"quelqu'un peut m'expliquer pourquoi je me souviens pas du mois de juillet ?",time:"3:00am",rp:9,rt:14,fav:38},
       {h:"@dreww_orms",name:"Drew B.",text:"Weird Fishes by Radiohead hits different à 2h du mat. #Radiohead",time:"5:00am",rp:5,rt:11,fav:44},
-      {h:"@dreww_orms",name:"Drew B.",text:"maine → maine's university at augusta. upgrade en cours 🌿",time:"2j",rp:7,rt:19,fav:81},
+      {h:"@dreww_orms",name:"Drew B.",text:"maine → maine's university at augusta. upgrade en cours 🌿",time:"2d",rp:7,rt:19,fav:81},
     ],
     elias:[
       {h:"@noteliasgreen",name:"Elias G.",text:"je sais des choses sur ce qui se passe à Augusta. personne ne me croit. c'est ok.",time:"23m",rp:6,rt:12,fav:34},
       {h:"@noteliasgreen",name:"Elias G.",text:"il y a des disparitions non résolues à Derry depuis 27 ans. cherchez.",time:"1:00am",rp:18,rt:41,fav:127},
       {h:"@noteliasgreen",name:"Elias G.",text:"Can You Feel My Heart — BMTH. c'est tout ce que j'ai à dire.",time:"3:00am",rp:3,rt:5,fav:21},
       {h:"@noteliasgreen",name:"Elias G.",text:"\"The truth is out there\" mais personne cherche vraiment #conspi #Derry",time:"5:00am",rp:9,rt:23,fav:76},
-      {h:"@noteliasgreen",name:"Elias G.",text:"nouveau chapitre de Five Nights posté. oui c'est de la fanfic. non j'ai pas honte.",time:"1j",rp:2,rt:4,fav:16},
+      {h:"@noteliasgreen",name:"Elias G.",text:"nouveau chapitre de Five Nights posté. oui c'est de la fanfic. non j'ai pas honte.",time:"1d",rp:2,rt:4,fav:16},
     ],
   };
 
@@ -4932,22 +4453,26 @@ const TwitterScreen = ({data, isIos, accent, onBack=null, sharedTweets=[], twitt
   const textCol = isIos ? "#0f1419" : "#fff";
   const subCol  = "#657786";
 
-  const Avatar = ({av}) => {
+  const Avatar = ({av, onClick}) => {
     const isImg = typeof av==="string" && (av.startsWith("data:")||av.startsWith("http")||av.startsWith("/"));
     return (
-      <div style={{width:36,height:36,borderRadius:6,background:TW_BLUE,flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontWeight:700,fontSize:13,overflow:"hidden"}}>
+      <div onClick={onClick} style={{width:36,height:36,borderRadius:6,background:TW_BLUE,flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontWeight:700,fontSize:13,overflow:"hidden",cursor:onClick?"pointer":"default"}}>
         {isImg ? <img src={av} style={{width:"100%",height:"100%",objectFit:"cover"}}/> : (typeof av==="string"?av[0]:"?")}
       </div>
     );
   };
 
-  const Tweet = ({t}) => (
+  const Tweet = ({t}) => {
+    const otherKey = handleToCharKey[t.h];
+    const clickable = otherKey && otherKey!==charKey;
+    const goToProfile = clickable ? ()=>setViewProfile(otherKey) : undefined;
+    return (
     <div style={{background:t._shared?`${TW_BLUE}14`:rowBg,padding:"10px 12px",borderBottom:rowBorder,display:"flex",gap:9,borderLeft:t._shared?`3px solid ${TW_BLUE}`:"none"}}>
-      <Avatar av={t.av||"?"}/>
+      <Avatar av={t.av||"?"} onClick={goToProfile}/>
       <div style={{flex:1,minWidth:0}}>
         <div style={{display:"flex",alignItems:"baseline",gap:5,flexWrap:"wrap"}}>
-          <span style={{color:textCol,fontSize:12,fontWeight:700}}>{t.name}</span>
-          <span style={{color:subCol,fontSize:11}}>{t.h}</span>
+          <span onClick={goToProfile} style={{color:textCol,fontSize:12,fontWeight:700,cursor:clickable?"pointer":"default"}}>{t.name}</span>
+          <span onClick={goToProfile} style={{color:subCol,fontSize:11,cursor:clickable?"pointer":"default"}}>{t.h}</span>
           <span style={{color:subCol,fontSize:11,marginLeft:"auto"}}>· {loreRelativeLabel(t.time,loreDateStr)}</span>
         </div>
         <div style={{color:textCol,fontSize:12,lineHeight:1.45,marginTop:2}}>{t.text}</div>
@@ -4980,7 +4505,8 @@ const TwitterScreen = ({data, isIos, accent, onBack=null, sharedTweets=[], twitt
         </div>
       </div>
     </div>
-  );
+    );
+  };
 
   const tabs = [
     {id:"home",label:"Home",icon:(a)=><svg width="18" height="17" viewBox="0 0 22 21" fill="none"><path d="M2 10L11 2l9 8M4 8.5V19a1 1 0 001 1h5v-5h4v5h5a1 1 0 001-1V8.5" stroke={a?"#1da1f2":"#8899a6"} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>},
@@ -5002,6 +4528,45 @@ const TwitterScreen = ({data, isIos, accent, onBack=null, sharedTweets=[], twitt
         {tabs.map(t=><button key={t.id} onClick={()=>setTab(t.id)} style={{flex:1,padding:"10px 0 8px",border:"none",background:"transparent",color:tab===t.id?"#fff":subCol,cursor:"pointer",fontSize:11,fontWeight:tab===t.id?"700":"400",borderBottom:`3px solid ${tab===t.id?TW_BLUE:"transparent"}`,display:"flex",flexDirection:"column",alignItems:"center",gap:2,transition:"border-color 0.15s",fontFamily:FF_IOS}}>{typeof t.icon==="function" ? t.icon(tab===t.id) : <span style={{fontSize:16}}>{t.icon}</span>}</button>)}
       </div>}
       <div style={{flex:1,overflowY:"auto",background:isIos?"#e8ecef":"#131619"}}>
+        {viewProfile ? (()=>{
+          const pKey = viewProfile;
+          const pInfo = CHAR_TWITTER_KEYS[pKey];
+          const pUser = effectiveTwUsers[pInfo.key] || {};
+          const pTweets = sharedTweets.filter(t=>t.author===pKey).map(t=>({
+            h:handles[pKey], name:names[pKey], text:t.text, time:t.time||"maintenant", av:pUser.av||names[pKey][0],
+          })).reverse();
+          const following = iFollow(pKey);
+          return (
+            <>
+              <div onClick={()=>setViewProfile(null)} style={{padding:"8px 12px",color:TW_BLUE,fontSize:12,fontWeight:600,cursor:"pointer",background:rowBg,borderBottom:rowBorder}}>‹ Back</div>
+              <div style={{
+                background:pUser.bannerImg ? `url(${pUser.bannerImg}) center/cover` : (pUser.bannerColor||TW_BLUE),
+                padding:"14px 12px 10px",display:"flex",gap:10,alignItems:"flex-end"}}>
+                <div style={{width:52,height:52,borderRadius:8,background:"rgba(255,255,255,0.3)",border:"3px solid #fff",display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontWeight:700,fontSize:22,overflow:"hidden",flexShrink:0}}>
+                  {pUser.av ? <img src={pUser.av} style={{width:"100%",height:"100%",objectFit:"cover"}}/> : pKey[0].toUpperCase()}
+                </div>
+                <div style={{flex:1}}>
+                  <div style={{color:"#fff",fontWeight:700,fontSize:14}}>{pUser.name||names[pKey]}</div>
+                  <div style={{color:"rgba(255,255,255,0.8)",fontSize:12}}>{pUser.h||handles[pKey]}</div>
+                </div>
+                <button onClick={()=>toggleFollow(pKey)} style={{
+                  background:following?"transparent":"#fff", color:following?"#fff":TW_BLUE,
+                  border:`1.5px solid #fff`, borderRadius:16, padding:"5px 14px", fontSize:11, fontWeight:700, cursor:"pointer",flexShrink:0}}>
+                  {following?"Following":"Follow"}
+                </button>
+              </div>
+              {followsMe(pKey) && <div style={{padding:"4px 12px",background:rowBg,borderBottom:rowBorder}}><span style={{fontSize:10,color:subCol,fontWeight:600,background:isIos?"#e1e8ed":"#22303c",borderRadius:3,padding:"2px 6px"}}>Follows you</span></div>}
+              <div style={{background:rowBg,padding:"8px 12px",borderBottom:rowBorder,display:"flex",gap:20}}>
+                {[["Tweets",pTweets.length]].map(([l,v])=>(
+                  <div key={l} style={{textAlign:"center"}}><div style={{color:textCol,fontWeight:700,fontSize:13}}>{v}</div><div style={{color:subCol,fontSize:10}}>{l}</div></div>
+                ))}
+              </div>
+              {pTweets.length===0
+                ? <div style={{padding:24,textAlign:"center",color:subCol,fontSize:12}}>No tweets yet.</div>
+                : pTweets.map((t,i)=><Tweet key={i} t={t}/>)}
+            </>
+          );
+        })() : <>
         {tab==="home"&&<>
           {othersShared.length>0&&<div style={{background:TW_BLUE,padding:"5px 12px"}}><span style={{color:"#fff",fontSize:10,fontWeight:700}}>NOUVEAU · {othersShared.length} tweet{othersShared.length>1?"s":""} de tes amis</span></div>}
           {homeFeed.map((t,i)=><Tweet key={i} t={t}/>)}
@@ -5033,6 +4598,7 @@ const TwitterScreen = ({data, isIos, accent, onBack=null, sharedTweets=[], twitt
             ))}
           </div>
           {[...myShared.slice().reverse(),...(PROFILE_TWEETS[charKey]||[])].map(resolveTweet).map((t,i)=><Tweet key={i} t={{...t,av:effectiveTwUsers[CHAR_TWITTER_KEYS[charKey].key]?.av||charKey[0].toUpperCase()}}/>)}
+        </>}
         </>}
       </div>
       {isIos&&<div style={{background:"linear-gradient(180deg,#e8ecef,#d5dde3)",borderTop:"1px solid #b0bec5",display:"flex",flexShrink:0}}>
@@ -5184,124 +4750,8 @@ const VPNScreen = ({isIos}) => {
 };
 
 
-// ─── SUPER-ADMIN ──────────────────────────────────────────────────────────────
-const WallpaperPicker = ({value,onChange}) => {
-  const presets = ["#c0607a","#1a1200","#0d1a0d","#0d0509","#1a1a2e","#0a1628","#1a0a0a","#1a1a1a","#000000","#0f1923","#1c1433","#112211"];
-  const [showHex,setShowHex] = useState(false);
-  const [trigger,el] = useFileUpload(src=>onChange(src));
-  return (
-    <div style={{padding:8,background:"#1a1a1a",borderRadius:0,border:"1px solid #333"}}>
-      <div style={{color:"#ffc107",fontSize:10,marginBottom:6}}>Wallpaper</div>
-      <div style={{display:"flex",flexWrap:"wrap",gap:4,marginBottom:6}}>
-        {presets.map(c=><div key={c} onClick={()=>onChange(c)} style={{width:20,height:20,background:c,borderRadius:3,cursor:"pointer",border:value===c?"2px solid #ffc107":"1px solid #333"}}/>)}
-      </div>
-      <div style={{display:"flex",gap:4}}><AdminBadge label="🎨 Hex" onClick={()=>setShowHex(s=>!s)}/><AdminBadge label="🖼️ Image" onClick={trigger}/>{el}</div>
-      {showHex&&<input type="color" value={value?.startsWith("#")?value:"#000000"} onChange={e=>onChange(e.target.value)} style={{marginTop:6,width:"100%",height:24,background:"none",border:"none",cursor:"pointer"}}/>}
-    </div>
-  );
-};
-
-const SuperAdminPanel = ({data,onUpdate,onClose}) => {
-  const [tab,setTab] = useState("icons");
-  const update = (key,val) => onUpdate({...data,[key]:val});
-  const ALL = ["messages","photos","gallery","insta","music","snapchat","grindr","safari","browser","phone"];
-  const ts = t => ({padding:"6px 12px",cursor:"pointer",fontSize:11,fontWeight:600,background:tab===t?"#ffc107":"transparent",color:tab===t?"#000":"#888",border:"none",borderBottom:tab===t?"none":"1px solid #333"});
-  return (
-    <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.93)",zIndex:9999,display:"flex",flexDirection:"column",fontFamily:"monospace"}}>
-      <div style={{background:"rgba(255,255,255,0.8)",borderBottom:"2px solid #6366f1",padding:"10px 16px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-        <div><span style={{color:"#ffc107",fontWeight:700,fontSize:13,letterSpacing:2}}>⚙⚙ SUPER-ADMIN</span><span style={{color:"#666",fontSize:11,marginLeft:10}}>{data.name}</span></div>
-        <button onClick={onClose} style={{background:"none",border:"1px solid #555",color:"#fff",padding:"3px 10px",cursor:"pointer",fontSize:12}}>✕ Close</button>
-      </div>
-      <div style={{display:"flex",borderBottom:"1px solid rgba(0,0,0,0.07)",background:"rgba(248,250,255,0.8)",flexShrink:0,overflowX:"auto"}}>
-        {[["icons","🎨 Icons"],["apps","📱 Apps"],["identity","👤 Identity"]].map(([t,l])=><button key={t} style={ts(t)} onClick={()=>setTab(t)}>{l}</button>)}
-      </div>
-      <div style={{flex:1,overflowY:"auto",padding:16}}>
-        {tab==="icons"&&<div style={{display:"flex",flexDirection:"column",gap:12}}>
-          <div style={{color:"#ffc107",fontSize:11,marginBottom:4}}>Import les icônes 2012</div>
-          {data.apps.map(appId=>{
-            const meta=APP_META[appId]||{label:appId,iosIcon:"📱"};
-            const cur=data.appIcons?.[appId];
-            const isAndroid = data?.os === "android";
-            const sharedCur = data?._sharedAndroidIcons?.[appId];
-            return <div key={appId} style={{display:"flex",alignItems:"center",gap:12,padding:"10px 12px",background:"#1a1a1a",borderRadius:0,border:"1px solid #2a2a2a"}}>
-              <div style={{width:44,height:44,borderRadius:0,background:"#333",border:"1px solid #444",display:"flex",alignItems:"center",justifyContent:"center",overflow:"hidden",flexShrink:0}}>
-                {cur?<img src={cur} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:<span style={{fontSize:22}}>{meta.iosIcon||"📱"}</span>}
-              </div>
-              <span style={{color:"#fff",fontSize:12,flex:1}}>{meta.label}</span>
-              <div style={{display:"flex",gap:6}}>
-                <label style={{background:"#ffc10722",border:"1px dashed #ffc107",color:"#ffc107",borderRadius:3,fontSize:10,padding:"3px 8px",cursor:"pointer"}}>
-                  📂 Import<input type="file" accept="image/*" style={{display:"none"}} onChange={e=>{const f=e.target.files?.[0];if(!f)return;const r=new UploadReader();r.onload=ev=>update("appIcons",{...data.appIcons,[appId]:ev.target.result});r.readAsDataURL(f);e.target.value="";}}/>
-                </label>
-                {cur&&<AdminBadge label="✕" onClick={()=>{const ic={...data.appIcons};delete ic[appId];update("appIcons",ic);}} color="#f44"/>}
-              </div>
-            </div>;
-          })}
-        </div>}
-        {tab==="apps"&&<div style={{display:"flex",flexDirection:"column",gap:10}}>
-          <div style={{color:"#ffc107",fontSize:11,marginBottom:4}}>Activer / désactiver</div>
-          {ALL.map(appId=>{
-            const meta=APP_META[appId]||{label:appId,iosIcon:"📱"};
-            const active=data.apps.includes(appId);
-            const idx=data.apps.indexOf(appId);
-            return <div key={appId} style={{display:"flex",alignItems:"center",gap:10,padding:"8px 12px",background:"#1a1a1a",borderRadius:0,border:`1px solid ${active?"#ffc10744":"#2a2a2a"}`}}>
-              <span style={{fontSize:18,width:28,textAlign:"center"}}>{meta.iosIcon||"📱"}</span>
-              <span style={{color:active?"#fff":"#555",fontSize:12,flex:1}}>{meta.label}</span>
-              <div style={{display:"flex",gap:4}}>
-                {active&&idx>0&&<AdminBadge label="↑" onClick={()=>{const a=[...data.apps];[a[idx-1],a[idx]]=[a[idx],a[idx-1]];update("apps",a);}}/>}
-                {active&&idx<data.apps.length-1&&<AdminBadge label="↓" onClick={()=>{const a=[...data.apps];[a[idx],a[idx+1]]=[a[idx+1],a[idx]];update("apps",a);}}/>}
-                <AdminBadge label={active?"Disable":"Enable"} color={active?"#f44":"#4c4"} onClick={()=>{if(active)update("apps",data.apps.filter(a=>a!==appId));else update("apps",[...data.apps,appId]);}}/>
-              </div>
-            </div>;
-          })}
-        </div>}
-        {tab==="identity"&&<div style={{display:"flex",flexDirection:"column",gap:10}}>
-          {[["Nom complet","name"],["Nom d'utilisateur","username"],["Bio","bio"]].map(([l,k])=>(
-            <div key={k} style={{display:"flex",gap:8,alignItems:"center"}}>
-              <span style={{color:"#888",fontSize:10,width:90,flexShrink:0}}>{l}</span>
-              <input value={data[k]||""} onChange={e=>update(k,e.target.value)} style={{flex:1,background:"#2a2a2a",border:"1px solid #444",color:"#fff",padding:"4px 8px",fontSize:12,borderRadius:3}}/>
-            </div>
-          ))}
-          <div style={{display:"flex",gap:8,alignItems:"center"}}>
-            <span style={{color:"#888",fontSize:10,width:90,flexShrink:0}}>Couleur d'accentuation</span>
-            <input type="color" value={data.accentColor||"#888"} onChange={e=>update("accentColor",e.target.value)} style={{width:40,height:28,background:"none",border:"none",cursor:"pointer"}}/>
-          </div>
-          <WallpaperPicker value={data.wallpaper} onChange={v=>update("wallpaper",v)}/>
-        </div>}
-      </div>
-    </div>
-  );
-};
 
 // ─── PHOTO MODAL ──────────────────────────────────────────────────────────────
-const PhotoModal = ({modal,setModal,data,update}) => {
-  if(!modal) return null;
-  const {type,index} = modal;
-  const doUpload = src => {
-    if(type==="gallery"){const g=[...data.gallery];g[index]={...g[index],src};update("gallery",g);}
-    if(type==="insta")  {const p=[...data.insta];  p[index]={...p[index],src};update("insta",p);}
-    if(type==="avatar") update("avatar",src);
-    setModal(null);
-  };
-  const doRemove = () => {
-    if(type==="gallery"){const g=[...data.gallery];g[index]={...g[index],src:null};update("gallery",g);}
-    if(type==="insta")  {const p=[...data.insta];  p[index]={...p[index],src:null};update("insta",p);}
-    if(type==="avatar") update("avatar",null);
-    setModal(null);
-  };
-  return (
-    <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.85)",zIndex:8000,display:"flex",alignItems:"center",justifyContent:"center"}} onClick={()=>setModal(null)}>
-      <div style={{background:"#1a1a1a",border:"1px solid #333",borderRadius:0,padding:20,minWidth:220,display:"flex",flexDirection:"column",gap:10}} onClick={e=>e.stopPropagation()}>
-        <div style={{color:"#ffc107",fontWeight:700,fontSize:13}}>📷 Edit photo</div>
-        <label style={{background:"#ffc10722",border:"1px dashed #ffc107",color:"#ffc107",borderRadius:0,padding:"8px 14px",cursor:"pointer",textAlign:"center",fontSize:12}}>
-          📂 Uploader<input type="file" accept="image/*" style={{display:"none"}} onChange={e=>{const f=e.target.files?.[0];if(!f)return;const r=new UploadReader();r.onload=ev=>doUpload(ev.target.result);r.readAsDataURL(f);e.target.value="";}}/>
-        </label>
-        <button onClick={doRemove} style={{background:"#f4444422",border:"1px dashed #f44",color:"#f44",borderRadius:0,padding:"6px 14px",cursor:"pointer",fontSize:12}}>🗑 Delete</button>
-        <button onClick={()=>setModal(null)} style={{background:"transparent",border:"1px solid #333",color:"#888",borderRadius:0,padding:"5px 14px",cursor:"pointer",fontSize:12}}>Cancel</button>
-      </div>
-    </div>
-  );
-};
-
 // ─── DRAG-AND-DROP HOMESCREEN ─────────────────────────────────────────────────
 // Hold-to-jiggle, then drag between grid slots and dock
 // Dock iOS — reads devOverrides from context
@@ -5569,46 +5019,20 @@ const DraggableHomescreen = ({data, update, appIcon, badge, goApp, os, accent, a
                         
                         <div style={{background:"rgba(180,0,0,0.8)",padding:"5px 10px",display:"flex",alignItems:"center",gap:6}}>
                           <span style={{fontSize:10}}>📡</span>
-                          {admin
-                            ? <input value={headerTitle} onChange={e=>update("conspiracyFeedTitle",e.target.value)}
-                                style={{flex:1,background:"rgba(255,255,255,0.2)",border:"1px dashed #ffc107",color:"#fff",fontSize:10,fontWeight:700,letterSpacing:0.5,padding:"1px 4px"}}/>
-                            : <span style={{color:"#fff",fontSize:10,fontWeight:700,letterSpacing:0.5,flex:1}}>{headerTitle}</span>
-                          }
+                          <span style={{color:"#fff",fontSize:10,fontWeight:700,letterSpacing:0.5,flex:1}}>{headerTitle}</span>
                           <span style={{color:"rgba(255,255,255,0.5)",fontSize:8}}>Live</span>
                           <div style={{width:6,height:6,borderRadius:"50%",background:"#f00"}}/>
                         </div>
                         
                         {items.map((item,i)=>(
                           <div key={i} style={{padding:"6px 10px",borderBottom:"1px solid rgba(255,255,255,0.06)",display:"flex",gap:8,alignItems:"flex-start"}}>
-                            {admin
-                              ? <input value={item.icon} onChange={e=>{const f=[...items];f[i]={...f[i],icon:e.target.value};update("conspiracyFeed",f);}}
-                                  style={{width:28,background:"rgba(255,255,255,0.1)",border:"1px dashed #ffc107",color:"#fff",fontSize:12,textAlign:"center",padding:0,flexShrink:0}}/>
-                              : <span style={{fontSize:14,flexShrink:0,marginTop:1}}>{item.icon}</span>
-                            }
+                            <span style={{fontSize:14,flexShrink:0,marginTop:1}}>{item.icon}</span>
                             <div style={{flex:1,minWidth:0}}>
-                              {admin
-                                ? <>
-                                    <input value={item.title} onChange={e=>{const f=[...items];f[i]={...f[i],title:e.target.value};update("conspiracyFeed",f);}}
-                                      style={{width:"100%",background:"rgba(255,255,255,0.1)",border:"1px dashed #ffc107",color:"#e8e8e8",fontSize:10,marginBottom:2,padding:"1px 4px"}}/>
-                                    <div style={{display:"flex",gap:4}}>
-                                      <input value={item.src} onChange={e=>{const f=[...items];f[i]={...f[i],src:e.target.value};update("conspiracyFeed",f);}}
-                                        style={{flex:1,background:"rgba(255,255,255,0.1)",border:"1px dashed #ffc107",color:"rgba(255,255,255,0.5)",fontSize:8,padding:"1px 3px"}}/>
-                                      <input value={item.time} onChange={e=>{const f=[...items];f[i]={...f[i],time:e.target.value};update("conspiracyFeed",f);}}
-                                        style={{width:60,background:"rgba(255,255,255,0.1)",border:"1px dashed #ffc107",color:"rgba(255,255,255,0.5)",fontSize:8,padding:"1px 3px"}}/>
-                                      <button onClick={()=>update("conspiracyFeed",items.filter((_,j)=>j!==i))}
-                                        style={{background:"none",border:"none",color:"#f44",cursor:"pointer",fontSize:10,padding:0}}>✕</button>
-                                    </div>
-                                  </>
-                                : <>
-                                    <div style={{color:"#e8e8e8",fontSize:10,fontWeight:500,lineHeight:1.3,fontFamily:FF_IOS}}>{item.title}</div>
-                                    <div style={{color:"rgba(255,255,255,0.35)",fontSize:8,marginTop:2,fontFamily:FF_IOS}}>{item.src} · {item.time}</div>
-                                  </>
-                              }
+                              <div style={{color:"#e8e8e8",fontSize:10,fontWeight:500,lineHeight:1.3,fontFamily:FF_IOS}}>{item.title}</div>
+                              <div style={{color:"rgba(255,255,255,0.35)",fontSize:8,marginTop:2,fontFamily:FF_IOS}}>{item.src} · {item.time}</div>
                             </div>
                           </div>
                         ))}
-                        {admin&&<div onClick={()=>update("conspiracyFeed",[...items,{icon:"📰",title:"Nouvel article",src:"source.com",time:"il y a 1:00am"}])}
-                          style={{padding:"5px 10px",background:"rgba(255,193,7,0.1)",cursor:"pointer",textAlign:"center",color:"#ffc107",fontSize:9}}>+ Add article</div>}
                         <div style={{padding:"4px 10px",background:"rgba(255,255,255,0.04)",display:"flex",justifyContent:"flex-end"}}>
                           <span style={{color:"rgba(255,255,255,0.3)",fontSize:8}}>Voir plus →</span>
                         </div>
@@ -5685,7 +5109,6 @@ const IOSPhone = ({data,admin,onUpdate,onUpdateShared=()=>{},loreDate:loreDatePr
   const [app,setApp] = useState(null);
   const [thread,setThread] = useState(null);
   const [msgView,setMsgView] = useState("inbox");
-  const [photoModal,setPhotoModal] = useState(null);
   const [browserTab,setBrowserTab] = useState("search");
   const [noteOpen,setNoteOpen] = useState(null);
   const [photoDetail,setPhotoDetail] = useState(null);
@@ -5693,8 +5116,6 @@ const IOSPhone = ({data,admin,onUpdate,onUpdateShared=()=>{},loreDate:loreDatePr
   const [phonePanel,setPhonePanel] = useState("keypad");
   const [instaView, setInstaView] = useState("list");
   const [asleep, setAsleep] = useState(false);
-  const [galDragIdx, setGalDragIdx] = useState(null);
-  const [galOverIdx, setGalOverIdx] = useState(null);
 
   const wake = () => { setAsleep(false); };
   const sleep = () => { setAsleep(true); };
@@ -5921,7 +5342,6 @@ const IOSPhone = ({data,admin,onUpdate,onUpdateShared=()=>{},loreDate:loreDatePr
       return (
         <DevCtx.Provider value={devOv}>
           <>
-          <PhotoModal modal={photoModal} setModal={setPhotoModal} data={data} update={update}/>
           <div style={{position:"relative",width:W,height:H,flexShrink:0}}>
             {/* Screen content sits behind the SVG frame */}
             <div style={{
@@ -6018,7 +5438,6 @@ const IOSPhone = ({data,admin,onUpdate,onUpdateShared=()=>{},loreDate:loreDatePr
       return (
         <DevCtx.Provider value={devOv}>
           <>
-          <PhotoModal modal={photoModal} setModal={setPhotoModal} data={data} update={update}/>
           <div style={{position:"relative",width:W,height:H,flexShrink:0}}>
             
             <div style={{
@@ -6641,7 +6060,6 @@ const IOSPhone = ({data,admin,onUpdate,onUpdateShared=()=>{},loreDate:loreDatePr
     return (
     <DevCtx.Provider value={devOv}>
       <>
-      <PhotoModal modal={photoModal} setModal={setPhotoModal} data={data} update={update}/>
       <div style={{width:phoneW,height:phoneH,position:"relative",flexShrink:0,fontFamily:FF_IOS}}>
         <div style={{position:"absolute",inset:0,borderRadius:chassisBROv,background:chassisGradOv,boxShadow:`${boxShadowOv},inset 0 1px 0 rgba(255,255,255,0.9)`}}>
           <div style={{position:"absolute",top:14,left:"50%",transform:"translateX(-50%)",width:8,height:8,borderRadius:"50%",background:bezelText}}/>
@@ -6826,14 +6244,18 @@ const IOSPhone = ({data,admin,onUpdate,onUpdateShared=()=>{},loreDate:loreDatePr
 
     // ── Photo detail view ─────────────────────────────────────────────────
     if(photoDetail!==null) {
-      const list = galleryView==="recently_deleted" ? deletedPhotos : (galleryView==="camera_roll"||galleryView==="albums") ? activePhotos : allPhotos.filter(p=>!p.deleted && String(p.album)===String(galleryView));
+      let list = galleryView==="recently_deleted" ? deletedPhotos : (galleryView==="camera_roll"||galleryView==="albums") ? activePhotos : allPhotos.filter(p=>!p.deleted && String(p.album)===String(galleryView));
+      // Camera Roll trie par date dès qu'au moins une photo en a une (cf. grille plus bas) — il faut
+      // appliquer EXACTEMENT le même tri ici (fonction partagée), sinon l'index cliqué dans la grille
+      // ne correspond plus à la bonne photo dans cette liste.
+      if(galleryView==="camera_roll"||galleryView==="albums") list = sortGalleryPhotos(list);
       const photo = list[photoDetail];
       const prev = photoDetail > 0 ? photoDetail-1 : null;
       const next = photoDetail < list.length-1 ? photoDetail+1 : null;
       return (
         <Shell>
           <IOSStatusBar mode="home"/>
-          <NavBar title={photo?.date||""} back={()=>setPhotoDetail(null)}/>
+          <NavBar title={loreDateOnly(photo?.date)||""} back={()=>setPhotoDetail(null)}/>
           <div style={{flex:1,background:"#000",display:"flex",alignItems:"center",justifyContent:"center",position:"relative"}}>
             {photo?.src
               ? <img src={photo.src} style={{maxWidth:"100%",maxHeight:"100%",objectFit:"contain"}}/>
@@ -6841,7 +6263,6 @@ const IOSPhone = ({data,admin,onUpdate,onUpdateShared=()=>{},loreDate:loreDatePr
             {prev!==null&&<button onClick={()=>setPhotoDetail(prev)} style={{position:"absolute",left:6,top:"50%",transform:"translateY(-50%)",background:"rgba(0,0,0,0.4)",border:"none",color:"#fff",fontSize:22,borderRadius:4,padding:"4px 8px",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}><svg width="8" height="14" viewBox="0 0 8 14" fill="none"><path d="M7 1L1 7l6 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg></button>}
             {next!==null&&<button onClick={()=>setPhotoDetail(next)} style={{position:"absolute",right:6,top:"50%",transform:"translateY(-50%)",background:"rgba(0,0,0,0.4)",border:"none",color:"#fff",borderRadius:4,padding:"6px 10px",cursor:"pointer",display:"flex",alignItems:"center"}}><svg width="8" height="14" viewBox="0 0 8 14" fill="none"><path d="M1 1l6 6-6 6" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg></button>}
             <span style={{position:"absolute",bottom:8,left:"50%",transform:"translateX(-50%)",color:"rgba(255,255,255,0.6)",fontSize:11}}>{photoDetail+1} / {list.length}</span>
-            {admin&&<button onClick={()=>setPhotoModal({type:"gallery",index:allPhotos.indexOf(photo)})} style={{position:"absolute",top:8,right:8,background:"rgba(255,193,7,0.9)",border:"none",color:"#000",fontSize:10,cursor:"pointer",borderRadius:4,padding:"2px 6px"}}>Edit</button>}
           </div>
         </Shell>
       );
@@ -6884,21 +6305,7 @@ const IOSPhone = ({data,admin,onUpdate,onUpdateShared=()=>{},loreDate:loreDatePr
       // Sinon, on garde l'ordre manuel (drag & drop) exactement comme avant, pour ne rien casser
       // pour les parties déjà en cours qui n'ont pas encore daté leurs photos.
       const hasDates = !isDeleted && rawList.some(p=>p.dateISO);
-      const list = hasDates
-        ? [...rawList].sort((a,b)=>(b.dateISO||"0000-00-00").localeCompare(a.dateISO||"0000-00-00"))
-        : rawList;
-      let lastYear = null;
-      const onDrop_g = (toIdx) => {
-        if(galDragIdx===null||galDragIdx===toIdx) return;
-        const reorderable = isDeleted ? [...deletedPhotos] : [...activePhotos];
-        const [moved] = reorderable.splice(galDragIdx,1);
-        reorderable.splice(toIdx,0,moved);
-        const newAll = isDeleted
-          ? [...activePhotos,...reorderable]
-          : [...reorderable,...deletedPhotos];
-        update("gallery",newAll);
-        setGalDragIdx(null); setGalOverIdx(null);
-      };
+      const list = isDeleted ? rawList : sortGalleryPhotos(rawList);
       return (
         <Shell>
           <IOSStatusBar mode="home"/>
@@ -6910,12 +6317,7 @@ const IOSPhone = ({data,admin,onUpdate,onUpdateShared=()=>{},loreDate:loreDatePr
             {hasDates ? (
               // Vue groupée par année (lecture seule pour l'ordre — il suit les dates)
               (()=>{
-                const groups = [];
-                list.forEach(photo=>{
-                  const year = photo.dateISO ? photo.dateISO.slice(0,4) : "Sans date";
-                  if(!groups.length || groups[groups.length-1].year!==year) groups.push({year, photos:[]});
-                  groups[groups.length-1].photos.push(photo);
-                });
+                const groups = groupGalleryByYear(list);
                 return groups.map(g=>(
                   <div key={g.year}>
                     <div style={{padding:"8px 12px 4px",fontSize:13,fontWeight:700,color:"#3a3a3c"}}>{g.year}</div>
@@ -6925,16 +6327,8 @@ const IOSPhone = ({data,admin,onUpdate,onUpdateShared=()=>{},loreDate:loreDatePr
                         return (
                         <div key={photo.id}
                           style={{aspectRatio:"1",background:photo.color||"#e5e5ea",position:"relative",cursor:"pointer",overflow:"hidden"}}
-                          onClick={()=>{ if(admin&&!isDeleted){ setPhotoModal({type:"gallery",index:allPhotos.indexOf(photo)}); } else { setPhotoDetail(i); } }}>
-                          {photo.src?<img src={photo.src} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
-                            :<div style={{width:"100%",height:"100%",display:"flex",alignItems:"center",justifyContent:"center"}}>
-                              {admin&&<span style={{fontSize:6,color:"rgba(255,255,255,0.3)",textAlign:"center",padding:2}}>{photo.desc||"+"}</span>}
-                            </div>}
-                          {admin&&!isDeleted&&<AdminBadge label="✕" onClick={e=>{e.stopPropagation();update("gallery",allPhotos.map(p=>p.id===photo.id?{...p,deleted:true}:p));}} color="#f44" style={{position:"absolute",top:1,right:1}}/>}
-                          {admin&&isDeleted&&<>
-                            <AdminBadge label="↩" onClick={e=>{e.stopPropagation();update("gallery",allPhotos.map(p=>p.id===photo.id?{...p,deleted:false}:p));}} color="#4cd964" style={{position:"absolute",top:1,right:1}}/>
-                            <AdminBadge label="🗑" onClick={e=>{e.stopPropagation();update("gallery",allPhotos.filter(p=>p.id!==photo.id));}} color="#f44" style={{position:"absolute",top:1,left:1}}/>
-                          </>}
+                          onClick={()=>setPhotoDetail(i)}>
+                          {photo.src?<img src={photo.src} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:null}
                         </div>
                         );
                       })}
@@ -6946,53 +6340,13 @@ const IOSPhone = ({data,admin,onUpdate,onUpdateShared=()=>{},loreDate:loreDatePr
             <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:6,padding:8}}>
               {list.map((photo,i)=>(
                 <div key={photo.id}
-                  draggable={admin&&!isDeleted}
-                  onDragStart={()=>setGalDragIdx(i)}
-                  onDragOver={e=>{e.preventDefault();setGalOverIdx(i);}}
-                  onDrop={()=>onDrop_g(i)}
-                  onDragEnd={()=>{setGalDragIdx(null);setGalOverIdx(null);}}
                   style={{
-                    aspectRatio:"1",background:photo.color||"#e5e5ea",position:"relative",cursor:admin&&!isDeleted?"grab":"pointer",overflow:"hidden",
-                    opacity:galDragIdx===i?0.4:1,
-                    outline:galOverIdx===i&&galDragIdx!==i?"2px solid #007aff":"none",
-                    transition:"opacity 0.15s",
+                    aspectRatio:"1",background:photo.color||"#e5e5ea",position:"relative",cursor:"pointer",overflow:"hidden",
                   }}
-                  onClick={()=>{ if(admin&&!isDeleted){ setPhotoModal({type:"gallery",index:allPhotos.indexOf(photo)}); } else { setPhotoDetail(i); } }}>
-                  {photo.src?<img src={photo.src} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
-                    :<div style={{width:"100%",height:"100%",display:"flex",alignItems:"center",justifyContent:"center"}}>
-                      {admin&&<span style={{fontSize:6,color:"rgba(255,255,255,0.3)",textAlign:"center",padding:2}}>{photo.desc||"+"}</span>}
-                    </div>}
-                  {admin&&!isDeleted&&<AdminBadge label="✕" onClick={e=>{e.stopPropagation();update("gallery",allPhotos.map(p=>p.id===photo.id?{...p,deleted:true}:p));}} color="#f44" style={{position:"absolute",top:1,right:1}}/>}
-                  {admin&&isDeleted&&<>
-                    <AdminBadge label="↩" onClick={e=>{e.stopPropagation();update("gallery",allPhotos.map(p=>p.id===photo.id?{...p,deleted:false}:p));}} color="#4cd964" style={{position:"absolute",top:1,right:1}}/>
-                    <AdminBadge label="🗑" onClick={e=>{e.stopPropagation();update("gallery",allPhotos.filter(p=>p.id!==photo.id));}} color="#f44" style={{position:"absolute",top:1,left:1}}/>
-                  </>}
+                  onClick={()=>setPhotoDetail(i)}>
+                  {photo.src?<img src={photo.src} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:null}
                 </div>
               ))}
-              {admin&&!isDeleted&&<label style={{aspectRatio:"1",background:"#111",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",cursor:"pointer",color:"#ffc107",fontSize:18,border:"1px dashed #ffc10755",gap:3}}>
-                <span style={{fontSize:22,lineHeight:1}}>+</span>
-                <span style={{fontSize:7,opacity:0.7,textAlign:"center",lineHeight:1.2}}>multi</span>
-                <input type="file" accept="image/*" multiple style={{display:"none"}} onChange={e=>{
-                  const files=Array.from(e.target.files||[]);
-                  if(!files.length) return;
-                  let loaded=0;
-                  const newPhotos=[];
-                  files.forEach((f,fi)=>{const r=new UploadReader();r.onload=ev=>{newPhotos.push({id:Date.now()+fi,src:ev.target.result,date:"Oct 2012"});loaded++;if(loaded===files.length)update("gallery",[...allPhotos.filter(p=>p.src||p.deleted),...newPhotos]);};r.readAsDataURL(f);});
-                  e.target.value="";
-                }}/>
-              </label>}
-              {admin&&isDeleted&&<label style={{aspectRatio:"1",background:"#111",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",cursor:"pointer",color:"#ffc107",fontSize:18,border:"1px dashed #ffc10755",gap:3}}>
-                <span style={{fontSize:22,lineHeight:1}}>+</span>
-                <span style={{fontSize:7,opacity:0.7,textAlign:"center",lineHeight:1.2}}>multi</span>
-                <input type="file" accept="image/*" multiple style={{display:"none"}} onChange={e=>{
-                  const files=Array.from(e.target.files||[]);
-                  if(!files.length) return;
-                  let loaded=0;
-                  const newPhotos=[];
-                  files.forEach((f,fi)=>{const r=new UploadReader();r.onload=ev=>{newPhotos.push({id:Date.now()+fi,src:ev.target.result,date:"Oct 2012",deleted:true});loaded++;if(loaded===files.length)update("gallery",[...allPhotos.filter(p=>p.src),...newPhotos]);};r.readAsDataURL(f);});
-                  e.target.value="";
-                }}/>
-              </label>}
             </div>
             )}
           </div>
@@ -7034,7 +6388,7 @@ const IOSPhone = ({data,admin,onUpdate,onUpdateShared=()=>{},loreDate:loreDatePr
         return (
           <Shell>
             <IOSStatusBar mode="home"/>
-            <NavBar title={photo?.date||""} back={()=>setPhotoDetail(null)}/>
+            <NavBar title={loreDateOnly(photo?.date)||""} back={()=>setPhotoDetail(null)}/>
             <div style={{flex:1,background:"#000",display:"flex",alignItems:"center",justifyContent:"center",position:"relative"}}>
               {photo?.src?<img src={photo.src} style={{maxWidth:"100%",maxHeight:"100%",objectFit:"contain"}}/>:<div style={{color:"#555",fontSize:13,padding:16}}>{photo?.desc||"No Photo"}</div>}
               {prev!==null&&<button onClick={()=>setPhotoDetail(prev)} style={{position:"absolute",left:6,top:"50%",transform:"translateY(-50%)",background:"rgba(0,0,0,0.4)",border:"none",color:"#fff",borderRadius:4,padding:"4px 8px",cursor:"pointer"}}><svg width="8" height="14" viewBox="0 0 8 14" fill="none"><path d="M7 1L1 7l6 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg></button>}
@@ -7082,46 +6436,24 @@ const IOSPhone = ({data,admin,onUpdate,onUpdateShared=()=>{},loreDate:loreDatePr
   }
 
   if(app==="messages"&&thread===null) {
-    const getLastMsgTime = (m) => { const t=getThread(m); return t[t.length-1]?.time||""; };
-    const setLastMsgTime = (allMsgs, idx, newTime) => allMsgs.map((m,ii)=>{ if(ii!==idx) return m; const th=[...getThread(m)]; if(!th.length) return m; th[th.length-1]={...th[th.length-1],time:newTime}; return {...m,thread:th}; });
-    const reorderConvs = (sortedPairs, rankA, rankB) => {
-      const [,iA]=sortedPairs[rankA], [,iB]=sortedPairs[rankB];
-      const tA=getLastMsgTime(data.messages[iA]), tB=getLastMsgTime(data.messages[iB]);
-      let msgs=setLastMsgTime([...data.messages],iA,tB);
-      msgs=setLastMsgTime(msgs,iB,tA);
-      updateMsg(msgs);
-    };
-    const renderConvRow = (msg, i, dim=false, rank=-1, sortedPairs=[]) => (
+    const renderConvRow = (msg, i, dim=false) => (
         <div key={msg.id} onClick={()=>setThread(i)} style={{background:"#fff",borderBottom:"0.5px solid #c8c7cc",display:"flex",cursor:"pointer",alignItems:"stretch",opacity:dim?0.55:1}}>
             
             <div style={{width:18,flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",paddingLeft:6}}>
-              {msg.unread&&!admin&&<div style={{width:10,height:10,borderRadius:"50%",background:"#007aff"}}/>}
+              {msg.unread&&<div style={{width:10,height:10,borderRadius:"50%",background:"#007aff"}}/>}
             </div>
             <div style={{width:52,display:"flex",alignItems:"center",justifyContent:"center",padding:"10px 0 10px 4px",flexShrink:0}}>
               <div style={{width:38,height:38,borderRadius:"50%",background:`linear-gradient(135deg,${accent}88,${accent}44)`,display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontWeight:700,fontSize:15,border:`1.5px solid ${accent}66`}}>{msg.contact[0]}</div>
             </div>
             <div style={{flex:1,padding:"10px 0 10px 10px",minWidth:0}}>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",marginBottom:2}}>
-                <div style={{fontWeight:msg.unread?700:600,fontSize:14,color:"#000"}}>
-                  {admin?<input value={msg.contact} onChange={e=>{const m=[...data.messages];m[i]={...m[i],contact:e.target.value};update("messages",m);}} style={{background:"rgba(255,200,0,0.2)",border:"1px dashed #ffc107",fontWeight:600,fontSize:14}} onClick={e=>e.stopPropagation()}/>:msg.contact}
-                </div>
+                <div style={{fontWeight:msg.unread?700:600,fontSize:14,color:"#000"}}>{msg.contact}</div>
                 {(()=>{const _t=getThread(msg);const _l=_t[_t.length-1];return <span style={{fontSize:12,color:msg.unread?"#007aff":"#8e8e93",fontWeight:msg.unread?600:400,flexShrink:0,marginRight:12}}>{fmtTime(_l?.time)}</span>;})()}
               </div>
               <div style={{fontSize:13,color:msg.unread?"#000":"#8e8e93",fontWeight:msg.unread?500:400,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",marginRight:12}}>{(()=>{const _t=getThread(msg);return _t[_t.length-1]?.text;})()}</div>
             </div>
             <div style={{display:"flex",alignItems:"center",paddingRight:8,gap:6}}>
-              {admin&&<div style={{display:"flex",flexDirection:"column",gap:2,alignItems:"flex-end"}}>
-                <div style={{display:"flex",gap:2}}>
-                  {rank>0&&<button onClick={e=>{e.stopPropagation();reorderConvs(sortedPairs,rank,rank-1);}} style={{background:"#2a2a2a",border:"1px solid #555",color:"#ccc",borderRadius:3,fontSize:9,padding:"1px 5px",cursor:"pointer"}}>↑</button>}
-                  {rank>=0&&rank<sortedPairs.length-1&&<button onClick={e=>{e.stopPropagation();reorderConvs(sortedPairs,rank,rank+1);}} style={{background:"#2a2a2a",border:"1px solid #555",color:"#ccc",borderRadius:3,fontSize:9,padding:"1px 5px",cursor:"pointer"}}>↓</button>}
-                </div>
-                <div style={{display:"flex",gap:2}}>
-                  <button onClick={e=>{e.stopPropagation();const m=[...data.messages];m[i]={...m[i],unread:!msg.unread};update("messages",m);}} style={{background:msg.unread?"#007aff22":"#2a2a2a",border:`1px solid ${msg.unread?"#007aff":"#444"}`,color:msg.unread?"#007aff":"#666",borderRadius:3,fontSize:8,padding:"1px 4px",cursor:"pointer"}}>{msg.unread?"●NL":"○NL"}</button>
-                  <button onClick={e=>{e.stopPropagation();const m=[...data.messages];m[i]={...m[i],deleted:!msg.deleted};update("messages",m);}} style={{background:msg.deleted?"#f4433622":"#2a2a2a",border:`1px solid ${msg.deleted?"#f44":"#444"}`,color:msg.deleted?"#f44":"#666",borderRadius:3,fontSize:8,padding:"1px 4px",cursor:"pointer"}}>{msg.deleted?"🗑":"Del"}</button>
-                  <button onClick={e=>{e.stopPropagation();updateMsg(data.messages.filter((_,j)=>j!==i));}} style={{background:"#f44",border:"none",color:"#fff",borderRadius:3,fontSize:8,padding:"1px 4px",cursor:"pointer"}}>✕</button>
-                </div>
-              </div>}
-              {!admin&&<span style={{color:"#c8c7cc",lineHeight:1}}><svg width="8" height="14" viewBox="0 0 8 14" fill="none"><path d="M1 1l6 6-6 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg></span>}
+              <span style={{color:"#c8c7cc",lineHeight:1}}><svg width="8" height="14" viewBox="0 0 8 14" fill="none"><path d="M1 1l6 6-6 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg></span>
             </div>
         </div>
     );
@@ -7147,8 +6479,7 @@ const IOSPhone = ({data,admin,onUpdate,onUpdateShared=()=>{},loreDate:loreDatePr
             <span style={{color:"#c8c7cc",lineHeight:1}}><svg width="8" height="14" viewBox="0 0 8 14" fill="none"><path d="M1 1l6 6-6 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg></span>
           </div>
         )}
-        {(()=>{const sp=data.messages.map((m,i)=>[m,i]).filter(([m])=>!m.deleted).sort(([a],[b])=>{const ta=getThread(a),tb=getThread(b);return loreSortKey(tb[tb.length-1]?.time)-loreSortKey(ta[ta.length-1]?.time);});return sp.map(([msg,i],rank)=>renderConvRow(msg,i,false,rank,sp));})()}
-        {admin&&<div onClick={()=>updateMsg([...data.messages,{id:Date.now(),contact:"Nouveau contact",thread:[{from:"them",text:"…",time:"12:00 PM"}]}])} style={{padding:14,textAlign:"center",color:"#ffc107",cursor:"pointer",borderTop:"0.5px solid #c8c7cc"}}>+ New conversation</div>}
+        {(()=>{const sp=data.messages.map((m,i)=>[m,i]).filter(([m])=>!m.deleted).sort(([a],[b])=>{const ta=getThread(a),tb=getThread(b);return loreSortKey(tb[tb.length-1]?.time)-loreSortKey(ta[ta.length-1]?.time);});return sp.map(([msg,i])=>renderConvRow(msg,i,false));})()}
       </div>
     </Shell>
     );
@@ -7196,53 +6527,14 @@ const IOSPhone = ({data,admin,onUpdate,onUpdateShared=()=>{},loreDate:loreDatePr
                   wordBreak:"break-word",
                   overflow:msg.img?"hidden":"visible",
                 }}>
-                  {admin
-                    ?<div style={{display:"flex",flexDirection:"column",gap:3,padding:msg.img?6:0}}>
-                      {msg.img && <div style={{position:"relative"}}>
-                        <img src={msg.img} style={{maxWidth:160,maxHeight:160,borderRadius:10,display:"block"}}/>
-                        <button onClick={()=>{const newT=[...resolvedThread];newT[mi]={...newT[mi],img:null};saveThread(conv,newT);}} style={{position:"absolute",top:2,right:2,background:"rgba(0,0,0,0.6)",border:"none",color:"#fff",borderRadius:"50%",width:18,height:18,fontSize:11,cursor:"pointer",lineHeight:1}}>✕</button>
-                      </div>}
-                      <label style={{background:"rgba(0,122,255,0.12)",border:"1px dashed #007aff",color:"#007aff",borderRadius:6,padding:"3px 8px",fontSize:10,cursor:"pointer",textAlign:"center"}}>
-                        {msg.img?"Changer l'image":"+ Image"}
-                        <input type="file" accept="image/*" style={{display:"none"}} onChange={e=>{
-                          const f=e.target.files?.[0]; if(!f)return;
-                          const r=new UploadReader(); r.onload=ev=>{const newT=[...resolvedThread];newT[mi]={...newT[mi],img:ev.target.result};saveThread(conv,newT);};
-                          r.readAsDataURL(f); e.target.value="";
-                        }}/>
-                      </label>
-                      <input value={msg.text} onChange={e=>{const newT=[...resolvedThread];newT[mi]={...newT[mi],text:e.target.value};saveThread(conv,newT);}}
-                        style={{background:"rgba(255,200,0,0.2)",border:"1px dashed #ffc107",color:"inherit",fontSize:14,width:140}} placeholder="Légende (optionnel)"/>
-                      <input value={msg.time||""} onChange={e=>{const newT=[...resolvedThread];newT[mi]={...newT[mi],time:e.target.value};saveThread(conv,newT);}}
-                        style={{background:"rgba(255,200,0,0.1)",border:"1px dashed #ffc10799",color:"inherit",fontSize:10,width:140}} placeholder="ex: 1 oct, 15h30"/>
-                    </div>
-                    :<>
-                      {msg.img && <img src={msg.img} style={{maxWidth:"100%",display:"block",borderRadius:msg.text?"18px 18px 0 0":(isMe?"18px 18px 3px 18px":"18px 18px 18px 3px")}}/>}
-                      {msg.text && <div style={{padding:msg.img?"6px 12px":0}}>{msg.text}</div>}
-                    </>}
+                  {msg.img && <img src={msg.img} style={{maxWidth:"100%",display:"block",borderRadius:msg.text?"18px 18px 0 0":(isMe?"18px 18px 3px 18px":"18px 18px 18px 3px")}}/>}
+                  {msg.text && <div style={{padding:msg.img?"6px 12px":0}}>{msg.text}</div>}
                 </div>
-                {admin&&<div style={{display:"flex",gap:4,marginTop:2,flexWrap:"wrap",alignItems:"center"}}>
-                  <button onClick={()=>{if(mi>0){const t=[...resolvedThread];[t[mi-1],t[mi]]=[t[mi],t[mi-1]];saveThread(conv,t);}}} style={{background:"#2a2a2a",border:"1px solid #555",color:"#ccc",borderRadius:4,fontSize:10,padding:"1px 6px",cursor:mi>0?"pointer":"not-allowed",opacity:mi>0?1:0.4}}>↑</button>
-                  <button onClick={()=>{if(mi<resolvedThread.length-1){const t=[...resolvedThread];[t[mi+1],t[mi]]=[t[mi],t[mi+1]];saveThread(conv,t);}}} style={{background:"#2a2a2a",border:"1px solid #555",color:"#ccc",borderRadius:4,fontSize:10,padding:"1px 6px",cursor:mi<resolvedThread.length-1?"pointer":"not-allowed",opacity:mi<resolvedThread.length-1?1:0.4}}>↓</button>
-                  <button onClick={()=>saveThread(conv, resolvedThread.filter((_,j)=>j!==mi))} style={{background:"#f44",border:"none",color:"#fff",borderRadius:4,fontSize:9,padding:"1px 6px",cursor:"pointer"}}>✕</button>
-                  {conv.isGroup&&(()=>{
-                    const senders=[{key:"me",label:"Moi"},...(conv.sharedThreadId
-                      ?Object.entries(CHAR_NAMES).filter(([k])=>k!==charKey).map(([k,v])=>({key:k,label:v}))
-                      :[...new Set(resolvedThread.filter(m=>m.from!=="me").map(m=>m.senderKey).filter(Boolean))].map(k=>({key:k,label:resolvedThread.find(m=>m.senderKey===k)?.senderName||k}))
-                    )];
-                    const curKey=msg.from==="me"?"me":(msg.senderKey||senders[1]?.key||"them");
-                    return <select value={curKey} onClick={e=>e.stopPropagation()}
-                      onChange={e=>{const val=e.target.value;const newT=[...resolvedThread];if(val==="me")newT[mi]={...newT[mi],from:"me",senderKey:undefined,senderName:undefined};else{const s=senders.find(x=>x.key===val);newT[mi]={...newT[mi],from:"them",senderKey:val,senderName:s?.label||val};}saveThread(conv,newT);}}
-                      style={{background:"#2a2a2a",border:"1px solid #555",color:"#ccc",borderRadius:4,fontSize:9,padding:"1px 4px"}}>
-                      {senders.map(s=><option key={s.key} value={s.key}>{s.label}</option>)}
-                    </select>;
-                  })()}
-                </div>}
                 {showTime&&<span style={{fontSize:10,color:"#555e6b",padding:"2px 4px",fontFamily:FF_IOS}}>{loreRelativeLabel(msg.time,loreDate)}</span>}
               </div>
               </React.Fragment>
             );
           })}
-          {admin&&<MsgReplyModal update={update} data={data} updateMsg={updateMsg} threadIdx={thread} conv={conv} charKey={charKey}/>}
         </div>
         <div style={{background:"linear-gradient(180deg,#c6ccd4,#b8bec6)",borderTop:"1px solid #8a9099",padding:"5px 8px",display:"flex",alignItems:"center",gap:6,flexShrink:0,boxShadow:"inset 0 1px 0 rgba(255,255,255,0.35)"}}>
           <div style={{flex:1,background:"linear-gradient(180deg,#fff,#f4f4f4)",border:"1px solid #9a9a9a",borderRadius:14,padding:"5px 12px",fontSize:13,color:"#aaa",fontFamily:FF_IOS,boxShadow:"inset 0 1px 3px rgba(0,0,0,0.12)"}}>iMessage</div>
@@ -7263,7 +6555,7 @@ const IOSPhone = ({data,admin,onUpdate,onUpdateShared=()=>{},loreDate:loreDatePr
   if(app==="phone") return <Shell><IOSStatusBar/><PhoneScreen data={data} admin={admin} update={update} accent={accent} isIos={true} panel={phonePanel} setPanel={setPhonePanel}/></Shell>;
   if(app==="notes") return <Shell><IOSStatusBar/><NotesScreen data={data} admin={admin} update={update} accent={accent} isIos={true} noteOpen={noteOpen} setNoteOpen={setNoteOpen} goHome={goHome}/></Shell>;
   if(app==="tumblr")    return <Shell><IOSStatusBar/><NavBar title="Tumblr" back={goHome}/><TumblrScreen data={data} admin={admin} update={update} onUpdateShared={onUpdateShared} accent={accent}/></Shell>;
-  if(app==="twitter")   return <Shell><IOSStatusBar/><TwitterScreen data={data} isIos={true} accent={accent} onBack={goHome} sharedTweets={data.sharedThreads?._sharedTweets||[]} twitterUsers={{...(data.sharedThreads?._sharedTwitterUsers||{}),...(data.twitterUsers||{})}} homeBaseTweets={data.homeBaseTweets||[]}/></Shell>;
+  if(app==="twitter")   return <Shell><IOSStatusBar/><TwitterScreen data={data} isIos={true} accent={accent} onBack={goHome} sharedTweets={data.sharedThreads?._sharedTweets||[]} twitterUsers={{...(data.sharedThreads?._sharedTwitterUsers||{}),...(data.twitterUsers||{})}} homeBaseTweets={data.homeBaseTweets||[]} onUpdateShared={onUpdateShared}/></Shell>;
   if(app==="nikeplus")  return <Shell><IOSStatusBar/><NavBar title="Nike+" back={goHome}/><NikeplusScreen data={data} accent={accent}/></Shell>;
   if(app==="youtube")   return <Shell><IOSStatusBar/><YouTubeScreen isIos={true} charKey={charKey} data={data} onBack={goHome}/></Shell>;
   if(app==="reddit")     return <Shell><IOSStatusBar/><NavBar title="Reddit" back={goHome}/><RedditScreen data={data} isIos={true} accent={accent}/></Shell>;
@@ -7296,7 +6588,6 @@ const AndroidPhone = ({data,admin,onUpdate,sharedAndroidIcons={},onUpdateShared=
   const [screen,setScreen] = useState("lock");
   const [app,setApp] = useState(null);
   const [thread,setThread] = useState(null);
-  const [photoModal,setPhotoModal] = useState(null);
   const [browserTab,setBrowserTab] = useState("bookmarks");
   const [noteOpen,setNoteOpen] = useState(null);
   const [photoDetail,setPhotoDetail] = useState(null);
@@ -7494,8 +6785,7 @@ const AndroidPhone = ({data,admin,onUpdate,sharedAndroidIcons={},onUpdateShared=
       return (
         <DevCtx.Provider value={devOv}>
           <>
-            <PhotoModal modal={photoModal} setModal={setPhotoModal} data={data} update={update}/>
-            <div style={{position:"relative",width:W,height:H,flexShrink:0,fontFamily:FF_IOS,background:"transparent"}}>
+              <div style={{position:"relative",width:W,height:H,flexShrink:0,fontFamily:FF_IOS,background:"transparent"}}>
               <div style={{position:"absolute",top:scrTopPx,left:scrLeftPx,width:scrWidthPx,height:scrHeightPx,overflow:"hidden",display:"flex",flexDirection:"column",zIndex:1}}>
                 <div style={{flex:1,display:"flex",flexDirection:"column",minHeight:0,overflow:"hidden"}}>
                   {children}
@@ -7531,7 +6821,6 @@ const AndroidPhone = ({data,admin,onUpdate,sharedAndroidIcons={},onUpdateShared=
     return (
       <DevCtx.Provider value={devOv}>
         <>
-          <PhotoModal modal={photoModal} setModal={setPhotoModal} data={data} update={update}/>
           <div style={{width:chW,height:chH,borderRadius:chR,background:chBg,boxShadow:chSh,display:"flex",flexDirection:"column",padding:chP,fontFamily:FF_IOS,overflow:"hidden",flexShrink:0}}>
             <div style={{flex:1,borderRadius:scR,overflow:"hidden",background:scBg,display:"flex",flexDirection:"column",minHeight:0}}>{children}</div>
           </div>
@@ -7611,7 +6900,9 @@ const AndroidPhone = ({data,admin,onUpdate,sharedAndroidIcons={},onUpdateShared=
     // Photo detail view
     if(photoDetail!==null) {
       const isDelView = galleryView==="recently_deleted";
-      const list = isDelView ? deletedGallery : activeGallery;
+      const list = isDelView ? deletedGallery
+        : galleryView==="camera_roll" ? sortGalleryPhotos(activeGallery)
+        : sortGalleryPhotos(allGallery.filter(p=>!p.deleted && String(p.album)===String(galleryView)));
       const photo = list[photoDetail];
       const prev = photoDetail > 0 ? photoDetail-1 : null;
       const next = photoDetail < list.length-1 ? photoDetail+1 : null;
@@ -7621,16 +6912,14 @@ const AndroidPhone = ({data,admin,onUpdate,sharedAndroidIcons={},onUpdateShared=
           <div style={{background:"#000",display:"flex",alignItems:"center",justifyContent:"space-between",padding:"6px 10px",borderBottom:`1px solid ${accent}22`,flexShrink:0}}>
             <button onClick={()=>setPhotoDetail(null)} style={{background:"none",border:"none",color:accent,fontSize:13,cursor:"pointer"}}>←</button>
             <span style={{color:"#666",fontSize:11}}>{photoDetail+1} / {list.length}</span>
-            {admin&&!isDelView&&<button onClick={()=>setPhotoModal({type:"gallery",index:allGallery.indexOf(photo)})} style={{background:"none",border:"none",color:"#ffc107",fontSize:11,cursor:"pointer"}}>Edit</button>}
-            {admin&&isDelView&&<button onClick={()=>{update("gallery",allGallery.map(p=>p.id===photo.id?{...p,deleted:false}:p));setPhotoDetail(null);}} style={{background:"none",border:"none",color:"#4cd964",fontSize:11,cursor:"pointer"}}>Restore</button>}
-            {!admin&&<div style={{width:52}}/>}
+            <div style={{width:52}}/>
           </div>
           <div style={{flex:1,background:"#fff",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center"}}>
             <div style={{width:"100%",aspectRatio:"1",background:"#0d0d0d",display:"flex",alignItems:"center",justifyContent:"center"}}>
               {photo?.src?<img src={photo.src} style={{width:"100%",height:"100%",objectFit:"contain"}}/>:<span style={{fontSize:40,opacity:0.2}}>🏔️</span>}
             </div>
             <div style={{width:"100%",padding:"10px 14px",background:"#000"}}>
-              <div style={{color:"#555",fontSize:11,marginBottom:3}}>{photo?.date}</div>
+              <div style={{color:"#555",fontSize:11,marginBottom:3}}>{loreDateOnly(photo?.date)}</div>
               {isDelView&&<div style={{color:"#ff6b6b",fontSize:10,marginTop:4}}>⚠ This photo will be permanently deleted after 30 days.</div>}
             </div>
           </div>
@@ -7659,22 +6948,10 @@ const AndroidPhone = ({data,admin,onUpdate,sharedAndroidIcons={},onUpdateShared=
                     <div key={photo.id} style={{aspectRatio:"1",background:"#222",display:"flex",alignItems:"center",justifyContent:"center",position:"relative",cursor:"pointer"}}
                       onClick={()=>setPhotoDetail(i)}>
                       {photo.src?<img src={photo.src} style={{width:"100%",height:"100%",objectFit:"cover",opacity:0.7}}/>:<span style={{color:"#444",fontSize:20}}>🏔️</span>}
-                      {admin&&<>
-                        <AdminBadge label="↩" onClick={e=>{e.stopPropagation();update("gallery",allGallery.map(p=>p.id===photo.id?{...p,deleted:false}:p));}} color="#4cd964" style={{position:"absolute",top:2,right:2}}/>
-                        <AdminBadge label="🗑" onClick={e=>{e.stopPropagation();update("gallery",allGallery.filter(p=>p.id!==photo.id));}} color="#f44" style={{position:"absolute",top:2,left:2}}/>
-                      </>}
                     </div>
                   ))}
                 </div>
             }
-            {admin&&<label style={{display:"block",padding:14,textAlign:"center",color:"#ffc107",cursor:"pointer",borderTop:"1px dashed #ffc10766",fontSize:12,fontFamily:FF_IOS}}>+ Add photos (select multiple)<input type="file" accept="image/*" multiple style={{display:"none"}} onChange={e=>{
-              const files=Array.from(e.target.files||[]);
-              if(!files.length) return;
-              let loaded=0;
-              const newPhotos=[];
-              files.forEach((f,fi)=>{const r=new UploadReader();r.onload=ev=>{newPhotos.push({id:Date.now()+fi,src:ev.target.result,date:"Oct 2012",deleted:true});loaded++;if(loaded===files.length)update("gallery",[...allGallery.filter(p=>p.src),...newPhotos]);};r.readAsDataURL(f);});
-              e.target.value="";
-            }}/></label>}
           </div>
         </AppShell>
       );
@@ -7717,7 +6994,7 @@ const AndroidPhone = ({data,admin,onUpdate,sharedAndroidIcons={},onUpdateShared=
       const customAlbums2 = data.galleryAlbums || [];
       const albumId = galleryView;
       const album = customAlbums2.find(a=>String(a.id)===String(albumId));
-      const albumPhotos = (data.gallery||[]).filter(p=>!p.deleted && String(p.album)===String(albumId));
+      const albumPhotos = sortGalleryPhotos((data.gallery||[]).filter(p=>!p.deleted && String(p.album)===String(albumId)));
       return (
         <AppShell>
           <AndroidStatusBar notifApps={notifApps} accent={accent}/><ActionBar title={album?.name||"Album"} back={()=>setGalleryView("albums")} overflow/>
@@ -7736,49 +7013,42 @@ const AndroidPhone = ({data,admin,onUpdate,sharedAndroidIcons={},onUpdateShared=
     }
 
     // Camera Roll grid
+    const hasDatesAndroid = activeGallery.some(p=>p.dateISO);
+    const sortedActive = sortGalleryPhotos(activeGallery);
     return (
       <AppShell>
         <AndroidStatusBar notifApps={notifApps} accent={accent}/><ActionBar title="Camera Roll" back={()=>setGalleryView("albums")} overflow/>
         <div style={{flex:1,background:"#111",overflowY:"auto"}}>
-          <div style={{padding:"6px 10px 3px",color:"#555",fontSize:11}}>{activeGallery.length} photo{activeGallery.length!==1?"s":""}{admin&&<span style={{color:"#ffc10788",marginLeft:6}}>· drag to reorder</span>}</div>
-          <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:1}}>
-            {activeGallery.map((photo,i)=>{
-              const onDragStart_g=()=>{window.__galleryDrag=i;};
-              const onDragOver_g=(e)=>{e.preventDefault();window.__galleryOver=i;};
-              const onDrop_g=()=>{
-                const from=window.__galleryDrag, to=window.__galleryOver;
-                if(from===undefined||from===to) return;
-                const reorderable=[...activeGallery];
-                const [moved]=reorderable.splice(from,1);
-                reorderable.splice(to,0,moved);
-                update("gallery",[...reorderable,...deletedGallery]);
-                window.__galleryDrag=undefined; window.__galleryOver=undefined;
-              };
-              return (
-              <div key={photo.id}
-                draggable={admin}
-                onDragStart={onDragStart_g}
-                onDragOver={onDragOver_g}
-                onDrop={onDrop_g}
-                style={{aspectRatio:"1",background:"#222",display:"flex",alignItems:"center",justifyContent:"center",position:"relative",cursor:admin?"grab":"pointer"}}
-                onClick={()=>{ if(admin){ setPhotoModal({type:"gallery",index:allGallery.indexOf(photo)}); } else { setPhotoDetail(i); } }}>
-                {photo.src?<img src={photo.src} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:<span style={{color:"#444",fontSize:20}}>🏔️</span>}
-                {admin&&<AdminBadge label="🗑" onClick={e=>{e.stopPropagation();update("gallery",allGallery.map(p=>p.id===photo.id?{...p,deleted:true}:p));}} color="#f44" style={{position:"absolute",top:2,right:2}}/>}
+          <div style={{padding:"6px 10px 3px",color:"#555",fontSize:11}}>{activeGallery.length} photo{activeGallery.length!==1?"s":""}</div>
+          {hasDatesAndroid ? (
+            groupGalleryByYear(sortedActive).map(g=>(
+              <div key={g.year}>
+                <div style={{padding:"6px 10px 2px",color:"#888",fontSize:12,fontWeight:700}}>{g.year}</div>
+                <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:1}}>
+                  {g.photos.map(photo=>{
+                    const i = sortedActive.indexOf(photo);
+                    return (
+                      <div key={photo.id}
+                        style={{aspectRatio:"1",background:"#222",display:"flex",alignItems:"center",justifyContent:"center",position:"relative",cursor:"pointer"}}
+                        onClick={()=>setPhotoDetail(i)}>
+                        {photo.src?<img src={photo.src} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:<span style={{color:"#444",fontSize:20}}>🏔️</span>}
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
-            );})}
-            {admin&&<label style={{aspectRatio:"1",background:"#1a1a1a",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",cursor:"pointer",color:"#ffc107",fontSize:22,border:"1px dashed #ffc107",gap:3}}>
-              <span style={{lineHeight:1}}>+</span>
-              <span style={{fontSize:8,opacity:0.7,fontFamily:FF_IOS}}>multi</span>
-              <input type="file" accept="image/*" multiple style={{display:"none"}} onChange={e=>{
-                const files=Array.from(e.target.files||[]);
-                if(!files.length) return;
-                let loaded=0;
-                const newPhotos=[];
-                files.forEach((f,fi)=>{const r=new UploadReader();r.onload=ev=>{newPhotos.push({id:Date.now()+fi,src:ev.target.result,date:"Oct 2012"});loaded++;if(loaded===files.length)update("gallery",[...activeGallery.filter(p=>p.src),...deletedGallery,...newPhotos]);};r.readAsDataURL(f);});
-                e.target.value="";
-              }}/>
-            </label>}
+            ))
+          ) : (
+          <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:1}}>
+            {sortedActive.map((photo,i)=>(
+              <div key={photo.id}
+                style={{aspectRatio:"1",background:"#222",display:"flex",alignItems:"center",justifyContent:"center",position:"relative",cursor:"pointer"}}
+                onClick={()=>setPhotoDetail(i)}>
+                {photo.src?<img src={photo.src} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:<span style={{color:"#444",fontSize:20}}>🏔️</span>}
+              </div>
+            ))}
           </div>
+          )}
         </div>
       </AppShell>
     );
@@ -7806,18 +7076,14 @@ const AndroidPhone = ({data,admin,onUpdate,sharedAndroidIcons={},onUpdateShared=
               <div style={{width:38,height:38,background:avatarColor,borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontWeight:700,fontSize:14,flexShrink:0,fontFamily:FF_IOS}}>{initials}</div>
               <div style={{flex:1,minWidth:0}}>
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",marginBottom:3}}>
-                  <div style={{color:msg.unread?"#212121":"#424242",fontWeight:msg.unread?700:400,fontSize:14,fontFamily:FF_IOS}}>
-                    {admin?<input value={msg.contact} onChange={e=>{const m=[...data.messages];m[i]={...m[i],contact:e.target.value};update("messages",m);}} style={{background:"rgba(255,200,0,0.15)",border:"1px dashed #ffc107",color:"#212121",fontSize:14}} onClick={e=>e.stopPropagation()}/>:msg.contact}
-                  </div>
+                  <div style={{color:msg.unread?"#212121":"#424242",fontWeight:msg.unread?700:400,fontSize:14,fontFamily:FF_IOS}}>{msg.contact}</div>
                   <span style={{color:msg.unread?accent:"#bdbdbd",fontSize:11,fontFamily:FF_IOS,flexShrink:0}}>{lastTime}</span>
                 </div>
                 <div style={{color:msg.unread?"#616161":"#9e9e9e",fontSize:12,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",fontFamily:FF_IOS,fontWeight:msg.unread?500:400}}>{lastMsg?.text}</div>
               </div>
               {msg.unread&&<div style={{width:9,height:9,borderRadius:"50%",background:accent,flexShrink:0}}/>}
-              {admin&&<AdminBadge label="✕" onClick={e=>{e.stopPropagation();updateMsg(data.messages.filter((_,j)=>j!==i));}} color="#f44"/>}
             </div>
           );})}
-        {admin&&<div onClick={()=>updateMsg([...data.messages,{id:Date.now(),contact:"New contact",thread:[{from:"them",text:"…",time:"—"}]}])} style={{padding:14,textAlign:"center",color:"#ffc107",cursor:"pointer",borderTop:"1px dashed #ffc10744",fontSize:12,fontFamily:FF_IOS}}>+ New conversation</div>}
       </div>
     </AppShell>
   );
@@ -7853,51 +7119,14 @@ const AndroidPhone = ({data,admin,onUpdate,sharedAndroidIcons={},onUpdateShared=
                   fontFamily:FF_IOS,
                   overflow:msg.img?"hidden":"visible",
                 }}>
-                  {admin
-                    ?<div style={{display:"flex",flexDirection:"column",gap:3,padding:msg.img?6:0}}>
-                      {msg.img && <div style={{position:"relative"}}>
-                        <img src={msg.img} style={{maxWidth:160,maxHeight:160,borderRadius:8,display:"block"}}/>
-                        <button onClick={()=>{const newT=[...resolvedThread];newT[mi]={...newT[mi],img:null};saveThread(conv,newT);}} style={{position:"absolute",top:2,right:2,background:"rgba(0,0,0,0.6)",border:"none",color:"#fff",borderRadius:"50%",width:18,height:18,fontSize:11,cursor:"pointer",lineHeight:1}}>✕</button>
-                      </div>}
-                      <label style={{background:"rgba(0,0,0,0.06)",border:"1px dashed #999",color:"#555",borderRadius:4,padding:"3px 8px",fontSize:10,cursor:"pointer",textAlign:"center",fontFamily:FF_IOS}}>
-                        {msg.img?"Changer l'image":"+ Image"}
-                        <input type="file" accept="image/*" style={{display:"none"}} onChange={e=>{
-                          const f=e.target.files?.[0]; if(!f)return;
-                          const r=new UploadReader(); r.onload=ev=>{const newT=[...resolvedThread];newT[mi]={...newT[mi],img:ev.target.result};saveThread(conv,newT);};
-                          r.readAsDataURL(f); e.target.value="";
-                        }}/>
-                      </label>
-                      <input value={msg.text} onChange={e=>{const newT=[...resolvedThread];newT[mi]={...newT[mi],text:e.target.value};saveThread(conv,newT);}} style={{background:"rgba(255,200,0,0.2)",border:"1px dashed #ffc107",color:"inherit",fontSize:13,width:120,fontFamily:FF_IOS}} placeholder="Légende (optionnel)"/>
-                      <input value={msg.time||""} onChange={e=>{const newT=[...resolvedThread];newT[mi]={...newT[mi],time:e.target.value};saveThread(conv,newT);}} style={{background:"rgba(255,200,0,0.08)",border:"1px dashed #ffc10777",color:"inherit",fontSize:10,width:120,fontFamily:FF_IOS}} placeholder="ex: 1 oct, 15h30"/>
-                    </div>
-                    :<>
-                      {msg.img && <img src={msg.img} style={{maxWidth:"100%",display:"block",borderRadius:msg.text?"18px 18px 0 0":(isMe?"18px 4px 18px 18px":"4px 18px 18px 18px")}}/>}
-                      {msg.text && <div style={{padding:msg.img?"6px 12px":0}}>{msg.text}</div>}
-                    </>}
+                  {msg.img && <img src={msg.img} style={{maxWidth:"100%",display:"block",borderRadius:msg.text?"18px 18px 0 0":(isMe?"18px 4px 18px 18px":"4px 18px 18px 18px")}}/>}
+                  {msg.text && <div style={{padding:msg.img?"6px 12px":0}}>{msg.text}</div>}
                 </div>
-                {admin&&<div style={{display:"flex",gap:4,marginTop:2,justifyContent:isMe?"flex-end":"flex-start",flexWrap:"wrap",alignItems:"center"}}>
-                  <button onClick={()=>{if(mi>0){const t=[...resolvedThread];[t[mi-1],t[mi]]=[t[mi],t[mi-1]];saveThread(conv,t);}}} style={{background:"#ddd",border:"none",color:"#666",borderRadius:2,fontSize:10,padding:"1px 6px",cursor:mi>0?"pointer":"not-allowed",opacity:mi>0?1:0.4}}>↑</button>
-                  <button onClick={()=>{if(mi<resolvedThread.length-1){const t=[...resolvedThread];[t[mi+1],t[mi]]=[t[mi],t[mi+1]];saveThread(conv,t);}}} style={{background:"#ddd",border:"none",color:"#666",borderRadius:2,fontSize:10,padding:"1px 6px",cursor:mi<resolvedThread.length-1?"pointer":"not-allowed",opacity:mi<resolvedThread.length-1?1:0.4}}>↓</button>
-                  <button onClick={()=>saveThread(conv, resolvedThread.filter((_,j)=>j!==mi))} style={{background:"#f44",border:"none",color:"#fff",borderRadius:2,fontSize:9,padding:"1px 6px",cursor:"pointer"}}>✕</button>
-                  {conv.isGroup&&(()=>{
-                    const senders=[{key:"me",label:"Moi"},...(conv.sharedThreadId
-                      ?Object.entries(CHAR_NAMES).filter(([k])=>k!==charKey).map(([k,v])=>({key:k,label:v}))
-                      :[...new Set(resolvedThread.filter(m=>m.from!=="me").map(m=>m.senderKey).filter(Boolean))].map(k=>({key:k,label:resolvedThread.find(m=>m.senderKey===k)?.senderName||k}))
-                    )];
-                    const curKey=msg.from==="me"?"me":(msg.senderKey||senders[1]?.key||"them");
-                    return <select value={curKey} onClick={e=>e.stopPropagation()}
-                      onChange={e=>{const val=e.target.value;const newT=[...resolvedThread];if(val==="me")newT[mi]={...newT[mi],from:"me",senderKey:undefined,senderName:undefined};else{const s=senders.find(x=>x.key===val);newT[mi]={...newT[mi],from:"them",senderKey:val,senderName:s?.label||val};}saveThread(conv,newT);}}
-                      style={{background:"#333",border:"1px solid #555",color:"#ccc",borderRadius:2,fontSize:9,padding:"1px 4px"}}>
-                      {senders.map(s=><option key={s.key} value={s.key}>{s.label}</option>)}
-                    </select>;
-                  })()}
-                </div>}
                 <div style={{fontSize:10,color:"#aaa",marginTop:2,textAlign:isMe?"right":"left",padding:"0 4px",fontFamily:FF_IOS}}>{loreRelativeLabel(msg.time,loreDate)}</div>
               </div>
             </div>
             </React.Fragment>;
           })}
-          {admin&&<MsgReplyModal update={update} data={data} updateMsg={updateMsg} threadIdx={thread} conv={conv} charKey={charKey}/>}
         </div>
         
         <div style={{background:"#f0f0f0",borderTop:"1px solid #ddd",padding:"6px 10px",display:"flex",gap:8,alignItems:"center",flexShrink:0}}>
@@ -7928,7 +7157,7 @@ const AndroidPhone = ({data,admin,onUpdate,sharedAndroidIcons={},onUpdateShared=
   if(app==="kindle")    return <AppShell><AndroidStatusBar notifApps={notifApps} accent={accent}/><ActionBar title="Kindle" back={goHome}/><KindleScreen isIos={false} accent={accent} data={data}/></AppShell>;
   if(app==="inaturalist")return <AppShell><AndroidStatusBar notifApps={notifApps} accent={accent}/><ActionBar title="iNaturalist" back={goHome}/><INaturalistScreen data={data} isIos={false} accent={accent}/></AppShell>;
   if(app==="soundhound")return <AppShell><AndroidStatusBar notifApps={notifApps} accent={accent}/><ActionBar title="SoundHound" back={goHome}/><SoundHoundScreen isIos={false} accent={accent}/></AppShell>;
-  if(app==="reddit")    return <AppShell><AndroidStatusBar notifApps={notifApps} accent={accent}/><ActionBar title="Reddit" back={goHome}/><RedditScreen data={data} isIos={false} accent={accent}/></AppShell>;  if(app==="twitter")   return <AppShell><AndroidStatusBar notifApps={notifApps} accent={accent}/><TwitterScreen data={data} isIos={false} accent={accent} onBack={goHome} sharedTweets={data.sharedThreads?._sharedTweets||[]} twitterUsers={{...(data.sharedThreads?._sharedTwitterUsers||{}),...(data.twitterUsers||{})}} homeBaseTweets={data.homeBaseTweets||[]}/></AppShell>;
+  if(app==="reddit")    return <AppShell><AndroidStatusBar notifApps={notifApps} accent={accent}/><ActionBar title="Reddit" back={goHome}/><RedditScreen data={data} isIos={false} accent={accent}/></AppShell>;  if(app==="twitter")   return <AppShell><AndroidStatusBar notifApps={notifApps} accent={accent}/><TwitterScreen data={data} isIos={false} accent={accent} onBack={goHome} sharedTweets={data.sharedThreads?._sharedTweets||[]} twitterUsers={{...(data.sharedThreads?._sharedTwitterUsers||{}),...(data.twitterUsers||{})}} homeBaseTweets={data.homeBaseTweets||[]} onUpdateShared={onUpdateSharedThread}/></AppShell>;
   if(app==="vpn")       return <AppShell><AndroidStatusBar notifApps={notifApps} accent={accent}/><ActionBar title="VPN" back={goHome}/><VPNScreen isIos={false} accent={accent}/></AppShell>;
   if(app==="contacts")  return <AppShell><AndroidStatusBar notifApps={notifApps} accent={accent}/><ActionBar title="Contacts" back={goHome}/><ContactsScreen data={data} isIos={false} accent={accent}/></AppShell>;
   if(app==="clock")     return <AppShell><AndroidStatusBar notifApps={notifApps} accent={accent}/><ActionBar title="Clock" back={goHome}/><ClockScreen isIos={false} accent={accent}/></AppShell>;
@@ -18525,7 +17754,7 @@ const CHARACTERS = [
 // Sélecteur de date + heure pour les champs "lore" (ex: "6 oct, 9:58am") — remplace la saisie
 // manuelle par deux <input type="date"/"time"> natifs, tout en gardant le format de string attendu
 // par parseLoreTime/formatMsgTime partout ailleurs dans l'app. Année toujours 2012 (cf LORE_DATE_DEFAULT).
-const LORE_MONTHS_FR = ['','jan','fév','mar','avr','mai','juin','juil','aoû','sep','oct','nov','déc'];
+const LORE_MONTHS = ['','Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 const LoreDateTimeInput = ({value, onChange, width="100%", showLabel=true}) => {
   const parsed = parseLoreTime(value);
   // Si aucune date n'est encore posée, on pré-remplit avec la date de lore par défaut (oct. 2012)
@@ -18537,7 +17766,7 @@ const LoreDateTimeInput = ({value, onChange, width="100%", showLabel=true}) => {
   const build = (d, t) => {
     if(!d) return value||'';
     const [, m, day] = d.split('-').map(Number);
-    let str = `${day} ${LORE_MONTHS_FR[m]}`;
+    let str = `${day} ${LORE_MONTHS[m]}`;
     if(t) {
       const [hh, mm] = t.split(':').map(Number);
       const period = hh < 12 ? 'am' : 'pm';
@@ -18572,6 +17801,61 @@ const Field = ({label, value, onChange, textarea=false, width="100%"}) => (
     }
   </div>
 );
+
+// Éditeur générique pour les "posts partagés" (mêmes principes que Twitter : un tableau partagé
+// entre les 4 persos, chacun ne voit/modifie que les posts dont il est l'auteur, ajout d'image et
+// de date intégrés). Utilisé par Twitter, Tumblr et Facebook — seule la "forme" des données change
+// (fieldMap), la mécanique (lister/ajouter/éditer/supprimer ses propres posts) est écrite une fois.
+const SharedPostsEditor = ({
+  posts, onChange, tab, accent="#6366f1",
+  fieldMap={text:"text", img:"img", time:"time"},
+  showTitle=false, statFields=[], addExtra={}, addLabel="+ Post", textLabel="Texte", hint,
+}) => {
+  const F = fieldMap;
+  const mine = posts.filter(p=>p.author===tab);
+  const updPost = (id, patch) => onChange(posts.map(p=>p.id===id?{...p,...patch}:p));
+  const removePost = (id) => onChange(posts.filter(p=>p.id!==id));
+  const addPost = () => {
+    const blank = {id:Date.now(), author:tab, [F.text]:"", [F.time]:"1 oct, 9:00am", ...addExtra};
+    statFields.forEach(sf=>{ blank[sf.key] = 0; });
+    onChange([blank, ...posts]);
+  };
+  return (
+    <div style={{display:"flex",flexDirection:"column",gap:10}}>
+      {hint && <div style={{fontSize:11,color:"#9ca3af"}}>{hint}</div>}
+      {mine.map(post=>(
+        <div key={post.id} className="adm-card" style={{background:"rgba(255,255,255,0.9)",borderRadius:10,padding:"10px 12px",border:"1px solid rgba(0,0,0,0.07)",display:"flex",flexDirection:"column",gap:6}}>
+          <div style={{display:"flex",gap:6,flexWrap:"wrap",alignItems:"flex-end"}}>
+            {showTitle && <Field label="Titre (opt.)" value={post.title||""} onChange={v=>updPost(post.id,{title:v})} width="160px"/>}
+            <LoreDateTimeInput value={post[F.time]||""} onChange={v=>updPost(post.id,{[F.time]:v})} width="190px" showLabel={true}/>
+            <button onClick={()=>removePost(post.id)} className="adm-del-btn" style={{background:"rgba(239,68,68,0.07)",border:"1px solid rgba(239,68,68,0.2)",color:"#ef4444",borderRadius:6,padding:"5px 8px",cursor:"pointer",fontSize:11}}>✕</button>
+          </div>
+          {post[F.img] && <div style={{position:"relative",alignSelf:"flex-start"}}>
+            <img src={post[F.img]} style={{maxWidth:200,maxHeight:150,borderRadius:8,display:"block"}}/>
+            <button onClick={()=>updPost(post.id,{[F.img]:null})} style={{position:"absolute",top:2,right:2,background:"rgba(0,0,0,0.6)",border:"none",color:"#fff",borderRadius:"50%",width:20,height:20,fontSize:12,cursor:"pointer",lineHeight:1}}>✕</button>
+          </div>}
+          <label style={{alignSelf:"flex-start",background:`${accent}1a`,border:`1px dashed ${accent}66`,color:accent,borderRadius:6,padding:"5px 10px",fontSize:11,cursor:"pointer"}}>
+            {post[F.img]?"Changer l'image":"+ Image"}
+            <input type="file" accept="image/*" style={{display:"none"}} onChange={e=>{
+              const f=e.target.files?.[0]; if(!f) return;
+              const r=new UploadReader(); r.onload=ev=>updPost(post.id,{[F.img]:ev.target.result}); r.readAsDataURL(f); e.target.value="";
+            }}/>
+          </label>
+          <Field label={textLabel} value={post[F.text]||""} onChange={v=>updPost(post.id,{[F.text]:v})} textarea/>
+          {statFields.length>0 && (
+            <div style={{display:"flex",gap:6,alignItems:"flex-end"}}>
+              {statFields.map(sf=>(
+                <Field key={sf.key} label={sf.label} value={String(post[sf.key]??0)} onChange={v=>updPost(post.id,{[sf.key]:parseInt(v)||0})} width="auto"/>
+              ))}
+            </div>
+          )}
+        </div>
+      ))}
+      <button onClick={addPost}
+        style={{background:`${accent}14`,border:`1px dashed ${accent}66`,color:accent,borderRadius:8,padding:"10px 18px",cursor:"pointer",fontSize:12,fontWeight:600,alignSelf:"flex-start"}}>{addLabel}</button>
+    </div>
+  );
+};
 
 // Parse un coller multi-lignes "expéditeur: texte | heure" en thread.
 // group=true → expéditeurs nommés (glinda/eoghan/drew/elias/moi) ; sinon moi/eux.
@@ -18748,12 +18032,6 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
     return () => { ro.disconnect(); window.removeEventListener("resize", check); };
   }, []);
 
-
-  const [itunesMusicQuery, setItunesMusicQuery] = useState("");
-  const [itunesResults, setItunesResults] = useState([]);
-  const [itunesSearching, setItunesSearching] = useState(false);
-  const itunesSearchRef = React.useRef(false);
-
   const char = CHARACTERS.find(c=>c.key===tab);
   const d    = data[tab];
   const upd  = (key, val) => {
@@ -18792,12 +18070,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
           };
           const GM="#00AFF0";
           return (<>
-            {isCustom && (
-              <div style={{display:"flex",alignItems:"center",justifyContent:"flex-end"}}>
-                <button onClick={()=>updList([])} style={{background:"none",border:"1px solid rgba(0,0,0,0.12)",color:"#6b7280",borderRadius:6,padding:"3px 9px",cursor:"pointer",fontSize:10}}>↩ Réinitialiser</button>
-              </div>
-            )}
-            {effective.map((g,i)=>(
+                        {effective.map((g,i)=>(
               <div key={g.id??i} className="adm-card" style={{background:"rgba(255,255,255,0.9)",borderRadius:10,padding:"10px 12px",border:"1px solid rgba(0,0,0,0.07)",display:"flex",flexDirection:"column",gap:6}}>
                 <div style={{display:"flex",gap:6,flexWrap:"wrap",alignItems:"center"}}>
                   <Field label="Nom du groupe" value={g.name||""} onChange={v=>ensureCustom(i,{name:v})} style={{flex:1}}/>
@@ -19580,7 +18853,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                     const n=[...d.notes];
                     if(!e.target.value){ n[i]={...n[i],date:""}; upd("notes",n); return; }
                     const [,m,dd]=e.target.value.split('-').map(Number);
-                    n[i]={...n[i],date:`${dd} ${LORE_MONTHS_FR[m]}`};
+                    n[i]={...n[i],date:`${dd} ${LORE_MONTHS[m]}`};
                     upd("notes",n);
                   }}
                   className="adm-input" style={{background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#1a1a2e",padding:"7px 8px",fontSize:11,borderRadius:7}}/>
@@ -19663,7 +18936,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                 const iso = e.target.value;
                 if(!iso){ updPhoto(photo.id,{dateISO:null}); return; }
                 const [y,m,dd] = iso.split('-').map(Number);
-                updPhoto(photo.id,{dateISO:iso, date:`${dd} ${LORE_MONTHS_FR[m]} ${y}`});
+                updPhoto(photo.id,{dateISO:iso, date:`${dd} ${LORE_MONTHS[m]} ${y}`});
               }}
               className="adm-input" style={{width:"100%",background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.08)",color:"#6b7280",padding:"4px 7px",fontSize:10,borderRadius:6}}/>
             <div style={{display:"flex",gap:4}}>
@@ -19868,134 +19141,6 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
     case "music": return (
       <div style={{display:"flex",flexDirection:"column",gap:10}}>
 
-        
-        {(()=>{
-          const [itunesQ, setItunesQ] = [itunesMusicQuery, setItunesMusicQuery];
-          const [results, setResults] = [itunesResults, setItunesResults];
-          const [searching, setSearching] = [itunesSearching, setItunesSearching];
-          const MUSIC_DB = [
-            // Pop 2010-2012
-            {t:"Rolling in the Deep",a:"Adele",d:"3:49"},{t:"Someone Like You",a:"Adele",d:"4:45"},{t:"Set Fire to the Rain",a:"Adele",d:"4:01"},{t:"Skyfall",a:"Adele",d:"4:46"},
-            {t:"We Are Young",a:"fun. ft. Janelle Monáe",d:"4:10"},{t:"Some Nights",a:"fun.",d:"4:58"},
-            {t:"Call Me Maybe",a:"Carly Rae Jepsen",d:"3:13"},{t:"Good Time",a:"Owl City & Carly Rae Jepsen",d:"3:26"},
-            {t:"Somebody That I Used to Know",a:"Gotye ft. Kimbra",d:"4:04"},{t:"Eyes Wide Open",a:"Gotye",d:"5:21"},
-            {t:"Ho Hey",a:"The Lumineers",d:"2:43"},{t:"Stubborn Love",a:"The Lumineers",d:"4:28"},
-            {t:"Shake It Out",a:"Florence + The Machine",d:"4:38"},{t:"Dog Days Are Over",a:"Florence + The Machine",d:"4:13"},{t:"You've Got the Love",a:"Florence + The Machine",d:"3:45"},
-            {t:"Pumped Up Kicks",a:"Foster The People",d:"3:59"},{t:"Helena Beat",a:"Foster The People",d:"4:01"},
-            {t:"Moves Like Jagger",a:"Maroon 5 ft. Christina Aguilera",d:"3:22"},{t:"Payphone",a:"Maroon 5 ft. Wiz Khalifa",d:"3:59"},{t:"She Will Be Loved",a:"Maroon 5",d:"4:17"},
-            {t:"Party Rock Anthem",a:"LMFAO ft. Lauren Bennett",d:"4:23"},{t:"Sexy and I Know It",a:"LMFAO",d:"3:19"},
-            {t:"Titanium",a:"David Guetta ft. Sia",d:"4:05"},{t:"Without You",a:"David Guetta ft. Usher",d:"3:49"},
-            {t:"Wide Awake",a:"Katy Perry",d:"3:41"},{t:"Roar",a:"Katy Perry",d:"3:43"},{t:"Teenage Dream",a:"Katy Perry",d:"3:48"},{t:"Last Friday Night",a:"Katy Perry",d:"3:51"},{t:"Part of Me",a:"Katy Perry",d:"2:44"},
-            {t:"We Found Love",a:"Rihanna ft. Calvin Harris",d:"3:36"},{t:"Diamonds",a:"Rihanna",d:"3:45"},{t:"Where Have You Been",a:"Rihanna",d:"3:58"},{t:"Stay",a:"Rihanna ft. Mikky Ekko",d:"4:00"},
-            {t:"As Long As You Love Me",a:"Justin Bieber ft. Big Sean",d:"3:30"},{t:"Boyfriend",a:"Justin Bieber",d:"3:35"},{t:"Beauty and a Beat",a:"Justin Bieber ft. Nicki Minaj",d:"3:14"},
-            {t:"Starships",a:"Nicki Minaj",d:"3:30"},{t:"Super Bass",a:"Nicki Minaj",d:"3:20"},
-            {t:"Glad You Came",a:"The Wanted",d:"3:14"},{t:"I Knew You Were Trouble",a:"Taylor Swift",d:"3:37"},{t:"We Are Never Ever Getting Back Together",a:"Taylor Swift",d:"3:13"},{t:"22",a:"Taylor Swift",d:"3:52"},
-            {t:"Blow Me (One Last Kiss)",a:"P!nk",d:"3:42"},{t:"Raise Your Glass",a:"P!nk",d:"2:55"},
-            {t:"Feel So Close",a:"Calvin Harris",d:"3:23"},{t:"Sweet Nothing",a:"Calvin Harris ft. Florence Welch",d:"3:36"},
-            {t:"Levels",a:"Avicii",d:"3:18"},{t:"Silhouettes",a:"Avicii",d:"3:43"},
-            {t:"Thrift Shop",a:"Macklemore & Ryan Lewis ft. Wanz",d:"3:54"},{t:"Can't Hold Us",a:"Macklemore & Ryan Lewis ft. Ray Dalton",d:"4:18"},
-            {t:"Sail",a:"AWOLNATION",d:"4:23"},{t:"Kill Everyone",a:"AWOLNATION",d:"2:37"},
-            {t:"Radioactive",a:"Imagine Dragons",d:"3:06"},{t:"Demons",a:"Imagine Dragons",d:"2:57"},{t:"It's Time",a:"Imagine Dragons",d:"4:00"},
-            {t:"Home",a:"Phillip Phillips",d:"3:32"},{t:"Gone Gone Gone",a:"Phillip Phillips",d:"3:38"},
-            {t:"Hall of Fame",a:"The Script ft. will.i.am",d:"3:23"},{t:"The Man Who Can't Be Moved",a:"The Script",d:"4:00"},{t:"Breakeven",a:"The Script",d:"3:55"},
-            {t:"Paradise",a:"Coldplay",d:"4:38"},{t:"The Scientist",a:"Coldplay",d:"5:09"},{t:"Every Teardrop Is a Waterfall",a:"Coldplay",d:"4:14"},{t:"Fix You",a:"Coldplay",d:"4:55"},
-            {t:"Lonely Boy",a:"The Black Keys",d:"3:13"},{t:"Gold on the Ceiling",a:"The Black Keys",d:"3:41"},
-            {t:"Little Talks",a:"Of Monsters and Men",d:"4:15"},{t:"Mountain Sound",a:"Of Monsters and Men",d:"3:33"},
-            {t:"Take Care",a:"Drake ft. Rihanna",d:"4:35"},{t:"Marvins Room",a:"Drake",d:"5:39"},{t:"Started From the Bottom",a:"Drake",d:"3:10"},
-            {t:"Otis",a:"Jay-Z & Kanye West",d:"3:25"},{t:"Niggas in Paris",a:"Jay-Z & Kanye West",d:"3:39"},{t:"New Day",a:"Jay-Z & Kanye West",d:"4:45"},
-            {t:"Birthday Song",a:"2 Chainz ft. Kanye West",d:"4:04"},{t:"No Lie",a:"2 Chainz ft. Drake",d:"4:11"},
-            {t:"Young, Wild & Free",a:"Snoop Dogg & Wiz Khalifa ft. Bruno Mars",d:"3:42"},{t:"Work Hard, Play Hard",a:"Wiz Khalifa",d:"4:00"},
-            {t:"Locked Out of Heaven",a:"Bruno Mars",d:"3:53"},{t:"When I Was Your Man",a:"Bruno Mars",d:"3:33"},{t:"The Lazy Song",a:"Bruno Mars",d:"3:09"},
-            {t:"Stronger (What Doesn't Kill You)",a:"Kelly Clarkson",d:"3:42"},{t:"Mr. Know It All",a:"Kelly Clarkson",d:"3:44"},
-            {t:"Gangnam Style",a:"PSY",d:"3:39"},
-            // K-Pop
-            {t:"Gee",a:"Girls' Generation",d:"2:59"},{t:"Genie",a:"Girls' Generation",d:"3:35"},{t:"The Boys",a:"Girls' Generation",d:"3:39"},{t:"Oh!",a:"Girls' Generation",d:"3:02"},{t:"Run Devil Run",a:"Girls' Generation",d:"3:06"},{t:"Mr. Taxi",a:"Girls' Generation",d:"3:36"},{t:"I Got a Boy",a:"Girls' Generation",d:"4:04"},{t:"Paparazzi",a:"Girls' Generation",d:"3:37"},
-            {t:"Sorry Sorry",a:"Super Junior",d:"3:36"},{t:"Mr. Simple",a:"Super Junior",d:"3:38"},{t:"Bonamana",a:"Super Junior",d:"3:32"},
-            {t:"Lucifer",a:"SHINee",d:"3:36"},{t:"Sherlock",a:"SHINee",d:"3:42"},{t:"Ring Ding Dong",a:"SHINee",d:"3:43"},
-            {t:"Bo Peep Bo Peep",a:"T-ara",d:"3:30"},{t:"Lovey Dovey",a:"T-ara",d:"3:29"},{t:"Roly Poly",a:"T-ara",d:"3:38"},
-            {t:"Fantastic Baby",a:"BIGBANG",d:"3:33"},{t:"Bad Boy",a:"BIGBANG",d:"3:38"},{t:"Blue",a:"BIGBANG",d:"3:40"},
-            {t:"Breathe",a:"2NE1",d:"3:30"},{t:"I Am the Best",a:"2NE1",d:"3:22"},{t:"Lonely",a:"2NE1",d:"3:40"},
-            {t:"What's Your Name?",a:"4Minute",d:"3:22"},{t:"Volume Up",a:"4Minute",d:"3:22"},
-            {t:"Danger",a:"BTS",d:"3:59"},{t:"No More Dream",a:"BTS",d:"3:38"},
-            {t:"EXO - MAMA",a:"EXO",d:"4:07"},{t:"History",a:"EXO",d:"3:35"},{t:"Wolf",a:"EXO",d:"3:31"},
-            {t:"A Pink - NoNoNo",a:"Apink",d:"3:22"},{t:"Hush",a:"Miss A",d:"3:29"},{t:"Touch",a:"Miss A",d:"3:27"},
-            {t:"Bubble Pop!",a:"HyunA",d:"3:20"},{t:"Ice Cream",a:"HyunA",d:"3:12"},
-            {t:"U-Kiss - Neverland",a:"U-KISS",d:"3:30"},{t:"Troublemaker",a:"Troublemaker",d:"3:40"},
-            // Indie / Alt
-            {t:"Tighten Up",a:"The Black Keys",d:"3:31"},{t:"Weight of Love",a:"The Black Keys",d:"6:50"},
-            {t:"Midnight City",a:"M83",d:"4:03"},{t:"Reunion",a:"M83",d:"4:07"},
-            {t:"Babel",a:"Mumford & Sons",d:"5:28"},{t:"I Will Wait",a:"Mumford & Sons",d:"4:38"},{t:"Little Lion Man",a:"Mumford & Sons",d:"4:05"},
-            {t:"A Team",a:"Ed Sheeran",d:"4:19"},{t:"Lego House",a:"Ed Sheeran",d:"3:04"},{t:"Drunk",a:"Ed Sheeran",d:"3:20"},
-            {t:"Breezeblocks",a:"alt-J",d:"4:02"},{t:"Tessellate",a:"alt-J",d:"2:49"},{t:"Fitzpleasure",a:"alt-J",d:"3:39"},
-            {t:"The XX - Intro",a:"The xx",d:"2:07"},{t:"Angels",a:"The xx",d:"3:21"},{t:"Chained",a:"The xx",d:"3:56"},
-            {t:"Video Games",a:"Lana Del Rey",d:"4:42"},{t:"Born to Die",a:"Lana Del Rey",d:"4:22"},{t:"Summertime Sadness",a:"Lana Del Rey",d:"4:25"},{t:"Blue Jeans",a:"Lana Del Rey",d:"3:31"},
-            {t:"Wuthering Heights",a:"Kate Bush",d:"4:28"},{t:"Running Up That Hill",a:"Kate Bush",d:"5:02"},
-            // Electronic / Dance
-            {t:"Spectrum",a:"Florence + The Machine",d:"4:08"},{t:"Never Let Me Go",a:"Florence + The Machine",d:"4:25"},
-            {t:"Blue (Da Ba Dee)",a:"Eiffel 65",d:"3:38"},{t:"I'm a Barbie Girl",a:"Aqua",d:"3:12"},
-            {t:"Starships",a:"Nicki Minaj",d:"3:30"},{t:"Turn Me On",a:"David Guetta ft. Nicki Minaj",d:"3:44"},
-            {t:"Don't You Worry Child",a:"Swedish House Mafia ft. John Martin",d:"3:48"},{t:"Save the World",a:"Swedish House Mafia",d:"4:12"},
-            {t:"In for the Kill",a:"La Roux",d:"3:30"},{t:"Bulletproof",a:"La Roux",d:"3:27"},
-            // Soundcloud / Indie
-            {t:"Flaws",a:"Bastille",d:"3:24"},{t:"Pompeii",a:"Bastille",d:"3:34"},{t:"Things We Lost in the Fire",a:"Bastille",d:"4:00"},
-            {t:"Ghosts",a:"Ladytron",d:"4:17"},{t:"Seventeen",a:"Ladytron",d:"4:09"},
-          ];
-
-          const search = () => {
-            if(!itunesQ.trim()) return;
-            const q = itunesQ.toLowerCase();
-            const found = MUSIC_DB.filter(s =>
-              s.t.toLowerCase().includes(q) ||
-              s.a.toLowerCase().includes(q)
-            ).slice(0, 10);
-            setResults(found.map(s=>({trackName:s.t, artistName:s.a, trackTimeMillis:0, _dur:s.d})));
-          };
-          const fmtMs = (r) => r._dur || "3:00";
-          return (
-            <div style={{background:"rgba(99,102,241,0.05)",border:"1px solid rgba(99,102,241,0.15)",borderRadius:10,padding:12,display:"flex",flexDirection:"column",gap:8}}>
-              <div style={{fontSize:11,fontWeight:700,color:"#6366f1"}}>🔍 iTunes Search</div>
-              <div style={{display:"flex",gap:6}}>
-                <input
-                  className="adm-input"
-                  placeholder="Artist, title, album…"
-                  value={itunesQ}
-                  onChange={e=>setItunesMusicQuery(e.target.value)}
-                  onKeyDown={e=>e.key==="Enter"&&search()}
-                  style={{flex:1,background:"rgba(255,255,255,0.9)",border:"1px solid rgba(0,0,0,0.1)",color:"#1a1a2e",padding:"7px 10px",fontSize:12,borderRadius:7}}
-                />
-                <button onClick={search} className="adm-btn-primary"
-                  style={{background:"linear-gradient(135deg,#6366f1,#8b5cf6)",border:"none",color:"#fff",padding:"7px 14px",borderRadius:7,fontWeight:600,fontSize:12,cursor:"pointer",whiteSpace:"nowrap"}}>
-                  {searching ? "…" : "Search"}
-                </button>
-              </div>
-              {results.length>0 && (
-                <div style={{display:"flex",flexDirection:"column",gap:4,maxHeight:220,overflowY:"auto"}}>
-                  {results.map(r=>(
-                    <div key={r.trackId} style={{display:"flex",alignItems:"center",gap:8,padding:"5px 6px",borderRadius:6,background:"rgba(255,255,255,0.7)",cursor:"pointer",transition:"background 0.1s"}}
-                      onMouseEnter={e=>e.currentTarget.style.background="rgba(99,102,241,0.1)"}
-                      onMouseLeave={e=>e.currentTarget.style.background="rgba(255,255,255,0.7)"}
-                      onClick={()=>{
-                        upd("music",[...(d.music||[]),{id:Date.now(),title:r.trackName,artist:r.artistName,duration:r._dur||fmtMs(r)}]);
-                        setResults([]);
-                        setItunesMusicQuery("");
-                      }}>
-                      {r.artworkUrl60 && <img src={r.artworkUrl60} style={{width:32,height:32,borderRadius:4,flexShrink:0}} alt=""/>}
-                      <div style={{flex:1,minWidth:0}}>
-                        <div style={{fontSize:11,fontWeight:600,color:"#1a1a2e",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{r.trackName}</div>
-                        <div style={{fontSize:10,color:"#6b7280",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{r.artistName}</div>
-                      </div>
-                      <div style={{fontSize:10,color:"#9ca3af",flexShrink:0}}>{fmtMs(r.trackTimeMillis||180000)}</div>
-                      <div style={{fontSize:11,color:"#6366f1",flexShrink:0,fontWeight:600}}>+ Add</div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          );
-        })()}
-
-        
-        
         <div style={{display:"flex",gap:12,alignItems:"center",background:"rgba(255,255,255,0.85)",padding:12,borderRadius:10,border:"1px solid rgba(0,0,0,0.07)"}}>
           <div
             onClick={()=>document.getElementById(`playlist-cover-${tab}`).click()}
@@ -20013,26 +19158,6 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
             <div style={{fontSize:11,color:"#9ca3af"}}>S'affiche dans le lecteur quand rien ne joue</div>
             {d.playlistCover && <button onClick={()=>upd("playlistCover",null)} style={{fontSize:10,color:"#ef4444",background:"none",border:"none",cursor:"pointer",padding:0,marginTop:2}}>Supprimer</button>}
           </div>
-          <button
-            onClick={async()=>{
-              const m=[...(dataRef.current[tab]?.music||d.music||[])]; let found=0, missed=[];
-              for(let i=0;i<m.length;i++){
-                if(m[i].cover) continue;
-                try{
-                  const q=encodeURIComponent(`${m[i].artist||""} ${m[i].title||""}`.trim());
-                  const r=await fetch(`https://itunes.apple.com/search?term=${q}&entity=song&limit=1&country=US`);
-                  const j=await r.json();
-                  const art=j.results?.[0]?.artworkUrl100;
-                  if(art){ m[i]={...m[i],cover:art.replace("100x100","600x600")}; found++; }
-                  else missed.push(m[i].title);
-                }catch(e){ missed.push(m[i].title); }
-              }
-              onUpdate(tab,{...dataRef.current[tab],music:m});
-              alert(`${found} pochette(s) trouvée(s).`+(missed.length?` Non trouvées : ${missed.join(", ")}`:""));
-            }}
-            style={{background:"rgba(99,102,241,0.08)",border:"1px dashed rgba(99,102,241,0.4)",color:"#6366f1",borderRadius:8,padding:"8px 14px",cursor:"pointer",fontSize:11,fontWeight:600,whiteSpace:"nowrap",flexShrink:0}}>
-            🔍 Chercher les pochettes manquantes
-          </button>
         </div>
 
         
@@ -20056,26 +19181,6 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                 onUpdate(tab,{...dataRef.current[tab],music:freshMusic});
               }; r.readAsDataURL(f); e.target.value="";
             }}/>
-            <button
-              title="Chercher la pochette automatiquement (iTunes)"
-              onClick={async()=>{
-                const trackId=track.id;
-                try{
-                  const q=encodeURIComponent(`${track.artist||""} ${track.title||""}`.trim());
-                  const r=await fetch(`https://itunes.apple.com/search?term=${q}&entity=song&limit=1&country=US`);
-                  const j=await r.json();
-                  const art=j.results?.[0]?.artworkUrl100;
-                  if(art){
-                    const big=art.replace("100x100","600x600");
-                    const freshMusic=[...(dataRef.current[tab]?.music||[])];
-                    const idx=freshMusic.findIndex(t=>t.id===trackId);
-                    if(idx<0) return;
-                    freshMusic[idx]={...freshMusic[idx],cover:big};
-                    onUpdate(tab,{...dataRef.current[tab],music:freshMusic});
-                  } else alert("Pochette non trouvée pour "+track.title);
-                }catch(e){ alert("Recherche impossible (hors-ligne ?)"); }
-              }}
-              style={{width:24,height:24,borderRadius:6,background:"rgba(99,102,241,0.08)",border:"1px solid rgba(99,102,241,0.25)",color:"#6366f1",fontSize:11,cursor:"pointer",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center"}}>🔍</button>
             <input value={track.title} onChange={e=>{const m=[...d.music];m[i]={...m[i],title:e.target.value};upd("music",m);}}
               placeholder="Titre" className="adm-input" style={{flex:2,background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#1a1a2e",padding:"7px 10px",fontSize:12,borderRadius:7}}/>
             <input value={track.artist} onChange={e=>{const m=[...d.music];m[i]={...m[i],artist:e.target.value};upd("music",m);}}
@@ -20084,6 +19189,12 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
               placeholder="Album" className="adm-input" style={{flex:2,background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#6b7280",padding:"7px 10px",fontSize:12,borderRadius:7}}/>
             <input value={track.duration} onChange={e=>{const m=[...d.music];m[i]={...m[i],duration:e.target.value};upd("music",m);}}
               placeholder="3:00" className="adm-input" style={{width:60,background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#6b7280",padding:"7px 8px",fontSize:11,borderRadius:7}}/>
+            <MoveButtons
+              index={i}
+              length={d.music.length}
+              onMoveUp={() => { const m=[...d.music]; [m[i-1],m[i]]=[m[i],m[i-1]]; upd("music",m); }}
+              onMoveDown={() => { const m=[...d.music]; [m[i+1],m[i]]=[m[i],m[i+1]]; upd("music",m); }}
+            />
             <button onClick={()=>upd("music",d.music.filter((_,j)=>j!==i))}
               className="adm-del-btn" style={{background:"none",border:"none",color:"#d1d5db",cursor:"pointer",fontSize:16,padding:"2px 6px",borderRadius:5,transition:"all 0.15s"}}>×</button>
           </div>
@@ -20254,40 +19365,15 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
 
           {twTab==="shared" && (()=>{
             const allShared = data.sharedThreads?._sharedTweets || [];
-            const mySharedTweets = allShared.filter(t=>t.author===tab);
             const updAllShared = (list) => onUpdate("_sharedTweets", list);
-            const updMine = (patch, id) => updAllShared(allShared.map(t=>t.id===id?{...t,...patch}:t));
             return (
-            <div style={{display:"flex",flexDirection:"column",gap:10}}>
-              <div style={{fontSize:11,color:"#9ca3af"}}>Ces tweets sont réellement partagés : ils apparaissent dans le fil des autres persos et sur ton profil, comme un vrai tweet posté depuis l'app. Tu ne peux modifier que les tiens.</div>
-              {mySharedTweets.map((t)=>(
-                <div key={t.id} className="adm-card" style={{background:"rgba(255,255,255,0.9)",borderRadius:10,padding:"10px 12px",border:"1px solid rgba(0,0,0,0.07)",display:"flex",flexDirection:"column",gap:6}}>
-                  <div style={{display:"flex",gap:6,flexWrap:"wrap",alignItems:"flex-end"}}>
-                    <LoreDateTimeInput value={t.time||""} onChange={v=>updMine({time:v},t.id)} width="190px" showLabel={true}/>
-                    <button onClick={()=>updAllShared(allShared.filter(x=>x.id!==t.id))} className="adm-del-btn" style={{background:"rgba(239,68,68,0.07)",border:"1px solid rgba(239,68,68,0.2)",color:"#ef4444",borderRadius:6,padding:"5px 8px",cursor:"pointer",fontSize:11}}>✕</button>
-                  </div>
-                  {t.photo && <div style={{position:"relative",alignSelf:"flex-start"}}>
-                    <img src={t.photo} style={{maxWidth:180,maxHeight:140,borderRadius:8,display:"block"}}/>
-                    <button onClick={()=>updMine({photo:null},t.id)} style={{position:"absolute",top:2,right:2,background:"rgba(0,0,0,0.6)",border:"none",color:"#fff",borderRadius:"50%",width:20,height:20,fontSize:12,cursor:"pointer",lineHeight:1}}>✕</button>
-                  </div>}
-                  <label style={{alignSelf:"flex-start",background:"rgba(29,161,242,0.1)",border:"1px dashed rgba(29,161,242,0.4)",color:"#1da1f2",borderRadius:6,padding:"5px 10px",fontSize:11,cursor:"pointer"}}>
-                    {t.photo?"Changer l'image":"+ Image"}
-                    <input type="file" accept="image/*" style={{display:"none"}} onChange={e=>{
-                      const f=e.target.files?.[0]; if(!f) return;
-                      const r=new UploadReader(); r.onload=ev=>updMine({photo:ev.target.result},t.id); r.readAsDataURL(f); e.target.value="";
-                    }}/>
-                  </label>
-                  <Field label="Texte" value={t.text||""} onChange={v=>updMine({text:v},t.id)} textarea/>
-                  <div style={{display:"flex",gap:6,alignItems:"flex-end"}}>
-                    <Field label="💬" value={String(t.rp??0)}  onChange={v=>updMine({rp:parseInt(v)||0},t.id)} style={{flex:1}}/>
-                    <Field label="🔁" value={String(t.rt??0)}  onChange={v=>updMine({rt:parseInt(v)||0},t.id)} style={{flex:1}}/>
-                    <Field label="❤"  value={String(t.fav??0)} onChange={v=>updMine({fav:parseInt(v)||0},t.id)} style={{flex:1}}/>
-                  </div>
-                </div>
-              ))}
-              <button onClick={()=>updAllShared([{id:Date.now(),author:tab,text:"",time:"1 oct, 9:00am",rp:0,rt:0,fav:0},...allShared])}
-                style={{background:"rgba(29,161,242,0.08)",border:"1px dashed rgba(29,161,242,0.4)",color:"#1da1f2",borderRadius:8,padding:"10px 18px",cursor:"pointer",fontSize:12,fontWeight:600}}>+ Tweet</button>
-            </div>
+              <SharedPostsEditor
+                posts={allShared} onChange={updAllShared} tab={tab} accent="#1da1f2"
+                fieldMap={{text:"text", img:"photo", time:"time"}}
+                statFields={[{key:"rp",label:"💬"},{key:"rt",label:"🔁"},{key:"fav",label:"❤"}]}
+                addLabel="+ Tweet" textLabel="Texte"
+                hint="Ces tweets sont réellement partagés : ils apparaissent dans le fil des autres persos et sur ton profil, comme un vrai tweet posté depuis l'app. Tu ne peux modifier que les tiens."
+              />
             );
           })()}
 
@@ -20298,11 +19384,6 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
             const updEffective = (newList) => upd("homeBaseTweets", newList);
             return (
             <div style={{display:"flex",flexDirection:"column",gap:10}}>
-              {isCustom && (
-                <div style={{display:"flex",alignItems:"center",justifyContent:"flex-end"}}>
-                  <button onClick={()=>updEffective([])} style={{background:"none",border:"1px solid rgba(0,0,0,0.12)",color:"#6b7280",borderRadius:6,padding:"3px 9px",cursor:"pointer",fontSize:10,fontWeight:500,whiteSpace:"nowrap"}}>↩ Réinitialiser</button>
-                </div>
-              )}
 
               {effectiveTweets.map((t,i)=>{
                 const upTw = (patch) => updEffective(effectiveTweets.map((t2,j)=>j===i?{...t2,...patch,id:t2.id||Date.now()+j}:{...t2,id:t2.id||Date.now()+j}));
@@ -20351,12 +19432,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
           };
           const RED="#e60023";
           return (<>
-            {isCustom && (
-              <div style={{display:"flex",alignItems:"center",justifyContent:"flex-end"}}>
-                <button onClick={()=>updList([])} style={{background:"none",border:"1px solid rgba(0,0,0,0.12)",color:"#6b7280",borderRadius:6,padding:"3px 9px",cursor:"pointer",fontSize:10}}>↩ Réinitialiser</button>
-              </div>
-            )}
-            {effective.map((p,i)=>(
+                        {effective.map((p,i)=>(
               <div key={p.id??i} style={{background:"rgba(255,255,255,0.9)",borderRadius:10,padding:"10px 12px",border:"1px solid rgba(0,0,0,0.07)",display:"flex",gap:10,alignItems:"flex-start"}}>
                 {/* Image / Emoji */}
                 <label style={{width:64,height:p.tall?96:64,borderRadius:8,overflow:"hidden",cursor:"pointer",flexShrink:0,background:"#f3f4f6",border:"1px solid rgba(0,0,0,0.08)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:26}}>
@@ -20404,12 +19480,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
           };
           const SC = "#e8c400";
           return (<>
-            {isCustom && (
-              <div style={{display:"flex",alignItems:"center",justifyContent:"flex-end"}}>
-                <button onClick={()=>updList([])} style={{background:"none",border:"1px solid rgba(0,0,0,0.12)",color:"#6b7280",borderRadius:6,padding:"3px 9px",cursor:"pointer",fontSize:10}}>↩ Réinitialiser</button>
-              </div>
-            )}
-            {effective.map((snap,i)=>(
+                        {effective.map((snap,i)=>(
               <div key={snap.id??i} className="adm-card" style={{background:"rgba(255,255,255,0.9)",borderRadius:10,border:"1px solid rgba(0,0,0,0.07)",padding:"10px 12px",display:"flex",flexDirection:"column",gap:7}}>
                 <div style={{display:"flex",gap:6,alignItems:"center",flexWrap:"wrap"}}>
                   {/* Direction : envoyé / reçu */}
@@ -20505,11 +19576,11 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                 {from:"them", text:"idem ! on est peut-être voisins 😲",      time:"09:08 AM"},
               ]},
               {id:5, name:"Johnny",   distance:"2.1 km",  photo:null, online:false, thread:[
-                {from:"them", text:"yo",                                      time:"2j"},
-                {from:"me",   text:"yo, ça va ?",                             time:"2j"},
-                {from:"them", text:"ouais tranquille. t'aimes la musique ?",  time:"2j"},
-                {from:"me",   text:"un peu oui, pourquoi ?",                  time:"2j"},
-                {from:"them", text:"je fais des sets le week-end si tu veux passer", time:"2j"},
+                {from:"them", text:"yo",                                      time:"2d"},
+                {from:"me",   text:"yo, ça va ?",                             time:"2d"},
+                {from:"them", text:"ouais tranquille. t'aimes la musique ?",  time:"2d"},
+                {from:"me",   text:"un peu oui, pourquoi ?",                  time:"2d"},
+                {from:"them", text:"je fais des sets le week-end si tu veux passer", time:"2d"},
               ]},
               {id:6, name:"Gary",     distance:"850 m",   photo:null, online:true,  thread:[
                 {from:"them", text:"salut 😌",                                time:"11:30 AM"},
@@ -20528,12 +19599,12 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                 {from:"them", text:"architecture. 5 ans de souffrance 😭",   time:"09:03 AM"},
               ]},
               {id:8, name:"Rayan",    distance:"1.8 km",  photo:null, online:false, thread:[
-                {from:"them", text:"bonsoir",                                 time:"3j"},
-                {from:"me",   text:"bonsoir :)",                              time:"3j"},
-                {from:"them", text:"tu fais quoi ce soir ?",                  time:"3j"},
-                {from:"me",   text:"rien de spécial, toi ?",                  time:"3j"},
-                {from:"them", text:"idem. on pourrait se voir ?",             time:"3j"},
-                {from:"me",   text:"pourquoi pas, t'es dans quel coin ?",     time:"3j"},
+                {from:"them", text:"bonsoir",                                 time:"3d"},
+                {from:"me",   text:"bonsoir :)",                              time:"3d"},
+                {from:"them", text:"tu fais quoi ce soir ?",                  time:"3d"},
+                {from:"me",   text:"rien de spécial, toi ?",                  time:"3d"},
+                {from:"them", text:"idem. on pourrait se voir ?",             time:"3d"},
+                {from:"me",   text:"pourquoi pas, t'es dans quel coin ?",     time:"3d"},
               ]},
             ],
           };
@@ -20589,11 +19660,6 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
 
             {/* DMs */}
             {gTab==="dms" && <>
-              {isCustom && (
-                <div style={{display:"flex",alignItems:"center",justifyContent:"flex-end"}}>
-                  <button onClick={()=>updDms([])} style={{background:"none",border:"1px solid rgba(0,0,0,0.12)",color:"#6b7280",borderRadius:6,padding:"3px 9px",cursor:"pointer",fontSize:10}}>↩ Réinitialiser</button>
-                </div>
-              )}
             
               {dms.map((conv,ci)=>{
                 const dmKey = `grindr-dm-${tab}-${conv.id}`;
@@ -20681,7 +19747,6 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
 
     case "tumblr": {
       const sharedPosts = data.sharedThreads?._sharedTumblrPosts || [];
-      const myShared = sharedPosts.filter(p=>p.author===tab);
       const updShared = (list) => onUpdate("_sharedTumblrPosts", list);
       return (
       <div style={{display:"flex",flexDirection:"column",gap:12}}>
@@ -20690,6 +19755,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
           <Field label="Followers" value={String(d.tumblr?.followers||"")} onChange={v=>upd("tumblr",{...(d.tumblr||{}),followers:parseInt(v)||0})}/>
           <Field label="Following" value={String(d.tumblr?.following||"")} onChange={v=>upd("tumblr",{...(d.tumblr||{}),following:parseInt(v)||0})}/>
         </div>
+        <Field label="Bio" value={d.tumblr?.bio||""} onChange={v=>upd("tumblr",{...(d.tumblr||{}),bio:v})} textarea/>
         <div style={{display:"flex",gap:14,alignItems:"center",flexWrap:"wrap",background:"rgba(255,255,255,0.6)",borderRadius:10,padding:"10px 12px",border:"1px solid rgba(0,0,0,0.06)"}}>
           <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:4}}>
             <label style={{width:48,height:48,borderRadius:8,overflow:"hidden",background:d.tumblr?.avatarBg||"#8e7cc3",display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontWeight:700,fontSize:18,cursor:"pointer",border:"1px solid rgba(0,0,0,0.1)"}}>
@@ -20708,52 +19774,19 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
         </div>
 
         <div style={{color:"#888",fontSize:10,letterSpacing:1,textTransform:"uppercase",margin:"4px 0 0"}}>Mes posts (partagés — visibles par tout le monde, comme sur Twitter)</div>
-        <div style={{fontSize:11,color:"#9ca3af"}}>Seul toi peux modifier ou supprimer tes propres posts ici.</div>
-        {myShared.map((post)=>{
-          const updPost = (patch) => updShared(sharedPosts.map(p=>p.id===post.id?{...p,...patch}:p));
-          return (
-          <div key={post.id} className="adm-card" style={{background:"rgba(255,255,255,0.85)",borderRadius:12,padding:14,border:"1px solid rgba(0,0,0,0.07)",boxShadow:"0 2px 8px rgba(0,0,0,0.04)"}}>
-            <div style={{display:"flex",gap:8,marginBottom:8,alignItems:"center",flexWrap:"wrap"}}>
-              <Field label="Titre (opt.)" value={post.title||""} onChange={v=>updPost({title:v})} width="160px"/>
-              <div style={{display:"flex",flexDirection:"column",gap:5,width:"150px"}}>
-                <label style={{color:"#9ca3af",fontSize:10,letterSpacing:0.8,textTransform:"uppercase",fontWeight:600}}>Date</label>
-                <input type="date" min="2012-01-01" max="2012-12-31"
-                  value={(()=>{const p=parseLoreTime(post.date); return p?.day?`2012-${String(p.month).padStart(2,'0')}-${String(p.day).padStart(2,'0')}`:LORE_DATE_DEFAULT;})()}
-                  onChange={e=>{ if(!e.target.value){updPost({date:""});return;} const [,m,dd]=e.target.value.split('-').map(Number); updPost({date:`${dd} ${LORE_MONTHS_FR[m]}`}); }}
-                  className="adm-input" style={{background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#1a1a2e",padding:"7px 8px",fontSize:11,borderRadius:7}}/>
-              </div>
-              <Field label="Notes" value={String(post.notes||0)} onChange={v=>updPost({notes:parseInt(v)||0})} width="80px"/>
-              <button onClick={()=>updShared(sharedPosts.filter(p=>p.id!==post.id))}
-                className="adm-del-btn" style={{background:"rgba(239,68,68,0.06)",border:"1px solid rgba(239,68,68,0.2)",color:"#ef4444",borderRadius:6,padding:"4px 8px",cursor:"pointer",fontSize:11,marginTop:18}}>✕</button>
-            </div>
-            {post.img && <div style={{position:"relative",alignSelf:"flex-start",marginBottom:8,display:"inline-block"}}>
-              <img src={post.img} style={{maxWidth:200,maxHeight:150,borderRadius:8,display:"block"}}/>
-              <button onClick={()=>updPost({img:null})} style={{position:"absolute",top:2,right:2,background:"rgba(0,0,0,0.6)",border:"none",color:"#fff",borderRadius:"50%",width:20,height:20,fontSize:12,cursor:"pointer",lineHeight:1}}>✕</button>
-            </div>}
-            <label style={{display:"inline-block",marginBottom:8,background:"rgba(99,102,241,0.08)",border:"1px dashed rgba(99,102,241,0.4)",color:"#6366f1",borderRadius:6,padding:"5px 10px",fontSize:11,cursor:"pointer"}}>
-              {post.img?"Changer l'image":"+ Image"}
-              <input type="file" accept="image/*" style={{display:"none"}} onChange={e=>{
-                const f=e.target.files?.[0]; if(!f)return;
-                const r=new UploadReader(); r.onload=ev=>updPost({img:ev.target.result}); r.readAsDataURL(f); e.target.value="";
-              }}/>
-            </label>
-            <Field label="Texte" value={post.body||""} onChange={v=>updPost({body:v})} textarea/>
-          </div>
-        );})}
-        <button onClick={()=>updShared([{id:Date.now(),author:tab,username:d.tumblr?.handle||"",body:"",notes:0,date:"1 oct",type:"text"},...sharedPosts])}
-          style={{background:"rgba(53,70,92,0.08)",border:"1px dashed rgba(53,70,92,0.4)",color:"#35465c",borderRadius:8,padding:"10px 18px",cursor:"pointer",fontSize:12,fontWeight:600}}>+ Post Tumblr</button>
+        <SharedPostsEditor
+          posts={sharedPosts} onChange={updShared} tab={tab} accent="#35465c"
+          fieldMap={{text:"body", img:"img", time:"date"}}
+          showTitle statFields={[{key:"notes",label:"Notes"}]}
+          addExtra={{username:d.tumblr?.handle||""}} addLabel="+ Post Tumblr" textLabel="Texte"
+          hint="Seul toi peux modifier ou supprimer tes propres posts ici."
+        />
 
         <div style={{color:"#888",fontSize:10,letterSpacing:1,textTransform:"uppercase",margin:"16px 0 8px"}}>Fil d'accueil (posts décoratifs des comptes suivis — pas partagés, propres à ce perso)</div>
         {(()=>{
-          const isCustomFeed = !!d.tumblr?.feedPosts;
           const effectiveFeed = d.tumblr?.feedPosts || TUMBLR_FEED_POSTS_DEFAULT[d.username] || [];
           const updFeed = (list) => upd("tumblr",{...(d.tumblr||{}),feedPosts:list});
           return (<>
-            {isCustomFeed && (
-              <div style={{display:"flex",alignItems:"center",justifyContent:"flex-end"}}>
-                <button onClick={()=>{const next={...(d.tumblr||{})};delete next.feedPosts;upd("tumblr",next);}} style={{background:"none",border:"1px solid rgba(0,0,0,0.12)",color:"#6b7280",borderRadius:6,padding:"3px 9px",cursor:"pointer",fontSize:10}}>↩ Réinitialiser</button>
-              </div>
-            )}
             {effectiveFeed.map((post,i)=>(
               <div key={post.id??i} className="adm-card" style={{background:"rgba(255,255,255,0.85)",borderRadius:12,padding:14,border:"1px solid rgba(0,0,0,0.07)",boxShadow:"0 2px 8px rgba(0,0,0,0.04)",marginTop:6}}>
                 <div style={{display:"flex",gap:8,marginBottom:8,alignItems:"center",flexWrap:"wrap"}}>
@@ -20782,12 +19815,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
           const effective = isCustom ? (d.reddit||[]) : REDDIT_ALL_POSTS;
           const updList = (newList) => upd("reddit", newList);
           return (<>
-            {isCustom && (
-              <div style={{display:"flex",alignItems:"center",justifyContent:"flex-end"}}>
-                <button onClick={()=>updList([])} style={{background:"none",border:"1px solid rgba(0,0,0,0.12)",color:"#6b7280",borderRadius:6,padding:"3px 9px",cursor:"pointer",fontSize:10}}>↩ Réinitialiser</button>
-              </div>
-            )}
-            {effective.map((post,i)=>(
+                        {effective.map((post,i)=>(
               <div key={post.id??i} className="adm-card" style={{display:"flex",gap:8,alignItems:"center",background:"rgba(255,255,255,0.85)",padding:"8px 10px",borderRadius:10,border:"1px solid rgba(0,0,0,0.07)",flexWrap:"wrap",opacity:isCustom?1:0.75}}>
                 <Field label="Sub" value={post.sub||""} onChange={v=>{const r=[...effective].map((p,j)=>({...p,id:p.id||Date.now()+j}));r[i]={...r[i],sub:v};updList(r);}} width="120px"/>
                 <Field label="Titre" value={post.title||""} onChange={v=>{const r=[...effective].map((p,j)=>({...p,id:p.id||Date.now()+j}));r[i]={...r[i],title:v};updList(r);}}/>
@@ -20831,12 +19859,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
           const toggleDay = k => setCollapsed(prev=>{const s=new Set(prev);s.has(k)?s.delete(k):s.add(k);return s;});
           const CAL_RED="#e04444";
           return (<>
-            {isCustom && (
-              <div style={{display:"flex",alignItems:"center",justifyContent:"flex-end"}}>
-                <button onClick={()=>updList([])} style={{background:"none",border:"1px solid rgba(0,0,0,0.12)",color:"#6b7280",borderRadius:6,padding:"3px 9px",cursor:"pointer",fontSize:10}}>↩ Réinitialiser</button>
-              </div>
-            )}
-
+            
             {dayKeys.map(k=>{
               const {label, indices} = grouped[k];
               const isOpen = !collapsed.has(k);
@@ -20913,11 +19936,6 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
           const COND_ICONS=["☀️","🌤️","⛅","🌥️","☁️","🌧️","⛈️","🌨️","🌫️","🌬️"];
           const DAY_OPTS=["SUNDAY","MONDAY","TUESDAY","WEDNESDAY","THURSDAY","FRIDAY","SATURDAY"];
           return (<>
-            {isCustom && (
-              <div style={{display:"flex",alignItems:"center",justifyContent:"flex-end"}}>
-                <button onClick={()=>upd("weather",{})} style={{background:"none",border:"1px solid rgba(0,0,0,0.12)",color:"#6b7280",borderRadius:6,padding:"3px 9px",cursor:"pointer",fontSize:10}}>↩ Réinitialiser</button>
-              </div>
-            )}
 
             {cities.map((city,ci)=>(
               <WeatherCityCard key={ci} city={city} ci={ci}
@@ -20940,6 +19958,35 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
           <Field label="Réseau Wi-Fi" value={d.settings?.wifi||""} onChange={v=>upd("settings",{...(d.settings||{}),wifi:v})} width="150px"/>
           <Field label="Opérateur" value={d.settings?.carrier||""} onChange={v=>upd("settings",{...(d.settings||{}),carrier:v})} width="120px"/>
         </div>
+        {tab==="elias" && (()=>{
+          const defaultItems = [
+            {icon:"👽", title:"ZONE 51 : des témoins parlent", src:"TruthSeekers.net", time:"il y a 2:00am"},
+            {icon:"🔺", title:"Les Illuminati et le Nouvel Ordre Mondial : preuves 2012", src:"WakeUpAmerica.org", time:"il y a 5:00am"},
+            {icon:"🛸", title:"NASA cache des signaux extraterrestres — documents déclassifiés", src:"AlienTruth.com", time:"il y a 8:00am"},
+            {icon:"💉", title:"Chemtrails : analyse chimique indépendante", src:"FreeMinds.net", time:"il y a 1j"},
+            {icon:"📡", title:"HAARP et le contrôle météorologique — ce qu'ils ne veulent pas que vous sachiez", src:"DeepState.info", time:"il y a 1j"},
+          ];
+          const items = d.conspiracyFeed || defaultItems;
+          const updItems = (list) => upd("conspiracyFeed", list);
+          return (
+            <div style={{display:"flex",flexDirection:"column",gap:10}}>
+              <div style={{color:"#888",fontSize:10,letterSpacing:1,textTransform:"uppercase"}}>Widget "Truth Feed" (écran d'accueil)</div>
+              <Field label="Titre du widget" value={d.conspiracyFeedTitle||"TRUTH FEED"} onChange={v=>upd("conspiracyFeedTitle",v)} width="220px"/>
+              {items.map((item,i)=>(
+                <div key={i} className="adm-card" style={{display:"flex",gap:8,alignItems:"center",background:"rgba(255,255,255,0.85)",padding:10,borderRadius:10,border:"1px solid rgba(0,0,0,0.07)",flexWrap:"wrap"}}>
+                  <Field label="Icône" value={item.icon||""} onChange={v=>{const f=[...items];f[i]={...f[i],icon:v};updItems(f);}} width="60px"/>
+                  <Field label="Titre" value={item.title||""} onChange={v=>{const f=[...items];f[i]={...f[i],title:v};updItems(f);}} width="220px"/>
+                  <Field label="Source" value={item.src||""} onChange={v=>{const f=[...items];f[i]={...f[i],src:v};updItems(f);}} width="140px"/>
+                  <Field label="Temps (ex: il y a 2:00am)" value={item.time||""} onChange={v=>{const f=[...items];f[i]={...f[i],time:v};updItems(f);}} width="160px"/>
+                  <button onClick={()=>updItems(items.filter((_,j)=>j!==i))}
+                    className="adm-del-btn" style={{background:"rgba(239,68,68,0.06)",border:"1px solid rgba(239,68,68,0.2)",color:"#ef4444",borderRadius:6,padding:"4px 8px",cursor:"pointer",fontSize:11}}>✕</button>
+                </div>
+              ))}
+              <button onClick={()=>updItems([...items,{icon:"📰",title:"Nouvel article",src:"source.com",time:"il y a 1:00am"}])}
+                style={{background:"rgba(220,38,38,0.08)",border:"1px dashed rgba(220,38,38,0.4)",color:"#dc2626",borderRadius:8,padding:"10px 18px",cursor:"pointer",fontSize:12,fontWeight:600,alignSelf:"flex-start"}}>+ Article</button>
+            </div>
+          );
+        })()}
       </div>
     );
 
@@ -20951,12 +19998,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
           const effective = isCustom ? (d.wikipedia||[]) : defaults;
           const updList = (newList) => upd("wikipedia", newList);
           return (<>
-            {isCustom && (
-              <div style={{display:"flex",alignItems:"center",justifyContent:"flex-end"}}>
-                <button onClick={()=>updList([])} style={{background:"none",border:"1px solid rgba(0,0,0,0.12)",color:"#6b7280",borderRadius:6,padding:"3px 9px",cursor:"pointer",fontSize:10}}>↩ Réinitialiser</button>
-              </div>
-            )}
-            {effective.map((art,i)=>(
+                        {effective.map((art,i)=>(
               <div key={i} style={{display:"flex",gap:8,alignItems:"center",background:"rgba(255,255,255,0.85)",padding:"8px 10px",borderRadius:10,border:"1px solid rgba(0,0,0,0.07)",opacity:isCustom?1:0.75}}>
                 <Field label="Titre" value={art[0]||""} onChange={v=>{const w=[...effective];w[i]=[v,art[1]||"",art[2]||""];updList(w);}}/>
                 <Field label="Extrait" value={art[1]||""} onChange={v=>{const w=[...effective];w[i]=[art[0]||"",v,art[2]||""];updList(w);}} width="200px"/>
@@ -21021,12 +20063,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
           };
           const AMZ="#FF9900";
           return (<>
-            {isCustom && (
-              <div style={{display:"flex",alignItems:"center",justifyContent:"flex-end"}}>
-                <button onClick={()=>updList([])} style={{background:"none",border:"1px solid rgba(0,0,0,0.12)",color:"#6b7280",borderRadius:6,padding:"3px 9px",cursor:"pointer",fontSize:10}}>↩ Réinitialiser</button>
-              </div>
-            )}
-            {effective.map((book,i)=>(
+                        {effective.map((book,i)=>(
               <div key={book.id??i} style={{background:"rgba(255,255,255,0.9)",borderRadius:10,border:"1px solid rgba(0,0,0,0.07)",padding:"10px 12px",display:"flex",gap:10,alignItems:"flex-start"}}>
                 {/* Couverture */}
                 <label style={{width:44,height:62,borderRadius:3,overflow:"hidden",cursor:"pointer",flexShrink:0,background:`hsl(${(i*60)%360},40%,72%)`,border:"1px solid rgba(0,0,0,0.1)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,position:"relative"}}>
@@ -21211,69 +20248,29 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
     }
 
     case "facebook": {
-      const sharedFeed = data.sharedThreads?._sharedFacebookPosts || FACEBOOK_FRIENDS_FEED_DEFAULT;
-      const isCustomFeed = !!data.sharedThreads?._sharedFacebookPosts;
+      // Anciens posts partagés identifiés par "name" (nom affiché) plutôt que par "author" (clé
+      // perso) — on les fait correspondre une fois ici, pour que tout passe par le même mécanisme
+      // que Twitter/Tumblr. Dès qu'un post est ré-enregistré, il prend author=tab durablement.
+      const nameToKey = Object.fromEntries(Object.entries(CHAR_NAMES).map(([k,v])=>[v,k]));
+      const sharedFeed = (data.sharedThreads?._sharedFacebookPosts || FACEBOOK_FRIENDS_FEED_DEFAULT)
+        .map(p => p.author ? p : {...p, author: nameToKey[p.name] || p.author});
       const updFeed = (list) => onUpdate("_sharedFacebookPosts", list);
-      const resetFeed = () => onUpdate("_sharedFacebookPosts", null);
-      const addFeedPost = () => updFeed([...sharedFeed, {name:d.name, time:"à l'instant", text:"", likes:0, comments:0}]);
 
       const pages = d.facebookPages?.[tab] || FACEBOOK_PAGES_DEFAULT[tab] || [];
-      const isCustomPages = !!d.facebookPages?.[tab];
       const updPages = (list) => upd("facebookPages", {...(d.facebookPages||{}), [tab]: list});
-      const resetPages = () => {
-        const next = {...(d.facebookPages||{})};
-        delete next[tab];
-        upd("facebookPages", next);
-      };
       const addPage = () => updPages([...pages, {name:"", time:"à l'instant", text:"", likes:0, comments:0}]);
 
       return (
         <div style={{display:"flex",flexDirection:"column",gap:12}}>
-          <div style={{background:"rgba(59,89,152,0.06)",border:"1px solid rgba(59,89,152,0.15)",borderRadius:8,padding:"7px 12px",fontSize:11,color:"#3B5998"}}>
-            🔄 Fil d'amis partagé — n'affiche ici que les posts écrits par {CHAR_NAMES[tab]||tab}, mais ils restent visibles depuis les 4 téléphones. Les pages suivies (plus bas) restent propres à {CHAR_NAMES[tab]||tab}.
-          </div>
-          {isCustomFeed && (
-            <div style={{display:"flex",alignItems:"center",justifyContent:"flex-end"}}>
-              <button onClick={resetFeed} style={{background:"none",border:"1px solid rgba(0,0,0,0.12)",color:"#6b7280",borderRadius:6,padding:"3px 9px",cursor:"pointer",fontSize:10,fontWeight:500,whiteSpace:"nowrap"}}>↩ Réinitialiser tout le fil</button>
-            </div>
-          )}
-
-          {sharedFeed.map((p,i)=>({p,i})).filter(({p})=>p.name===d.name).map(({p,i})=>{
-            const myPosts = sharedFeed.map((p2,j)=>({p:p2,i:j})).filter(({p:p2})=>p2.name===d.name);
-            const myIdx = myPosts.findIndex(x=>x.i===i);
-            const updPost = (patch) => updFeed(sharedFeed.map((p2,j)=>j===i?{...p2,...patch}:p2));
-            return (
-              <div key={i} className="adm-card" style={{background:"rgba(255,255,255,0.9)",borderRadius:10,padding:"10px 12px",border:"1px solid rgba(0,0,0,0.07)",display:"flex",flexDirection:"column",gap:6}}>
-                <div style={{display:"flex",gap:6}}>
-                  <Field label="Quand" value={p.time||""} onChange={v=>updPost({time:v})} style={{flex:1}}/>
-                  <div style={{display:"flex",gap:6,alignItems:"flex-start"}}>
-                    <MoveButtons
-                      index={myIdx}
-                      length={myPosts.length}
-                      onMoveUp={() => { const l=[...sharedFeed]; const otherI=myPosts[myIdx-1].i; [l[otherI],l[i]]=[l[i],l[otherI]]; updFeed(l); }}
-                      onMoveDown={() => { const l=[...sharedFeed]; const otherI=myPosts[myIdx+1].i; [l[otherI],l[i]]=[l[i],l[otherI]]; updFeed(l); }}
-                    />
-                    <button onClick={()=>updFeed(sharedFeed.filter((_,j)=>j!==i))} className="adm-del-btn" style={{background:"rgba(239,68,68,0.07)",border:"1px solid rgba(239,68,68,0.2)",color:"#ef4444",borderRadius:6,padding:"5px 8px",cursor:"pointer",fontSize:11,marginTop:18}}>✕</button>
-                  </div>
-                </div>
-                <Field label="Texte du post" value={p.text||""} onChange={v=>updPost({text:v})} textarea/>
-                <div style={{display:"flex",gap:6}}>
-                  <Field label="👍 Likes" value={String(p.likes??0)} onChange={v=>updPost({likes:parseInt(v)||0})} style={{flex:1}}/>
-                  <Field label="💬 Commentaires" value={String(p.comments??0)} onChange={v=>updPost({comments:parseInt(v)||0})} style={{flex:1}}/>
-                </div>
-              </div>
-            );
-          })}
-
-          <button onClick={addFeedPost}
-            style={{background:"rgba(59,89,152,0.08)",border:"1px dashed rgba(59,89,152,0.4)",color:"#3B5998",borderRadius:8,padding:"10px 18px",cursor:"pointer",fontSize:12,fontWeight:600}}>+ Post d'ami (partagé)</button>
+          <SharedPostsEditor
+            posts={sharedFeed} onChange={updFeed} tab={tab} accent="#3B5998"
+            fieldMap={{text:"text", img:"img", time:"time"}}
+            statFields={[{key:"likes",label:"👍 Likes"},{key:"comments",label:"💬 Commentaires"}]}
+            addExtra={{name:d.name}} addLabel="+ Post d'ami (partagé)" textLabel="Texte du post"
+            hint="Fil d'amis partagé — visible depuis les 4 téléphones. Tu ne peux modifier que tes propres posts."
+          />
 
           <div style={{color:"#888",fontSize:10,letterSpacing:1,textTransform:"uppercase",margin:"16px 0 8px"}}>Pages suivies par {CHAR_NAMES[tab]||tab} (propre à ce personnage)</div>
-          {isCustomPages && (
-            <div style={{display:"flex",alignItems:"center",justifyContent:"flex-end"}}>
-              <button onClick={resetPages} style={{background:"none",border:"1px solid rgba(0,0,0,0.12)",color:"#6b7280",borderRadius:6,padding:"3px 9px",cursor:"pointer",fontSize:10,fontWeight:500,whiteSpace:"nowrap"}}>↩ Réinitialiser</button>
-            </div>
-          )}
           {pages.map((p,i)=>{
             const updPage = (patch) => updPages(pages.map((p2,j)=>j===i?{...p2,...patch}:p2));
             return (
@@ -21308,22 +20305,10 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
 
     case "youtube": {
       const ytVideos = d.youtubeVideos?.[tab] || YOUTUBE_FEEDS_DEFAULT[tab] || YOUTUBE_FEEDS_DEFAULT.elias;
-      const isCustomYt = !!d.youtubeVideos?.[tab];
       const updYtList = (list) => upd("youtubeVideos", {...(d.youtubeVideos||{}), [tab]: list});
-      const resetYt = () => {
-        const next = {...(d.youtubeVideos||{})};
-        delete next[tab];
-        upd("youtubeVideos", next);
-      };
-      const addYtVideo = () => updYtList([...ytVideos, {id:Date.now(), ch:"", chAvatar:"📺", age:"1j", views:"0 vue", dur:"0:00", thumb:"#1a1a1a", thumbImg:null, title:""}]);
+      const addYtVideo = () => updYtList([...ytVideos, {id:Date.now(), ch:"", chAvatar:"📺", age:"1d", views:"0 vue", dur:"0:00", thumb:"#1a1a1a", thumbImg:null, title:""}]);
       return (
         <div style={{display:"flex",flexDirection:"column",gap:12}}>
-          {isCustomYt && (
-            <div style={{display:"flex",alignItems:"center",justifyContent:"flex-end"}}>
-              <button onClick={resetYt} style={{background:"none",border:"1px solid rgba(0,0,0,0.12)",color:"#6b7280",borderRadius:6,padding:"3px 9px",cursor:"pointer",fontSize:10,fontWeight:500,whiteSpace:"nowrap"}}>↩ Réinitialiser</button>
-            </div>
-          )}
-
           {ytVideos.map((v,i)=>{
             const updVid = (patch) => updYtList(ytVideos.map((v2,j)=>j===i?{...v2,...patch,id:v2.id||Date.now()+j}:{...v2,id:v2.id||Date.now()+j}));
             return (
@@ -22074,12 +21059,12 @@ const CALENDAR_SEED = {
   },
 };
 
-const CalendarScreen = ({data, isIos, accent, admin=false, update=()=>{}}) => {
+const CalendarScreen = ({data, isIos, accent}) => {
   const charKey = data.username?.includes("glinda")?"glinda":data.username?.includes("eoghan")?"eoghan":data.username?.includes("drew")?"drew":"elias";
   const DAYS = ["M","T","W","T","F","S","S"];
   const SEED = CALENDAR_SEED;
   const calendarArr = data?.calendar || [];
-  // Les vrais événements (créés ici ou dans l'admin) vivent dans data.calendar et sont donc
+  // Les vrais événements (créés dans l'admin) vivent dans data.calendar et sont donc
   // synchronisés/persistés comme tout le reste. Tant qu'aucun vrai événement n'existe, on retombe
   // sur les événements par défaut (SEED) pour ne pas afficher un calendrier vide au premier lancement.
   const realEventsByDay = (() => {
@@ -22097,8 +21082,6 @@ const CalendarScreen = ({data, isIos, accent, admin=false, update=()=>{}}) => {
     return (seedMap[d] || []).map((line, idx) => ({id:`seed-${d}-${idx}`, title:line, _seed:true}));
   };
   const [selectedDay, setSelectedDay] = useState(6);
-  const [editing, setEditing] = useState(null); // {day, id} or {day, id:null} for new
-  const [draft, setDraft] = useState("");
 
   const todayEvents = eventsForDay(selectedDay);
   const RED = isIos ? "#FF3B30" : "#c0392b";
@@ -22110,28 +21093,11 @@ const CalendarScreen = ({data, isIos, accent, admin=false, update=()=>{}}) => {
 
   const eventLabel = (ev) => [ev.title, ev.time, ev.location].filter(Boolean).join(ev.time ? " — " : " ");
 
-  const addEvent = () => {
-    const t = draft.trim();
-    if(t) update("calendar", [...calendarArr, {id:Date.now(), day:selectedDay, month:10, year:2012, title:t}]);
-    setEditing(null); setDraft("");
-  };
-  const saveEditTitle = () => {
-    if(editing==null || editing.id==null) return;
-    const t = draft.trim();
-    if(!t) { update("calendar", calendarArr.filter(e=>e.id!==editing.id)); }
-    else { update("calendar", calendarArr.map(e=>e.id===editing.id ? {...e, title:t} : e)); }
-    setEditing(null); setDraft("");
-  };
-  const deleteEvent = (ev) => {
-    if(ev._seed) return; // les événements par défaut ne sont pas modifiables ici — passez par l'admin pour les remplacer
-    update("calendar", calendarArr.filter(e=>e.id!==ev.id));
-  };
-
   return (
     <div style={{flex:1,display:"flex",flexDirection:"column",background:BG,overflow:"hidden"}}>
       <div style={{background:isIos?"linear-gradient(180deg,#f2f2f2,#e0e0e0)":"#111",borderBottom:`1px solid ${BORDER}`,padding:"8px 14px",display:"flex",alignItems:"center",justifyContent:"space-between",flexShrink:0}}>
         <span style={{color:SUB,fontSize:18}}>‹</span>
-        <span style={{color:TEXT,fontSize:14,fontWeight:600}}>Octobre 2012</span>
+        <span style={{color:TEXT,fontSize:14,fontWeight:600}}>October 2012</span>
         <span style={{color:SUB,fontSize:18}}>›</span>
       </div>
       <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",background:isIos?"#f9f9f9":"#111",borderBottom:`1px solid ${BORDER}`,flexShrink:0}}>
@@ -22145,7 +21111,7 @@ const CalendarScreen = ({data, isIos, accent, admin=false, update=()=>{}}) => {
           const hasEv = eventsForDay(d).length>0;
           const isSel = d===selectedDay;
           return (
-            <div key={d} onClick={()=>{setSelectedDay(d);setEditing(null);setDraft("");}} style={{background:isSel?ACC:BG,padding:"6px 0",textAlign:"center",cursor:"pointer",position:"relative"}}>
+            <div key={d} onClick={()=>setSelectedDay(d)} style={{background:isSel?ACC:BG,padding:"6px 0",textAlign:"center",cursor:"pointer",position:"relative"}}>
               <div style={{color:isSel?"#fff":isMatchDay?RED:TEXT,fontSize:12,fontWeight:isMatchDay||isSel?700:400}}>{d}</div>
               {hasEv&&<div style={{width:4,height:4,borderRadius:"50%",background:isSel?"#fff":ACC,margin:"2px auto 0"}}/>}
             </div>
@@ -22155,29 +21121,15 @@ const CalendarScreen = ({data, isIos, accent, admin=false, update=()=>{}}) => {
       <div style={{flex:1,overflowY:"auto",padding:"10px 14px",display:"flex",flexDirection:"column",gap:8}}>
         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:2}}>
           <div style={{color:SUB,fontSize:11,fontWeight:600}}>
-            {selectedDay===6 ? "Samedi 6 octobre 2012 🏈" : `${selectedDay} octobre 2012`}
+            {selectedDay===6 ? "Saturday, October 6, 2012 🏈" : `October ${selectedDay}, 2012`}
           </div>
-          {admin&&<button onClick={()=>{setEditing({day:selectedDay,id:null});setDraft("");}} style={{background:ACC,border:"none",color:"#fff",borderRadius:14,width:24,height:24,fontSize:16,lineHeight:1,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>+</button>}
         </div>
-        {admin&&editing&&editing.day===selectedDay&&editing.id===null&&(
-          <div style={{display:"flex",gap:6}}>
-            <input autoFocus value={draft} onChange={e=>setDraft(e.target.value)} onKeyDown={e=>{if(e.key==="Enter")addEvent();if(e.key==="Escape"){setEditing(null);setDraft("");}}} placeholder="Nouvel événement…" style={{flex:1,border:`1px solid ${ACC}`,borderRadius:8,padding:"7px 10px",fontSize:12,background:BG,color:TEXT,outline:"none"}}/>
-            <button onClick={addEvent} style={{background:ACC,border:"none",color:"#fff",borderRadius:8,padding:"0 12px",fontSize:12,cursor:"pointer"}}>OK</button>
-          </div>
-        )}
-        {todayEvents.length===0 && !(editing&&editing.day===selectedDay&&editing.id===null)
+        {todayEvents.length===0
           ? <div style={{color:SUB,fontSize:12,textAlign:"center",marginTop:20}}>Aucun événement</div>
           : todayEvents.map((ev)=>(
-            admin&&editing&&editing.day===selectedDay&&editing.id===ev.id
-              ? <div key={ev.id} style={{display:"flex",gap:6}}>
-                  <input autoFocus value={draft} onChange={e=>setDraft(e.target.value)} onKeyDown={e=>{if(e.key==="Enter")saveEditTitle();if(e.key==="Escape"){setEditing(null);setDraft("");}}} style={{flex:1,border:`1px solid ${ACC}`,borderRadius:8,padding:"7px 10px",fontSize:12,background:BG,color:TEXT,outline:"none"}}/>
-                  <button onClick={saveEditTitle} style={{background:ACC,border:"none",color:"#fff",borderRadius:8,padding:"0 12px",fontSize:12,cursor:"pointer"}}>OK</button>
-                </div>
-              : <div key={ev.id} style={{background:isIos?"#f9f9f9":"#222",borderRadius:8,padding:"8px 12px",borderLeft:`3px solid ${ACC}`,display:"flex",alignItems:"center",gap:8}}>
-                  <div style={{flex:1,color:TEXT,fontSize:12}}>{eventLabel(ev)}</div>
-                  {admin&&!ev._seed&&<><span onClick={()=>{setEditing({day:selectedDay,id:ev.id});setDraft(ev.title||"");}} style={{cursor:"pointer",fontSize:13,opacity:0.6}}>✏️</span>
-                  <span onClick={()=>deleteEvent(ev)} style={{cursor:"pointer",fontSize:13,opacity:0.6}}>🗑️</span></>}
-                </div>
+              <div key={ev.id} style={{background:isIos?"#f9f9f9":"#222",borderRadius:8,padding:"8px 12px",borderLeft:`3px solid ${ACC}`,display:"flex",alignItems:"center",gap:8}}>
+                <div style={{flex:1,color:TEXT,fontSize:12}}>{eventLabel(ev)}</div>
+              </div>
           ))
         }
       </div>
@@ -22374,6 +21326,7 @@ const FacebookScreen = ({data, isIos, accent}) => {
             </div>
             {/* Post text */}
             <div style={{padding:"0 10px 8px",fontSize:13,color:"#1d2129",lineHeight:1.45}}>{p.text}</div>
+            {p.img && <img src={p.img} style={{width:"100%",display:"block",maxHeight:300,objectFit:"cover"}}/>}
             {/* Like/comment bar */}
             <div style={{borderTop:"1px solid #dde3ea",padding:"4px 10px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
               <div style={{display:"flex",gap:12}}>
