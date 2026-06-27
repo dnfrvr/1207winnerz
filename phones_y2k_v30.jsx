@@ -266,10 +266,11 @@ const loreDateLabel = (timeStr) => { const p = parseLoreTime(timeStr); return p 
 // donc rien ne casse pour les données déjà existantes qui n'ont pas encore été repassées par le sélecteur.
 const loreRelativeLabel = (timeStr, loreDateStr) => {
   const lore = loreDateStr || LORE_DATE_DEFAULT;
-  const [, lm, ld] = lore.split('-').map(Number);
+  const [ly, lm, ld] = lore.split('-').map(Number);
   const parsed = parseLoreTime(timeStr);
   if(!parsed || !parsed.day) return timeStr;
   const {day, month, hour, min} = parsed;
+  // Même jour → heure
   if(day === ld && month === lm) {
     if(hour !== null) {
       const period = hour < 12 ? 'am' : 'pm';
@@ -278,10 +279,19 @@ const loreRelativeLabel = (timeStr, loreDateStr) => {
     }
     return "Today";
   }
-  const loreMs = new Date(2012, lm-1, ld).getTime();
+  const loreMs = new Date(ly, lm-1, ld).getTime();
   const itemMs = new Date(2012, month-1, day).getTime();
   const diffDays = Math.round((loreMs - itemMs) / 86400000);
-  if(diffDays > 0) return `${diffDays}d`;
+  // < 7 jours → jour de la semaine abrégé
+  if(diffDays > 0 && diffDays < 7) {
+    const DOW = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+    return DOW[new Date(2012, month-1, day).getDay()];
+  }
+  // ≥ 7 jours → DD/MM/YY
+  if(diffDays >= 7) {
+    return `${String(day).padStart(2,'0')}/${String(month).padStart(2,'0')}/12`;
+  }
+  // Futur
   if(diffDays < 0) return `in ${-diffDays}d`;
   return timeStr;
 };
@@ -617,7 +627,7 @@ const APP_META = {
   subwaysurf: {label:"Subway Surfers",  iosIcon:"🛹", droidLabel:"Subway Surfers"},
   wordswfriends: {label:"Words w Friends", iosIcon:"📝", droidLabel:"Words w Friends"},
 
-  vine: {label:"Vine",           iosIcon:"🌿"},
+  files:      {label:"Fichiers",   iosIcon:"📁", droidLabel:"Fichiers"},
   polyvore: {label:"Polyvore",        iosIcon:"👗"},
   kik: {label:"Kik",             iosIcon:"💬"},
   runkeeper: {label:"RunKeeper",       iosIcon:"🏃"},
@@ -4277,54 +4287,41 @@ const RedditScreen = ({data, isIos, accent}) => {
 
 const TWITTER_HOME_BASE = {
   glinda:[
-    {h:"@eoghan_m",name:"Eoghan M.",text:"nouveau son en ligne soundcloud.com/eoghan_m #Rush #indierock",time:"15m",av:"E",rp:22,rt:38,fav:26},
-    {h:"@snsd_official",name:"Girls' Generation",text:"소녀시대 is always with you ✨ #GirlsGeneration #Gee",time:"30m",av:"G",rp:5,rt:5,fav:67},
-    {h:"@dreww_orms",name:"Drew B.",text:"TP bio terminé. les vers de terre n'ont aucun secret pour moi 🪱",time:"2:00am",av:"D",rp:16,rt:6,fav:70},
-    {h:"@SHINee",name:"SHINee",text:"Sherlock (Clue+Note) MV hits 10M views! 감사합니다 💎 #SHINee",time:"2:00am",av:"S",rp:4,rt:23,fav:94},
-    {h:"@noteliasgreen",name:"Elias G.",text:"il y a des disparitions non résolues à Derry depuis 27 ans. cherchez.",time:"3:00am",av:"E",rp:14,rt:32,fav:47},
-    {h:"@MileyCyrus",name:"Miley Cyrus",text:"Party In The USA forever my love letter to you guys 🎉",time:"4:00am",av:"M",rp:14,rt:2,fav:81},
-    {h:"@boq_uma",name:"Boq 🌹",text:"bonne chance à @glindarvf et toute la squad pour le match aujourd'hui 🌹🏈",time:"1:00am",av:"B",rp:4,rt:11,fav:38},
-    {h:"@boq_uma",name:"Boq 🌹",text:"j'ai relu mes notes de cours d'éco. en fait elles sont nulles 🙃 @glindarvf",time:"5:00am",av:"B",rp:0,rt:25,fav:66},
-    {h:"@cynthia_k",name:"Cynthia K.",text:"club échecs UMA demain 14h salle B204! @glindarvf @dreww_orms",time:"6:00am",av:"C",rp:7,rt:25,fav:111},
-    {h:"@taylorswift13",name:"Taylor Swift",text:"sometimes the best way to get over someone is to write a really really really mean song about them",time:"1d",av:"T",rp:412,rt:1803,fav:6044},
-    {h:"@eoghan_m",name:"Eoghan M.",text:"la soirée de jackson le 15 sep était iconique jusqu'à ce qu'elle soit terrifiante. go Moose quand même 🏈",time:"2d",av:"E",rp:4,rt:12,fav:38},
-    {h:"@cynthia_k",name:"Cynthia K.",text:"quelqu'un sait où est Liam ? genre dans la vraie vie il a disparu de la soirée et personne répond",time:"2d",av:"C",rp:18,rt:44,fav:19},
-    {h:"@noteliasgreen",name:"Elias G.",text:"les enfants du quartier entendent des voix dans les canalisations. quelqu'un d'autre ?",time:"3d",av:"E",rp:3,rt:9,fav:4},
+    {h:"@eoghan_m",name:"Eoghan M.",text:"nouveau son en ligne soundcloud.com/eoghan_m #Rush #indierock",time:"6 oct, 9:45am",av:"E",rp:22,rt:38,fav:26},
+    {h:"@snsd_official",name:"Girls' Generation",text:"소녀시대 is always with you ✨ #GirlsGeneration #Gee",time:"6 oct, 9:30am",av:"G",rp:5,rt:5,fav:67},
+    {h:"@dreww_orms",name:"Drew B.",text:"TP bio terminé. les vers de terre n'ont aucun secret pour moi 🪱",time:"6 oct, 2:00am",av:"D",rp:16,rt:6,fav:70},
+    {h:"@SHINee",name:"SHINee",text:"Sherlock (Clue+Note) MV hits 10M views! 감사합니다 💎 #SHINee",time:"6 oct, 2:30am",av:"S",rp:4,rt:23,fav:94},
+    {h:"@noteliasgreen",name:"Elias G.",text:"il y a des disparitions non résolues à Derry depuis 27 ans. cherchez.",time:"6 oct, 3:00am",av:"E",rp:14,rt:32,fav:47},
+    {h:"@MileyCyrus",name:"Miley Cyrus",text:"Party In The USA forever my love letter to you guys 🎉",time:"6 oct, 4:00am",av:"M",rp:14,rt:2,fav:81},
+    {h:"@boq_uma",name:"Boq 🌹",text:"bonne chance à @glindarvf et toute la squad pour le match aujourd'hui 🌹🏈",time:"6 oct, 1:00am",av:"B",rp:4,rt:11,fav:38},
+    {h:"@boq_uma",name:"Boq 🌹",text:"j'ai relu mes notes de cours d'éco. en fait elles sont nulles 🙃 @glindarvf",time:"6 oct, 5:00am",av:"B",rp:0,rt:25,fav:66},
+    {h:"@cynthia_k",name:"Cynthia K.",text:"club échecs UMA demain 14h salle B204! @glindarvf @dreww_orms",time:"6 oct, 6:00am",av:"C",rp:7,rt:25,fav:111},
+    {h:"@taylorswift13",name:"Taylor Swift",text:"sometimes the best way to get over someone is to write a really really really mean song about them",time:"5 oct, 11:00pm",av:"T",rp:412,rt:1803,fav:6044},
+    {h:"@cynthia_k",name:"Cynthia K.",text:"quelqu'un sait où est Liam ? genre dans la vraie vie il a disparu de la soirée et personne répond",time:"4 oct, 11:00pm",av:"C",rp:18,rt:44,fav:19},
+    {h:"@noteliasgreen",name:"Elias G.",text:"les enfants du quartier entendent des voix dans les canalisations. quelqu'un d'autre ?",time:"3 oct, 11:00pm",av:"E",rp:3,rt:9,fav:4},
   ],
   eoghan:[
-    {h:"@glindarvf",name:"Glinda R.",text:"Gee par SNSD en boucle depuis 3h. pas de regrets. #SNSD",time:"30m",av:"G",rp:14,rt:1,fav:81},
-    {h:"@ladygaga",name:"Lady Gaga",text:"Born This Way is more than a song. It's a manifesto. 🏳️‍🌈",time:"1:00am",av:"L",rp:21,rt:18,fav:58},
-    {h:"@noteliasgreen",name:"Elias G.",text:"je sais des choses. personne ne me croit. c'est ok.",time:"2:00am",av:"E",rp:7,rt:39,fav:90},
-    {h:"@asra_k",name:"Asra K.",text:"@eoghan_m tu réponds plus aux snaps ou bien",time:"2:00am",av:"A",rp:1,rt:13,fav:50},
-    {h:"@rihannaworld",name:"Rihanna",text:"We Found Love dropped 1 year ago today 🙌 @CalvinHarris",time:"3:00am",av:"R",rp:21,rt:6,fav:61},
-    {h:"@dreww_orms",name:"Drew B.",text:"1812 elo. je suis un humble joueur d'échecs. c'est tout. ♟️",time:"4:00am",av:"D",rp:5,rt:3,fav:65},
-    {h:"@glindarvf",name:"Glinda R.",text:"poirier réussi du premier coup la nuit dernière. on ne mentionnera pas qui a échoué. (c'était pas moi)",time:"1d",av:"G",rp:2,rt:8,fav:44},
-    {h:"@ilya_beats",name:"Ilya 🔥",text:"@eoghan_m boude pas, viens plutôt",time:"1d",av:"I",rp:0,rt:3,fav:22},
-    {h:"@uma_football",name:"UMA Moose FB 🏈",text:"GO MOOSE 🫎 match samedi 6 oct contre Vermont Beavers. venez soutenir votre équipe !",time:"2d",av:"M",rp:9,rt:31,fav:87},
-    {h:"@asra_k",name:"Asra K.",text:"quelqu'un sait pourquoi il y avait une flaque de sang dans la chambre du fond chez Jackson ? la police a rien expliqué",time:"2d",av:"A",rp:44,rt:122,fav:67},
+    {h:"@glindarvf",name:"Glinda R.",text:"Gee par SNSD en boucle depuis 3h. pas de regrets. #SNSD",time:"6 oct, 9:30am",av:"G",rp:14,rt:1,fav:81},
+    {h:"@ladygaga",name:"Lady Gaga",text:"Born This Way is more than a song. It's a manifesto. 🏳️‍🌈",time:"6 oct, 1:00am",av:"L",rp:21,rt:18,fav:58},
+    {h:"@asra_k",name:"Asra K.",text:"@eoghan_m tu réponds plus aux snaps ou bien",time:"6 oct, 2:00am",av:"A",rp:1,rt:13,fav:50},
+    {h:"@rihannaworld",name:"Rihanna",text:"We Found Love dropped 1 year ago today 🙌 @CalvinHarris",time:"6 oct, 3:00am",av:"R",rp:21,rt:6,fav:61},
+    {h:"@ilya_beats",name:"Ilya 🔥",text:"@eoghan_m boude pas, viens plutôt",time:"5 oct, 11:00pm",av:"I",rp:0,rt:3,fav:22},
+    {h:"@uma_football",name:"UMA Moose FB 🏈",text:"GO MOOSE 🫎 match samedi 6 oct contre Vermont Beavers. venez soutenir votre équipe !",time:"4 oct, 10:00am",av:"M",rp:9,rt:31,fav:87},
+    {h:"@asra_k",name:"Asra K.",text:"quelqu'un sait pourquoi il y avait une flaque de sang dans la chambre du fond chez Jackson ? la police a rien expliqué",time:"4 oct, 11:00pm",av:"A",rp:44,rt:122,fav:67},
   ],
   drew:[
-    {h:"@glindarvf",name:"Glinda R.",text:"bibliothèque UMA = mon nouveau chez moi ☕📚 #UMA",time:"10m",av:"G",rp:8,rt:28,fav:30},
-    {h:"@noteliasgreen",name:"Elias G.",text:"quelqu'un peut m'expliquer pourquoi je me souviens pas du mois de juillet ?",time:"1:00am",av:"E",rp:6,rt:36,fav:19},
-    {h:"@radiohead",name:"Radiohead",text:"A Moon Shaped Pool sessions were… something else.",time:"2:00am",av:"R",rp:3,rt:13,fav:20},
-    {h:"@eoghan_m",name:"Eoghan M.",text:"\"This is the end, beautiful friend\" - The Doors.",time:"2:00am",av:"E"},
-    {h:"@cynthia_k",name:"Cynthia K.",text:"@dreww_orms t'as vu le classement des clubs ? on est PREMIERS 🏆",time:"3:00am",av:"C",rp:5,rt:0,fav:12},
-    {h:"@fobofficiel",name:"Fall Out Boy",text:"NEW ALBUM FALL 2013 🔥 #FallOutBoy #Comeback",time:"4:00am",av:"F",rp:23,rt:35,fav:36},
-    {h:"@inaturalist",name:"iNaturalist",text:"Species of the day: Lumbricus terrestris 🪱 #nature",time:"6:00am",av:"i",rp:8,rt:3,fav:71},
-    {h:"@noteliasgreen",name:"Elias G.",text:"les égouts de Derry sont plus grands que vous le pensez. il y a des choses dedans.",time:"1d",av:"E",rp:3,rt:11,fav:8},
-    {h:"@eoghan_m",name:"Eoghan M.",text:"quelqu'un sait lire dans les mains ? pas pour moi c'est pour un ami",time:"2d",av:"E",rp:7,rt:14,fav:33},
-    {h:"@nils_k",name:"Nils K.",text:"back in Derry for the weekend. cette ville ne change jamais.",time:"3d",av:"N",rp:0,rt:0,fav:3},
+    {h:"@radiohead",name:"Radiohead",text:"A Moon Shaped Pool sessions were… something else.",time:"6 oct, 2:00am",av:"R",rp:3,rt:13,fav:20},
+    {h:"@cynthia_k",name:"Cynthia K.",text:"@dreww_orms t'as vu le classement des clubs ? on est PREMIERS 🏆",time:"6 oct, 3:00am",av:"C",rp:5,rt:0,fav:12},
+    {h:"@fobofficiel",name:"Fall Out Boy",text:"NEW ALBUM FALL 2013 🔥 #FallOutBoy #Comeback",time:"6 oct, 4:00am",av:"F",rp:23,rt:35,fav:36},
+    {h:"@inaturalist",name:"iNaturalist",text:"Species of the day: Lumbricus terrestris 🪱 #nature",time:"6 oct, 6:00am",av:"i",rp:8,rt:3,fav:71},
+    {h:"@nils_k",name:"Nils K.",text:"back in Derry for the weekend. cette ville ne change jamais.",time:"3 oct, 11:00pm",av:"N",rp:0,rt:0,fav:3},
   ],
   elias:[
-    {h:"@eoghan_m",name:"Eoghan M.",text:"les égouts de derry sont plus grands que vous ne le pensez.",time:"5m",av:"E",rp:24,rt:24,fav:58},
-    {h:"@bmthofficial",name:"Bring Me The Horizon",text:"Can You Feel My Heart — 3 years and still going 🖤",time:"1:00am",av:"B",rp:0,rt:33,fav:98},
-    {h:"@glindarvf",name:"Glinda R.",text:"quelqu'un a des notes du cours de macro ? j'étais indisponible 😬",time:"2:00am",av:"G",rp:17,rt:40,fav:97},
-    {h:"@dreww_orms",name:"Drew B.",text:"quelqu'un peut m'expliquer pourquoi je me souviens pas du mois de juillet ?",time:"2:00am",av:"D",rp:21,rt:30,fav:38},
-    {h:"@creepypasta",name:"CreepyPasta",text:"The disappearances of Derry, Maine — thread 🧵 #derry #horror",time:"3:00am",av:"👻",rp:10,rt:1,fav:34},
-    {h:"@radiohead",name:"Radiohead",text:"No surprises. No alarms. And no surprises.",time:"4:00am",av:"R",rp:22,rt:13,fav:100},
-    {h:"@noteliasgreen",name:"Elias G.",text:"update : ma soeur Anna a été retrouvée. catatonique. à l'hôpital. si vous savez quelque chose sur Derry ME écrivez-moi.",time:"1d",av:"E",rp:82,rt:230,fav:541},
-    {h:"@prof_hanlon",name:"Mike Hanlon",text:"les bibliothèques gardent la mémoire que les gens préfèrent oublier. #Derry",time:"2d",av:"H",rp:14,rt:7,fav:22},
-    {h:"@derrypolice",name:"Derry Police Dept",text:"L'enquête sur les disparitions de juillet est toujours ouverte. Merci au public pour sa patience.",time:"3d",av:"P",rp:33,rt:89,fav:12},
+    {h:"@bmthofficial",name:"Bring Me The Horizon",text:"Can You Feel My Heart — 3 years and still going 🖤",time:"6 oct, 1:00am",av:"B",rp:0,rt:33,fav:98},
+    {h:"@creepypasta",name:"CreepyPasta",text:"The disappearances of Derry, Maine — thread 🧵 #derry #horror",time:"6 oct, 3:00am",av:"👻",rp:10,rt:1,fav:34},
+    {h:"@radiohead",name:"Radiohead",text:"No surprises. No alarms. And no surprises.",time:"6 oct, 4:00am",av:"R",rp:22,rt:13,fav:100},
+    {h:"@prof_hanlon",name:"Mike Hanlon",text:"les bibliothèques gardent la mémoire que les gens préfèrent oublier. #Derry",time:"4 oct, 11:00pm",av:"H",rp:14,rt:7,fav:22},
+    {h:"@derrypolice",name:"Derry Police Dept",text:"L'enquête sur les disparitions de juillet est toujours ouverte. Merci au public pour sa patience.",time:"3 oct, 11:00pm",av:"P",rp:33,rt:89,fav:12},
   ],
 };
 
@@ -4332,36 +4329,255 @@ const TWITTER_HOME_BASE = {
 // Tweets de profil statiques — au niveau module pour que l'admin y accède
 const TWITTER_PROFILE_TWEETS = {
   glinda:[
-    {h:"@glindarvf",name:"Glinda R.",text:"bibliothèque UMA = mon nouveau chez moi ☕📚 #UMA #Économie",time:"2m",rp:3,rt:7,fav:24},
-    {h:"@glindarvf",name:"Glinda R.",text:"quelqu'un a des notes du cours de macro de hier ? j'étais… indisponible 😬",time:"1:00am",rp:8,rt:2,fav:31},
-    {h:"@glindarvf",name:"Glinda R.",text:"Gee par SNSD en boucle depuis 3h. pas de regrets. #SNSD #GirlsGeneration",time:"3:00am",rp:5,rt:12,fav:47},
-    {h:"@glindarvf",name:"Glinda R.",text:"pourquoi les gens jouent aux échecs en silence ???? c'est un SPORT 🎲",time:"5:00am",rp:14,rt:28,fav:102},
-    {h:"@glindarvf",name:"Glinda R.",text:"déjà un mois à UMA et la bibli me connaît par mon prénom ☕📚 #UMA",time:"1d",rp:6,rt:9,fav:58},
+    {h:"@glindarvf",name:"Glinda R.",text:"bibliothèque UMA = mon nouveau chez moi ☕📚 #UMA #Économie",time:"6 oct, 9:58am",rp:3,rt:7,fav:24},
+    {h:"@glindarvf",name:"Glinda R.",text:"quelqu'un a des notes du cours de macro de hier ? j'étais… indisponible 😬",time:"6 oct, 1:00am",rp:8,rt:2,fav:31},
+    {h:"@glindarvf",name:"Glinda R.",text:"Gee par SNSD en boucle depuis 3h. pas de regrets. #SNSD #GirlsGeneration",time:"6 oct, 3:00am",rp:5,rt:12,fav:47},
+    {h:"@glindarvf",name:"Glinda R.",text:"pourquoi les gens jouent aux échecs en silence ???? c'est un SPORT 🎲",time:"6 oct, 5:00am",rp:14,rt:28,fav:102},
+    {h:"@glindarvf",name:"Glinda R.",text:"déjà un mois à UMA et la bibli me connaît par mon prénom ☕📚 #UMA",time:"5 oct, 11:00pm",rp:6,rt:9,fav:58},
   ],
   eoghan:[
-    {h:"@eoghan_m",name:"Eoghan M.",text:"nouveau son en ligne soundcloud.com/eoghan_m #Rush #indierock",time:"15m",rp:2,rt:4,fav:18},
-    {h:"@eoghan_m",name:"Eoghan M.",text:"les égouts de derry sont plus grands que vous ne le pensez. je dis ça je dis rien.",time:"2:00am",rp:7,rt:15,fav:43},
-    {h:"@eoghan_m",name:"Eoghan M.",text:"asra et ilya encore fourrés ensemble. cool. tout va bien. je gère.",time:"4:00am",rp:1,rt:0,fav:9},
-    {h:"@eoghan_m",name:"Eoghan M.",text:"\"This is the end, beautiful friend\" - The Doors. citation du jour.",time:"6:00am",rp:3,rt:8,fav:29},
-    {h:"@eoghan_m",name:"Eoghan M.",text:"UMA est une école comme les autres. les secrets en plus. #UMA",time:"1d",rp:11,rt:22,fav:67},
+    {h:"@eoghan_m",name:"Eoghan M.",text:"nouveau son en ligne soundcloud.com/eoghan_m #Rush #indierock",time:"6 oct, 9:45am",rp:2,rt:4,fav:18},
+    {h:"@eoghan_m",name:"Eoghan M.",text:"les égouts de derry sont plus grands que vous ne le pensez. je dis ça je dis rien.",time:"6 oct, 2:00am",rp:7,rt:15,fav:43},
+    {h:"@eoghan_m",name:"Eoghan M.",text:"asra et ilya encore fourrés ensemble. cool. tout va bien. je gère.",time:"6 oct, 4:00am",rp:1,rt:0,fav:9},
+    {h:"@eoghan_m",name:"Eoghan M.",text:"\"This is the end, beautiful friend\" - The Doors. citation du jour.",time:"6 oct, 6:00am",rp:3,rt:8,fav:29},
+    {h:"@eoghan_m",name:"Eoghan M.",text:"UMA est une école comme les autres. les secrets en plus. #UMA",time:"5 oct, 11:00pm",rp:11,rt:22,fav:67},
   ],
   drew:[
-    {h:"@dreww_orms",name:"Drew B.",text:"TP bio terminé. les vers de terre n'ont aucun secret pour moi 🪱 #Sciences #UMA",time:"30m",rp:4,rt:6,fav:22},
-    {h:"@dreww_orms",name:"Drew B.",text:"1812 elo. je suis un humble joueur d'échecs. c'est tout. ♟️",time:"2:00am",rp:2,rt:3,fav:17},
-    {h:"@dreww_orms",name:"Drew B.",text:"quelqu'un peut m'expliquer pourquoi je me souviens pas du mois de juillet ?",time:"3:00am",rp:9,rt:14,fav:38},
-    {h:"@dreww_orms",name:"Drew B.",text:"Weird Fishes by Radiohead hits different à 2h du mat. #Radiohead",time:"5:00am",rp:5,rt:11,fav:44},
-    {h:"@dreww_orms",name:"Drew B.",text:"maine → maine's university at augusta. upgrade en cours 🌿",time:"2d",rp:7,rt:19,fav:81},
+    {h:"@dreww_orms",name:"Drew B.",text:"TP bio terminé. les vers de terre n'ont aucun secret pour moi 🪱 #Sciences #UMA",time:"6 oct, 9:30am",rp:4,rt:6,fav:22},
+    {h:"@dreww_orms",name:"Drew B.",text:"1812 elo. je suis un humble joueur d'échecs. c'est tout. ♟️",time:"6 oct, 2:00am",rp:2,rt:3,fav:17},
+    {h:"@dreww_orms",name:"Drew B.",text:"quelqu'un peut m'expliquer pourquoi je me souviens pas du mois de juillet ?",time:"6 oct, 3:00am",rp:9,rt:14,fav:38},
+    {h:"@dreww_orms",name:"Drew B.",text:"Weird Fishes by Radiohead hits different à 2h du mat. #Radiohead",time:"6 oct, 5:00am",rp:5,rt:11,fav:44},
+    {h:"@dreww_orms",name:"Drew B.",text:"maine → maine's university at augusta. upgrade en cours 🌿",time:"4 oct, 11:00pm",rp:7,rt:19,fav:81},
   ],
   elias:[
-    {h:"@noteliasgreen",name:"Elias G.",text:"je sais des choses sur ce qui se passe à Augusta. personne ne me croit. c'est ok.",time:"23m",rp:6,rt:12,fav:34},
-    {h:"@noteliasgreen",name:"Elias G.",text:"il y a des disparitions non résolues à Derry depuis 27 ans. cherchez.",time:"1:00am",rp:18,rt:41,fav:127},
-    {h:"@noteliasgreen",name:"Elias G.",text:"Can You Feel My Heart — BMTH. c'est tout ce que j'ai à dire.",time:"3:00am",rp:3,rt:5,fav:21},
-    {h:"@noteliasgreen",name:"Elias G.",text:"\"The truth is out there\" mais personne cherche vraiment #conspi #Derry",time:"5:00am",rp:9,rt:23,fav:76},
-    {h:"@noteliasgreen",name:"Elias G.",text:"nouveau chapitre de Five Nights posté. oui c'est de la fanfic. non j'ai pas honte.",time:"1d",rp:2,rt:4,fav:16},
+    {h:"@noteliasgreen",name:"Elias G.",text:"je sais des choses sur ce qui se passe à Augusta. personne ne me croit. c'est ok.",time:"6 oct, 9:37am",rp:6,rt:12,fav:34},
+    {h:"@noteliasgreen",name:"Elias G.",text:"il y a des disparitions non résolues à Derry depuis 27 ans. cherchez.",time:"6 oct, 1:00am",rp:18,rt:41,fav:127},
+    {h:"@noteliasgreen",name:"Elias G.",text:"Can You Feel My Heart — BMTH. c'est tout ce que j'ai à dire.",time:"6 oct, 3:00am",rp:3,rt:5,fav:21},
+    {h:"@noteliasgreen",name:"Elias G.",text:"\"The truth is out there\" mais personne cherche vraiment #conspi #Derry",time:"6 oct, 5:00am",rp:9,rt:23,fav:76},
+    {h:"@noteliasgreen",name:"Elias G.",text:"nouveau chapitre de Five Nights posté. oui c'est de la fanfic. non j'ai pas honte.",time:"5 oct, 11:00pm",rp:2,rt:4,fav:16},
   ],
 };
-// Twitter (Elias)
-const TwitterScreen = ({data, isIos, accent, onBack=null, sharedTweets=[], twitterUsers={}, homeBaseTweets=[], onUpdateShared=()=>{}}) => {
+// ─── FILES SCREEN ─────────────────────────────────────────────────────────────
+// Types de fichiers → emoji icône + couleur label
+const FILE_TYPE_META = {
+  pdf:  {icon:"📄", color:"#e74c3c", label:"PDF"},
+  mp3:  {icon:"🎵", color:"#9b59b6", label:"MP3"},
+  mp4:  {icon:"🎬", color:"#2980b9", label:"MP4"},
+  mov:  {icon:"🎬", color:"#2980b9", label:"MOV"},
+  jpg:  {icon:"🖼️", color:"#27ae60", label:"JPG"},
+  png:  {icon:"🖼️", color:"#27ae60", label:"PNG"},
+  doc:  {icon:"📝", color:"#2c5fbe", label:"DOC"},
+  docx: {icon:"📝", color:"#2c5fbe", label:"DOCX"},
+  xls:  {icon:"📊", color:"#1a7c3e", label:"XLS"},
+  xlsx: {icon:"📊", color:"#1a7c3e", label:"XLSX"},
+  ppt:  {icon:"📋", color:"#d35400", label:"PPT"},
+  zip:  {icon:"🗜️", color:"#7f8c8d", label:"ZIP"},
+  txt:  {icon:"📃", color:"#95a5a6", label:"TXT"},
+  other:{icon:"📎", color:"#7f8c8d", label:"FILE"},
+};
+const fileTypeMeta = (ext) => FILE_TYPE_META[(ext||"other").toLowerCase()] || FILE_TYPE_META.other;
+const fileExt = (name) => (name||"").split(".").pop().toLowerCase();
+
+const FilesScreen = ({data, isIos, accent, onBack}) => {
+  const [folder, setFolder] = useState(null); // null = racine, string = id du dossier ouvert
+  const items = data.files || {folders:[], rootFiles:[]};
+  const folders = items.folders || [];
+  const rootFiles = items.rootFiles || [];
+
+  // iOS 6 style
+  const IOS6_BG    = "#c8c8cc";
+  const IOS6_CELL  = "#ffffff";
+  const IOS6_SEP   = "#c8c8cd";
+  const IOS6_BLUE  = "#007aff";
+  const IOS6_GRAY  = "#6d6d72";
+  const IOS6_HDR   = "linear-gradient(180deg,#f5f5f5 0%,#e0e0e0 100%)";
+
+  // Android style
+  const AND_BG     = "#fafafa";
+  const AND_CELL   = "#ffffff";
+  const AND_SEP    = "#e0e0e0";
+  const AND_BLUE   = "#1565C0";
+  const AND_GRAY   = "#757575";
+  const AND_HDR    = "#1976D2";
+
+  const currentFolder = folder ? folders.find(f=>f.id===folder) : null;
+  const displayFiles  = folder ? (currentFolder?.files||[]) : rootFiles;
+  const displayFolders= folder ? [] : folders;
+
+  if(isIos) {
+    // ── iOS 6 Files ──────────────────────────────────────────────────────────
+    return (
+      <div style={{flex:1,background:IOS6_BG,display:"flex",flexDirection:"column",overflow:"hidden"}}>
+        {/* Nav bar iOS 6 */}
+        <div style={{background:IOS6_HDR,borderBottom:`1px solid ${IOS6_SEP}`,padding:"8px 12px",display:"flex",alignItems:"center",gap:8,flexShrink:0,boxShadow:"0 1px 2px rgba(0,0,0,0.15)"}}>
+          {folder && (
+            <button onClick={()=>setFolder(null)} style={{background:"linear-gradient(180deg,#5a9fd4,#3a7bc8)",border:"1px solid #2060a0",borderRadius:6,color:"#fff",fontSize:11,fontWeight:600,padding:"4px 10px",cursor:"pointer",boxShadow:"0 1px 0 rgba(255,255,255,0.3) inset",textShadow:"0 -1px 0 rgba(0,0,0,0.3)",display:"flex",alignItems:"center",gap:3}}>
+              <span style={{fontSize:10}}>◀</span> Fichiers
+            </button>
+          )}
+          <span style={{flex:1,textAlign:"center",fontWeight:700,fontSize:17,color:"#1a1a1a",textShadow:"0 1px 0 rgba(255,255,255,0.8)"}}>
+            {folder ? (currentFolder?.name||"Dossier") : "Fichiers"}
+          </span>
+          {folder && <span style={{width:60}}/>}
+        </div>
+
+        {/* Barre de recherche iOS 6 */}
+        {!folder && (
+          <div style={{background:"linear-gradient(180deg,#d0d0d4,#c0c0c4)",padding:"6px 10px",borderBottom:`1px solid ${IOS6_SEP}`,flexShrink:0}}>
+            <div style={{background:"rgba(255,255,255,0.85)",borderRadius:10,padding:"5px 10px",display:"flex",alignItems:"center",gap:6,border:"1px solid #aaa",boxShadow:"inset 0 1px 3px rgba(0,0,0,0.12)"}}>
+              <span style={{color:IOS6_GRAY,fontSize:13}}>🔍</span>
+              <span style={{color:"#aaa",fontSize:14}}>Rechercher</span>
+            </div>
+          </div>
+        )}
+
+        <div style={{flex:1,overflowY:"auto"}}>
+          {/* Dossiers */}
+          {displayFolders.length > 0 && (
+            <div style={{marginTop:20}}>
+              <div style={{padding:"4px 14px 4px",fontSize:11,fontWeight:600,color:IOS6_GRAY,textTransform:"uppercase",letterSpacing:0.5}}>{folder?"":""}</div>
+              <div style={{background:IOS6_CELL,borderTop:`1px solid ${IOS6_SEP}`,borderBottom:`1px solid ${IOS6_SEP}`}}>
+                {displayFolders.map((f,i)=>(
+                  <div key={f.id||i} onClick={()=>setFolder(f.id)}
+                    style={{display:"flex",alignItems:"center",gap:12,padding:"11px 14px",borderBottom:i<displayFolders.length-1?`1px solid ${IOS6_SEP}`:"none",cursor:"pointer",background:IOS6_CELL}}>
+                    {/* Icône dossier iOS 6 */}
+                    <div style={{width:36,height:30,position:"relative",flexShrink:0}}>
+                      <svg viewBox="0 0 36 30" style={{width:"100%",height:"100%"}}>
+                        <defs>
+                          <linearGradient id={`fg${f.id}`} x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stopColor="#c8972a"/>
+                            <stop offset="100%" stopColor="#a07018"/>
+                          </linearGradient>
+                        </defs>
+                        <rect x="0" y="5" width="36" height="25" rx="3" fill={`url(#fg${f.id})`}/>
+                        <rect x="0" y="5" width="36" height="25" rx="3" fill="rgba(255,255,255,0.08)"/>
+                        <path d="M0 8 Q2 5 5 5 L12 5 Q14 5 15 7 L36 7 L36 8 Z" fill="#d4a030"/>
+                        <rect x="1" y="5" width="34" height="1" fill="rgba(255,255,255,0.25)"/>
+                      </svg>
+                    </div>
+                    <div style={{flex:1,minWidth:0}}>
+                      <div style={{fontSize:15,color:"#000",fontWeight:400,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{f.name||"Dossier"}</div>
+                      {f.files?.length>0 && <div style={{fontSize:12,color:IOS6_GRAY}}>{f.files.length} élément{f.files.length>1?"s":""}</div>}
+                    </div>
+                    <span style={{color:"#c0c0c5",fontSize:16}}>›</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Fichiers */}
+          {displayFiles.length > 0 && (
+            <div style={{marginTop:displayFolders.length>0?16:20}}>
+              <div style={{background:IOS6_CELL,borderTop:`1px solid ${IOS6_SEP}`,borderBottom:`1px solid ${IOS6_SEP}`}}>
+                {displayFiles.map((file,i)=>{
+                  const ext = fileExt(file.name);
+                  const meta = fileTypeMeta(ext);
+                  return (
+                    <div key={file.id||i} style={{display:"flex",alignItems:"center",gap:12,padding:"10px 14px",borderBottom:i<displayFiles.length-1?`1px solid ${IOS6_SEP}`:"none",background:IOS6_CELL}}>
+                      {/* Icône fichier iOS 6 */}
+                      <div style={{width:32,height:38,position:"relative",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center"}}>
+                        <svg viewBox="0 0 32 38" style={{width:"100%",height:"100%",position:"absolute",top:0,left:0}}>
+                          <defs>
+                            <linearGradient id={`ff${file.id||i}`} x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="0%" stopColor="#f8f8f8"/>
+                              <stop offset="100%" stopColor="#e8e8e8"/>
+                            </linearGradient>
+                          </defs>
+                          <path d="M0 2 Q0 0 2 0 L22 0 L32 10 L32 36 Q32 38 30 38 L2 38 Q0 38 0 36 Z" fill={`url(#ff${file.id||i})`} stroke="#ccc" strokeWidth="0.5"/>
+                          <path d="M22 0 L22 10 L32 10 Z" fill="#ddd"/>
+                        </svg>
+                        <span style={{position:"relative",fontSize:13,zIndex:1,marginTop:6}}>{meta.icon}</span>
+                        <div style={{position:"absolute",bottom:4,left:0,right:0,textAlign:"center",fontSize:7,fontWeight:700,color:"#fff",background:meta.color,borderRadius:2,margin:"0 3px",padding:"1px 0",letterSpacing:0.3}}>{ext.toUpperCase().slice(0,4)}</div>
+                      </div>
+                      <div style={{flex:1,minWidth:0}}>
+                        <div style={{fontSize:15,color:"#000",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{file.name||"Fichier"}</div>
+                        <div style={{fontSize:12,color:IOS6_GRAY}}>{file.date||""}{file.size?` · ${file.size}`:""}</div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {displayFolders.length===0 && displayFiles.length===0 && (
+            <div style={{padding:"60px 24px",textAlign:"center",color:IOS6_GRAY,fontSize:14}}>
+              <div style={{fontSize:40,marginBottom:12}}>📁</div>
+              Aucun fichier
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // ── Android Files ─────────────────────────────────────────────────────────
+  return (
+    <div style={{flex:1,background:AND_BG,display:"flex",flexDirection:"column",overflow:"hidden"}}>
+      {/* Sub-header Android Material */}
+      {folder && (
+        <div style={{background:AND_HDR,padding:"10px 16px",display:"flex",alignItems:"center",gap:12,flexShrink:0,boxShadow:"0 2px 4px rgba(0,0,0,0.2)"}}>
+          <button onClick={()=>setFolder(null)} style={{background:"none",border:"none",color:"#fff",cursor:"pointer",padding:0,fontSize:20,display:"flex",alignItems:"center"}}>←</button>
+          <span style={{color:"#fff",fontSize:16,fontWeight:500}}>{currentFolder?.name||"Dossier"}</span>
+        </div>
+      )}
+
+      <div style={{flex:1,overflowY:"auto"}}>
+        {/* Dossiers Android */}
+        {displayFolders.length > 0 && (
+          <div>
+            <div style={{padding:"12px 16px 4px",fontSize:12,fontWeight:500,color:AND_GRAY,textTransform:"uppercase",letterSpacing:0.8}}>Dossiers</div>
+            {displayFolders.map((f,i)=>(
+              <div key={f.id||i} onClick={()=>setFolder(f.id)}
+                style={{display:"flex",alignItems:"center",gap:14,padding:"12px 16px",borderBottom:`1px solid ${AND_SEP}`,cursor:"pointer",background:AND_CELL}}>
+                <span style={{fontSize:28,flexShrink:0}}>📁</span>
+                <div style={{flex:1,minWidth:0}}>
+                  <div style={{fontSize:15,color:"#212121",fontWeight:400}}>{f.name||"Dossier"}</div>
+                  {f.files?.length>0 && <div style={{fontSize:12,color:AND_GRAY}}>{f.files.length} élément{f.files.length>1?"s":""}</div>}
+                </div>
+                <span style={{color:AND_GRAY,fontSize:18}}>›</span>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Fichiers Android */}
+        {displayFiles.length > 0 && (
+          <div>
+            <div style={{padding:"12px 16px 4px",fontSize:12,fontWeight:500,color:AND_GRAY,textTransform:"uppercase",letterSpacing:0.8}}>Fichiers</div>
+            {displayFiles.map((file,i)=>{
+              const ext = fileExt(file.name);
+              const meta = fileTypeMeta(ext);
+              return (
+                <div key={file.id||i} style={{display:"flex",alignItems:"center",gap:14,padding:"12px 16px",borderBottom:`1px solid ${AND_SEP}`,background:AND_CELL}}>
+                  <div style={{width:40,height:40,borderRadius:4,background:meta.color+"22",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                    <span style={{fontSize:20}}>{meta.icon}</span>
+                  </div>
+                  <div style={{flex:1,minWidth:0}}>
+                    <div style={{fontSize:14,color:"#212121",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{file.name||"Fichier"}</div>
+                    <div style={{fontSize:12,color:AND_GRAY}}>{file.date||""}{file.size?` · ${file.size}`:""}</div>
+                  </div>
+                  <span style={{fontSize:11,fontWeight:600,color:meta.color,background:meta.color+"18",borderRadius:4,padding:"2px 6px",flexShrink:0}}>{ext.toUpperCase()}</span>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {displayFolders.length===0 && displayFiles.length===0 && (
+          <div style={{padding:"60px 24px",textAlign:"center",color:AND_GRAY,fontSize:14}}>
+            <div style={{fontSize:40,marginBottom:12}}>📂</div>
+            Aucun fichier
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+// ─── END FILES SCREEN ──────────────────────────────────────────────────────────
+// Twitter (Elias) = ({data, isIos, accent, onBack=null, sharedTweets=[], twitterUsers={}, homeBaseTweets=[], onUpdateShared=()=>{}}) => {
   const loreDateStr = useContext(LoreDateCtx);
   const [tab, setTab] = useState("home");
   const [viewProfile, setViewProfile] = useState(null);
@@ -4429,15 +4645,12 @@ const TwitterScreen = ({data, isIos, accent, onBack=null, sharedTweets=[], twitt
     const u = effectiveTwUsers[key];
     return {...t, name: u.name||t.name, h: u.h||t.h, av: u.av||t.av};
   };
-  // Les tweets partagés (mes tweets + ceux des autres persos joueurs) passent en priorité —
-  // on les mêle aux tweets de fond et on trie par heure lore pour que les nouveaux tweets
-  // créés en admin remontent bien en tête de fil (et non enfoncés après les tweets de base).
   const baseList = homeBaseTweets.length ? homeBaseTweets : (HOME_BASE[charKey]||[]);
   const sharedList = [...myShared, ...othersShared];
   const homeFeed = [
     ...sharedList,
     ...baseList.filter(t=>!sharedList.some(s=>s.text===t.text&&s.h===t.h)),
-  ].map(t=>({...resolveTweet(t), _sort:t._sort??loreSortKey(t.time)}))
+  ].map(t=>({...resolveTweet(t), _sort:t._sort ?? loreSortKey(t.time)}))
    .sort((a,b)=>b._sort-a._sort);
 
   // ── Connect ──
@@ -6253,7 +6466,7 @@ const IOSPhone = ({data,admin,onUpdate,onUpdateShared=()=>{},loreDate:loreDatePr
       <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden",position:"relative",...homeBg,fontFamily:FF_IOS}}>
         <IOSStatusBar mode="home"/>
         <DraggableHomescreen data={data} update={update} appIcon={appIcon} badge={badge} goApp={id=>{
-          const IOS_APPS=['calculator','calendar','facebook','gmail','groupme','messages','mfp','music','nikeplus','notes','phone','photos','gallery','pinterest','safari','settings','snapchat','soundcloud','spotify','starbucks','tumblr','twitter','weather','wikipedia','grindr','reddit','vpn','youtube','contacts'];
+          const IOS_APPS=['calculator','calendar','facebook','gmail','groupme','messages','mfp','music','nikeplus','notes','phone','photos','gallery','pinterest','safari','settings','snapchat','soundcloud','spotify','starbucks','tumblr','twitter','weather','wikipedia','grindr','reddit','vpn','youtube','contacts','files'];
           if(IOS_APPS.includes(id)){setThread(null);if(id==="contacts")setPhonePanel("contacts");setApp(id==="gallery"?"photos":id==="contacts"?"phone":id);if(id==="safari"||id==="browser"){setBrowserTab("search");}}
         }} os="ios" accent={accent} admin={admin} charKey={charKey} noWallpaper/>
       </div>
@@ -6585,6 +6798,7 @@ const IOSPhone = ({data,admin,onUpdate,onUpdateShared=()=>{},loreDate:loreDatePr
   if(app==="grindr") return (
     <Shell><IOSStatusBar/><NavBar title="Grindr" back={goHome}/><GrindrScreen data={data} admin={admin} update={update}/></Shell>
   );
+  if(app==="files")     return <Shell><IOSStatusBar/><NavBar title="Fichiers" back={goHome}/><FilesScreen data={data} isIos={true} accent={accent} onBack={goHome}/></Shell>;
   if(app==="safari"||app==="browser") return <Shell><IOSStatusBar/><NavBar title="Safari" back={goHome}/><BrowserScreen data={data} admin={admin} update={update} accent={accent} isIos={true} tab={browserTab} setTab={setBrowserTab}/></Shell>;
   if(app==="phone") return <Shell><IOSStatusBar/><PhoneScreen data={data} admin={admin} update={update} accent={accent} isIos={true} panel={phonePanel} setPanel={setPhonePanel}/></Shell>;
   if(app==="notes") return <Shell><IOSStatusBar/><NotesScreen data={data} admin={admin} update={update} accent={accent} isIos={true} noteOpen={noteOpen} setNoteOpen={setNoteOpen} goHome={goHome}/></Shell>;
@@ -7194,6 +7408,7 @@ const AndroidPhone = ({data,admin,onUpdate,sharedAndroidIcons={},onUpdateShared=
   if(app==="reddit")    return <AppShell><AndroidStatusBar notifApps={notifApps} accent={accent}/><ActionBar title="Reddit" back={goHome}/><RedditScreen data={data} isIos={false} accent={accent}/></AppShell>;  if(app==="twitter")   return <AppShell><AndroidStatusBar notifApps={notifApps} accent={accent}/><TwitterScreen data={data} isIos={false} accent={accent} onBack={goHome} sharedTweets={data.sharedThreads?._sharedTweets||[]} twitterUsers={{...(data.sharedThreads?._sharedTwitterUsers||{}),...(data.twitterUsers||{})}} homeBaseTweets={data.homeBaseTweets||[]} onUpdateShared={onUpdateSharedThread}/></AppShell>;
   if(app==="vpn")       return <AppShell><AndroidStatusBar notifApps={notifApps} accent={accent}/><ActionBar title="VPN" back={goHome}/><VPNScreen isIos={false} accent={accent}/></AppShell>;
   if(app==="contacts")  return <AppShell><AndroidStatusBar notifApps={notifApps} accent={accent}/><ActionBar title="Contacts" back={goHome}/><ContactsScreen data={data} isIos={false} accent={accent}/></AppShell>;
+  if(app==="files")      return <AppShell><AndroidStatusBar notifApps={notifApps} accent={accent}/><ActionBar title="Fichiers" back={goHome}/><FilesScreen data={data} isIos={false} accent={accent} onBack={goHome}/></AppShell>;
   if(app==="clock")     return <AppShell><AndroidStatusBar notifApps={notifApps} accent={accent}/><ActionBar title="Clock" back={goHome}/><ClockScreen isIos={false} accent={accent}/></AppShell>;
   if(app==="maps")      return <AppShell><AndroidStatusBar notifApps={notifApps} accent={accent}/><ActionBar title="Maps" back={goHome}/><MapsScreen isIos={false} accent={accent}/></AppShell>;
 
@@ -17738,7 +17953,7 @@ const loadData = () => {
 };
 
 // Version des seeds — incrémenter à chaque correction des données initiales pour forcer une re-migration.
-const SEED_VERSION = 2;
+const SEED_VERSION = 3;
 
 
 // Injectés dans loadData() si les clés partagées sont absentes ou vides.
@@ -18089,6 +18304,32 @@ const MoveButtons = ({index, length, onMoveUp, onMoveDown}) => (
   </div>
 );
 
+// Composant stable pour une ligne de track musicale — en dehors de AdminBackoffice pour éviter
+// la recréation des nœuds DOM (et donc la perte de l'event handler onChange) à chaque render.
+const MusicTrackRow = ({track, index, total, onCoverChange, onFieldChange, onMoveUp, onMoveDown, onDelete}) => (
+  <div className="adm-card" style={{display:"flex",gap:8,alignItems:"center",background:"rgba(255,255,255,0.85)",padding:10,borderRadius:10,border:"1px solid rgba(0,0,0,0.07)",flexWrap:"wrap"}}>
+    <label style={{width:40,height:40,borderRadius:6,background:"rgba(99,102,241,0.08)",border:"1px dashed rgba(99,102,241,0.3)",overflow:"hidden",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer"}}>
+      {track.cover
+        ? <img src={track.cover} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+        : <span style={{fontSize:16}}>🎵</span>}
+      <input type="file" accept="image/*" style={{display:"none"}} onChange={e=>{
+        const f=e.target.files?.[0]; if(!f) return;
+        onCoverChange(f); e.target.value="";
+      }}/>
+    </label>
+    <input value={track.title||""} onChange={e=>onFieldChange("title",e.target.value)}
+      placeholder="Titre" className="adm-input" style={{flex:2,background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#1a1a2e",padding:"7px 10px",fontSize:12,borderRadius:7}}/>
+    <input value={track.artist||""} onChange={e=>onFieldChange("artist",e.target.value)}
+      placeholder="Artiste" className="adm-input" style={{flex:2,background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#6b7280",padding:"7px 10px",fontSize:12,borderRadius:7}}/>
+    <input value={track.album||""} onChange={e=>onFieldChange("album",e.target.value)}
+      placeholder="Album" className="adm-input" style={{flex:2,background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#6b7280",padding:"7px 10px",fontSize:12,borderRadius:7}}/>
+    <input value={track.duration||""} onChange={e=>onFieldChange("duration",e.target.value)}
+      placeholder="3:00" className="adm-input" style={{width:60,background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#6b7280",padding:"7px 8px",fontSize:11,borderRadius:7}}/>
+    <MoveButtons index={index} length={total} onMoveUp={onMoveUp} onMoveDown={onMoveDown}/>
+    <button onClick={onDelete} className="adm-del-btn" style={{background:"none",border:"none",color:"#d1d5db",cursor:"pointer",fontSize:16,padding:"2px 6px",borderRadius:5,transition:"all 0.15s"}}>×</button>
+  </div>
+);
+
 // Apps with dedicated admin sections — utilisée pour la sidebar ET pour choisir
 // la section d'ouverture par défaut de l'admin (la première par ordre alphabétique).
 const APP_SECTIONS = {
@@ -18120,7 +18361,7 @@ const APP_SECTIONS = {
   groupme:    {icon:"💬", label:"GroupMe"},
   gmail:      {icon:"✉️", label:"Mails"},
   facebook:   {icon:"📘", label:"Facebook"},
-  youtube:    {icon:"▶️", label:"YouTube"},
+  files:      {icon:"📁", label:"Fichiers"},
 };
 
 // L'app "Téléphone" regroupe désormais Appels, Contacts et Messages vocaux dans un seul onglet admin.
@@ -19344,57 +19585,35 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
             où l'id dans le DOM (basé sur l'index) ne correspond plus à la track après un tri ou ajout. */}
         {(()=>{
           const music = d.music||[];
-          // Auto-assigner un id aux tracks qui n'en ont pas
           const needsId = music.some(t=>!t.id);
           if(needsId) {
             const fixed = music.map((t,j)=>t.id?t:{...t,id:Date.now()+j});
             setTimeout(()=>upd("music",fixed),0);
           }
-          return music.map((track,i)=>{
-            const stableId = track.id || `tmp_${i}`;
-          return (
-          <div key={stableId} className="adm-card" style={{display:"flex",gap:8,alignItems:"center",background:"rgba(255,255,255,0.85)",padding:10,borderRadius:10,border:"1px solid rgba(0,0,0,0.07)",flexWrap:"wrap"}}>
-            {/* Pochette — input à l'intérieur du label, comme tous les autres uploads */}
-            <label style={{width:40,height:40,borderRadius:6,background:"rgba(99,102,241,0.08)",border:"1px dashed rgba(99,102,241,0.3)",overflow:"hidden",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer"}}>
-              {track.cover
-                ? <img src={track.cover} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
-                : <span style={{fontSize:16}}>🎵</span>}
-              <input type="file" accept="image/*" style={{display:"none"}} onChange={e=>{
-                const f=e.target.files?.[0]; if(!f) return;
-                const capturedIndex = i;
-                const capturedId = stableId;
+          return music.map((track,i)=>(
+            <MusicTrackRow
+              key={track.id||i}
+              track={track}
+              index={i}
+              total={music.length}
+              onCoverChange={file=>{
+                const trackId = track.id;
                 const r = new UploadReader();
                 r.onload = ev => {
                   const freshMusic = [...(dataRef.current[tab]?.music||[])];
-                  const idx = freshMusic.findIndex(t => t.id === capturedId);
-                  const target = idx >= 0 ? idx : capturedIndex;
-                  if(target < 0 || target >= freshMusic.length) return;
-                  freshMusic[target] = {...freshMusic[target], cover: ev.target.result};
+                  const idx = trackId ? freshMusic.findIndex(t=>t.id===trackId) : i;
+                  if(idx<0||idx>=freshMusic.length) return;
+                  freshMusic[idx] = {...freshMusic[idx], cover: ev.target.result};
                   onUpdate(tab, {...dataRef.current[tab], music: freshMusic});
                 };
-                r.readAsDataURL(f);
-                e.target.value = "";
-              }}/>
-            </label>
-            <input value={track.title||""} onChange={e=>{const m=[...d.music];m[i]={...m[i],title:e.target.value};upd("music",m);}}
-              placeholder="Titre" className="adm-input" style={{flex:2,background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#1a1a2e",padding:"7px 10px",fontSize:12,borderRadius:7}}/>
-            <input value={track.artist||""} onChange={e=>{const m=[...d.music];m[i]={...m[i],artist:e.target.value};upd("music",m);}}
-              placeholder="Artiste" className="adm-input" style={{flex:2,background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#6b7280",padding:"7px 10px",fontSize:12,borderRadius:7}}/>
-            <input value={track.album||""} onChange={e=>{const m=[...d.music];m[i]={...m[i],album:e.target.value};upd("music",m);}}
-              placeholder="Album" className="adm-input" style={{flex:2,background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#6b7280",padding:"7px 10px",fontSize:12,borderRadius:7}}/>
-            <input value={track.duration||""} onChange={e=>{const m=[...d.music];m[i]={...m[i],duration:e.target.value};upd("music",m);}}
-              placeholder="3:00" className="adm-input" style={{width:60,background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#6b7280",padding:"7px 8px",fontSize:11,borderRadius:7}}/>
-            <MoveButtons
-              index={i}
-              length={d.music.length}
-              onMoveUp={() => { const m=[...d.music]; [m[i-1],m[i]]=[m[i],m[i-1]]; upd("music",m); }}
-              onMoveDown={() => { const m=[...d.music]; [m[i+1],m[i]]=[m[i],m[i+1]]; upd("music",m); }}
+                r.readAsDataURL(file);
+              }}
+              onFieldChange={(field,val)=>{const m=[...d.music];m[i]={...m[i],[field]:val};upd("music",m);}}
+              onMoveUp={()=>{const m=[...d.music];[m[i-1],m[i]]=[m[i],m[i-1]];upd("music",m);}}
+              onMoveDown={()=>{const m=[...d.music];[m[i+1],m[i]]=[m[i],m[i+1]];upd("music",m);}}
+              onDelete={()=>upd("music",d.music.filter((_,j)=>j!==i))}
             />
-            <button onClick={()=>upd("music",d.music.filter((_,j)=>j!==i))}
-              className="adm-del-btn" style={{background:"none",border:"none",color:"#d1d5db",cursor:"pointer",fontSize:16,padding:"2px 6px",borderRadius:5,transition:"all 0.15s"}}>×</button>
-          </div>
-          );
-          });
+          ));
         })()}
         <button onClick={()=>upd("music",[{id:Date.now(),title:"",artist:"",duration:"3:00"},...(d.music||[])])}
           style={{background:"rgba(99,102,241,0.08)",border:"1px dashed rgba(99,102,241,0.4)",color:"#6366f1",borderRadius:8,padding:"10px 18px",cursor:"pointer",fontSize:12,fontWeight:600}}>+ Add manually</button>
@@ -20269,6 +20488,89 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
               </div>
             ))}
             <button onClick={()=>updList([...effective,["","","1 oct"]])} style={{background:"rgba(91,145,206,0.08)",border:"1px dashed rgba(91,145,206,0.35)",color:"#5b91ce",borderRadius:8,padding:"10px 18px",cursor:"pointer",fontSize:12,fontWeight:600}}>+ Article</button>
+          </>);
+        })()}
+      </div>
+    );
+
+    case "files": return (
+      <div style={{display:"flex",flexDirection:"column",gap:12}}>
+        {(()=>{
+          const files = d.files || {folders:[], rootFiles:[]};
+          const folders = files.folders || [];
+          const rootFiles = files.rootFiles || [];
+          const updFiles = (patch) => upd("files", {...files, ...patch});
+          const FILE_TYPES = [".pdf",".mp3",".mp4",".mov",".jpg",".png",".doc",".docx",".xls",".xlsx",".ppt",".zip",".txt",".other"];
+          const FOLDER_COLOR = "#a07018";
+
+          return (<>
+            {/* Dossiers */}
+            <div style={{fontSize:12,fontWeight:700,color:"#374151",letterSpacing:0.3}}>📁 Dossiers</div>
+            {folders.map((folder,fi)=>(
+              <div key={folder.id||fi} className="adm-card" style={{background:"rgba(255,255,255,0.9)",borderRadius:10,border:"1px solid rgba(0,0,0,0.07)",overflow:"hidden"}}>
+                {/* Header du dossier */}
+                <div style={{background:"rgba(160,112,24,0.08)",padding:"10px 12px",display:"flex",gap:8,alignItems:"center",borderBottom:"1px solid rgba(0,0,0,0.06)"}}>
+                  <span style={{fontSize:20}}>📁</span>
+                  <input value={folder.name||""} onChange={e=>{const f=[...folders];f[fi]={...f[fi],name:e.target.value};updFiles({folders:f});}}
+                    placeholder="Nom du dossier" className="adm-input"
+                    style={{flex:1,background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#1a1a2e",padding:"6px 10px",fontSize:13,borderRadius:7,fontWeight:600}}/>
+                  <button onClick={()=>updFiles({folders:folders.filter((_,j)=>j!==fi)})}
+                    className="adm-del-btn" style={{background:"rgba(239,68,68,0.07)",border:"1px solid rgba(239,68,68,0.2)",color:"#ef4444",borderRadius:6,padding:"5px 8px",cursor:"pointer",fontSize:11}}>✕</button>
+                </div>
+                {/* Fichiers dans ce dossier */}
+                <div style={{padding:"8px 12px",display:"flex",flexDirection:"column",gap:6}}>
+                  {(folder.files||[]).map((file,fj)=>{
+                    const ext = (file.name||"").split(".").pop().toLowerCase();
+                    const meta = fileTypeMeta(ext);
+                    return (
+                      <div key={file.id||fj} style={{display:"flex",gap:6,alignItems:"center",background:"rgba(0,0,0,0.02)",borderRadius:7,padding:"6px 8px",border:"1px solid rgba(0,0,0,0.05)"}}>
+                        <span style={{fontSize:16,flexShrink:0}}>{meta.icon}</span>
+                        <input value={file.name||""} onChange={e=>{const f=[...folders];const fs=[...f[fi].files];fs[fj]={...fs[fj],name:e.target.value};f[fi]={...f[fi],files:fs};updFiles({folders:f});}}
+                          placeholder="nom.pdf" className="adm-input"
+                          style={{flex:2,background:"rgba(255,255,255,0.9)",border:"1px solid rgba(0,0,0,0.1)",color:"#1a1a2e",padding:"5px 8px",fontSize:12,borderRadius:6}}/>
+                        <input value={file.date||""} onChange={e=>{const f=[...folders];const fs=[...f[fi].files];fs[fj]={...fs[fj],date:e.target.value};f[fi]={...f[fi],files:fs};updFiles({folders:f});}}
+                          placeholder="Date (ex: 5 oct)" className="adm-input"
+                          style={{flex:1,background:"rgba(255,255,255,0.9)",border:"1px solid rgba(0,0,0,0.1)",color:"#6b7280",padding:"5px 8px",fontSize:11,borderRadius:6}}/>
+                        <input value={file.size||""} onChange={e=>{const f=[...folders];const fs=[...f[fi].files];fs[fj]={...fs[fj],size:e.target.value};f[fi]={...f[fi],files:fs};updFiles({folders:f});}}
+                          placeholder="Taille (ex: 4,7 MB)" className="adm-input"
+                          style={{width:90,background:"rgba(255,255,255,0.9)",border:"1px solid rgba(0,0,0,0.1)",color:"#6b7280",padding:"5px 8px",fontSize:11,borderRadius:6}}/>
+                        <button onClick={()=>{const f=[...folders];f[fi]={...f[fi],files:(f[fi].files||[]).filter((_,k)=>k!==fj)};updFiles({folders:f});}}
+                          style={{background:"none",border:"none",color:"#d1d5db",cursor:"pointer",fontSize:14,padding:"0 2px",flexShrink:0}}>×</button>
+                      </div>
+                    );
+                  })}
+                  <button onClick={()=>{const f=[...folders];f[fi]={...f[fi],files:[...(f[fi].files||[]),{id:Date.now(),name:"",date:"",size:""}]};updFiles({folders:f});}}
+                    style={{background:"rgba(160,112,24,0.07)",border:"1px dashed rgba(160,112,24,0.35)",color:FOLDER_COLOR,borderRadius:7,padding:"6px 12px",cursor:"pointer",fontSize:11,fontWeight:600,alignSelf:"flex-start"}}>+ Fichier</button>
+                </div>
+              </div>
+            ))}
+            <button onClick={()=>updFiles({folders:[...folders,{id:Date.now(),name:"",files:[]}]})}
+              style={{background:"rgba(160,112,24,0.08)",border:"1px dashed rgba(160,112,24,0.4)",color:FOLDER_COLOR,borderRadius:8,padding:"10px 18px",cursor:"pointer",fontSize:12,fontWeight:600}}>+ Dossier</button>
+
+            {/* Fichiers à la racine */}
+            <div style={{fontSize:12,fontWeight:700,color:"#374151",letterSpacing:0.3,marginTop:8}}>📄 Fichiers à la racine</div>
+            {rootFiles.map((file,i)=>{
+              const ext = (file.name||"").split(".").pop().toLowerCase();
+              const meta = fileTypeMeta(ext);
+              return (
+                <div key={file.id||i} style={{display:"flex",gap:6,alignItems:"center",background:"rgba(255,255,255,0.85)",borderRadius:8,padding:"8px 10px",border:"1px solid rgba(0,0,0,0.07)"}}>
+                  <span style={{fontSize:18,flexShrink:0}}>{meta.icon}</span>
+                  <input value={file.name||""} onChange={e=>{const rf=[...rootFiles];rf[i]={...rf[i],name:e.target.value};updFiles({rootFiles:rf});}}
+                    placeholder="nom.pdf" className="adm-input"
+                    style={{flex:2,background:"rgba(255,255,255,0.9)",border:"1px solid rgba(0,0,0,0.1)",color:"#1a1a2e",padding:"6px 9px",fontSize:12,borderRadius:7}}/>
+                  <input value={file.date||""} onChange={e=>{const rf=[...rootFiles];rf[i]={...rf[i],date:e.target.value};updFiles({rootFiles:rf});}}
+                    placeholder="Date" className="adm-input"
+                    style={{flex:1,background:"rgba(255,255,255,0.9)",border:"1px solid rgba(0,0,0,0.1)",color:"#6b7280",padding:"6px 8px",fontSize:11,borderRadius:7}}/>
+                  <input value={file.size||""} onChange={e=>{const rf=[...rootFiles];rf[i]={...rf[i],size:e.target.value};updFiles({rootFiles:rf});}}
+                    placeholder="Taille" className="adm-input"
+                    style={{width:90,background:"rgba(255,255,255,0.9)",border:"1px solid rgba(0,0,0,0.1)",color:"#6b7280",padding:"6px 8px",fontSize:11,borderRadius:7}}/>
+                  <button onClick={()=>updFiles({rootFiles:rootFiles.filter((_,j)=>j!==i)})}
+                    style={{background:"none",border:"none",color:"#d1d5db",cursor:"pointer",fontSize:16,padding:"0 2px",flexShrink:0}}>×</button>
+                </div>
+              );
+            })}
+            <button onClick={()=>updFiles({rootFiles:[...rootFiles,{id:Date.now(),name:"",date:"",size:""}]})}
+              style={{background:"rgba(99,102,241,0.08)",border:"1px dashed rgba(99,102,241,0.4)",color:"#6366f1",borderRadius:8,padding:"10px 18px",cursor:"pointer",fontSize:12,fontWeight:600}}>+ Fichier racine</button>
           </>);
         })()}
       </div>
