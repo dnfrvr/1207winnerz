@@ -17957,7 +17957,7 @@ const loadData = () => {
 };
 
 // Version des seeds — incrémenter à chaque correction des données initiales pour forcer une re-migration.
-const SEED_VERSION = 3;
+const SEED_VERSION = 4;
 
 
 // Injectés dans loadData() si les clés partagées sont absentes ou vides.
@@ -18072,6 +18072,10 @@ const withSocialSeeds = (d) => {
     const username = USERNAME_MAP[k];
     if(patched[k]) {
       patched[k] = {...patched[k], tumblr:{...(patched[k].tumblr||{}), feedPosts: SEED_FEED_TUMBLR[username]||[]}};
+      // Ajouter "files" dans les apps si absent
+      if(!(patched[k].apps||[]).includes("files")) {
+        patched[k] = {...patched[k], apps: [...(patched[k].apps||[]), "files"]};
+      }
     }
   });
 
@@ -20715,79 +20719,60 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
     );
 
     case "mail": {
-      const EMAIL_DEFAULTS = {
-        glindatheverygood:[
-          {from:"UMA Registrar",     subj:"Calendrier des partiels — Automne 2012", preview:"Les dates des examens de mi-semestre sont publiées sur le portail étudiant.",time:"8:02 AM",unread:true},
-          {from:"UMA Registrar",     subj:"Date limite add/drop : 5 octobre",   preview:"Dernier jour pour modifier votre sélection de cours sans pénalité.",time:"9:14 AM",  unread:true},
-          {from:"UMA Financial Aid Office",subj:"Demande d'émancipation financière — dossier reçu",preview:"Nous accusons réception de votre demande d'émancipation financière pour l'année 2012-2013. Un conseiller examinera votre situation dans un délai de 10 à 15 jours. Des justificatifs pourront vous être demandés.",time:"Sep 26",unread:true},
-          {from:"Chess.com",         subj:"Mise à jour classement : 1812 → 1824",preview:"Félicitations ! Vous venez de franchir la barre des 1800.",time:"Sep 24",unread:false},
-          {from:"UMA Library",       subj:"Réservation disponible au comptoir",  preview:"Le livre que vous avez demandé est disponible au bureau principal.",time:"Sep 22",unread:false},
-        ],
-        eoghan_masuda:[
-          {from:"Keene Public Library",subj:"Réservation confirmée : microfilms 1958–1962",preview:"Votre demande de consultation des microfilms (Keene Sentinel, 1958–1962) est prête au comptoir de référence.",time:"7:20 AM",unread:true},
-          {from:"UMA Athletics",    subj:"Horaires salle de sport — octobre",   preview:"Le centre sportif sera ouvert en horaires étendus du 1er au 15 octobre.",time:"8:00 AM",unread:true},
-          {from:"SoundCloud",       subj:"Quelqu'un a aimé votre titre Rush",    preview:"Votre titre Rush vient de recevoir un nouveau like. Continuez à créer !",time:"Sep 30",unread:true},
-          {from:"Spotify",          subj:"Nouvelles musiques pour vous",         preview:"D'après vos écoutes : Grimes, M83, Kavinsky et plus encore.",time:"Sep 28",unread:false},
-          {from:"UMA Housing",      subj:"Inspection de chambre — 10 oct.",     preview:"Merci de vous assurer que votre chambre est prête pour l'inspection prévue.",time:"Sep 26",unread:false},
-          {from:"Financial Aid UMA",subj:"Bourse 2012-2013 confirmée",          preview:"Votre dossier a été traité. Voir la lettre en pièce jointe.",time:"Sep 20",unread:false},
-        ],
-        dreww_orms:[
-          {from:"UMA Chess Club",   subj:"Tournoi interne — inscriptions ouvertes",preview:"Les inscriptions pour le tournoi interne d'automne sont ouvertes. Première ronde samedi 14h, salle B204.",time:"9:15 AM",unread:true},
-          {from:"PubMed Alerts",    subj:"Nouvel article : Locomotion des vers de terre",preview:"Contrôle neural de la locomotion péristaltique chez Lumbricus terrestris — nouvelles données.",time:"10:22 AM",unread:true},
-          {from:"UMA Biology Dept", subj:"Rappel : compte-rendu labo semaine 5", preview:"Les comptes-rendus sont à rendre vendredi avant minuit. Aucun retard accepté.",time:"Sep 30",unread:true},
-          {from:"iNaturalist",      subj:"Votre observation a été confirmée",    preview:"Des naturalistes experts ont vérifié votre observation de Lumbricus terrestris.",time:"Sep 29",unread:false},
-          {from:"Chess.com",        subj:"Résumé hebdomadaire — vos stats",     preview:"Vous avez joué 12 parties cette semaine. Taux de victoire : 75 %. ELO : 1812.",time:"Sep 28",unread:false},
-          {from:"Twilight Fan Wiki", subj:"Nouvelle discussion : Équipe Edward vs Jacob",preview:"L'utilisateur twilightforever a répondu à votre commentaire dans le forum.",time:"Sat",unread:false},
-        ],
-        noteliasgreen:[
-          {from:"Hôpital Régional de Derry",subj:"Mise à jour situation patiente — A. Green", preview:"Situation inchangée. Votre sœur Anna reste stabilisée en service psychiatrique. Visites autorisées lundi-vendredi 9h-17h. Merci de vous présenter à l'accueil.",time:"9:30 AM",unread:true},
-      {from:"Parrot Society of America",subj:"Newsletter oct. 2012 — comportement des psittacidés",preview:"Ce mois-ci : la communication vocale chez le gris du Gabon, nouvelles études sur la mémoire des aras, et retour sur le congrès annuel de Portland.",time:"8:15 AM",unread:false},
-      {from:"NaNoWriMo",        subj:"Prêt pour novembre ? Inscrivez-vous",  preview:"Le Mois national de l'écriture commence dans 30 jours. Votre profil vous attend.",time:"9:00 AM",unread:true},
-          {from:"Reddit",           subj:"[r/conspiracy] Réponse à votre commentaire",preview:"u/TruthSeeker99 a répondu : « Les disparitions de Derry ? Je fais des recherches là-dessus aussi. »",time:"11:58 PM",unread:true},
-          {from:"UMA Literature",   subj:"Planning S2 disponible",               preview:"Le planning du semestre de printemps est en ligne sur le portail étudiant.",time:"Mon",unread:false},
-          {from:"AO3",              subj:"Nouveau commentaire sur Five Nights ch.3",preview:"horrorfan2012 a laissé un commentaire : « C'est vraiment terrifiant, mettez à jour vite. »",time:"Sep 29",unread:false},
-          {from:"Paranormal Forums",subj:"Votre fil : disparitions de Derry",    preview:"8 nouvelles réponses à votre fil. Quelqu'un prétend avoir des documents.",time:"Sep 27",unread:false},
-        ],
-      };
-      const baseMails = d.mail_override
-        ? (d.mail_override[d.username] || [])
-        : (EMAIL_DEFAULTS[d.username] || EMAIL_DEFAULTS.glindatheverygood);
-      const mails = d.mail_override?.[d.username] ?? (EMAIL_DEFAULTS[d.username] || EMAIL_DEFAULTS.glindatheverygood);
-      const updMailList = (list) => upd("mail_override", {...(d.mail_override||{}), [d.username]: list});
-      const newMail = () => updMailList([...mails, {from:"", subj:"", preview:"", time:"", unread:true}]);
+      const MAIL_TAB_DEFS = [
+        {key:"inbox",   label:"📥 Inbox",   color:"#4a7ab5", storageKey:"mail_override",  defaultFn:(un)=>EMAILS_BY_CHAR[un]||EMAILS_BY_CHAR.glindatheverygood},
+        {key:"drafts",  label:"📝 Drafts",  color:"#6366f1", storageKey:"mail_drafts",    defaultFn:(un)=>MAIL_DRAFTS_BY_CHAR[un]||[]},
+        {key:"deleted", label:"🗑 Deleted",  color:"#ef4444", storageKey:"mail_deleted",   defaultFn:(un)=>MAIL_DELETED_BY_CHAR[un]||[]},
+      ];
+      const [mailAdmTab, setMailAdmTab] = useState("inbox");
+      const curTabDef = MAIL_TAB_DEFS.find(t=>t.key===mailAdmTab);
+      const un = d.username || "glindatheverygood";
+      const mails = d[curTabDef.storageKey]?.[un] ?? curTabDef.defaultFn(un);
+      const updMailList = (list) => upd(curTabDef.storageKey, {...(d[curTabDef.storageKey]||{}), [un]: list});
+      const newMail = () => updMailList([...mails, {id:Date.now(), from:"", subj:"", preview:"", time:"6 oct, 10:00am", unread:mailAdmTab==="inbox"}]);
       return (
         <div style={{display:"flex",flexDirection:"column",gap:12}}>
-          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:4}}>
-            <div style={{fontSize:13,fontWeight:700,color:"#1a1a2e"}}>Mails — {char?.label}</div>
-            <button onClick={newMail} style={{background:"rgba(99,102,241,0.08)",border:"1px dashed rgba(99,102,241,0.35)",color:"#6366f1",borderRadius:8,padding:"6px 14px",cursor:"pointer",fontSize:12,fontWeight:600}}>+ Mail</button>
+          {/* 3 onglets */}
+          <div className="adm-subtabs" style={{display:"flex",gap:0,background:"rgba(0,0,0,0.05)",borderRadius:10,padding:3,alignSelf:"stretch"}}>
+            {MAIL_TAB_DEFS.map(t=>(
+              <button key={t.key} onClick={()=>setMailAdmTab(t.key)} style={{
+                flex:1,padding:"9px 12px",border:"none",borderRadius:8,cursor:"pointer",fontSize:12,
+                fontWeight:mailAdmTab===t.key?700:400,
+                background:mailAdmTab===t.key?"#fff":"transparent",
+                color:mailAdmTab===t.key?t.color:"#6b7280",
+                boxShadow:mailAdmTab===t.key?"0 1px 3px rgba(0,0,0,0.1)":"none",
+                transition:"all 0.15s",whiteSpace:"nowrap",
+              }}>{t.label}</button>
+            ))}
           </div>
+          {/* Liste des mails */}
           {mails.map((m,i)=>{
             const updMail = (patch) => { const l=[...mails]; l[i]={...l[i],...patch}; updMailList(l); };
             return (
-              <div key={i} style={{background:"rgba(255,255,255,0.9)",borderRadius:10,border:"1px solid rgba(0,0,0,0.07)",padding:"12px 14px",display:"flex",flexDirection:"column",gap:8}}>
+              <div key={m.id||i} style={{background:"rgba(255,255,255,0.9)",borderRadius:10,border:"1px solid rgba(0,0,0,0.07)",padding:"12px 14px",display:"flex",flexDirection:"column",gap:8}}>
                 <div style={{display:"flex",gap:8,alignItems:"center",flexWrap:"wrap"}}>
                   <Field label="Expéditeur" value={m.from||""} onChange={v=>updMail({from:v})} style={{flex:1,minWidth:140}}/>
                   <LoreDateTimeInput value={m.time||""} onChange={v=>updMail({time:v})} width="180px"/>
-                  <div style={{display:"flex",flexDirection:"column",gap:2,marginTop:18}}>
-                    <label style={{display:"flex",alignItems:"center",gap:5,fontSize:11,color:"#6b7280",cursor:"pointer",whiteSpace:"nowrap"}}>
-                      <input type="checkbox" checked={!!m.unread} onChange={e=>updMail({unread:e.target.checked})}/> Non lu
-                    </label>
-                  </div>
-                  <div style={{display:"flex",gap:6,alignItems:"flex-start"}}>
-                    <MoveButtons 
-                      index={i} 
-                      length={mails.length}
-                      onMoveUp={() => { const l=[...mails]; [l[i-1],l[i]]=[l[i],l[i-1]]; updMailList(l); }}
-                      onMoveDown={() => { const l=[...mails]; [l[i+1],l[i]]=[l[i],l[i+1]]; updMailList(l); }}
-                    />
+                  {mailAdmTab==="inbox" && (
+                    <div style={{display:"flex",flexDirection:"column",gap:2,marginTop:18}}>
+                      <label style={{display:"flex",alignItems:"center",gap:5,fontSize:11,color:"#6b7280",cursor:"pointer",whiteSpace:"nowrap"}}>
+                        <input type="checkbox" checked={!!m.unread} onChange={e=>updMail({unread:e.target.checked})}/> Non lu
+                      </label>
+                    </div>
+                  )}
+                  <div style={{display:"flex",gap:4,alignItems:"flex-start"}}>
+                    <MoveButtons index={i} length={mails.length}
+                      onMoveUp={()=>{const l=[...mails];[l[i-1],l[i]]=[l[i],l[i-1]];updMailList(l);}}
+                      onMoveDown={()=>{const l=[...mails];[l[i+1],l[i]]=[l[i],l[i+1]];updMailList(l);}}/>
                     <button onClick={()=>updMailList(mails.filter((_,j)=>j!==i))} style={{background:"none",border:"none",color:"#d1d5db",cursor:"pointer",fontSize:16,padding:"0 2px",marginTop:18}}>×</button>
                   </div>
                 </div>
                 <Field label="Objet" value={m.subj||""} onChange={v=>updMail({subj:v})} style={{width:"100%"}}/>
-                <Field label="Aperçu" value={m.preview||""} onChange={v=>updMail({preview:v})} textarea style={{width:"100%"}}/>
+                <Field label="Aperçu / Corps" value={m.preview||""} onChange={v=>updMail({preview:v})} textarea style={{width:"100%"}}/>
               </div>
             );
           })}
+          <button onClick={newMail} style={{background:`rgba(${mailAdmTab==="inbox"?"74,122,181":mailAdmTab==="drafts"?"99,102,241":"239,68,68"},0.08)`,border:`1px dashed rgba(${mailAdmTab==="inbox"?"74,122,181":mailAdmTab==="drafts"?"99,102,241":"239,68,68"},0.4)`,color:curTabDef.color,borderRadius:8,padding:"10px 18px",cursor:"pointer",fontSize:12,fontWeight:600}}>+ Mail ({curTabDef.label.split(" ")[1]})</button>
         </div>
       );
     }
@@ -21249,6 +21234,11 @@ export default function App() {
               const username = USERNAME_MAP[k];
               // Toujours remplacer feedPosts pour éliminer les posts de joueurs mal placés
               patches[`${k}/tumblr`] = {...(remote[k]?.tumblr||{}), feedPosts: SEED_FEED_TUMBLR[username]||[]};
+              // Ajouter "files" dans les apps si absent
+              const existingApps = remote[k]?.apps || [];
+              if(!existingApps.includes("files")) {
+                patches[`${k}/apps`] = [...existingApps, "files"];
+              }
             });
 
             update(ref(firebaseDb), patches).catch(e => console.error("[seed] Erreur migration seeds :", e));
@@ -22024,81 +22014,206 @@ const EMAILS_BY_CHAR = {
   ],
 };
 
-const GmailScreen = ({data, isIos, accent}) => {
-  const emailsByChar = EMAILS_BY_CHAR;
-  const loreDateStr = useContext(LoreDateCtx);
-  const emails = data.mail_override?.[data.username]
-    ?? emailsByChar[data.username]
-    ?? emailsByChar.glindatheverygood;
-  const unreadCount = emails.filter(e=>e.unread).length;
+const MAIL_DRAFTS_BY_CHAR = {
+  glindatheverygood:[
+    {from:"Glinda R.",subj:"Re: UMA Financial Aid — brouillon",preview:"Bonjour, je vous écris concernant mon dossier d'émancipation financière. Suite à votre email du 26 septembre, je souhaitais vous préciser que...",time:"6 oct, 9:12am",unread:false},
+    {from:"Glinda R.",subj:"[Brouillon] Lettre de motivation — Club photo",preview:"Je me permets de vous contacter pour exprimer mon intérêt pour rejoindre le club photo de l'UMA. Passionnée d'architecture...",time:"5 oct, 11:30pm",unread:false},
+  ],
+  eoghan_masuda:[
+    {from:"Eoghan M.",subj:"[Brouillon] Sound file for Ilya",preview:"Hey, j'ai fini le mix de Rush — je voulais t'envoyer la version wav avant de la publier. Dis-moi ce que tu en penses...",time:"6 oct, 2:14am",unread:false},
+    {from:"Eoghan M.",subj:"Re: Asra — brouillon",preview:"Asra, je sais pas comment dire ça sans que ça sonne bizarre mais...",time:"4 oct, 11:58pm",unread:false},
+  ],
+  dreww_orms:[
+    {from:"Drew B.",subj:"[Brouillon] Compte-rendu labo semaine 5",preview:"Introduction : L'objectif de cette expérience était d'observer les comportements locomoteurs de Lumbricus terrestris sous différentes conditions de lumière...",time:"6 oct, 8:30am",unread:false},
+    {from:"Drew B.",subj:"Re: Tournoi — brouillon",preview:"Bonjour, je confirme ma participation au tournoi interne du samedi. Pour l'ouverture je prévois...",time:"5 oct, 7:00pm",unread:false},
+  ],
+  noteliasgreen:[
+    {from:"Elias G.",subj:"[Brouillon] Lettre hôpital — Anna",preview:"Je souhaitais vous faire part de mes inquiétudes concernant le suivi de ma sœur Anna Green, admise le 4 octobre. Les informations qui m'ont été communiquées...",time:"6 oct, 1:04am",unread:false},
+    {from:"Elias G.",subj:"[Brouillon] chapitre 4 Five Nights",preview:"La forêt derrière Derry ne ressemble à aucune autre. Les arbres y poussent trop serrés, trop droits, comme s'ils attendaient quelque chose...",time:"5 oct, 11:00pm",unread:false},
+  ],
+};
 
-  if(!isIos) {
-    const AVATAR_COLORS = ["#E53935","#8E24AA","#1E88E5","#00897B","#F4511E","#3949AB","#039BE5","#7CB342","#D81B60","#F6BF26"];
-    const avatarColor = (name) => AVATAR_COLORS[name.charCodeAt(0) % AVATAR_COLORS.length];
-    return (
-      <div style={{flex:1,background:"#f1f1f1",overflowY:"auto",fontFamily:FF_IOS}}>
-        {emails.map((m,i)=>(
-          <div key={i} style={{background:m.unread?"#fff":"#fafafa",borderBottom:"1px solid #e5e5e5",padding:"10px 10px 10px 12px",display:"flex",gap:10,alignItems:"center",cursor:"pointer"}}>
-            {/* Colored avatar circle */}
-            <div style={{width:40,height:40,borderRadius:"50%",background:avatarColor(m.from),display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontWeight:"700",fontSize:16,flexShrink:0,textTransform:"uppercase"}}>{m.from[0]}</div>
-            {/* Content */}
-            <div style={{flex:1,minWidth:0}}>
-              <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",marginBottom:2}}>
-                <span style={{color:m.unread?"#202124":"#5f6368",fontSize:13,fontWeight:m.unread?"700":"400",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",maxWidth:"65%"}}>{m.from}</span>
-                <span style={{color:m.unread?"#202124":"#5f6368",fontSize:11,fontWeight:m.unread?"600":"400",flexShrink:0,marginLeft:4}}>{loreRelativeLabel(m.time,loreDateStr)}</span>
-              </div>
-              <div style={{color:m.unread?"#202124":"#5f6368",fontSize:12,fontWeight:m.unread?"500":"400",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",marginBottom:1}}>{m.subj}</div>
-              <div style={{color:"#9aa0a6",fontSize:11,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{m.preview}</div>
-            </div>
-            {/* Star */}
-            <span style={{color:"#bdc1c6",fontSize:16,flexShrink:0,paddingLeft:4}}>☆</span>
+const MAIL_DELETED_BY_CHAR = {
+  glindatheverygood:[
+    {from:"Tumblr",subj:"Nouveau follower : glindarvf",preview:"Quelqu'un vous suit maintenant sur Tumblr. Découvrez son blog.",time:"Sep 20",unread:false},
+    {from:"UMA Events",subj:"Soirée de bienvenue — 15 sept.",preview:"Rappel : la soirée de bienvenue de la rentrée aura lieu vendredi soir.",time:"Sep 14",unread:false},
+    {from:"Pinterest",subj:"Vous avez du mal à trouver des idées ?",preview:"Retrouvez vos épingles enregistrées et explorez de nouveaux tableaux.",time:"Sep 10",unread:false},
+  ],
+  eoghan_masuda:[
+    {from:"UMA Athletics",subj:"Feuille de présence — semaine 3",preview:"Merci de confirmer votre présence aux entraînements de la semaine 3.",time:"Sep 22",unread:false},
+    {from:"Grindr",subj:"Nouveau message — 3 nouveaux likes",preview:"Des utilisateurs près de vous ont consulté votre profil.",time:"Sep 19",unread:false},
+    {from:"Spotify",subj:"Votre abonnement se renouvelle bientôt",preview:"Votre abonnement Spotify Premium sera renouvelé le 1er octobre.",time:"Sep 12",unread:false},
+  ],
+  dreww_orms:[
+    {from:"Twilight Fan Wiki",subj:"Votre compte a été activé",preview:"Bienvenue sur Twilight Fan Wiki ! Votre compte dreww_orms est maintenant actif.",time:"Sep 18",unread:false},
+    {from:"UMA Biology Dept",subj:"Emploi du temps semaine 3",preview:"Votre emploi du temps pour la semaine 3 est disponible sur le portail.",time:"Sep 17",unread:false},
+    {from:"iNaturalist",subj:"Bienvenue dans la communauté !",preview:"Merci de rejoindre iNaturalist. Partagez vos observations et aidez la science.",time:"Sep 5",unread:false},
+  ],
+  noteliasgreen:[
+    {from:"Reddit",subj:"Votre compte Reddit est prêt",preview:"Bienvenue sur Reddit, noteliasgreen. Explorez les communautés qui vous intéressent.",time:"Sep 15",unread:false},
+    {from:"AO3",subj:"Votre publication a été validée",preview:"Votre chapitre 2 de Five Nights a été publié sur AO3.",time:"Sep 10",unread:false},
+    {from:"NaNoWriMo",subj:"Rappel : 50 000 mots en novembre",preview:"Novembre approche. Commencez à planifier votre roman dès maintenant.",time:"Sep 8",unread:false},
+  ],
+};
+
+const GmailScreen = ({data, isIos, accent}) => {
+  const loreDateStr = useContext(LoreDateCtx);
+  const [mailbox, setMailbox] = useState(null); // null=liste boîtes, "inbox"|"drafts"|"deleted"=vue liste, "open"=mail ouvert
+  const [openMail, setOpenMail] = useState(null);
+
+  const charUsername = data.username || "glindatheverygood";
+  const inbox   = data.mail_override?.[charUsername] ?? EMAILS_BY_CHAR[charUsername] ?? EMAILS_BY_CHAR.glindatheverygood;
+  const drafts  = data.mail_drafts?.[charUsername]   ?? MAIL_DRAFTS_BY_CHAR[charUsername]  ?? [];
+  const deleted = data.mail_deleted?.[charUsername]  ?? MAIL_DELETED_BY_CHAR[charUsername]  ?? [];
+
+  const FOLDERS = [
+    {key:"inbox",  label:"Inbox",    icon:"📥", count:inbox.filter(e=>e.unread).length,  list:inbox,   badge:true},
+    {key:"drafts", label:"Drafts",   icon:"📝", count:drafts.length,                     list:drafts,  badge:false},
+    {key:"deleted",label:"Deleted",  icon:"🗑", count:0,                                 list:deleted, badge:false},
+  ];
+  const curFolder = FOLDERS.find(f=>f.key===mailbox);
+
+  // ── styles partagés ──
+  const IOS_BLUE = "#4a7ab5";
+  const GM_AVATAR_COLORS = ["#E53935","#8E24AA","#1E88E5","#00897B","#F4511E","#3949AB","#039BE5","#7CB342","#D81B60","#F6BF26"];
+  const gmAvatar = (name) => GM_AVATAR_COLORS[(name||" ").charCodeAt(0) % GM_AVATAR_COLORS.length];
+
+  // ── Rendu d'un mail ouvert ──
+  const MailDetail = ({m, onBack}) => (
+    <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden"}}>
+      {isIos ? (
+        <div style={{background:"linear-gradient(180deg,#6a8fc0,#3d5f8a)",padding:"6px 10px",display:"flex",alignItems:"center",gap:8,flexShrink:0,boxShadow:"0 1px 3px rgba(0,0,0,0.4)"}}>
+          <button onClick={onBack} style={{background:"linear-gradient(180deg,#6a8fc0,#3d5f8a)",border:"1px solid #2a4a70",color:"#fff",fontSize:11,fontWeight:600,padding:"3px 10px",borderRadius:5,cursor:"pointer",display:"flex",alignItems:"center",gap:3}}>
+            <span style={{fontSize:10}}>◀</span> {curFolder?.label||"Back"}
+          </button>
+          <span style={{flex:1}}/>
+        </div>
+      ) : (
+        <div style={{background:"#f1f1f1",borderBottom:"1px solid #e0e0e0",padding:"10px 14px",display:"flex",alignItems:"center",gap:10,flexShrink:0}}>
+          <button onClick={onBack} style={{background:"none",border:"none",cursor:"pointer",color:"#5f6368",fontSize:20,padding:0,display:"flex",alignItems:"center"}}>←</button>
+        </div>
+      )}
+      <div style={{flex:1,overflowY:"auto",padding:"16px 14px",background:isIos?"#fff":"#fff"}}>
+        <div style={{fontSize:17,fontWeight:700,color:"#1a1a2e",marginBottom:6,lineHeight:1.3}}>{m.subj}</div>
+        <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:12,paddingBottom:12,borderBottom:`1px solid ${isIos?"#e8e8e8":"#e0e0e0"}`}}>
+          {!isIos && <div style={{width:36,height:36,borderRadius:"50%",background:gmAvatar(m.from),display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontWeight:700,fontSize:15,flexShrink:0}}>{(m.from||"?")[0]}</div>}
+          <div style={{flex:1,minWidth:0}}>
+            <div style={{fontSize:13,fontWeight:600,color:"#1a1a2e"}}>{m.from}</div>
+            <div style={{fontSize:11,color:"#888"}}>{loreRelativeLabel(m.time,loreDateStr)}</div>
           </div>
-        ))}
+        </div>
+        <div style={{fontSize:13,color:"#333",lineHeight:1.6,whiteSpace:"pre-wrap"}}>{m.preview}</div>
+      </div>
+    </div>
+  );
+
+  // ── Vue mail ouvert ──
+  if(openMail) return <MailDetail m={openMail} onBack={()=>setOpenMail(null)}/>;
+
+  // ── Vue liste des mails d'un dossier ──
+  if(mailbox) {
+    const folder = curFolder;
+    const list = folder?.list || [];
+    return (
+      <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden"}}>
+        {isIos ? (
+          <>
+            <div style={{background:"linear-gradient(180deg,#6a8fc0,#3d5f8a)",padding:"6px 10px",display:"flex",alignItems:"center",flexShrink:0,boxShadow:"0 1px 3px rgba(0,0,0,0.4)"}}>
+              <button onClick={()=>setMailbox(null)} style={{background:"linear-gradient(180deg,#6a8fc0,#3d5f8a)",border:"1px solid #2a4a70",color:"#fff",fontSize:11,fontWeight:600,padding:"3px 10px",borderRadius:5,cursor:"pointer",display:"flex",alignItems:"center",gap:3}}>
+                <span style={{fontSize:10}}>◀</span> Mailboxes
+              </button>
+              <span style={{flex:1,textAlign:"center",color:"#fff",fontSize:14,fontWeight:700,textShadow:"0 1px 1px rgba(0,0,0,0.4)"}}>{folder?.label}</span>
+              <span style={{width:70}}/>
+            </div>
+            <div style={{flex:1,overflowY:"auto",background:"#c8c8c8"}}>
+              {list.length===0 && <div style={{padding:"40px 24px",textAlign:"center",color:"#888",fontSize:13}}>Aucun message</div>}
+              {list.map((m,i)=>(
+                <div key={i} onClick={()=>setOpenMail(m)} style={{background:i%2===0?"#fff":"#f7f7f7",borderBottom:"1px solid #c8c8c8",padding:"8px 10px",display:"flex",gap:8,alignItems:"flex-start",minHeight:64,cursor:"pointer"}}>
+                  <div style={{width:10,height:10,borderRadius:"50%",background:m.unread?"#4a7ab5":"transparent",flexShrink:0,marginTop:5}}/>
+                  <div style={{flex:1,minWidth:0}}>
+                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",marginBottom:1}}>
+                      <span style={{color:"#000",fontSize:13,fontWeight:m.unread?700:600,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",maxWidth:"65%"}}>{m.from}</span>
+                      <span style={{color:IOS_BLUE,fontSize:11,flexShrink:0}}>{loreRelativeLabel(m.time,loreDateStr)}</span>
+                    </div>
+                    <div style={{color:"#000",fontSize:12,fontWeight:m.unread?600:400,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",marginBottom:2}}>{m.subj}</div>
+                    <div style={{color:"#888",fontSize:11,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{m.preview}</div>
+                  </div>
+                  <span style={{color:"#c0c0c0",fontSize:16,flexShrink:0,marginTop:8}}>›</span>
+                </div>
+              ))}
+            </div>
+          </>
+        ) : (
+          <>
+            <div style={{background:"#1976D2",padding:"10px 14px",display:"flex",alignItems:"center",gap:10,flexShrink:0,boxShadow:"0 2px 4px rgba(0,0,0,0.2)"}}>
+              <button onClick={()=>setMailbox(null)} style={{background:"none",border:"none",color:"#fff",cursor:"pointer",padding:0,fontSize:20,display:"flex",alignItems:"center"}}>←</button>
+              <span style={{color:"#fff",fontSize:16,fontWeight:500,flex:1}}>{folder?.label}</span>
+            </div>
+            <div style={{flex:1,overflowY:"auto",background:"#f1f1f1"}}>
+              {list.length===0 && <div style={{padding:"40px 24px",textAlign:"center",color:"#888",fontSize:13}}>Aucun message</div>}
+              {list.map((m,i)=>(
+                <div key={i} onClick={()=>setOpenMail(m)} style={{background:m.unread?"#fff":"#fafafa",borderBottom:"1px solid #e5e5e5",padding:"10px 10px 10px 12px",display:"flex",gap:10,alignItems:"center",cursor:"pointer"}}>
+                  <div style={{width:40,height:40,borderRadius:"50%",background:gmAvatar(m.from),display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontWeight:700,fontSize:16,flexShrink:0}}>{(m.from||"?")[0]}</div>
+                  <div style={{flex:1,minWidth:0}}>
+                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",marginBottom:2}}>
+                      <span style={{color:m.unread?"#202124":"#5f6368",fontSize:13,fontWeight:m.unread?"700":"400",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",maxWidth:"65%"}}>{m.from}</span>
+                      <span style={{color:m.unread?"#202124":"#5f6368",fontSize:11,fontWeight:m.unread?"600":"400",flexShrink:0,marginLeft:4}}>{loreRelativeLabel(m.time,loreDateStr)}</span>
+                    </div>
+                    <div style={{color:m.unread?"#202124":"#5f6368",fontSize:12,fontWeight:m.unread?"500":"400",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",marginBottom:1}}>{m.subj}</div>
+                    <div style={{color:"#9aa0a6",fontSize:11,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{m.preview}</div>
+                  </div>
+                  <span style={{color:"#bdc1c6",fontSize:16,flexShrink:0,paddingLeft:4}}>☆</span>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
       </div>
     );
   }
 
-  // iOS 6 Mail style
-  const IOS_BLUE = "#4a7ab5";
-  return (
-    <div style={{flex:1,display:"flex",flexDirection:"column",background:"#c8c8c8",overflow:"hidden"}}>
-      {/* Header — iOS 6 Mail style */}
-      <div style={{background:"linear-gradient(180deg,#6a8fc0 0%,#4a6fa0 50%,#3d5f8a 100%)",padding:"6px 10px",display:"flex",alignItems:"center",justifyContent:"space-between",flexShrink:0,boxShadow:"0 1px 3px rgba(0,0,0,0.4)"}}>
-        <button style={{background:"linear-gradient(180deg,#6a8fc0,#3d5f8a)",border:"1px solid #2a4a70",color:"#fff",fontSize:11,fontWeight:600,padding:"3px 10px",borderRadius:5,cursor:"pointer",boxShadow:"0 1px 2px rgba(0,0,0,0.3)"}}>Mailboxes</button>
-        <span style={{color:"#fff",fontSize:14,fontWeight:700,textShadow:"0 1px 1px rgba(0,0,0,0.4)"}}>All Inboxes {unreadCount>0?`(${unreadCount})`:"" }</span>
-        <button style={{background:"linear-gradient(180deg,#6a8fc0,#3d5f8a)",border:"1px solid #2a4a70",color:"#fff",fontSize:11,fontWeight:600,padding:"3px 10px",borderRadius:5,cursor:"pointer",boxShadow:"0 1px 2px rgba(0,0,0,0.3)"}}>Edit</button>
+  // ── Vue liste des boîtes (Mailboxes) ──
+  const unreadTotal = inbox.filter(e=>e.unread).length;
+  if(isIos) return (
+    <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden"}}>
+      <div style={{background:"linear-gradient(180deg,#6a8fc0,#3d5f8a)",padding:"6px 10px",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,boxShadow:"0 1px 3px rgba(0,0,0,0.4)"}}>
+        <span style={{color:"#fff",fontSize:14,fontWeight:700,textShadow:"0 1px 1px rgba(0,0,0,0.4)"}}>Mailboxes</span>
       </div>
-      {/* Search bar */}
-      <div style={{background:"linear-gradient(180deg,#b0b8c8,#a0a8b8)",padding:"5px 8px",flexShrink:0,boxShadow:"inset 0 1px 2px rgba(0,0,0,0.15)"}}>
+      <div style={{background:"linear-gradient(180deg,#b0b8c8,#a0a8b8)",padding:"5px 8px",flexShrink:0}}>
         <div style={{background:"rgba(255,255,255,0.85)",borderRadius:8,padding:"4px 10px",display:"flex",alignItems:"center",gap:6,border:"1px solid #888",boxShadow:"inset 0 1px 2px rgba(0,0,0,0.1)"}}>
           <span style={{color:"#888",fontSize:12}}>🔍</span>
-          <span style={{color:"#aaa",fontSize:12}}>Search All Inboxes</span>
+          <span style={{color:"#aaa",fontSize:12}}>Search All Mailboxes</span>
         </div>
       </div>
-      {/* Email list */}
-      <div style={{flex:1,overflowY:"auto"}}>
-        {emails.map((m,i)=>(
-          <div key={i} style={{background:i%2===0?"#fff":"#f7f7f7",borderBottom:"1px solid #c8c8c8",padding:"8px 10px",display:"flex",gap:8,alignItems:"flex-start",minHeight:64,position:"relative"}}>
-            {/* Unread dot */}
-            <div style={{width:10,height:10,borderRadius:"50%",background:m.unread?"#4a7ab5":"transparent",flexShrink:0,marginTop:5,boxShadow:m.unread?"0 0 0 1px rgba(74,122,181,0.3)":undefined}}/>
-            {/* Content */}
-            <div style={{flex:1,minWidth:0}}>
-              <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",marginBottom:1}}>
-                <span style={{color:"#000",fontSize:13,fontWeight:m.unread?700:600,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",maxWidth:"65%"}}>{m.from}</span>
-                <span style={{color:"#4a7ab5",fontSize:11,flexShrink:0}}>{loreRelativeLabel(m.time,loreDateStr)}</span>
+      <div style={{flex:1,overflowY:"auto",background:"#c8c8c8"}}>
+        <div style={{marginTop:16}}>
+          <div style={{padding:"4px 14px",fontSize:11,fontWeight:600,color:"#555",textTransform:"uppercase",letterSpacing:0.5}}>Mailboxes</div>
+          <div style={{background:"#fff",borderTop:"1px solid #c8c8c8",borderBottom:"1px solid #c8c8c8"}}>
+            {FOLDERS.map((f,i)=>(
+              <div key={f.key} onClick={()=>setMailbox(f.key)} style={{display:"flex",alignItems:"center",gap:12,padding:"11px 14px",borderBottom:i<FOLDERS.length-1?"1px solid #c8c8c8":"none",cursor:"pointer",background:"#fff"}}>
+                <span style={{fontSize:20,width:28,textAlign:"center"}}>{f.icon}</span>
+                <span style={{flex:1,fontSize:15,color:"#000"}}>{f.label}</span>
+                {f.badge && f.count>0 && <span style={{background:IOS_BLUE,color:"#fff",borderRadius:10,padding:"1px 8px",fontSize:12,fontWeight:700}}>{f.count}</span>}
+                <span style={{color:"#c0c0c5",fontSize:16}}>›</span>
               </div>
-              <div style={{color:"#000",fontSize:12,fontWeight:m.unread?600:400,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",marginBottom:2}}>{m.subj}</div>
-              <div style={{color:"#888",fontSize:11,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{m.preview}</div>
-            </div>
-            {/* Chevron */}
-            <span style={{color:"#c0c0c0",fontSize:16,flexShrink:0,marginTop:8}}>›</span>
+            ))}
           </div>
-        ))}
-        {/* Footer */}
-        <div style={{background:"linear-gradient(180deg,#b0b8c8,#a0a8b8)",padding:"6px",textAlign:"center",borderTop:"1px solid #888"}}>
-          <span style={{color:"#fff",fontSize:10,textShadow:"0 1px 1px rgba(0,0,0,0.3)"}}>Updated {new Date().toLocaleDateString('en-GB')} {new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'})}</span>
         </div>
       </div>
+    </div>
+  );
+
+  // Android mailboxes
+  return (
+    <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden",background:"#f1f1f1"}}>
+      {FOLDERS.map((f,i)=>(
+        <div key={f.key} onClick={()=>setMailbox(f.key)} style={{display:"flex",alignItems:"center",gap:14,padding:"14px 16px",borderBottom:"1px solid #e0e0e0",cursor:"pointer",background:"#fff"}}>
+          <span style={{fontSize:24}}>{f.icon}</span>
+          <span style={{flex:1,fontSize:15,color:"#212121"}}>{f.label}</span>
+          {f.badge && f.count>0 && <span style={{background:"#1976D2",color:"#fff",borderRadius:10,padding:"1px 8px",fontSize:12,fontWeight:700}}>{f.count}</span>}
+          <span style={{color:"#9aa0a6",fontSize:16}}>›</span>
+        </div>
+      ))}
     </div>
   );
 };
