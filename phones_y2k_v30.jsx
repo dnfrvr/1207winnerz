@@ -4577,8 +4577,8 @@ const FilesScreen = ({data, isIos, accent, onBack}) => {
 };
 
 // ─── END FILES SCREEN ──────────────────────────────────────────────────────────
-// Twitter (Elias) = ({data, isIos, accent, onBack=null, sharedTweets=[], twitterUsers={}, homeBaseTweets=[], onUpdateShared=()=>{}}) => {
-  const loreDateStr = useContext(LoreDateCtx);
+// Twitter (Elias)
+  const TwitterScreen = ({data, isIos, accent, onBack=null, sharedTweets=[], twitterUsers={}, homeBaseTweets=[], onUpdateShared=()=>{}}) => {
   const [tab, setTab] = useState("home");
   const [viewProfile, setViewProfile] = useState(null);
   const scrollRef = useRef(null);
