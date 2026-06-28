@@ -20558,7 +20558,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                       </label>
                       <div style={{flex:1,minWidth:0,display:"flex",flexDirection:"column",gap:6}}>
                         <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
-                          <Field label="Date" value={post.date||""} onChange={v=>updPost({date:v})} width="100px"/>
+                          <LoreDateTimeInput value={post.date||""} onChange={v=>updPost({date:v})} width="160px" showLabel={true}/>
                           <Field label="Likes" value={String(post.likes??"")} onChange={v=>updPost({likes:parseInt(v)||0})} width="70px"/>
                           <Field label="📍 Lieu" value={post.location||""} onChange={v=>updPost({location:v||null})} style={{flex:1,minWidth:100}}/>
                           <div style={{display:"flex",alignItems:"flex-end",gap:4}}>
@@ -22697,7 +22697,17 @@ const InstaScreen = ({data, isIos, accent, onBack}) => {
   // Nom affiché spécifique Instagram, sinon nom générique
   const name      = ig.displayName || {glinda:"Glinda Rosalind",eoghan:"Eoghan Masuda",drew:"Drew Bates",elias:"Elias Green"}[charKey] || handleLo;
   const sharedAvatars = data.sharedThreads?._sharedAvatars || {};
-  const gridPosts = myPosts.filter(p=>!p.archived);
+  // Tri inversement chronologique — les posts les plus récents en premier.
+  // parseLoreTime renvoie {month, day, hour, min} ou null si le format n'est pas reconnu.
+  const gridPosts = [...myPosts.filter(p=>!p.archived)].sort((a,b)=>{
+    const pa = parseLoreTime(a.date), pb = parseLoreTime(b.date);
+    if(!pa && !pb) return 0;
+    if(!pa) return 1;
+    if(!pb) return -1;
+    const va = pa.month*10000 + (pa.day||0)*100 + (pa.hour||0);
+    const vb = pb.month*10000 + (pb.day||0)*100 + (pb.hour||0);
+    return vb - va; // décroissant
+  });
 
   const IG_HDR  = "linear-gradient(180deg,#6497b8,#4a7fa8)";
   const IG_BLUE = "#3b88c3";
@@ -22805,8 +22815,11 @@ const InstaScreen = ({data, isIos, accent, onBack}) => {
   // ── Vue feed (fil amis) ──
   if(view==="feed") {
     const feedPosts = [...sharedIg].sort((a,b)=>{
-      const t = s => { const m=s?.match(/(\d+)\s*(h|min|s|oct|sep|jan|fév|mar|avr|mai|juin|juil|août|nov|déc)/i); return m?parseInt(m[1]):999; };
-      return t(a.date)-t(b.date);
+      const pa = parseLoreTime(a.date), pb = parseLoreTime(b.date);
+      if(!pa && !pb) return 0; if(!pa) return 1; if(!pb) return -1;
+      const va = pa.month*10000+(pa.day||0)*100+(pa.hour||0);
+      const vb = pb.month*10000+(pb.day||0)*100+(pb.hour||0);
+      return vb - va;
     });
     return (
       <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden",background:"#fafafa"}}>
@@ -22905,9 +22918,9 @@ const InstaScreen = ({data, isIos, accent, onBack}) => {
         {/* Contenu grille */}
         {instaTab==="grid"&&(gridPosts.length===0
           ?<div style={{padding:"40px 24px",textAlign:"center",color:"#999",fontSize:13,background:"#fff"}}><div style={{fontSize:36,marginBottom:8}}>📷</div>Aucun post pour l'instant</div>
-          :<div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:2,background:"#e8e8e8"}}>
+          :<div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:4,padding:4,background:"#e0e0e0"}}>
             {gridPosts.map((p,i)=>(
-              <div key={p.id||i} onClick={()=>{setPost({...p,_fromFeed:false});setView("post");}} style={{aspectRatio:"1",overflow:"hidden",cursor:"pointer",background:"#d8d8d8"}}>
+              <div key={p.id||i} onClick={()=>{setPost({...p,_fromFeed:false});setView("post");}} style={{aspectRatio:"1",overflow:"hidden",cursor:"pointer",background:"#d8d8d8",border:"2px solid #fff",boxSizing:"border-box"}}>
                 {p.src?<img src={p.src} style={{width:"100%",height:"100%",objectFit:"cover",display:"block"}}/>:<div style={{width:"100%",height:"100%",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,color:"#bbb"}}>📷</div>}
               </div>
             ))}
