@@ -6474,7 +6474,7 @@ const IOSPhone = ({data,admin,onUpdate,onUpdateShared=()=>{},loreDate:loreDatePr
       <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden",position:"relative",...homeBg,fontFamily:FF_IOS}}>
         <IOSStatusBar mode="home"/>
         <DraggableHomescreen data={data} update={update} appIcon={appIcon} badge={badge} goApp={id=>{
-          const IOS_APPS=['calculator','calendar','facebook','gmail','groupme','messages','mfp','music','nikeplus','notes','phone','photos','gallery','pinterest','safari','settings','snapchat','soundcloud','spotify','starbucks','tumblr','twitter','weather','wikipedia','grindr','reddit','vpn','youtube','contacts','files'];
+          const IOS_APPS=['calculator','calendar','facebook','gmail','groupme','insta','messages','mfp','music','nikeplus','notes','phone','photos','gallery','pinterest','safari','settings','snapchat','soundcloud','spotify','starbucks','tumblr','twitter','weather','wikipedia','grindr','reddit','vpn','youtube','contacts','files'];
           if(IOS_APPS.includes(id)){setThread(null);if(id==="contacts")setPhonePanel("contacts");setApp(id==="gallery"?"photos":id==="contacts"?"phone":id);if(id==="safari"||id==="browser"){setBrowserTab("search");}}
         }} os="ios" accent={accent} admin={admin} charKey={charKey} noWallpaper/>
       </div>
@@ -7140,7 +7140,7 @@ const AndroidPhone = ({data,admin,onUpdate,sharedAndroidIcons={},onUpdateShared=
     <Chassis>
       <AndroidStatusBar notifApps={notifApps} accent={accent}/>
       <DraggableHomescreen data={data} update={update} appIcon={appIcon} badge={badge} goApp={id=>{
-        const AND_APPS=['browser','calculator','calendar','facebook','files','gallery','gmail','inaturalist','kindle','messages','music','notes','pandora','phone','reddit','settings','soundhound','twitter','vpn','weather','wikipedia','youtube'];
+        const AND_APPS=['browser','calculator','calendar','facebook','files','gallery','gmail','inaturalist','insta','kindle','messages','music','notes','pandora','phone','reddit','settings','soundhound','twitter','vpn','weather','wikipedia','youtube'];
         if(AND_APPS.includes(id)){setThread(null);setApp(id);if(id==="gallery"){setGalleryView("albums");setPhotoDetail(null);}}
       }} os="android" accent={accent} admin={admin} charKey={charKey}/>
       <SoftKeys onBack={()=>setScreen("lock")}/>
@@ -19571,15 +19571,11 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                   if(d.os==="android"){
                     onUpdateShared({...(data._sharedAndroidIcons||{}),[appId]:re.target.result});
                   } else {
-                    // dataRef.current : toujours à jour même après un re-render survenu pendant
-                    // l'upload asynchrone — évite d'écraser les modifications récentes avec d périmé.
+                    // Un seul appel onUpdate suffit : updateChar se charge de synchroniser
+                    // les appIcons vers tous les autres persos du même OS automatiquement.
                     const freshTab = dataRef.current[tab] || {};
                     const newIcons = {...(freshTab.appIcons||{}),[appId]:re.target.result};
                     onUpdate(tab, {...freshTab, appIcons:newIcons});
-                    ["glinda","eoghan","elias"].filter(k=>k!==tab&&dataRef.current[k]?.os==="ios").forEach(k=>{
-                      const freshK = dataRef.current[k] || {};
-                      onUpdate(k,{...freshK,appIcons:{...(freshK.appIcons||{}),[appId]:re.target.result}});
-                    });
                   }
                 };
                 r.readAsDataURL(f);
@@ -19614,7 +19610,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                   <input value={appName} onChange={e=>upd("appNames",{...(d.appNames||{}),[appId]:e.target.value})}
                     className="adm-input" style={{flex:1,background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#374151",fontSize:12,padding:"5px 8px",borderRadius:6}}/>
                   <span style={{fontSize:11,color:"#9ca3af",flexShrink:0,minWidth:40}}>{appId}</span>
-                  {cur&&<button onClick={()=>{if(d.os==="android"){const si={...(data._sharedAndroidIcons||{})};delete si[appId];onUpdateShared(si);}else{const ic={...(d.appIcons||{})};delete ic[appId];upd("appIcons",ic);["glinda","eoghan","elias"].filter(k=>k!==tab&&data[k]?.os==="ios").forEach(k=>{const kic={...(data[k].appIcons||{})};delete kic[appId];onUpdate(k,{...data[k],appIcons:kic});});} }} style={{background:"none",border:"none",color:"#9ca3af",cursor:"pointer",fontSize:10,flexShrink:0}}>✕ ico</button>}
+                  {cur&&<button onClick={()=>{if(d.os==="android"){const si={...(data._sharedAndroidIcons||{})};delete si[appId];onUpdateShared(si);}else{const ic={...(d.appIcons||{})};delete ic[appId];upd("appIcons",ic);}}} style={{background:"none",border:"none",color:"#9ca3af",cursor:"pointer",fontSize:10,flexShrink:0}}>✕ ico</button>}
                   <button onClick={remove} className="adm-del-btn" style={{background:"rgba(239,68,68,0.07)",border:"1px solid rgba(239,68,68,0.2)",color:"#ef4444",borderRadius:5,padding:"4px 8px",cursor:"pointer",fontSize:10,fontWeight:600,flexShrink:0}}>🗑</button>
                 </div>
               );
