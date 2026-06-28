@@ -21746,16 +21746,15 @@ export default function App() {
       const merged = forced ? {...d, ...forced} : d;
       let next = {...prev, [key]:merged};
       if(skipSync) { queueFirebaseUpdate({ [key]: merged }); return next; }
-      const patch = { [key]: merged };
-      // Sync icônes entre tous les persos du même OS
-      // On se base sur d.os (et non sur le nom de clé) car Elias est iOS, pas Android.
+      // Sync icônes entre tous les persos du même OS — état React local uniquement.
+      // On n'envoie PAS les persos voisins à Firebase : écraser leur objet entier avec
+      // une version issue de prev[] écraserait leurs données (instagram, messages…).
       const thisOs = merged.os || d.os;
       const ALL_CHAR_KEYS = ["glinda","eoghan","drew","elias"];
       ALL_CHAR_KEYS.filter(k => k !== key && prev[k]?.os === thisOs).forEach(other => {
         next[other] = {...next[other], appIcons:{...(d.appIcons||{})}, appNames:{...(d.appNames||{})}};
-        patch[other] = next[other];
       });
-      queueFirebaseUpdate(patch);
+      queueFirebaseUpdate({ [key]: merged });
       return next;
     });
 
