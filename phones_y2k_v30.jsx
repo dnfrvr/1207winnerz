@@ -8996,6 +8996,15 @@ const mkData = () => ({
       "messages": 3,
       "snapchat": 2
     },
+    "instagram": {
+      "handle": "glindarvf",
+      "displayName": "Glinda Rosalind",
+      "bio": "éco @ uma · she/her · nouveau départ 🌸",
+      "followers": 1204,
+      "following": 312,
+      "posts": [],
+      "avatar": null
+    },
     "followers": 847,
     "following": 312,
     "gallery": [
@@ -11441,6 +11450,15 @@ const mkData = () => ({
       "snapchat": 3,
       "grindr": 5
     },
+    "instagram": {
+      "handle": "eoghan_masuda",
+      "displayName": "Eoghan Masuda",
+      "bio": "maths & STAPS @ uma · him/bo · si je poste c'est que glinda m'a dit de le faire",
+      "followers": 614,
+      "following": 88,
+      "posts": [],
+      "avatar": null
+    },
     "followers": 623,
     "following": 280,
     "gallery": [
@@ -13338,6 +13356,15 @@ const mkData = () => ({
     },
     "badges": {
       "messages": 1
+    },
+    "instagram": {
+      "handle": "dreww_orms",
+      "displayName": "Drew Bates",
+      "bio": "",
+      "followers": 234,
+      "following": 102,
+      "posts": [],
+      "avatar": null
     },
     "followers": 89,
     "following": 102,
@@ -15870,6 +15897,15 @@ const mkData = () => ({
       "nikeplus": "/assets/seed/679f67d6e7a2a46513b398d3fb328ffc.jpg"
     },
     "badges": {},
+    "instagram": {
+      "handle": "noteliasgreen",
+      "displayName": "Elias Green",
+      "bio": "",
+      "followers": 445,
+      "following": 48,
+      "posts": [],
+      "avatar": null
+    },
     "followers": 34,
     "following": 48,
     "gallery": [
@@ -17965,7 +18001,7 @@ const loadData = () => {
 };
 
 // Version des seeds — incrémenter à chaque correction des données initiales pour forcer une re-migration.
-const SEED_VERSION = 4;
+const SEED_VERSION = 5;
 
 
 // Injectés dans loadData() si les clés partagées sont absentes ou vides.
@@ -21593,6 +21629,16 @@ export default function App() {
               const existingApps = remote[k]?.apps || [];
               if(!existingApps.includes("files")) {
                 patches[`${k}/apps`] = [...existingApps, "files"];
+              }
+              // Initialiser instagram si absent (nouvelle fonctionnalité v5)
+              if(!remote[k]?.instagram) {
+                const igDefaults = {
+                  glinda: {handle:"glindarvf",displayName:"Glinda Rosalind",bio:"éco @ uma · she/her · nouveau départ 🌸",followers:1204,following:312,posts:[],avatar:null},
+                  eoghan: {handle:"eoghan_masuda",displayName:"Eoghan Masuda",bio:"maths & STAPS @ uma · him/bo · si je poste c'est que glinda m'a dit de le faire",followers:614,following:88,posts:[],avatar:null},
+                  drew:   {handle:"dreww_orms",displayName:"Drew Bates",bio:"",followers:234,following:102,posts:[],avatar:null},
+                  elias:  {handle:"noteliasgreen",displayName:"Elias Green",bio:"",followers:445,following:48,posts:[],avatar:null},
+                };
+                if(igDefaults[k]) patches[`${k}/instagram`] = igDefaults[k];
               }
             });
 
