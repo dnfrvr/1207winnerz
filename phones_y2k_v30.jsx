@@ -21506,18 +21506,14 @@ export default function App() {
       let next = {...prev, [key]:merged};
       if(skipSync) { queueFirebaseUpdate({ [key]: merged }); return next; }
       const patch = { [key]: merged };
-      // Sync icônes entre les deux Android (Drew ↔ Elias)
-      if(key==="drew"||key==="elias") {
-        const other = key==="drew"?"elias":"drew";
+      // Sync icônes entre tous les persos du même OS
+      // On se base sur d.os (et non sur le nom de clé) car Elias est iOS, pas Android.
+      const thisOs = merged.os || d.os;
+      const ALL_CHAR_KEYS = ["glinda","eoghan","drew","elias"];
+      ALL_CHAR_KEYS.filter(k => k !== key && prev[k]?.os === thisOs).forEach(other => {
         next[other] = {...next[other], appIcons:{...(d.appIcons||{})}, appNames:{...(d.appNames||{})}};
         patch[other] = next[other];
-      }
-      // Sync icônes entre les deux iOS (Glinda ↔ Eoghan)
-      if(key==="glinda"||key==="eoghan") {
-        const other = key==="glinda"?"eoghan":"glinda";
-        next[other] = {...next[other], appIcons:{...(d.appIcons||{})}, appNames:{...(d.appNames||{})}};
-        patch[other] = next[other];
-      }
+      });
       queueFirebaseUpdate(patch);
       return next;
     });
@@ -22135,6 +22131,220 @@ const FacebookScreen = ({data, isIos, accent}) => {
 };
 
 
+const GmailScreen = ({data, isIos, accent, onBack}) => {
+  const loreDateStr = useContext(LoreDateCtx);
+  // "inbox" = vue inbox (défaut), null = liste Mailboxes iOS, "drafts"/"deleted" = sous-dossier
+  const [mailbox, setMailbox] = useState("inbox");
+  const [openMail, setOpenMail] = useState(null);
+  const [showMenu, setShowMenu] = useState(false);
+
+  const charUsername = data.username || "glindatheverygood";
+  const inbox   = data.mail_override?.[charUsername] ?? EMAILS_BY_CHAR[charUsername] ?? EMAILS_BY_CHAR.glindatheverygood;
+  const drafts  = data.mail_drafts?.[charUsername]   ?? MAIL_DRAFTS_BY_CHAR[charUsername]  ?? [];
+  const deleted = data.mail_deleted?.[charUsername]  ?? MAIL_DELETED_BY_CHAR[charUsername]  ?? [];
+
+  const FOLDERS = [
+    {key:"inbox",  label:"Inbox",   icon:"inbox",  count:inbox.filter(e=>e.unread).length, list:inbox,   badge:true},
+    {key:"drafts", label:"Drafts",  icon:"drafts", count:drafts.length,                    list:drafts,  badge:false},
+    {key:"deleted",label:"Deleted", icon:"trash",  count:0,                                list:deleted, badge:false},
+  ];
+
+  const FolderIcon = ({type, color="#4a7ab5", size=20}) => {
+    if(type==="inbox")  return <svg width={size} height={size} viewBox="0 0 24 24" fill="none"><path d="M2 12l4-8h12l4 8v6a2 2 0 01-2 2H4a2 2 0 01-2-2v-6z" stroke={color} strokeWidth="1.7" strokeLinejoin="round"/><path d="M2 12h5l2 3h6l2-3h5" stroke={color} strokeWidth="1.7" strokeLinejoin="round"/></svg>;
+    if(type==="drafts") return <svg width={size} height={size} viewBox="0 0 24 24" fill="none"><path d="M12 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10l4 4v3" stroke={color} strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"/><path d="M16 3v5h5M15.5 18.5l2-2 2 2-2 2-2-2zM17.5 16.5l2-2" stroke={color} strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"/></svg>;
+    if(type==="trash")  return <svg width={size} height={size} viewBox="0 0 24 24" fill="none"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" stroke={color} strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"/><path d="M10 11v6M14 11v6" stroke={color} strokeWidth="1.7" strokeLinecap="round"/></svg>;
+    return null;
+  };
+
+  const IOS_BLUE = "#4a7ab5";
+  const GM_AVATAR_COLORS = ["#E53935","#8E24AA","#1E88E5","#00897B","#F4511E","#3949AB","#039BE5","#7CB342","#D81B60","#F6BF26"];
+  const gmAvatar = name => GM_AVATAR_COLORS[(name||" ").charCodeAt(0) % GM_AVATAR_COLORS.length];
+
+  const CHAR_DISPLAY = {
+    glindatheverygood: "Glinda Rosalind <glindatheverygood@uma.edu>",
+    eoghan_masuda:     "Eoghan Masuda <eoghan_masuda@uma.edu>",
+    dreww_orms:        "Drew B. <dreww_orms@uma.edu>",
+    noteliasgreen:     "Elias Green <noteliasgreen@uma.edu>",
+  };
+  const toAddress   = m => m.to || CHAR_DISPLAY[charUsername] || charUsername;
+  const fromAddress = m => m.fromFull || m.from || "";
+  const curFolder   = FOLDERS.find(f => f.key === (mailbox || "inbox")) || FOLDERS[0];
+  const unreadTotal = inbox.filter(e => e.unread).length;
+
+  // ── Mail ouvert ──
+  if(openMail) {
+    const m = openMail;
+    return (
+      <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden"}}>
+        {isIos ? (
+          <div style={{background:"linear-gradient(180deg,#6a8fc0,#3d5f8a)",padding:"6px 10px",display:"flex",alignItems:"center",gap:8,flexShrink:0,boxShadow:"0 1px 3px rgba(0,0,0,0.4)"}}>
+            <button onClick={()=>setOpenMail(null)} style={{background:`linear-gradient(180deg,#6a8fc0,#3d5f8a)`,border:"1px solid rgba(0,0,0,0.45)",borderRadius:6,color:"#fff",fontSize:11,fontWeight:"600",cursor:"pointer",padding:"3px 10px 3px 7px",display:"flex",alignItems:"center",gap:2,textShadow:"0 -1px 0 rgba(0,0,0,0.5)",boxShadow:"inset 0 1px 0 rgba(255,255,255,0.2)"}}>
+              <svg width="8" height="14" viewBox="0 0 8 14" fill="none"><path d="M7 1L1 7l6 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
+              <span style={{fontSize:12,marginLeft:2}}>{curFolder.label}</span>
+            </button>
+            <span style={{flex:1,textAlign:"center",color:"#fff",fontSize:13,fontWeight:600,textShadow:"0 1px 1px rgba(0,0,0,0.4)"}}>{curFolder.label}</span>
+            <span style={{width:70}}/>
+          </div>
+        ) : (
+          <div style={{background:"#C62828",padding:"10px 14px",display:"flex",alignItems:"center",gap:10,flexShrink:0,boxShadow:"0 2px 4px rgba(0,0,0,0.2)"}}>
+            <button onClick={()=>setOpenMail(null)} style={{background:"none",border:"none",cursor:"pointer",color:"#fff",padding:0,display:"flex",alignItems:"center"}}>
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M19 12H5M12 19l-7-7 7-7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+            </button>
+            <span style={{flex:1,color:"#fff",fontSize:16,fontWeight:500,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{m.subj}</span>
+          </div>
+        )}
+        <div style={{flex:1,overflowY:"auto",background:"#fff"}}>
+          {isIos ? (
+            <>
+              <div style={{padding:"12px 14px 10px",borderBottom:"1px solid #e0dfe0"}}>
+                <div style={{fontSize:16,fontWeight:700,color:"#1a1a1a",lineHeight:1.3,fontFamily:"Helvetica,'Helvetica Neue',Arial,sans-serif"}}>{m.subj}</div>
+              </div>
+              <div style={{background:"#f7f6f1",borderBottom:"1px solid #d9d8d2"}}>
+                {[["De",fromAddress(m)],["À",toAddress(m)],["Date",m.time||""]].map(([label,value],i,arr)=>(
+                  <div key={label} style={{display:"flex",alignItems:"flex-start",padding:"7px 14px",borderBottom:i<arr.length-1?"1px solid #e0dfe0":"none",gap:8,minHeight:30}}>
+                    <span style={{fontSize:12,fontWeight:600,color:"#888",width:36,flexShrink:0,paddingTop:1}}>{label}</span>
+                    <span style={{fontSize:12,color:"#1a1a1a",flex:1,lineHeight:1.4,wordBreak:"break-word"}}>{value}</span>
+                  </div>
+                ))}
+              </div>
+              <div style={{padding:"14px",fontSize:13,color:"#1a1a1a",lineHeight:1.7,whiteSpace:"pre-wrap"}}>{m.preview}</div>
+            </>
+          ) : (
+            <>
+              <div style={{padding:"16px 16px 0"}}>
+                <div style={{fontSize:20,fontWeight:400,color:"#202124",lineHeight:1.3,marginBottom:16}}>{m.subj}</div>
+              </div>
+              <div style={{padding:"0 16px 12px",display:"flex",gap:12,alignItems:"flex-start"}}>
+                <div style={{width:40,height:40,borderRadius:"50%",background:gmAvatar(m.from),display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontWeight:700,fontSize:16,flexShrink:0}}>{(m.from||"?")[0]}</div>
+                <div style={{flex:1,minWidth:0}}>
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",gap:8,flexWrap:"wrap"}}>
+                    <span style={{fontSize:14,fontWeight:600,color:"#202124"}}>{fromAddress(m)}</span>
+                    <span style={{fontSize:11,color:"#5f6368",flexShrink:0}}>{m.time||""}</span>
+                  </div>
+                  <div style={{marginTop:2,fontSize:12,color:"#5f6368",display:"flex",gap:4,alignItems:"baseline"}}>
+                    <span style={{fontWeight:500}}>À</span>
+                    <span style={{flex:1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{toAddress(m)}</span>
+                  </div>
+                </div>
+              </div>
+              <div style={{height:1,background:"#e0e0e0",margin:"0 16px 14px"}}/>
+              <div style={{padding:"0 16px 24px",fontSize:14,color:"#202124",lineHeight:1.7,whiteSpace:"pre-wrap"}}>{m.preview}</div>
+            </>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // ── Liste Mailboxes iOS (mailbox === null) ──
+  if(isIos && mailbox === null) return (
+    <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden"}}>
+      <div style={{background:"linear-gradient(180deg,#6a8fc0,#3d5f8a)",padding:"6px 10px",display:"flex",alignItems:"center",flexShrink:0,boxShadow:"0 1px 3px rgba(0,0,0,0.4)"}}>
+        <button onClick={()=>onBack?.()} style={{background:`linear-gradient(180deg,#6a8fc0,#3d5f8a)`,border:"1px solid rgba(0,0,0,0.45)",borderRadius:6,color:"#fff",fontSize:11,fontWeight:"600",cursor:"pointer",padding:"3px 10px 3px 7px",display:"flex",alignItems:"center",gap:2,textShadow:"0 -1px 0 rgba(0,0,0,0.5)",boxShadow:"inset 0 1px 0 rgba(255,255,255,0.2)"}}>
+          <svg width="8" height="14" viewBox="0 0 8 14" fill="none"><path d="M7 1L1 7l6 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
+        </button>
+        <span style={{flex:1,textAlign:"center",color:"#fff",fontSize:14,fontWeight:700,textShadow:"0 1px 1px rgba(0,0,0,0.4)"}}>Mailboxes</span>
+        <span style={{width:44}}/>
+      </div>
+      <div style={{background:"linear-gradient(180deg,#b0b8c8,#a0a8b8)",padding:"5px 8px",flexShrink:0}}>
+        <div style={{background:"rgba(255,255,255,0.85)",borderRadius:8,padding:"4px 10px",display:"flex",alignItems:"center",gap:6,border:"1px solid #888",boxShadow:"inset 0 1px 2px rgba(0,0,0,0.1)"}}>
+          <svg width="13" height="13" viewBox="0 0 18 18" fill="none"><circle cx="8" cy="8" r="5.5" stroke="#888" strokeWidth="1.6"/><path d="M13 13l3 3" stroke="#888" strokeWidth="1.6" strokeLinecap="round"/></svg>
+          <span style={{color:"#aaa",fontSize:14}}>Rechercher</span>
+        </div>
+      </div>
+      <div style={{flex:1,overflowY:"auto",background:"#c8c8c8"}}>
+        <div style={{marginTop:16}}>
+          <div style={{padding:"4px 14px",fontSize:11,fontWeight:600,color:"#555",textTransform:"uppercase",letterSpacing:0.5}}>Mailboxes</div>
+          <div style={{background:"#fff",borderTop:"1px solid #c8c8c8",borderBottom:"1px solid #c8c8c8"}}>
+            {FOLDERS.map((f,i)=>(
+              <div key={f.key} onClick={()=>setMailbox(f.key)} style={{display:"flex",alignItems:"center",gap:12,padding:"11px 14px",borderBottom:i<FOLDERS.length-1?"1px solid #c8c8c8":"none",cursor:"pointer",background:"#fff"}}>
+                <FolderIcon type={f.icon} color={IOS_BLUE} size={22}/>
+                <span style={{flex:1,fontSize:15,color:"#000"}}>{f.label}</span>
+                {f.badge&&f.count>0&&<span style={{background:IOS_BLUE,color:"#fff",borderRadius:10,padding:"1px 8px",fontSize:12,fontWeight:700}}>{f.count}</span>}
+                <span style={{color:"#c0c0c5",fontSize:16}}>›</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  // ── Vue liste d'un dossier (inbox, drafts ou deleted) ──
+  const folderList = curFolder.list || [];
+  return (
+    <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden"}}>
+      {isIos ? (
+        <div style={{background:"linear-gradient(180deg,#6a8fc0,#3d5f8a)",padding:"6px 10px",display:"flex",alignItems:"center",flexShrink:0,boxShadow:"0 1px 3px rgba(0,0,0,0.4)"}}>
+          <button onClick={()=>setMailbox(null)} style={{background:`linear-gradient(180deg,#6a8fc0,#3d5f8a)`,border:"1px solid rgba(0,0,0,0.45)",borderRadius:6,color:"#fff",fontSize:11,fontWeight:"600",cursor:"pointer",padding:"3px 10px 3px 7px",display:"flex",alignItems:"center",gap:2,textShadow:"0 -1px 0 rgba(0,0,0,0.5)",boxShadow:"inset 0 1px 0 rgba(255,255,255,0.2)"}}>
+            <svg width="8" height="14" viewBox="0 0 8 14" fill="none"><path d="M7 1L1 7l6 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
+            <span style={{fontSize:12,marginLeft:2}}>Mailboxes</span>
+          </button>
+          <span style={{flex:1,textAlign:"center",color:"#fff",fontSize:14,fontWeight:700,textShadow:"0 1px 1px rgba(0,0,0,0.4)"}}>{curFolder.label}</span>
+          <span style={{width:80}}/>
+        </div>
+      ) : (
+        <div style={{background:"#C62828",padding:"10px 14px",display:"flex",alignItems:"center",gap:12,flexShrink:0,boxShadow:"0 2px 4px rgba(0,0,0,0.2)"}}>
+          <button onClick={()=>setShowMenu(m=>!m)} style={{background:"none",border:"none",color:"#fff",cursor:"pointer",padding:"2px 0",display:"flex",flexDirection:"column",gap:4,alignItems:"center",width:20}}>
+            <span style={{display:"block",width:18,height:2,background:"#fff",borderRadius:1}}/><span style={{display:"block",width:18,height:2,background:"#fff",borderRadius:1}}/><span style={{display:"block",width:18,height:2,background:"#fff",borderRadius:1}}/>
+          </button>
+          <span style={{color:"#fff",fontSize:18,fontWeight:500,flex:1}}>Gmail</span>
+          {unreadTotal>0&&<span style={{background:"rgba(255,255,255,0.25)",color:"#fff",borderRadius:10,padding:"1px 8px",fontSize:12,fontWeight:700}}>{unreadTotal}</span>}
+        </div>
+      )}
+
+      {/* Android drawer */}
+      {!isIos&&showMenu&&<>
+        <div onClick={()=>setShowMenu(false)} style={{position:"absolute",inset:0,background:"rgba(0,0,0,0.4)",zIndex:10}}/>
+        <div style={{position:"absolute",top:0,left:0,bottom:0,width:"72%",background:"#fff",zIndex:11,boxShadow:"2px 0 8px rgba(0,0,0,0.3)",display:"flex",flexDirection:"column"}}>
+          <div style={{background:"#C62828",padding:"14px 16px",color:"#fff",fontSize:16,fontWeight:500}}>Gmail</div>
+          {FOLDERS.map(f=>(
+            <div key={f.key} onClick={()=>{setMailbox(f.key);setShowMenu(false);}} style={{display:"flex",alignItems:"center",gap:14,padding:"13px 16px",cursor:"pointer",borderBottom:"1px solid #f5f5f5",background:f.key===mailbox?"rgba(198,40,40,0.06)":"#fff"}}>
+              <FolderIcon type={f.icon} color={f.key===mailbox?"#C62828":"#5f6368"} size={20}/>
+              <span style={{flex:1,fontSize:14,color:f.key===mailbox?"#C62828":"#212121",fontWeight:f.key===mailbox?600:400}}>{f.label}</span>
+              {f.badge&&f.count>0&&<span style={{background:"#C62828",color:"#fff",borderRadius:10,padding:"1px 8px",fontSize:11,fontWeight:700}}>{f.count}</span>}
+            </div>
+          ))}
+        </div>
+      </>}
+
+      <div style={{flex:1,overflowY:"auto",background:isIos?"#c8c8c8":"#f1f1f1"}}>
+        {folderList.length===0&&<div style={{padding:"40px 24px",textAlign:"center",color:"#888",fontSize:13}}>Aucun message</div>}
+        {folderList.map((m,i)=>(
+          isIos ? (
+            <div key={i} onClick={()=>setOpenMail(m)} style={{background:i%2===0?"#fff":"#f7f7f7",borderBottom:"1px solid #c8c8c8",padding:"8px 10px",display:"flex",gap:8,alignItems:"flex-start",minHeight:64,cursor:"pointer"}}>
+              <div style={{width:10,height:10,borderRadius:"50%",background:m.unread?"#4a7ab5":"transparent",flexShrink:0,marginTop:5}}/>
+              <div style={{flex:1,minWidth:0}}>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",marginBottom:1}}>
+                  <span style={{color:"#000",fontSize:13,fontWeight:m.unread?700:600,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",maxWidth:"65%"}}>{m.from}</span>
+                  <span style={{color:IOS_BLUE,fontSize:11,flexShrink:0}}>{loreRelativeLabel(m.time,loreDateStr)}</span>
+                </div>
+                <div style={{color:"#000",fontSize:12,fontWeight:m.unread?600:400,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",marginBottom:2}}>{m.subj}</div>
+                <div style={{color:"#888",fontSize:11,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{m.preview}</div>
+              </div>
+              <span style={{color:"#c0c0c0",fontSize:16,flexShrink:0,marginTop:8}}>›</span>
+            </div>
+          ) : (
+            <div key={i} onClick={()=>setOpenMail(m)} style={{background:m.unread?"#fff":"#fafafa",borderBottom:"1px solid #e5e5e5",padding:"10px 12px",display:"flex",gap:10,alignItems:"center",cursor:"pointer"}}>
+              <div style={{width:40,height:40,borderRadius:"50%",background:gmAvatar(m.from),display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontWeight:700,fontSize:16,flexShrink:0}}>{(m.from||"?")[0]}</div>
+              <div style={{flex:1,minWidth:0}}>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",marginBottom:2}}>
+                  <span style={{color:m.unread?"#202124":"#5f6368",fontSize:13,fontWeight:m.unread?"700":"400",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",maxWidth:"65%"}}>{m.from}</span>
+                  <span style={{color:"#5f6368",fontSize:11,flexShrink:0,marginLeft:4}}>{loreRelativeLabel(m.time,loreDateStr)}</span>
+                </div>
+                <div style={{color:m.unread?"#202124":"#5f6368",fontSize:12,fontWeight:m.unread?"500":"400",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",marginBottom:1}}>{m.subj}</div>
+                <div style={{color:"#9aa0a6",fontSize:11,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{m.preview}</div>
+              </div>
+              <span style={{color:"#bdc1c6",fontSize:16,flexShrink:0}}>☆</span>
+            </div>
+          )
+        ))}
+      </div>
+    </div>
+  );
+};
+
+
 const EMAILS_BY_CHAR = {
   glindatheverygood:[
     {from:"UMA Registrar",     subj:"Calendrier des partiels — Automne 2012", preview:"Les dates des examens de mi-semestre sont publiées sur le portail étudiant.",time:"8:02 AM",unread:true},
@@ -22192,316 +22402,6 @@ const MAIL_DRAFTS_BY_CHAR = {
     {from:"Elias G.",subj:"[Brouillon] chapitre 4 Five Nights",preview:"La forêt derrière Derry ne ressemble à aucune autre. Les arbres y poussent trop serrés, trop droits, comme s'ils attendaient quelque chose...",time:"5 oct, 11:00pm",unread:false},
   ],
 };
-
-const MAIL_DELETED_BY_CHAR = {
-  glindatheverygood:[
-    {from:"Tumblr",subj:"Nouveau follower : glindarvf",preview:"Quelqu'un vous suit maintenant sur Tumblr. Découvrez son blog.",time:"Sep 20",unread:false},
-    {from:"UMA Events",subj:"Soirée de bienvenue — 15 sept.",preview:"Rappel : la soirée de bienvenue de la rentrée aura lieu vendredi soir.",time:"Sep 14",unread:false},
-    {from:"Pinterest",subj:"Vous avez du mal à trouver des idées ?",preview:"Retrouvez vos épingles enregistrées et explorez de nouveaux tableaux.",time:"Sep 10",unread:false},
-  ],
-  eoghan_masuda:[
-    {from:"UMA Athletics",subj:"Feuille de présence — semaine 3",preview:"Merci de confirmer votre présence aux entraînements de la semaine 3.",time:"Sep 22",unread:false},
-    {from:"Grindr",subj:"Nouveau message — 3 nouveaux likes",preview:"Des utilisateurs près de vous ont consulté votre profil.",time:"Sep 19",unread:false},
-    {from:"Spotify",subj:"Votre abonnement se renouvelle bientôt",preview:"Votre abonnement Spotify Premium sera renouvelé le 1er octobre.",time:"Sep 12",unread:false},
-  ],
-  dreww_orms:[
-    {from:"Twilight Fan Wiki",subj:"Votre compte a été activé",preview:"Bienvenue sur Twilight Fan Wiki ! Votre compte dreww_orms est maintenant actif.",time:"Sep 18",unread:false},
-    {from:"UMA Biology Dept",subj:"Emploi du temps semaine 3",preview:"Votre emploi du temps pour la semaine 3 est disponible sur le portail.",time:"Sep 17",unread:false},
-    {from:"iNaturalist",subj:"Bienvenue dans la communauté !",preview:"Merci de rejoindre iNaturalist. Partagez vos observations et aidez la science.",time:"Sep 5",unread:false},
-  ],
-  noteliasgreen:[
-    {from:"Reddit",subj:"Votre compte Reddit est prêt",preview:"Bienvenue sur Reddit, noteliasgreen. Explorez les communautés qui vous intéressent.",time:"Sep 15",unread:false},
-    {from:"AO3",subj:"Votre publication a été validée",preview:"Votre chapitre 2 de Five Nights a été publié sur AO3.",time:"Sep 10",unread:false},
-    {from:"NaNoWriMo",subj:"Rappel : 50 000 mots en novembre",preview:"Novembre approche. Commencez à planifier votre roman dès maintenant.",time:"Sep 8",unread:false},
-  ],
-};
-
-const GmailScreen = ({data, isIos, accent, onBack}) => {
-  const loreDateStr = useContext(LoreDateCtx);
-  // null = inbox (vue principale), "drafts"/"deleted" = sous-dossier, "inbox" jamais utilisé comme state
-  const [mailbox, setMailbox] = useState(null);
-  const [openMail, setOpenMail] = useState(null);
-  const [showMenu, setShowMenu] = useState(false); // Android drawer
-
-  const charUsername = data.username || "glindatheverygood";
-  const inbox   = data.mail_override?.[charUsername] ?? EMAILS_BY_CHAR[charUsername] ?? EMAILS_BY_CHAR.glindatheverygood;
-  const drafts  = data.mail_drafts?.[charUsername]   ?? MAIL_DRAFTS_BY_CHAR[charUsername]  ?? [];
-  const deleted = data.mail_deleted?.[charUsername]  ?? MAIL_DELETED_BY_CHAR[charUsername]  ?? [];
-
-  const FOLDERS = [
-    {key:"inbox",  label:"Inbox",    icon:"inbox",  count:inbox.filter(e=>e.unread).length,  list:inbox,   badge:true},
-    {key:"drafts", label:"Drafts",   icon:"drafts", count:drafts.length,                     list:drafts,  badge:false},
-    {key:"deleted",label:"Deleted",  icon:"trash",  count:0,                                 list:deleted, badge:false},
-  ];
-
-  // Icônes SVG pour les dossiers mail
-  const FolderIcon = ({type, color="#4a7ab5", size=20}) => {
-    if(type==="inbox") return <svg width={size} height={size} viewBox="0 0 24 24" fill="none"><path d="M2 12l4-8h12l4 8v6a2 2 0 01-2 2H4a2 2 0 01-2-2v-6z" stroke={color} strokeWidth="1.7" strokeLinejoin="round"/><path d="M2 12h5l2 3h6l2-3h5" stroke={color} strokeWidth="1.7" strokeLinejoin="round"/></svg>;
-    if(type==="drafts") return <svg width={size} height={size} viewBox="0 0 24 24" fill="none"><path d="M12 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10l4 4v3" stroke={color} strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"/><path d="M16 3v5h5M15.5 18.5l2-2 2 2-2 2-2-2zM17.5 16.5l2-2" stroke={color} strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"/></svg>;
-    if(type==="trash") return <svg width={size} height={size} viewBox="0 0 24 24" fill="none"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" stroke={color} strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"/><path d="M10 11v6M14 11v6" stroke={color} strokeWidth="1.7" strokeLinecap="round"/></svg>;
-    return null;
-  };
-  // null = inbox (vue principale Android/iOS), sinon le sous-dossier ouvert
-  const curFolder = mailbox ? FOLDERS.find(f=>f.key===mailbox) : FOLDERS[0];
-
-  // ── styles partagés ──
-  const IOS_BLUE = "#4a7ab5";
-  const GM_AVATAR_COLORS = ["#E53935","#8E24AA","#1E88E5","#00897B","#F4511E","#3949AB","#039BE5","#7CB342","#D81B60","#F6BF26"];
-  const gmAvatar = (name) => GM_AVATAR_COLORS[(name||" ").charCodeAt(0) % GM_AVATAR_COLORS.length];
-
-  // ── Rendu d'un mail ouvert ──
-
-
-  // Nom affiché du perso courant pour le champ "À"
-  const CHAR_DISPLAY = {
-    glindatheverygood: "Glinda Rosalind <glindatheverygood@uma.edu>",
-    eoghan_masuda:     "Eoghan Masuda <eoghan_masuda@uma.edu>",
-    dreww_orms:        "Drew B. <dreww_orms@uma.edu>",
-    noteliasgreen:     "Elias Green <noteliasgreen@uma.edu>",
-  };
-  const toAddress = m => m.to || CHAR_DISPLAY[charUsername] || charUsername;
-  const fromAddress = m => m.fromFull || m.from || "";
-  const dateLabel = m => {
-    const rel = loreRelativeLabel(m.time, loreDateStr);
-    // Si la date relative est courte (ex: "9:30am"), on ajoute "Aujourd'hui"
-    const abs = m.time || "";
-    return abs && !abs.match(/^\d+:\d+/) ? abs : rel;
-  };
-
-  const MailDetail = ({m, onBack}) => (
-    <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden"}}>
-      {/* ── Barre de navigation ── */}
-      {isIos ? (
-        <div style={{background:"linear-gradient(180deg,#6a8fc0,#3d5f8a)",padding:"6px 10px",display:"flex",alignItems:"center",gap:8,flexShrink:0,boxShadow:"0 1px 3px rgba(0,0,0,0.4)"}}>
-          <button onClick={onBack} style={{background:`linear-gradient(180deg,#6a8fc0,#3d5f8a)`,border:"1px solid rgba(0,0,0,0.45)",borderRadius:6,color:"#fff",fontSize:11,fontWeight:"600",cursor:"pointer",padding:"3px 10px 3px 7px",display:"flex",alignItems:"center",gap:2,textShadow:"0 -1px 0 rgba(0,0,0,0.5)",boxShadow:"inset 0 1px 0 rgba(255,255,255,0.2)"}}>
-            <svg width="8" height="14" viewBox="0 0 8 14" fill="none"><path d="M7 1L1 7l6 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
-            <span style={{fontSize:12,marginLeft:2}}>{curFolder?.label||"Inbox"}</span>
-          </button>
-          <span style={{flex:1,textAlign:"center",color:"#fff",fontSize:13,fontWeight:600,textShadow:"0 1px 1px rgba(0,0,0,0.4)"}}>{curFolder?.label||"Inbox"}</span>
-          <span style={{width:70}}/>
-        </div>
-      ) : (
-        <div style={{background:"#C62828",padding:"10px 14px",display:"flex",alignItems:"center",gap:10,flexShrink:0,boxShadow:"0 2px 4px rgba(0,0,0,0.2)"}}>
-          <button onClick={onBack} style={{background:"none",border:"none",cursor:"pointer",color:"#fff",padding:0,display:"flex",alignItems:"center"}}>
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M19 12H5M12 19l-7-7 7-7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
-          </button>
-          <span style={{flex:1,color:"#fff",fontSize:16,fontWeight:500,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{m.subj}</span>
-        </div>
-      )}
-
-      <div style={{flex:1,overflowY:"auto",background:"#fff"}}>
-        {isIos ? (
-          /* ── iOS 6 Mail — header style natif ── */
-          <>
-            {/* Objet en grand */}
-            <div style={{padding:"12px 14px 10px",borderBottom:"1px solid #e0dfe0"}}>
-              <div style={{fontSize:16,fontWeight:700,color:"#1a1a1a",lineHeight:1.3,fontFamily:"Helvetica,'Helvetica Neue',Arial,sans-serif"}}>{m.subj}</div>
-            </div>
-            {/* Champs header : De, À, Date */}
-            <div style={{background:"#f7f6f1",borderBottom:"1px solid #d9d8d2"}}>
-              {[
-                ["De", fromAddress(m)],
-                ["À",  toAddress(m)],
-                ["Date", m.time || ""],
-              ].map(([label, value], i, arr) => (
-                <div key={label} style={{display:"flex",alignItems:"flex-start",padding:"7px 14px",borderBottom:i<arr.length-1?"1px solid #e0dfe0":"none",gap:8,minHeight:30}}>
-                  <span style={{fontSize:12,fontWeight:600,color:"#888",width:36,flexShrink:0,paddingTop:1,fontFamily:"Helvetica,'Helvetica Neue',Arial,sans-serif"}}>{label}</span>
-                  <span style={{fontSize:12,color:"#1a1a1a",flex:1,lineHeight:1.4,wordBreak:"break-word",fontFamily:"Helvetica,'Helvetica Neue',Arial,sans-serif"}}>{value}</span>
-                </div>
-              ))}
-            </div>
-            {/* Corps */}
-            <div style={{padding:"14px 14px",fontSize:13,color:"#1a1a1a",lineHeight:1.7,whiteSpace:"pre-wrap",fontFamily:"Helvetica,'Helvetica Neue',Arial,sans-serif"}}>
-              {m.preview}
-            </div>
-          </>
-        ) : (
-          /* ── Android Gmail — header Material ── */
-          <>
-            {/* Objet */}
-            <div style={{padding:"16px 16px 0"}}>
-              <div style={{fontSize:20,fontWeight:400,color:"#202124",lineHeight:1.3,marginBottom:16}}>{m.subj}</div>
-            </div>
-            {/* Bloc expéditeur */}
-            <div style={{padding:"0 16px 12px",display:"flex",gap:12,alignItems:"flex-start"}}>
-              <div style={{width:40,height:40,borderRadius:"50%",background:gmAvatar(m.from),display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontWeight:700,fontSize:16,flexShrink:0}}>
-                {(m.from||"?")[0]}
-              </div>
-              <div style={{flex:1,minWidth:0}}>
-                <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",gap:8,flexWrap:"wrap"}}>
-                  <span style={{fontSize:14,fontWeight:600,color:"#202124"}}>{fromAddress(m)}</span>
-                  <span style={{fontSize:11,color:"#5f6368",flexShrink:0,whiteSpace:"nowrap"}}>{m.time||""}</span>
-                </div>
-                {/* Ligne À */}
-                <div style={{marginTop:2,fontSize:12,color:"#5f6368",display:"flex",gap:4,alignItems:"baseline"}}>
-                  <span style={{fontWeight:500}}>À</span>
-                  <span style={{flex:1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{toAddress(m)}</span>
-                </div>
-              </div>
-            </div>
-            {/* Séparateur */}
-            <div style={{height:1,background:"#e0e0e0",margin:"0 16px 14px"}}/>
-            {/* Corps */}
-            <div style={{padding:"0 16px 24px",fontSize:14,color:"#202124",lineHeight:1.7,whiteSpace:"pre-wrap"}}>
-              {m.preview}
-            </div>
-          </>
-        )}
-      </div>
-    </div>
-  );
-
-  // ── Vue mail ouvert ──
-  if(openMail) return <MailDetail m={openMail} onBack={()=>setOpenMail(null)}/>;
-
-  // ── Vue liste des mails d'un sous-dossier (drafts/deleted uniquement — inbox = vue principale) ──
-  if(mailbox) {
-    const folder = curFolder;
-    const list = folder?.list || [];
-    return (
-      <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden"}}>
-        {isIos ? (
-          <>
-            <div style={{background:"linear-gradient(180deg,#6a8fc0,#3d5f8a)",padding:"6px 10px",display:"flex",alignItems:"center",flexShrink:0,boxShadow:"0 1px 3px rgba(0,0,0,0.4)"}}>
-              <button onClick={()=>setMailbox(null)} style={{background:`linear-gradient(180deg,#6a8fc0,#3d5f8a)`,border:"1px solid rgba(0,0,0,0.45)",borderRadius:6,color:"#fff",fontSize:11,fontWeight:"600",cursor:"pointer",padding:"3px 10px 3px 7px",display:"flex",alignItems:"center",gap:2,textShadow:"0 -1px 0 rgba(0,0,0,0.5)",boxShadow:"inset 0 1px 0 rgba(255,255,255,0.2)"}}>
-                <svg width="8" height="14" viewBox="0 0 8 14" fill="none"><path d="M7 1L1 7l6 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                <span style={{fontSize:12,marginLeft:2}}>Mailboxes</span>
-              </button>
-              <span style={{flex:1,textAlign:"center",color:"#fff",fontSize:14,fontWeight:700,textShadow:"0 1px 1px rgba(0,0,0,0.4)"}}>{folder?.label}</span>
-              <span style={{width:80}}/>
-            </div>
-            <div style={{flex:1,overflowY:"auto",background:"#c8c8c8"}}>
-              {list.length===0 && <div style={{padding:"40px 24px",textAlign:"center",color:"#888",fontSize:13}}>Aucun message</div>}
-              {list.map((m,i)=>(
-                <div key={i} onClick={()=>setOpenMail(m)} style={{background:i%2===0?"#fff":"#f7f7f7",borderBottom:"1px solid #c8c8c8",padding:"8px 10px",display:"flex",gap:8,alignItems:"flex-start",minHeight:64,cursor:"pointer"}}>
-                  <div style={{width:10,height:10,borderRadius:"50%",background:m.unread?"#4a7ab5":"transparent",flexShrink:0,marginTop:5}}/>
-                  <div style={{flex:1,minWidth:0}}>
-                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",marginBottom:1}}>
-                      <span style={{color:"#000",fontSize:13,fontWeight:m.unread?700:600,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",maxWidth:"65%"}}>{m.from}</span>
-                      <span style={{color:IOS_BLUE,fontSize:11,flexShrink:0}}>{loreRelativeLabel(m.time,loreDateStr)}</span>
-                    </div>
-                    <div style={{color:"#000",fontSize:12,fontWeight:m.unread?600:400,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",marginBottom:2}}>{m.subj}</div>
-                    <div style={{color:"#888",fontSize:11,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{m.preview}</div>
-                  </div>
-                  <span style={{color:"#c0c0c0",fontSize:16,flexShrink:0,marginTop:8}}>›</span>
-                </div>
-              ))}
-            </div>
-          </>
-        ) : (
-          <>
-            <div style={{background:"#C62828",padding:"10px 14px",display:"flex",alignItems:"center",gap:10,flexShrink:0,boxShadow:"0 2px 4px rgba(0,0,0,0.2)"}}>
-              <button onClick={()=>setMailbox(null)} style={{background:"none",border:"none",color:"#fff",cursor:"pointer",padding:0,display:"flex",alignItems:"center"}}>
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M19 12H5M12 19l-7-7 7-7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
-              </button>
-              <span style={{color:"#fff",fontSize:16,fontWeight:500,flex:1}}>{folder?.label}</span>
-            </div>
-            <div style={{flex:1,overflowY:"auto",background:"#f1f1f1"}}>
-              {list.length===0 && <div style={{padding:"40px 24px",textAlign:"center",color:"#888",fontSize:13}}>Aucun message</div>}
-              {list.map((m,i)=>(
-                <div key={i} onClick={()=>setOpenMail(m)} style={{background:m.unread?"#fff":"#fafafa",borderBottom:"1px solid #e5e5e5",padding:"10px 10px 10px 12px",display:"flex",gap:10,alignItems:"center",cursor:"pointer"}}>
-                  <div style={{width:40,height:40,borderRadius:"50%",background:gmAvatar(m.from),display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontWeight:700,fontSize:16,flexShrink:0}}>{(m.from||"?")[0]}</div>
-                  <div style={{flex:1,minWidth:0}}>
-                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",marginBottom:2}}>
-                      <span style={{color:m.unread?"#202124":"#5f6368",fontSize:13,fontWeight:m.unread?"700":"400",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",maxWidth:"65%"}}>{m.from}</span>
-                      <span style={{color:m.unread?"#202124":"#5f6368",fontSize:11,fontWeight:m.unread?"600":"400",flexShrink:0,marginLeft:4}}>{loreRelativeLabel(m.time,loreDateStr)}</span>
-                    </div>
-                    <div style={{color:m.unread?"#202124":"#5f6368",fontSize:12,fontWeight:m.unread?"500":"400",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",marginBottom:1}}>{m.subj}</div>
-                    <div style={{color:"#9aa0a6",fontSize:11,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{m.preview}</div>
-                  </div>
-                  <span style={{color:"#bdc1c6",fontSize:16,flexShrink:0,paddingLeft:4}}>☆</span>
-                </div>
-              ))}
-            </div>
-          </>
-        )}
-      </div>
-    );
-  }
-
-  // ── Vue principale : iOS = liste Mailboxes / Android = inbox directement ──
-  const unreadTotal = inbox.filter(e=>e.unread).length;
-  if(isIos) return (
-    <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden"}}>
-      <div style={{background:"linear-gradient(180deg,#6a8fc0,#3d5f8a)",padding:"6px 10px",display:"flex",alignItems:"center",flexShrink:0,boxShadow:"0 1px 3px rgba(0,0,0,0.4)"}}>
-        <button onClick={()=>onBack?.()} style={{background:`linear-gradient(180deg,#6a8fc0,#3d5f8a)`,border:"1px solid rgba(0,0,0,0.45)",borderRadius:6,color:"#fff",fontSize:11,fontWeight:"600",cursor:"pointer",padding:"3px 10px 3px 7px",display:"flex",alignItems:"center",gap:2,textShadow:"0 -1px 0 rgba(0,0,0,0.5)",boxShadow:"inset 0 1px 0 rgba(255,255,255,0.2)"}}>
-          <svg width="8" height="14" viewBox="0 0 8 14" fill="none"><path d="M7 1L1 7l6 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
-        </button>
-        <span style={{flex:1,textAlign:"center",color:"#fff",fontSize:14,fontWeight:700,textShadow:"0 1px 1px rgba(0,0,0,0.4)"}}>Mailboxes</span>
-        <span style={{width:44}}/>
-      </div>
-      <div style={{background:"linear-gradient(180deg,#b0b8c8,#a0a8b8)",padding:"5px 8px",flexShrink:0}}>
-        <div style={{background:"rgba(255,255,255,0.85)",borderRadius:8,padding:"4px 10px",display:"flex",alignItems:"center",gap:6,border:"1px solid #888",boxShadow:"inset 0 1px 2px rgba(0,0,0,0.1)"}}>
-          <svg width="14" height="14" viewBox="0 0 20 20" fill="none"><circle cx="9" cy="9" r="6" stroke="#888" strokeWidth="1.7"/><path d="M15 15l3 3" stroke="#888" strokeWidth="1.7" strokeLinecap="round"/></svg>
-          <span style={{color:"#aaa",fontSize:12}}>Search All Mailboxes</span>
-        </div>
-      </div>
-      <div style={{flex:1,overflowY:"auto",background:"#c8c8c8"}}>
-        <div style={{marginTop:16}}>
-          <div style={{padding:"4px 14px",fontSize:11,fontWeight:600,color:"#555",textTransform:"uppercase",letterSpacing:0.5}}>Mailboxes</div>
-          <div style={{background:"#fff",borderTop:"1px solid #c8c8c8",borderBottom:"1px solid #c8c8c8"}}>
-            {FOLDERS.map((f,i)=>(
-              <div key={f.key} onClick={()=>{ if(f.key==="inbox") { setOpenMail(null); } else { setMailbox(f.key); } }} style={{display:"flex",alignItems:"center",gap:12,padding:"11px 14px",borderBottom:i<FOLDERS.length-1?"1px solid #c8c8c8":"none",cursor:"pointer",background:"#fff"}}>
-                <FolderIcon type={f.icon} color={IOS_BLUE} size={22}/>
-                <span style={{flex:1,fontSize:15,color:"#000"}}>{f.label}</span>
-                {f.badge && f.count>0 && <span style={{background:IOS_BLUE,color:"#fff",borderRadius:10,padding:"1px 8px",fontSize:12,fontWeight:700}}>{f.count}</span>}
-                <span style={{color:"#c0c0c5",fontSize:16}}>›</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-
-  // ── Android — header rouge Gmail fixe + drawer hamburger ──
-  return (
-    <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden",background:"#f1f1f1",position:"relative"}}>
-      {/* Header rouge — toujours visible */}
-      <div style={{background:"#C62828",padding:"10px 14px",display:"flex",alignItems:"center",gap:12,flexShrink:0,boxShadow:"0 2px 4px rgba(0,0,0,0.2)"}}>
-        <button onClick={()=>setShowMenu(m=>!m)} style={{background:"none",border:"none",color:"#fff",cursor:"pointer",padding:"2px 0",display:"flex",flexDirection:"column",gap:4,alignItems:"center",width:20}}>
-          <span style={{display:"block",width:18,height:2,background:"#fff",borderRadius:1}}/>
-          <span style={{display:"block",width:18,height:2,background:"#fff",borderRadius:1}}/>
-          <span style={{display:"block",width:18,height:2,background:"#fff",borderRadius:1}}/>
-        </button>
-        <span style={{color:"#fff",fontSize:18,fontWeight:500,flex:1}}>Gmail</span>
-        {unreadTotal>0&&<span style={{background:"rgba(255,255,255,0.25)",color:"#fff",borderRadius:10,padding:"1px 8px",fontSize:12,fontWeight:700}}>{unreadTotal}</span>}
-      </div>
-      {/* Drawer overlay */}
-      {showMenu&&<>
-        <div onClick={()=>setShowMenu(false)} style={{position:"absolute",inset:0,background:"rgba(0,0,0,0.4)",zIndex:10}}/>
-        <div style={{position:"absolute",top:0,left:0,bottom:0,width:"72%",background:"#fff",zIndex:11,boxShadow:"2px 0 8px rgba(0,0,0,0.3)",display:"flex",flexDirection:"column"}}>
-          <div style={{background:"#C62828",padding:"14px 16px",color:"#fff",fontSize:16,fontWeight:500}}>Gmail</div>
-          {FOLDERS.map(f=>(
-            <div key={f.key} onClick={()=>{ if(f.key!=="inbox") setMailbox(f.key); setShowMenu(false); }} style={{display:"flex",alignItems:"center",gap:14,padding:"13px 16px",cursor:"pointer",borderBottom:"1px solid #f5f5f5"}}>
-              <FolderIcon type={f.icon} color="#5f6368" size={20}/>
-              <span style={{flex:1,fontSize:14,color:"#212121"}}>{f.label}</span>
-              {f.badge&&f.count>0&&<span style={{background:"#C62828",color:"#fff",borderRadius:10,padding:"1px 8px",fontSize:11,fontWeight:700}}>{f.count}</span>}
-            </div>
-          ))}
-        </div>
-      </>}
-      {/* Inbox — vue principale Android, jamais remplacée par un state mailbox */}
-      <div style={{flex:1,overflowY:"auto"}}>
-        {inbox.map((m,i)=>(
-          <div key={i} onClick={()=>setOpenMail(m)} style={{background:m.unread?"#fff":"#fafafa",borderBottom:"1px solid #e5e5e5",padding:"10px 12px",display:"flex",gap:10,alignItems:"center",cursor:"pointer"}}>
-            <div style={{width:40,height:40,borderRadius:"50%",background:gmAvatar(m.from),display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontWeight:700,fontSize:16,flexShrink:0}}>{(m.from||"?")[0]}</div>
-            <div style={{flex:1,minWidth:0}}>
-              <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",marginBottom:2}}>
-                <span style={{color:m.unread?"#202124":"#5f6368",fontSize:13,fontWeight:m.unread?"700":"400",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",maxWidth:"65%"}}>{m.from}</span>
-                <span style={{color:"#5f6368",fontSize:11,flexShrink:0,marginLeft:4}}>{loreRelativeLabel(m.time,loreDateStr)}</span>
-              </div>
-              <div style={{color:m.unread?"#202124":"#5f6368",fontSize:12,fontWeight:m.unread?"500":"400",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",marginBottom:1}}>{m.subj}</div>
-              <div style={{color:"#9aa0a6",fontSize:11,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{m.preview}</div>
-            </div>
-            <span style={{color:"#bdc1c6",fontSize:16,flexShrink:0}}>☆</span>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-};
-
 // Facebook
 
 const MapsScreen = ({isIos, accent}) => (
