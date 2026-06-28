@@ -20560,6 +20560,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                         <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
                           <Field label="Date" value={post.date||""} onChange={v=>updPost({date:v})} width="100px"/>
                           <Field label="Likes" value={String(post.likes??"")} onChange={v=>updPost({likes:parseInt(v)||0})} width="70px"/>
+                          <Field label="📍 Lieu" value={post.location||""} onChange={v=>updPost({location:v||null})} style={{flex:1,minWidth:100}}/>
                           <div style={{display:"flex",alignItems:"flex-end",gap:4}}>
                             <label style={{display:"flex",alignItems:"center",gap:4,fontSize:11,color:"#6b7280",cursor:"pointer",paddingBottom:4}}>
                               <input type="checkbox" checked={!!post.archived} onChange={e=>updPost({archived:e.target.checked})} style={{cursor:"pointer"}}/>
@@ -20572,26 +20573,11 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                       </div>
                     </div>
                     {/* Commentaires */}
-                    <div style={{display:"flex",flexDirection:"column",gap:4}}>
-                      <div style={{fontSize:10,fontWeight:600,color:"#9ca3af",letterSpacing:0.4}}>Commentaires ({(post.comments||[]).length})</div>
-                      {(post.comments||[]).map((c,ci)=>(
-                        <div key={ci} style={{display:"flex",gap:4,alignItems:"center"}}>
-                          <input value={c.user||""} onChange={e=>{const cm=[...(post.comments||[])];cm[ci]={...cm[ci],user:e.target.value};updPost({comments:cm});}}
-                            placeholder="@pseudo" className="adm-input" style={{width:100,background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#1a1a2e",padding:"6px 8px",fontSize:11,borderRadius:6}}/>
-                          <input value={c.text||""} onChange={e=>{const cm=[...(post.comments||[])];cm[ci]={...cm[ci],text:e.target.value};updPost({comments:cm});}}
-                            placeholder="commentaire" className="adm-input" style={{flex:1,background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#1a1a2e",padding:"6px 8px",fontSize:11,borderRadius:6}}/>
-                          <input value={c.time||""} onChange={e=>{const cm=[...(post.comments||[])];cm[ci]={...cm[ci],time:e.target.value};updPost({comments:cm});}}
-                            placeholder="1h" className="adm-input" style={{width:50,background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#6b7280",padding:"6px 6px",fontSize:11,borderRadius:6}}/>
-                          <button onClick={()=>{const cm=(post.comments||[]).filter((_,j)=>j!==ci);updPost({comments:cm});}} style={{background:"none",border:"none",color:"#d1d5db",cursor:"pointer",fontSize:14,padding:"0 2px",flexShrink:0}}>×</button>
-                        </div>
-                      ))}
-                      <button onClick={()=>{const cm=[...(post.comments||[]),{user:"",text:"",time:""}];updPost({comments:cm});}}
-                        style={{background:"rgba(61,107,143,0.06)",border:"1px dashed rgba(61,107,143,0.3)",color:IG_COLOR,borderRadius:6,padding:"5px 10px",cursor:"pointer",fontSize:11,fontWeight:600,alignSelf:"flex-start"}}>+ Commentaire</button>
-                    </div>
+                    <IgCommentEditor comments={post.comments||[]} onChange={cm=>updPost({comments:cm})} accentColor={IG_COLOR}/>
                   </div>
                 );
               })}
-              <button onClick={()=>updPosts([...igPosts,{id:Date.now(),src:null,caption:"",likes:0,date:"Oct 2012",comments:[],archived:false}])}
+              <button onClick={()=>updPosts([...igPosts,{id:Date.now(),src:null,caption:"",likes:0,date:"Oct 2012",location:null,comments:[],archived:false}])}
                 style={{background:"rgba(61,107,143,0.08)",border:"1px dashed rgba(61,107,143,0.4)",color:IG_COLOR,borderRadius:8,padding:"10px 18px",cursor:"pointer",fontSize:12,fontWeight:600}}>+ Post Instagram</button>
             </div>
           )}
@@ -20624,8 +20610,9 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                       </label>
                       <div style={{flex:1,minWidth:0,display:"flex",flexDirection:"column",gap:6}}>
                         <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
-                          <Field label="Date" value={post.date||""} onChange={v=>updPost({date:v})} width="100px"/>
+                          <LoreDateTimeInput value={post.date||""} onChange={v=>updPost({date:v})} width="160px" showLabel={true}/>
                           <Field label="Likes" value={String(post.likes??"")} onChange={v=>updPost({likes:parseInt(v)||0})} width="70px"/>
+                          <Field label="📍 Lieu" value={post.location||""} onChange={v=>updPost({location:v||null})} style={{flex:1,minWidth:100}}/>
                           <button onClick={()=>updSharedIg(sharedIgPosts.filter(p=>p.id!==post.id))} style={{background:"rgba(239,68,68,0.06)",border:"1px solid rgba(239,68,68,0.2)",color:"#ef4444",borderRadius:6,padding:"5px 8px",cursor:"pointer",fontSize:11,alignSelf:"flex-end"}}>✕</button>
                         </div>
                         <Field label="Légende" value={post.caption||""} onChange={v=>updPost({caption:v})} textarea/>
@@ -20638,7 +20625,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                     {sharedIgPosts.filter(p=>p.author!==tab).length} post(s) d'autres persos dans le fil (non modifiables ici).
                   </div>
                 )}
-                <button onClick={()=>updSharedIg([...sharedIgPosts,{id:Date.now(),author:tab,handle:myHandle,avatar:dataRef.current[tab]?.avatar||null,src:null,caption:"",likes:0,date:"Oct 2012",comments:[]}])}
+                <button onClick={()=>updSharedIg([...sharedIgPosts,{id:Date.now(),author:tab,handle:myHandle,avatar:dataRef.current[tab]?.avatar||null,src:null,caption:"",likes:0,date:"Oct 2012",location:null,comments:[]}])}
                   style={{background:"rgba(61,107,143,0.08)",border:"1px dashed rgba(61,107,143,0.4)",color:IG_COLOR,borderRadius:8,padding:"10px 18px",cursor:"pointer",fontSize:12,fontWeight:600}}>+ Mon post dans le fil</button>
               </div>
             );
@@ -22587,6 +22574,110 @@ const GmailScreen = ({data, isIos, accent, onBack}) => {
 
 
 
+// ── Composant d'affichage des commentaires Instagram (récursif) ──────────────
+const IgCommentThread = ({comments, depth=0}) => {
+  if(!comments||comments.length===0) return null;
+  return (
+    <>
+      {comments.map((c,i)=>(
+        <div key={i}>
+          <div style={{display:"flex",alignItems:"flex-start",gap:8,
+            padding: depth===0 ? "8px 12px" : "6px 12px 6px "+(12+depth*20)+"px",
+            borderBottom:"1px solid #f9f9f9",
+            background: depth>0 ? "rgba(0,0,0,0.015)" : "transparent"}}>
+            <div style={{width:depth===0?28:22,height:depth===0?28:22,borderRadius:"50%",
+              background:"#d0d0d0",flexShrink:0,overflow:"hidden",
+              display:"flex",alignItems:"center",justifyContent:"center",
+              fontSize:depth===0?12:10,fontWeight:700,color:"#fff"}}>
+              {(c.user||"?")[0].toUpperCase()}
+            </div>
+            <div style={{flex:1,fontSize:depth===0?13:12,color:"#262626",lineHeight:1.4}}>
+              <span style={{fontWeight:700}}>{c.user} </span>{c.text}
+              {c.time&&<div style={{fontSize:10,color:"#999",marginTop:2}}>{c.time}</div>}
+            </div>
+          </div>
+          {(c.replies||[]).length>0&&(
+            <IgCommentThread comments={c.replies} depth={depth+1}/>
+          )}
+        </div>
+      ))}
+    </>
+  );
+};
+
+// ── Composant d'édition des commentaires Instagram (admin, récursif) ──────────
+const IgCommentEditor = ({comments, onChange, accentColor="#3d6b8f", depth=0}) => {
+  const updComment = (ci, patch) => {
+    const cm = [...comments];
+    cm[ci] = {...cm[ci], ...patch};
+    onChange(cm);
+  };
+  const addReply = (ci) => {
+    const cm = [...comments];
+    cm[ci] = {...cm[ci], replies:[...(cm[ci].replies||[]), {user:"",text:"",time:"",replies:[]}]};
+    onChange(cm);
+  };
+  const delComment = (ci) => onChange(comments.filter((_,j)=>j!==ci));
+  const updReplies = (ci, replies) => updComment(ci, {replies});
+
+  const indent = depth * 16;
+  return (
+    <div style={{display:"flex",flexDirection:"column",gap:4, marginLeft: indent>0 ? indent : 0}}>
+      {depth===0&&(
+        <div style={{fontSize:10,fontWeight:600,color:"#9ca3af",letterSpacing:0.4,marginBottom:2}}>
+          Commentaires ({comments.length})
+        </div>
+      )}
+      {comments.map((c,ci)=>(
+        <div key={ci} style={{
+          background: depth===0 ? "rgba(61,107,143,0.04)" : "rgba(0,0,0,0.03)",
+          border:"1px solid rgba(0,0,0,0.07)", borderRadius:8,
+          padding:"8px 10px", display:"flex", flexDirection:"column", gap:6
+        }}>
+          {/* Ligne principale */}
+          <div style={{display:"flex",gap:4,alignItems:"flex-end",flexWrap:"wrap"}}>
+            <input value={c.user||""} onChange={e=>updComment(ci,{user:e.target.value})}
+              placeholder="@pseudo" className="adm-input"
+              style={{width:100,background:"rgba(255,255,255,0.9)",border:"1px solid rgba(0,0,0,0.1)",
+                color:"#1a1a2e",padding:"6px 8px",fontSize:11,borderRadius:6}}/>
+            <input value={c.text||""} onChange={e=>updComment(ci,{text:e.target.value})}
+              placeholder="commentaire" className="adm-input"
+              style={{flex:1,minWidth:120,background:"rgba(255,255,255,0.9)",border:"1px solid rgba(0,0,0,0.1)",
+                color:"#1a1a2e",padding:"6px 8px",fontSize:11,borderRadius:6}}/>
+            <LoreDateTimeInput value={c.time||""} onChange={v=>updComment(ci,{time:v})} width="200px" showLabel={false}/>
+            <button onClick={()=>addReply(ci)} title="Ajouter une réponse"
+              style={{background:"rgba(61,107,143,0.08)",border:"1px solid rgba(61,107,143,0.25)",
+                color:accentColor,borderRadius:6,padding:"5px 8px",cursor:"pointer",fontSize:11,flexShrink:0}}>
+              ↩ Reply
+            </button>
+            <button onClick={()=>delComment(ci)}
+              style={{background:"none",border:"none",color:"#d1d5db",cursor:"pointer",fontSize:14,padding:"0 2px",flexShrink:0}}>×</button>
+          </div>
+          {/* Réponses récursives */}
+          {(c.replies||[]).length>0&&(
+            <IgCommentEditor
+              comments={c.replies||[]}
+              onChange={replies=>updReplies(ci,replies)}
+              accentColor={accentColor}
+              depth={depth+1}
+            />
+          )}
+          {/* Bouton add reply (toujours visible si replies vides, sinon le + est dans IgCommentEditor) */}
+          {(c.replies||[]).length===0&&false&&null}
+        </div>
+      ))}
+      <button
+        onClick={()=>onChange([...comments,{user:"",text:"",time:"",replies:[]}])}
+        style={{background:"rgba(61,107,143,0.06)",border:"1px dashed rgba(61,107,143,0.3)",
+          color:accentColor,borderRadius:6,padding:"5px 10px",cursor:"pointer",
+          fontSize:11,fontWeight:600,alignSelf:"flex-start",
+          marginTop: depth>0?2:0}}>
+        {depth===0?"+ Commentaire":"+ Réponse"}
+      </button>
+    </div>
+  );
+};
+
 const InstaScreen = ({data, isIos, accent, onBack}) => {
   const [view, setView]         = useState("profile"); // "profile" | "feed" | "post"
   const [activePost, setPost]   = useState(null);
@@ -22612,32 +22703,46 @@ const InstaScreen = ({data, isIos, accent, onBack}) => {
   const IG_BLUE = "#3b88c3";
 
   // ── Tab bar bottom fidèle à la capture ──
-  const TabBar = ({active}) => (
-    <div style={{background:"linear-gradient(180deg,#f5f5f5,#e8e8e8)",borderTop:"1px solid #c8c8c8",display:"flex",alignItems:"flex-end",flexShrink:0,height:49,paddingBottom:0}}>
-      {/* Home */}
-      <button onClick={()=>setView("feed")} style={{flex:1,height:"100%",border:"none",background:"none",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>
-        <svg width="23" height="23" viewBox="0 0 24 24" fill="none"><path d="M3 10.5L12 3l9 7.5V20a1 1 0 01-1 1H5a1 1 0 01-1-1v-9.5z" stroke={active==="feed"?IG_BLUE:"#888"} strokeWidth="1.8" strokeLinejoin="round"/><path d="M9 21V13h6v8" stroke={active==="feed"?IG_BLUE:"#888"} strokeWidth="1.8" strokeLinejoin="round"/></svg>
-      </button>
-      {/* Explore (boussole) */}
-      <button onClick={()=>{}} style={{flex:1,height:"100%",border:"none",background:"none",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>
-        <svg width="23" height="23" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="#888" strokeWidth="1.8"/><polygon points="12,7 14,12 12,17 10,12" stroke="#888" strokeWidth="1.4" fill="none" strokeLinejoin="round"/></svg>
-      </button>
-      {/* Camera — centré surélevé dans un cercle */}
-      <div style={{flex:1,display:"flex",alignItems:"flex-end",justifyContent:"center",position:"relative",paddingBottom:3}}>
-        <div style={{width:44,height:44,borderRadius:"50%",background:"linear-gradient(180deg,#6a9fc0,#4a7fa0)",border:"2px solid #fff",display:"flex",alignItems:"center",justifyContent:"center",boxShadow:"0 2px 6px rgba(0,0,0,0.25)",marginBottom:2,cursor:"pointer"}}>
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z" stroke="#fff" strokeWidth="1.8" strokeLinejoin="round"/><circle cx="12" cy="13" r="4" stroke="#fff" strokeWidth="1.8"/></svg>
-        </div>
+  const TabBar = ({active}) => {
+    const btn = (onClick, icon, key) => (
+      <button key={key} onClick={onClick} style={{
+        flex:1, height:"100%", border:"none",
+        background: active===key ? "rgba(255,255,255,0.13)" : "transparent",
+        cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center",
+        borderRight:"1px solid rgba(255,255,255,0.07)",
+      }}>{icon}</button>
+    );
+    const ic = (path, isActive) => <svg width="22" height="22" viewBox="0 0 24 24" fill="none">{path(isActive)}</svg>;
+    return (
+      <div style={{background:"#111",borderTop:"1px solid #000",display:"flex",alignItems:"stretch",flexShrink:0,height:49}}>
+        {/* Home */}
+        {btn(()=>setView("feed"),
+          ic(a=><><path d="M3 11L12 3l9 8v9a1 1 0 01-1 1H5a1 1 0 01-1-1v-9z" fill={a?"#fff":"none"} stroke="#fff" strokeWidth={a?0:"1.8"} strokeLinejoin="round"/><path d="M9 21V13h6v8" stroke={a?"rgba(0,0,0,0.35)":"#fff"} strokeWidth="1.8" strokeLinejoin="round"/></>, active==="feed"),
+          "feed")}
+        {/* Explore */}
+        {btn(()=>{},
+          ic(a=><><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z" stroke="#fff" strokeWidth="1.8"/><polygon points="16.24,7.76 14.12,14.12 7.76,16.24 9.88,9.88" fill="#fff" stroke="none"/></>,false),
+          "explore")}
+        {/* Camera */}
+        {btn(()=>{},
+          ic(a=><><rect x="2" y="6" width="20" height="15" rx="2" stroke="#fff" strokeWidth="1.8"/><path d="M8 6l1.5-3h5L16 6" stroke="#fff" strokeWidth="1.8" strokeLinejoin="round"/><circle cx="12" cy="13.5" r="3.5" stroke="#fff" strokeWidth="1.8"/></>,false),
+          "camera")}
+        {/* Heart */}
+        {btn(()=>{},
+          ic(a=><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z" stroke="#fff" strokeWidth="1.8" strokeLinejoin="round"/>,false),
+          "heart")}
+        {/* Profile — grille 4 carrés */}
+        {btn(()=>setView("profile"),
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+            <rect x="2"  y="2"  width="9" height="9" rx="0" fill={active==="profile"?"#fff":"none"} stroke="#fff" strokeWidth="1.8"/>
+            <rect x="13" y="2"  width="9" height="9" rx="0" fill={active==="profile"?"#fff":"none"} stroke="#fff" strokeWidth="1.8"/>
+            <rect x="2"  y="13" width="9" height="9" rx="0" fill={active==="profile"?"#fff":"none"} stroke="#fff" strokeWidth="1.8"/>
+            <rect x="13" y="13" width="9" height="9" rx="0" fill={active==="profile"?"#fff":"none"} stroke="#fff" strokeWidth="1.8"/>
+          </svg>,
+          "profile")}
       </div>
-      {/* Heart / notifications */}
-      <button onClick={()=>{}} style={{flex:1,height:"100%",border:"none",background:"none",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>
-        <svg width="23" height="23" viewBox="0 0 24 24" fill="none"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z" stroke="#888" strokeWidth="1.8" strokeLinejoin="round"/></svg>
-      </button>
-      {/* Profile (active sur profil) */}
-      <button onClick={()=>setView("profile")} style={{flex:1,height:"100%",border:"none",background:"none",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>
-        <svg width="23" height="23" viewBox="0 0 24 24" fill="none"><rect x="2" y="2" width="9" height="9" rx="1" fill={active==="profile"?IG_BLUE:"#888"}/><rect x="13" y="2" width="9" height="9" rx="1" fill={active==="profile"?IG_BLUE:"#888"}/><rect x="2" y="13" width="9" height="9" rx="1" fill={active==="profile"?IG_BLUE:"#888"}/><rect x="13" y="13" width="9" height="9" rx="1" fill={active==="profile"?IG_BLUE:"#888"}/></svg>
-      </button>
-    </div>
-  );
+    );
+  };
 
   // ── Header ──
   const Header = ({title, left}) => (
@@ -22673,8 +22778,11 @@ const InstaScreen = ({data, isIos, accent, onBack}) => {
             <div style={{width:32,height:32,borderRadius:"50%",overflow:"hidden",background:"#d0d0d0",display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,fontWeight:700,color:"#fff",flexShrink:0}}>
               {postAvatar?<img src={postAvatar} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:(postHandle||"?")[0].toUpperCase()}
             </div>
-            <span style={{fontSize:13,fontWeight:700,color:"#262626"}}>{postHandle}</span>
-            <span style={{marginLeft:"auto",color:"#999",fontSize:11}}>{p.date||""}</span>
+            <div style={{flex:1}}>
+              <span style={{fontSize:13,fontWeight:700,color:"#262626"}}>{postHandle}</span>
+              {p.location&&<div style={{fontSize:11,color:"#3b88c3",marginTop:1,display:"flex",alignItems:"center",gap:2}}><span style={{fontSize:10}}>📍</span>{p.location}</div>}
+            </div>
+            <span style={{color:"#999",fontSize:11}}>{p.date||""}</span>
           </div>
           {/* Photo */}
           <div style={{width:"100%",aspectRatio:"1",background:"#efefef",overflow:"hidden"}}>
@@ -22687,12 +22795,7 @@ const InstaScreen = ({data, isIos, accent, onBack}) => {
           </div>
           {(p.likes||0)>0&&<div style={{padding:"6px 12px",fontSize:13,fontWeight:700,color:"#262626",borderBottom:"1px solid #f5f5f5"}}>{p.likes} J'aime</div>}
           {p.caption&&<div style={{padding:"8px 12px",fontSize:13,color:"#262626",lineHeight:1.5,borderBottom:"1px solid #f5f5f5"}}><span style={{fontWeight:700}}>{postHandle} </span>{p.caption}</div>}
-          {(p.comments||[]).map((c,i)=>(
-            <div key={i} style={{display:"flex",alignItems:"flex-start",gap:8,padding:"8px 12px",borderBottom:"1px solid #f9f9f9"}}>
-              <div style={{width:28,height:28,borderRadius:"50%",background:"#d0d0d0",flexShrink:0,overflow:"hidden",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:700,color:"#fff"}}>{(c.user||"?")[0].toUpperCase()}</div>
-              <div style={{flex:1,fontSize:13,color:"#262626",lineHeight:1.4}}><span style={{fontWeight:700}}>{c.user} </span>{c.text}{c.time&&<div style={{fontSize:11,color:"#999",marginTop:2}}>{c.time}</div>}</div>
-            </div>
-          ))}
+          <IgCommentThread comments={p.comments||[]} depth={0}/>
         </div>
         <TabBar active="feed"/>
       </div>
@@ -22727,6 +22830,7 @@ const InstaScreen = ({data, isIos, accent, onBack}) => {
                   </div>
                   <div style={{flex:1}}>
                     <div style={{fontSize:13,fontWeight:700,color:"#262626"}}>{postHandle}</div>
+                    {p.location&&<div style={{fontSize:11,color:"#3b88c3",marginTop:1,display:"flex",alignItems:"center",gap:2}}><span style={{fontSize:10}}>📍</span>{p.location}</div>}
                   </div>
                   <span style={{color:"#999",fontSize:11}}>{p.date||""}</span>
                 </div>
