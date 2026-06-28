@@ -6799,7 +6799,7 @@ const IOSPhone = ({data,admin,onUpdate,onUpdateShared=()=>{},loreDate:loreDatePr
     );
   }
 
-  if(app==="insta") return null;
+  if(app==="insta") return <Shell><IOSStatusBar/><InstaScreen data={data} isIos={true} accent={accent} onBack={goHome}/></Shell>;
 
   if(app==="music") return <Shell><IOSStatusBar/><MusicScreen data={data} admin={admin} update={update} accent={accent} isIos={true} goHome={goHome}/></Shell>;
   if(app==="snapchat") return <Shell><IOSStatusBar/><NavBar title="Snapchat" back={goHome}/><SnapchatScreen data={data} admin={admin} update={update}/></Shell>;
@@ -7395,7 +7395,7 @@ const AndroidPhone = ({data,admin,onUpdate,sharedAndroidIcons={},onUpdateShared=
     );
   }
 
-    if(app==="insta") return null;
+    if(app==="insta") return <AppShell><AndroidStatusBar notifApps={notifApps} accent={accent}/><InstaScreen data={data} isIos={false} accent={accent} onBack={goHome}/></AppShell>;
 
   if(app==="music") return <AppShell><AndroidStatusBar notifApps={notifApps} accent={accent}/><ActionBar title="Music" back={goHome}/><MusicScreen data={data} admin={admin} update={update} accent={accent} isIos={false}/></ AppShell>;
   if(app==="browser") return <AppShell><AndroidStatusBar notifApps={notifApps} accent={accent}/><ActionBar title="Browser" back={goHome} overflow/><BrowserScreen data={data} admin={admin} update={update} accent={accent} isIos={false} tab={browserTab} setTab={setBrowserTab}/></AppShell>;
@@ -18379,6 +18379,7 @@ const APP_SECTIONS = {
   mail:       {icon:"✉️", label:"Mails"},
   facebook:   {icon:"📘", label:"Facebook"},
   files:      {icon:"📁", label:"Fichiers"},
+  insta:      {icon:"📷", label:"Instagram"},
 };
 
 // L'app "Téléphone" regroupe désormais Appels, Contacts et Messages vocaux dans un seul onglet admin.
@@ -18423,6 +18424,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
   const [mailAdmTab, setMailAdmTab] = useState("inbox"); // "inbox" | "drafts" | "deleted"
   const [twTab, setTwTab] = useState("users"); // "users" | "shared" | "tweets"
   const [tbTab, setTbTab] = useState("users"); // "users" | "shared" | "feed"
+  const [igTab, setIgTab] = useState("profile"); // "profile" | "posts"
   const [fbTab, setFbTab] = useState("users"); // "users" | "shared" | "pages"
   const [phoneSubTab, setPhoneSubTab] = useState("calls"); // "calls" | "contacts" | "voicemail"
   const [grindrTab, setGrindrTab] = useState("grid"); // "grid" | "dms" | "profile"
@@ -20417,6 +20419,113 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
       );
     }
 
+    case "insta": {
+      const IG_COLOR = "#3d6b8f";
+      const igProfile = d.instagram || {};
+      const igPosts   = igProfile.posts || [];
+      const updIg     = (patch) => upd("instagram", {...igProfile, ...patch});
+      const updPosts  = (list)  => updIg({posts: list});
+
+      const SubTabs = [["profile","👤 Profil"],["posts","📷 Posts"]];
+      return (
+        <div style={{display:"flex",flexDirection:"column",gap:12}}>
+          {/* Tab bar */}
+          <div style={{display:"flex",gap:0,background:"rgba(0,0,0,0.05)",borderRadius:8,padding:2,alignSelf:"flex-start"}}>
+            {SubTabs.map(([k,label])=>(
+              <button key={k} onClick={()=>setIgTab(k)} style={{
+                padding:"6px 14px",border:"none",borderRadius:6,cursor:"pointer",fontSize:11,
+                fontWeight:igTab===k?700:400,
+                background:igTab===k?"#fff":"transparent",
+                color:igTab===k?IG_COLOR:"#6b7280",
+                boxShadow:igTab===k?"0 1px 3px rgba(0,0,0,0.1)":"none",
+                whiteSpace:"nowrap",
+              }}>{label}</button>
+            ))}
+          </div>
+
+          {/* ── PROFIL ── */}
+          {igTab==="profile" && (
+            <div style={{background:"rgba(255,255,255,0.85)",borderRadius:10,padding:"14px 16px",border:"1px solid rgba(0,0,0,0.07)",display:"flex",flexDirection:"column",gap:10}}>
+              <div style={{fontSize:10,fontWeight:700,color:"#9ca3af",letterSpacing:0.5}}>★ CE PERSO</div>
+              <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+                <Field label="Handle (@)" value={igProfile.handle||""} onChange={v=>updIg({handle:v})} style={{flex:"1 1 140px"}}/>
+                <Field label="Followers" value={String(igProfile.followers??"")} onChange={v=>updIg({followers:parseInt(v)||0})} width="80px"/>
+                <Field label="Following" value={String(igProfile.following??"")} onChange={v=>updIg({following:parseInt(v)||0})} width="80px"/>
+              </div>
+              <Field label="Bio" value={igProfile.bio||""} onChange={v=>updIg({bio:v})} textarea/>
+            </div>
+          )}
+
+          {/* ── POSTS ── */}
+          {igTab==="posts" && (
+            <div style={{display:"flex",flexDirection:"column",gap:8}}>
+              <div style={{fontSize:11,color:"#6b7280",lineHeight:1.5}}>Photos visibles dans la grille Instagram du perso. Chaque post peut avoir une légende, des likes et des commentaires.</div>
+              {igPosts.map((post,i)=>{
+                const updPost = (patch) => { const p=[...igPosts]; p[i]={...p[i],...patch}; updPosts(p); };
+                return (
+                  <div key={post.id||i} style={{background:"rgba(255,255,255,0.85)",borderRadius:10,padding:"10px 12px",border:"1px solid rgba(0,0,0,0.07)",display:"flex",flexDirection:"column",gap:8}}>
+                    {/* Photo + date */}
+                    <div style={{display:"flex",gap:10,alignItems:"flex-start"}}>
+                      <label style={{width:70,height:70,borderRadius:6,overflow:"hidden",background:"#efefef",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",flexShrink:0,border:"1px solid rgba(0,0,0,0.08)"}}>
+                        {post.src
+                          ? <img src={post.src} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+                          : <span style={{fontSize:24}}>📷</span>
+                        }
+                        <input type="file" accept="image/*" style={{display:"none"}} onChange={e=>{
+                          const f=e.target.files?.[0];if(!f)return;
+                          const r=new UploadReader();
+                          r.onload=ev=>{
+                            const freshIg=dataRef.current[tab]?.instagram||{};
+                            const fp=[...(freshIg.posts||[])];
+                            fp[i]={...fp[i],src:ev.target.result};
+                            upd("instagram",{...freshIg,posts:fp});
+                          };
+                          r.readAsDataURL(f);e.target.value="";
+                        }}/>
+                      </label>
+                      <div style={{flex:1,minWidth:0,display:"flex",flexDirection:"column",gap:6}}>
+                        <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+                          <Field label="Date" value={post.date||""} onChange={v=>updPost({date:v})} width="100px"/>
+                          <Field label="Likes" value={String(post.likes??"")} onChange={v=>updPost({likes:parseInt(v)||0})} width="70px"/>
+                          <div style={{display:"flex",alignItems:"flex-end",gap:4}}>
+                            <label style={{display:"flex",alignItems:"center",gap:4,fontSize:11,color:"#6b7280",cursor:"pointer",paddingBottom:4}}>
+                              <input type="checkbox" checked={!!post.archived} onChange={e=>updPost({archived:e.target.checked})} style={{cursor:"pointer"}}/>
+                              Archivé
+                            </label>
+                          </div>
+                          <button onClick={()=>updPosts(igPosts.filter((_,j)=>j!==i))} style={{background:"rgba(239,68,68,0.06)",border:"1px solid rgba(239,68,68,0.2)",color:"#ef4444",borderRadius:6,padding:"5px 8px",cursor:"pointer",fontSize:11,alignSelf:"flex-end"}}>✕</button>
+                        </div>
+                        <Field label="Légende" value={post.caption||""} onChange={v=>updPost({caption:v})} textarea/>
+                      </div>
+                    </div>
+                    {/* Commentaires */}
+                    <div style={{display:"flex",flexDirection:"column",gap:4}}>
+                      <div style={{fontSize:10,fontWeight:600,color:"#9ca3af",letterSpacing:0.4}}>Commentaires ({(post.comments||[]).length})</div>
+                      {(post.comments||[]).map((c,ci)=>(
+                        <div key={ci} style={{display:"flex",gap:4,alignItems:"center"}}>
+                          <input value={c.user||""} onChange={e=>{const cm=[...(post.comments||[])];cm[ci]={...cm[ci],user:e.target.value};updPost({comments:cm});}}
+                            placeholder="@pseudo" className="adm-input" style={{width:100,background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#1a1a2e",padding:"6px 8px",fontSize:11,borderRadius:6}}/>
+                          <input value={c.text||""} onChange={e=>{const cm=[...(post.comments||[])];cm[ci]={...cm[ci],text:e.target.value};updPost({comments:cm});}}
+                            placeholder="commentaire" className="adm-input" style={{flex:1,background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#1a1a2e",padding:"6px 8px",fontSize:11,borderRadius:6}}/>
+                          <input value={c.time||""} onChange={e=>{const cm=[...(post.comments||[])];cm[ci]={...cm[ci],time:e.target.value};updPost({comments:cm});}}
+                            placeholder="1h" className="adm-input" style={{width:50,background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#6b7280",padding:"6px 6px",fontSize:11,borderRadius:6}}/>
+                          <button onClick={()=>{const cm=(post.comments||[]).filter((_,j)=>j!==ci);updPost({comments:cm});}} style={{background:"none",border:"none",color:"#d1d5db",cursor:"pointer",fontSize:14,padding:"0 2px",flexShrink:0}}>×</button>
+                        </div>
+                      ))}
+                      <button onClick={()=>{const cm=[...(post.comments||[]),{user:"",text:"",time:""}];updPost({comments:cm});}}
+                        style={{background:"rgba(61,107,143,0.06)",border:"1px dashed rgba(61,107,143,0.3)",color:IG_COLOR,borderRadius:6,padding:"5px 10px",cursor:"pointer",fontSize:11,fontWeight:600,alignSelf:"flex-start"}}>+ Commentaire</button>
+                    </div>
+                  </div>
+                );
+              })}
+              <button onClick={()=>updPosts([...igPosts,{id:Date.now(),src:null,caption:"",likes:0,date:"Oct 2012",comments:[],archived:false}])}
+                style={{background:"rgba(61,107,143,0.08)",border:"1px dashed rgba(61,107,143,0.4)",color:IG_COLOR,borderRadius:8,padding:"10px 18px",cursor:"pointer",fontSize:12,fontWeight:600}}>+ Post Instagram</button>
+            </div>
+          )}
+        </div>
+      );
+    }
+
     case "reddit": return (
       <div style={{display:"flex",flexDirection:"column",gap:8}}>
         {(()=>{
@@ -22341,6 +22450,163 @@ const GmailScreen = ({data, isIos, accent, onBack}) => {
           )
         ))}
       </div>
+    </div>
+  );
+};
+
+
+
+
+const InstaScreen = ({data, isIos, accent, onBack}) => {
+  const [view, setView]         = useState("profile");
+  const [activePost, setPost]   = useState(null);
+  const [instaTab, setInstaTab] = useState("grid");
+
+  const ig       = data.instagram || {};
+  const posts    = ig.posts    || [];
+  const handle   = (ig.handle   || data.username || "").toUpperCase();
+  const handleLo = ig.handle   || data.username || "";
+  const bio      = ig.bio      || data.bio      || "";
+  const followers= ig.followers ?? data.followers ?? 0;
+  const following= ig.following ?? data.following ?? 0;
+  const avatar   = data.avatar || null;
+  const charKey  = data.username?.includes("glinda")?"glinda":data.username?.includes("eoghan")?"eoghan":data.username?.includes("drew")?"drew":"elias";
+  const name     = {glinda:"Glinda Rosalind",eoghan:"Eoghan Masuda",drew:"Drew Bates",elias:"Elias Green"}[charKey] || handleLo;
+
+  const IG_HDR = "linear-gradient(180deg,#6497b8,#4a7fa8)";
+  const IG_BLUE = "#3b88c3";
+  const gridPosts = posts.filter(p=>!p.archived);
+
+  const Header = ({title, left}) => (
+    <div style={{background:IG_HDR,borderBottom:"1px solid #3a6a90",height:44,display:"flex",alignItems:"center",padding:"0 8px",flexShrink:0,boxShadow:"0 1px 2px rgba(0,0,0,0.25)"}}>
+      <div style={{width:60,display:"flex",alignItems:"center"}}>{left}</div>
+      <div style={{flex:1,textAlign:"center",color:"#fff",fontSize:17,fontWeight:700,textShadow:"0 -1px 0 rgba(0,0,0,0.3)",letterSpacing:0.2}}>{title}</div>
+      <div style={{width:60,display:"flex",justifyContent:"flex-end",alignItems:"center"}}>
+        <button onClick={()=>{}} style={{background:"rgba(0,0,0,0.2)",border:"1px solid rgba(0,0,0,0.3)",borderRadius:5,width:30,height:30,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",padding:0}}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 15a3 3 0 100-6 3 3 0 000 6z" stroke="#fff" strokeWidth="1.8"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z" stroke="#fff" strokeWidth="1.8"/></svg>
+        </button>
+      </div>
+    </div>
+  );
+
+  const BackBtn = ({label, onClick}) => (
+    <button onClick={onClick} style={{background:"linear-gradient(180deg,#5a8fb8,#3a6f98)",border:"1px solid rgba(0,0,0,0.4)",borderRadius:5,color:"#fff",fontSize:11,fontWeight:"600",cursor:"pointer",padding:"4px 9px 4px 7px",display:"flex",alignItems:"center",gap:2,textShadow:"0 -1px 0 rgba(0,0,0,0.4)",boxShadow:"inset 0 1px 0 rgba(255,255,255,0.2)"}}>
+      <svg width="7" height="12" viewBox="0 0 7 12" fill="none"><path d="M6 1L1 6l5 5" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+      {label&&<span style={{marginLeft:1}}>{label}</span>}
+    </button>
+  );
+
+  const TabBar = () => (
+    <div style={{background:"linear-gradient(180deg,#f5f5f5,#e8e8e8)",borderTop:"1px solid #c8c8c8",display:"flex",alignItems:"center",flexShrink:0,height:49}}>
+      {[
+        <svg key="h" width="23" height="23" viewBox="0 0 24 24" fill="none"><path d="M3 9.5L12 3l9 6.5V21a1 1 0 01-1 1H5a1 1 0 01-1-1V9.5z" stroke="#555" strokeWidth="1.6" strokeLinejoin="round"/><path d="M9 21V12h6v9" stroke="#555" strokeWidth="1.6" strokeLinejoin="round"/></svg>,
+        <svg key="s" width="23" height="23" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="#555" strokeWidth="1.6"/><circle cx="12" cy="12" r="3" fill="#555"/><line x1="12" y1="3" x2="12" y2="6" stroke="#555" strokeWidth="1.4"/><line x1="12" y1="18" x2="12" y2="21" stroke="#555" strokeWidth="1.4"/><line x1="3" y1="12" x2="6" y2="12" stroke="#555" strokeWidth="1.4"/><line x1="18" y1="12" x2="21" y2="12" stroke="#555" strokeWidth="1.4"/></svg>,
+        <div key="c" style={{width:42,height:42,borderRadius:"50%",background:"linear-gradient(180deg,#6a9fc0,#4a7fa0)",border:"2px solid #3a6a88",display:"flex",alignItems:"center",justifyContent:"center",boxShadow:"0 2px 6px rgba(0,0,0,0.3)",marginBottom:10}}><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><rect x="2" y="6" width="20" height="14" rx="2" stroke="#fff" strokeWidth="1.8"/><circle cx="12" cy="13" r="4" stroke="#fff" strokeWidth="1.8"/><path d="M8 6l1.5-2.5h5L16 6" stroke="#fff" strokeWidth="1.6" strokeLinejoin="round"/></svg></div>,
+        <svg key="hrt" width="23" height="23" viewBox="0 0 24 24" fill="none"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z" stroke="#555" strokeWidth="1.6" strokeLinejoin="round"/></svg>,
+        <svg key="p" width="23" height="23" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="4" stroke="#4a7fa0" strokeWidth="1.8"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" stroke="#4a7fa0" strokeWidth="1.8" strokeLinecap="round"/></svg>,
+      ].map((icon,i)=>(
+        <div key={i} style={{flex:1,display:"flex",alignItems:"center",justifyContent:"center",height:"100%",cursor:"pointer"}}>{icon}</div>
+      ))}
+    </div>
+  );
+
+  if(view==="post" && activePost) {
+    const p = activePost;
+    return (
+      <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden",background:"#fff"}}>
+        <Header title="Photo" left={<BackBtn label={handle} onClick={()=>setView("profile")}/>}/>
+        <div style={{flex:1,overflowY:"auto"}}>
+          <div style={{width:"100%",aspectRatio:"1",background:"#efefef",overflow:"hidden"}}>
+            {p.src?<img src={p.src} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:<div style={{width:"100%",height:"100%",display:"flex",alignItems:"center",justifyContent:"center",fontSize:40,color:"#ccc"}}>📷</div>}
+          </div>
+          <div style={{display:"flex",alignItems:"center",padding:"8px 10px",gap:16,borderBottom:"1px solid #efefef"}}>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z" stroke="#555" strokeWidth="1.8" strokeLinejoin="round"/></svg>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" stroke="#555" strokeWidth="1.8" strokeLinejoin="round"/></svg>
+            <span style={{marginLeft:"auto",color:"#999",fontSize:12}}>{p.date||""}</span>
+          </div>
+          {(p.likes||0)>0&&<div style={{padding:"6px 12px",fontSize:13,fontWeight:700,color:"#262626",borderBottom:"1px solid #f5f5f5"}}>{p.likes} J'aime</div>}
+          {p.caption&&<div style={{padding:"8px 12px",fontSize:13,color:"#262626",lineHeight:1.5,borderBottom:"1px solid #f5f5f5"}}><span style={{fontWeight:700}}>{handleLo} </span>{p.caption}</div>}
+          {(p.comments||[]).map((c,i)=>(
+            <div key={i} style={{display:"flex",alignItems:"flex-start",gap:8,padding:"8px 12px",borderBottom:"1px solid #f9f9f9"}}>
+              <div style={{width:28,height:28,borderRadius:"50%",background:"#d0d0d0",flexShrink:0,overflow:"hidden",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:700,color:"#fff"}}>{(c.user||"?")[0].toUpperCase()}</div>
+              <div style={{flex:1,fontSize:13,color:"#262626",lineHeight:1.4}}><span style={{fontWeight:700}}>{c.user} </span>{c.text}{c.time&&<div style={{fontSize:11,color:"#999",marginTop:2}}>{c.time}</div>}</div>
+            </div>
+          ))}
+        </div>
+        <TabBar/>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden",background:"#fff"}}>
+      <Header title={handle} left={null}/>
+      <div style={{flex:1,overflowY:"auto",background:"#fafafa"}}>
+        <div style={{background:"#fff",borderBottom:"1px solid #dbdbdb"}}>
+          <div style={{display:"flex",alignItems:"flex-start",padding:"14px 12px 10px",gap:12}}>
+            <div style={{width:70,height:70,borderRadius:4,overflow:"hidden",flexShrink:0,border:"1px solid #d0d0d0",background:"#e0e0e0",display:"flex",alignItems:"center",justifyContent:"center",color:"#888",fontWeight:700,fontSize:26}}>
+              {avatar?<img src={avatar} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:(handleLo||"?")[0].toUpperCase()}
+            </div>
+            <div style={{flex:1,display:"flex",justifyContent:"space-around",paddingTop:4}}>
+              {[[gridPosts.length,"photos"],[followers,"followers"],[following,"following"]].map(([n,label])=>(
+                <div key={label} style={{textAlign:"center"}}>
+                  <div style={{fontSize:17,fontWeight:700,color:"#262626",lineHeight:1.2}}>{n}</div>
+                  <div style={{fontSize:11,color:"#555",marginTop:1}}>{label}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div style={{margin:"0 12px 10px",border:"1px solid #c8c8c8",borderRadius:4,background:"linear-gradient(180deg,#fafafa,#f0f0f0)",display:"flex",alignItems:"center",padding:"7px 12px",cursor:"default"}}>
+            <span style={{flex:1,fontSize:13,fontWeight:600,color:"#262626"}}>Edit Your Profile</span>
+            <svg width="10" height="16" viewBox="0 0 10 16" fill="none"><path d="M1 1l7 7-7 7" stroke="#bbb" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
+          </div>
+        </div>
+        <div style={{background:"#fff",padding:"10px 12px 12px",borderBottom:"1px solid #dbdbdb"}}>
+          <div style={{fontSize:14,fontWeight:700,color:"#262626",marginBottom:3}}>{name}</div>
+          {bio&&<div style={{fontSize:13,color:"#262626",lineHeight:1.5,whiteSpace:"pre-wrap"}}>{bio}</div>}
+          {ig.link&&<div style={{fontSize:13,color:IG_BLUE,marginTop:2}}>{ig.link}</div>}
+        </div>
+        <div style={{background:"#efefef",height:8,borderTop:"1px solid #dbdbdb",borderBottom:"1px solid #dbdbdb"}}/>
+        <div style={{background:"#fff",display:"flex",alignItems:"center",borderBottom:"1px solid #dbdbdb"}}>
+          <button onClick={()=>setInstaTab("grid")} style={{flex:1,height:42,border:"none",borderBottom:instaTab==="grid"?"2px solid #4a7fa0":"none",background:"none",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><rect x="2" y="2" width="9" height="9" rx="1" fill={instaTab==="grid"?"#4a7fa0":"#c0c0c0"}/><rect x="13" y="2" width="9" height="9" rx="1" fill={instaTab==="grid"?"#4a7fa0":"#c0c0c0"}/><rect x="2" y="13" width="9" height="9" rx="1" fill={instaTab==="grid"?"#4a7fa0":"#c0c0c0"}/><rect x="13" y="13" width="9" height="9" rx="1" fill={instaTab==="grid"?"#4a7fa0":"#c0c0c0"}/></svg>
+          </button>
+          <button onClick={()=>setInstaTab("list")} style={{flex:1,height:42,border:"none",borderLeft:"1px solid #e8e8e8",borderRight:"1px solid #e8e8e8",borderBottom:instaTab==="list"?"2px solid #4a7fa0":"none",background:"none",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><rect x="2" y="3" width="20" height="4" rx="1" fill={instaTab==="list"?"#4a7fa0":"#c0c0c0"}/><rect x="2" y="10" width="20" height="4" rx="1" fill={instaTab==="list"?"#4a7fa0":"#c0c0c0"}/><rect x="2" y="17" width="20" height="4" rx="1" fill={instaTab==="list"?"#4a7fa0":"#c0c0c0"}/></svg>
+          </button>
+          <button onClick={()=>setInstaTab("map")} style={{flex:2,height:42,border:"none",borderBottom:instaTab==="map"?"2px solid #4a7fa0":"none",background:"none",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:5}}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 010-5 2.5 2.5 0 010 5z" fill={instaTab==="map"?"#4a7fa0":"#c0c0c0"}/></svg>
+            <span style={{fontSize:12,color:instaTab==="map"?"#4a7fa0":"#888",fontWeight:instaTab==="map"?700:400}}>Photo Map</span>
+            <svg width="8" height="12" viewBox="0 0 8 12" fill="none"><path d="M1 1l5 5-5 5" stroke={instaTab==="map"?"#4a7fa0":"#bbb"} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+          </button>
+        </div>
+        {instaTab==="grid"&&(gridPosts.length===0
+          ?<div style={{padding:"40px 24px",textAlign:"center",color:"#999",fontSize:13,background:"#fff"}}><div style={{fontSize:36,marginBottom:8}}>📷</div>Aucun post pour l'instant</div>
+          :<div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:2,background:"#e8e8e8"}}>
+            {gridPosts.map((p,i)=>(
+              <div key={p.id||i} onClick={()=>{setPost(p);setView("post");}} style={{aspectRatio:"1",overflow:"hidden",cursor:"pointer",background:"#d8d8d8"}}>
+                {p.src?<img src={p.src} style={{width:"100%",height:"100%",objectFit:"cover",display:"block"}}/>:<div style={{width:"100%",height:"100%",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,color:"#bbb"}}>📷</div>}
+              </div>
+            ))}
+          </div>
+        )}
+        {instaTab==="list"&&(gridPosts.length===0
+          ?<div style={{padding:"40px 24px",textAlign:"center",color:"#999",fontSize:13,background:"#fff"}}>Aucun post</div>
+          :<div style={{display:"flex",flexDirection:"column",gap:0}}>
+            {gridPosts.map((p,i)=>(
+              <div key={p.id||i} onClick={()=>{setPost(p);setView("post");}} style={{display:"flex",gap:10,padding:"10px 12px",borderBottom:"1px solid #efefef",cursor:"pointer",background:"#fff",alignItems:"flex-start"}}>
+                <div style={{width:60,height:60,borderRadius:3,overflow:"hidden",flexShrink:0,background:"#e8e8e8"}}>{p.src?<img src={p.src} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:<div style={{width:"100%",height:"100%",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,color:"#bbb"}}>📷</div>}</div>
+                <div style={{flex:1,minWidth:0}}>
+                  {p.caption&&<div style={{fontSize:13,color:"#262626",lineHeight:1.4,overflow:"hidden",display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical"}}>{p.caption}</div>}
+                  <div style={{fontSize:11,color:"#999",marginTop:4,display:"flex",gap:10}}><span>❤ {p.likes||0}</span><span>💬 {(p.comments||[]).length}</span><span style={{marginLeft:"auto"}}>{p.date||""}</span></div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+        {instaTab==="map"&&<div style={{padding:"40px 24px",textAlign:"center",color:"#999",fontSize:13,background:"#fff"}}><div style={{fontSize:36,marginBottom:8}}>🗺️</div>Aucune photo géolocalisée</div>}
+      </div>
+      <TabBar/>
     </div>
   );
 };
