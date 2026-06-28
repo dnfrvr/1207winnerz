@@ -1871,6 +1871,7 @@ const IOSPhoneApp = ({data,admin,update,panel,setPanel}) => {
   );
 
 
+  const voicemailList = (data.voicemails && data.voicemails.length>0)
     ? data.voicemails
     : (calls.filter(c=>c.type==="missed")).slice(0,3).map((c,i)=>({id:"mc"+i, contact:c.contact, time:c.time, duration:`0:0${i+3}`, transcript:""}));
   const voicemail = list(
