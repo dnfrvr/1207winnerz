@@ -20419,10 +20419,21 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
       const IG_COLOR = "#3d6b8f";
       const igProfile = d.instagram || {};
       const igPosts   = igProfile.posts || [];
-      const updIg     = (patch) => upd("instagram", {...igProfile, ...patch});
-      const updPosts  = (list)  => updIg({posts: list});
+      const sharedIgPosts = data.sharedThreads?._sharedInstaPosts || [];
+      // Toujours lire depuis dataRef pour éviter les closures périmées → Firebase reçoit bien les données fraîches
+      const updIg = (patch) => {
+        const fresh = dataRef.current[tab] || {};
+        const freshIg = fresh.instagram || {};
+        onUpdate(tab, {...fresh, instagram: {...freshIg, ...patch}});
+      };
+      const updPosts  = (list) => {
+        const fresh = dataRef.current[tab] || {};
+        const freshIg = fresh.instagram || {};
+        onUpdate(tab, {...fresh, instagram: {...freshIg, posts: list}});
+      };
+      const updSharedIg = (list) => onUpdate("_sharedInstaPosts", list);
 
-      const SubTabs = [["profile","👤 Profil"],["posts","📷 Posts"]];
+      const SubTabs = [["profile","👤 Profil"],["posts","📷 Ma grille"],["feed","🏠 Fil partagé"]];
       return (
         <div style={{display:"flex",flexDirection:"column",gap:12}}>
           {/* Tab bar */}
@@ -20443,12 +20454,35 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
           {igTab==="profile" && (
             <div style={{background:"rgba(255,255,255,0.85)",borderRadius:10,padding:"14px 16px",border:"1px solid rgba(0,0,0,0.07)",display:"flex",flexDirection:"column",gap:10}}>
               <div style={{fontSize:10,fontWeight:700,color:"#9ca3af",letterSpacing:0.5}}>★ CE PERSO</div>
+              {/* Photo de profil Instagram spécifique */}
+              <div style={{display:"flex",gap:12,alignItems:"center"}}>
+                <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:4}}>
+                  <label style={{width:60,height:60,borderRadius:6,overflow:"hidden",background:"#e0e0e0",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",border:"1px solid rgba(0,0,0,0.1)",flexShrink:0}}>
+                    {igProfile.avatar
+                      ? <img src={igProfile.avatar} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+                      : (d.avatar ? <img src={d.avatar} style={{width:"100%",height:"100%",objectFit:"cover"}}/> : <span style={{fontSize:22,color:"#aaa"}}>👤</span>)
+                    }
+                    <input type="file" accept="image/*" style={{display:"none"}} onChange={e=>{
+                      const f=e.target.files?.[0];if(!f)return;
+                      const r=new UploadReader();
+                      r.onload=ev=>updIg({avatar:ev.target.result});
+                      r.readAsDataURL(f);e.target.value="";
+                    }}/>
+                  </label>
+                  <span style={{fontSize:9,color:"#888",textAlign:"center"}}>Photo Insta</span>
+                </div>
+                <div style={{flex:1,display:"flex",flexDirection:"column",gap:6}}>
+                  <Field label="Nom affiché" value={igProfile.displayName||""} onChange={v=>updIg({displayName:v})} style={{width:"100%"}}/>
+                  {igProfile.avatar && <button onClick={()=>updIg({avatar:null})} style={{fontSize:10,color:"#ef4444",background:"none",border:"none",cursor:"pointer",padding:0,alignSelf:"flex-start"}}>× Suppr. photo Insta</button>}
+                </div>
+              </div>
               <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
                 <Field label="Handle (@)" value={igProfile.handle||""} onChange={v=>updIg({handle:v})} style={{flex:"1 1 140px"}}/>
                 <Field label="Followers" value={String(igProfile.followers??"")} onChange={v=>updIg({followers:parseInt(v)||0})} width="80px"/>
                 <Field label="Following" value={String(igProfile.following??"")} onChange={v=>updIg({following:parseInt(v)||0})} width="80px"/>
               </div>
               <Field label="Bio" value={igProfile.bio||""} onChange={v=>updIg({bio:v})} textarea/>
+              <Field label="Lien (optionnel)" value={igProfile.link||""} onChange={v=>updIg({link:v})} style={{width:"100%"}}/>
             </div>
           )}
 
@@ -20457,7 +20491,13 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
             <div style={{display:"flex",flexDirection:"column",gap:8}}>
               <div style={{fontSize:11,color:"#6b7280",lineHeight:1.5}}>Photos visibles dans la grille Instagram du perso. Chaque post peut avoir une légende, des likes et des commentaires.</div>
               {igPosts.map((post,i)=>{
-                const updPost = (patch) => { const p=[...igPosts]; p[i]={...p[i],...patch}; updPosts(p); };
+                const updPost = (patch) => {
+                  const fresh = dataRef.current[tab] || {};
+                  const freshIg = fresh.instagram || {};
+                  const fp = [...(freshIg.posts||[])];
+                  fp[i] = {...fp[i], ...patch};
+                  onUpdate(tab, {...fresh, instagram: {...freshIg, posts: fp}});
+                };
                 return (
                   <div key={post.id||i} style={{background:"rgba(255,255,255,0.85)",borderRadius:10,padding:"10px 12px",border:"1px solid rgba(0,0,0,0.07)",display:"flex",flexDirection:"column",gap:8}}>
                     {/* Photo + date */}
@@ -20471,10 +20511,11 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                           const f=e.target.files?.[0];if(!f)return;
                           const r=new UploadReader();
                           r.onload=ev=>{
-                            const freshIg=dataRef.current[tab]?.instagram||{};
+                            const fresh=dataRef.current[tab]||{};
+                            const freshIg=fresh.instagram||{};
                             const fp=[...(freshIg.posts||[])];
                             fp[i]={...fp[i],src:ev.target.result};
-                            upd("instagram",{...freshIg,posts:fp});
+                            onUpdate(tab,{...fresh,instagram:{...freshIg,posts:fp}});
                           };
                           r.readAsDataURL(f);e.target.value="";
                         }}/>
@@ -20518,6 +20559,54 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                 style={{background:"rgba(61,107,143,0.08)",border:"1px dashed rgba(61,107,143,0.4)",color:IG_COLOR,borderRadius:8,padding:"10px 18px",cursor:"pointer",fontSize:12,fontWeight:600}}>+ Post Instagram</button>
             </div>
           )}
+
+          {/* ── FIL PARTAGÉ ── */}
+          {igTab==="feed" && (()=>{
+            const myHandle = igProfile.handle || d.username || tab;
+            return (
+              <div style={{display:"flex",flexDirection:"column",gap:8}}>
+                <div style={{fontSize:11,color:"#6b7280",lineHeight:1.5,background:"rgba(61,107,143,0.07)",border:"1px solid rgba(61,107,143,0.2)",borderRadius:8,padding:"8px 12px"}}>
+                  Posts visibles dans le <strong>fil d'accueil</strong> de tous les persos. Seul toi peux modifier ou supprimer tes propres posts.
+                </div>
+                {sharedIgPosts.filter(p=>p.author===tab).map((post,i)=>{
+                  const idx = sharedIgPosts.findIndex(p=>p.id===post.id);
+                  const updPost = (patch) => { const list=[...sharedIgPosts]; list[idx]={...list[idx],...patch}; updSharedIg(list); };
+                  return (
+                    <div key={post.id||i} style={{background:"rgba(255,255,255,0.85)",borderRadius:10,padding:"10px 12px",border:"1px solid rgba(0,0,0,0.07)",display:"flex",gap:10,alignItems:"flex-start"}}>
+                      <label style={{width:64,height:64,borderRadius:6,overflow:"hidden",background:"#efefef",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",flexShrink:0,border:"1px solid rgba(0,0,0,0.08)"}}>
+                        {post.src?<img src={post.src} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:<span style={{fontSize:22}}>📷</span>}
+                        <input type="file" accept="image/*" style={{display:"none"}} onChange={e=>{
+                          const f=e.target.files?.[0];if(!f)return;
+                          const r=new UploadReader();
+                          r.onload=ev=>{
+                            const list=[...((dataRef.current.sharedThreads?._sharedInstaPosts)||[])];
+                            const ii=list.findIndex(p=>p.id===post.id);
+                            if(ii>=0){list[ii]={...list[ii],src:ev.target.result};updSharedIg(list);}
+                          };
+                          r.readAsDataURL(f);e.target.value="";
+                        }}/>
+                      </label>
+                      <div style={{flex:1,minWidth:0,display:"flex",flexDirection:"column",gap:6}}>
+                        <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+                          <Field label="Date" value={post.date||""} onChange={v=>updPost({date:v})} width="100px"/>
+                          <Field label="Likes" value={String(post.likes??"")} onChange={v=>updPost({likes:parseInt(v)||0})} width="70px"/>
+                          <button onClick={()=>updSharedIg(sharedIgPosts.filter(p=>p.id!==post.id))} style={{background:"rgba(239,68,68,0.06)",border:"1px solid rgba(239,68,68,0.2)",color:"#ef4444",borderRadius:6,padding:"5px 8px",cursor:"pointer",fontSize:11,alignSelf:"flex-end"}}>✕</button>
+                        </div>
+                        <Field label="Légende" value={post.caption||""} onChange={v=>updPost({caption:v})} textarea/>
+                      </div>
+                    </div>
+                  );
+                })}
+                {sharedIgPosts.filter(p=>p.author!==tab).length>0&&(
+                  <div style={{fontSize:11,color:"#9ca3af",padding:"4px 0"}}>
+                    {sharedIgPosts.filter(p=>p.author!==tab).length} post(s) d'autres persos dans le fil (non modifiables ici).
+                  </div>
+                )}
+                <button onClick={()=>updSharedIg([...sharedIgPosts,{id:Date.now(),author:tab,handle:myHandle,avatar:dataRef.current[tab]?.avatar||null,src:null,caption:"",likes:0,date:"Oct 2012",comments:[]}])}
+                  style={{background:"rgba(61,107,143,0.08)",border:"1px dashed rgba(61,107,143,0.4)",color:IG_COLOR,borderRadius:8,padding:"10px 18px",cursor:"pointer",fontSize:12,fontWeight:600}}>+ Mon post dans le fil</button>
+              </div>
+            );
+          })()}
         </div>
       );
     }
@@ -22454,74 +22543,105 @@ const GmailScreen = ({data, isIos, accent, onBack}) => {
 
 
 const InstaScreen = ({data, isIos, accent, onBack}) => {
-  const [view, setView]         = useState("profile");
+  const [view, setView]         = useState("profile"); // "profile" | "feed" | "post"
   const [activePost, setPost]   = useState(null);
   const [instaTab, setInstaTab] = useState("grid");
 
-  const ig       = data.instagram || {};
-  const posts    = ig.posts    || [];
-  const handle   = (ig.handle   || data.username || "").toUpperCase();
-  const handleLo = ig.handle   || data.username || "";
-  const bio      = ig.bio      || data.bio      || "";
-  const followers= ig.followers ?? data.followers ?? 0;
-  const following= ig.following ?? data.following ?? 0;
-  const avatar   = data.avatar || null;
-  const charKey  = data.username?.includes("glinda")?"glinda":data.username?.includes("eoghan")?"eoghan":data.username?.includes("drew")?"drew":"elias";
-  const name     = {glinda:"Glinda Rosalind",eoghan:"Eoghan Masuda",drew:"Drew Bates",elias:"Elias Green"}[charKey] || handleLo;
+  const ig        = data.instagram || {};
+  const myPosts   = ig.posts    || [];
+  const sharedIg  = data.sharedThreads?._sharedInstaPosts || [];
+  const handle    = (ig.handle   || data.username || "").toUpperCase();
+  const handleLo  = ig.handle   || data.username || "";
+  const bio       = ig.bio      || data.bio      || "";
+  const followers = ig.followers ?? data.followers ?? 0;
+  const following = ig.following ?? data.following ?? 0;
+  // Photo de profil spécifique Instagram, sinon avatar global
+  const avatar    = ig.avatar   || data.avatar || null;
+  const charKey   = data.username?.includes("glinda")?"glinda":data.username?.includes("eoghan")?"eoghan":data.username?.includes("drew")?"drew":"elias";
+  // Nom affiché spécifique Instagram, sinon nom générique
+  const name      = ig.displayName || {glinda:"Glinda Rosalind",eoghan:"Eoghan Masuda",drew:"Drew Bates",elias:"Elias Green"}[charKey] || handleLo;
+  const sharedAvatars = data.sharedThreads?._sharedAvatars || {};
+  const gridPosts = myPosts.filter(p=>!p.archived);
 
-  const IG_HDR = "linear-gradient(180deg,#6497b8,#4a7fa8)";
+  const IG_HDR  = "linear-gradient(180deg,#6497b8,#4a7fa8)";
   const IG_BLUE = "#3b88c3";
-  const gridPosts = posts.filter(p=>!p.archived);
 
+  // ── Tab bar bottom fidèle à la capture ──
+  const TabBar = ({active}) => (
+    <div style={{background:"linear-gradient(180deg,#f5f5f5,#e8e8e8)",borderTop:"1px solid #c8c8c8",display:"flex",alignItems:"flex-end",flexShrink:0,height:49,paddingBottom:0}}>
+      {/* Home */}
+      <button onClick={()=>setView("feed")} style={{flex:1,height:"100%",border:"none",background:"none",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>
+        <svg width="23" height="23" viewBox="0 0 24 24" fill="none"><path d="M3 10.5L12 3l9 7.5V20a1 1 0 01-1 1H5a1 1 0 01-1-1v-9.5z" stroke={active==="feed"?IG_BLUE:"#888"} strokeWidth="1.8" strokeLinejoin="round"/><path d="M9 21V13h6v8" stroke={active==="feed"?IG_BLUE:"#888"} strokeWidth="1.8" strokeLinejoin="round"/></svg>
+      </button>
+      {/* Explore (boussole) */}
+      <button onClick={()=>{}} style={{flex:1,height:"100%",border:"none",background:"none",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>
+        <svg width="23" height="23" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="#888" strokeWidth="1.8"/><polygon points="12,7 14,12 12,17 10,12" stroke="#888" strokeWidth="1.4" fill="none" strokeLinejoin="round"/></svg>
+      </button>
+      {/* Camera — centré surélevé dans un cercle */}
+      <div style={{flex:1,display:"flex",alignItems:"flex-end",justifyContent:"center",position:"relative",paddingBottom:3}}>
+        <div style={{width:44,height:44,borderRadius:"50%",background:"linear-gradient(180deg,#6a9fc0,#4a7fa0)",border:"2px solid #fff",display:"flex",alignItems:"center",justifyContent:"center",boxShadow:"0 2px 6px rgba(0,0,0,0.25)",marginBottom:2,cursor:"pointer"}}>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z" stroke="#fff" strokeWidth="1.8" strokeLinejoin="round"/><circle cx="12" cy="13" r="4" stroke="#fff" strokeWidth="1.8"/></svg>
+        </div>
+      </div>
+      {/* Heart / notifications */}
+      <button onClick={()=>{}} style={{flex:1,height:"100%",border:"none",background:"none",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>
+        <svg width="23" height="23" viewBox="0 0 24 24" fill="none"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z" stroke="#888" strokeWidth="1.8" strokeLinejoin="round"/></svg>
+      </button>
+      {/* Profile (active sur profil) */}
+      <button onClick={()=>setView("profile")} style={{flex:1,height:"100%",border:"none",background:"none",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>
+        <svg width="23" height="23" viewBox="0 0 24 24" fill="none"><rect x="2" y="2" width="9" height="9" rx="1" fill={active==="profile"?IG_BLUE:"#888"}/><rect x="13" y="2" width="9" height="9" rx="1" fill={active==="profile"?IG_BLUE:"#888"}/><rect x="2" y="13" width="9" height="9" rx="1" fill={active==="profile"?IG_BLUE:"#888"}/><rect x="13" y="13" width="9" height="9" rx="1" fill={active==="profile"?IG_BLUE:"#888"}/></svg>
+      </button>
+    </div>
+  );
+
+  // ── Header ──
   const Header = ({title, left}) => (
     <div style={{background:IG_HDR,borderBottom:"1px solid #3a6a90",height:44,display:"flex",alignItems:"center",padding:"0 8px",flexShrink:0,boxShadow:"0 1px 2px rgba(0,0,0,0.25)"}}>
       <div style={{width:60,display:"flex",alignItems:"center"}}>{left}</div>
       <div style={{flex:1,textAlign:"center",color:"#fff",fontSize:17,fontWeight:700,textShadow:"0 -1px 0 rgba(0,0,0,0.3)",letterSpacing:0.2}}>{title}</div>
       <div style={{width:60,display:"flex",justifyContent:"flex-end",alignItems:"center"}}>
-        <button onClick={()=>{}} style={{background:"rgba(0,0,0,0.2)",border:"1px solid rgba(0,0,0,0.3)",borderRadius:5,width:30,height:30,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",padding:0}}>
+        <button onClick={()=>{}} style={{background:"rgba(0,0,0,0.18)",border:"1px solid rgba(0,0,0,0.28)",borderRadius:5,width:30,height:30,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",padding:0}}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 15a3 3 0 100-6 3 3 0 000 6z" stroke="#fff" strokeWidth="1.8"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z" stroke="#fff" strokeWidth="1.8"/></svg>
         </button>
       </div>
     </div>
   );
 
-  const BackBtn = ({label, onClick}) => (
-    <button onClick={onClick} style={{background:"linear-gradient(180deg,#5a8fb8,#3a6f98)",border:"1px solid rgba(0,0,0,0.4)",borderRadius:5,color:"#fff",fontSize:11,fontWeight:"600",cursor:"pointer",padding:"4px 9px 4px 7px",display:"flex",alignItems:"center",gap:2,textShadow:"0 -1px 0 rgba(0,0,0,0.4)",boxShadow:"inset 0 1px 0 rgba(255,255,255,0.2)"}}>
+  const BackArrow = ({onClick}) => (
+    <button onClick={onClick} style={{background:"linear-gradient(180deg,#5a8fb8,#3a6f98)",border:"1px solid rgba(0,0,0,0.4)",borderRadius:5,color:"#fff",fontSize:11,fontWeight:"600",cursor:"pointer",padding:"5px 9px",display:"flex",alignItems:"center",textShadow:"0 -1px 0 rgba(0,0,0,0.4)",boxShadow:"inset 0 1px 0 rgba(255,255,255,0.2)"}}>
       <svg width="7" height="12" viewBox="0 0 7 12" fill="none"><path d="M6 1L1 6l5 5" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
-      {label&&<span style={{marginLeft:1}}>{label}</span>}
     </button>
   );
 
-  const TabBar = () => (
-    <div style={{background:"linear-gradient(180deg,#f5f5f5,#e8e8e8)",borderTop:"1px solid #c8c8c8",display:"flex",alignItems:"center",flexShrink:0,height:49}}>
-      {[
-        <svg key="h" width="23" height="23" viewBox="0 0 24 24" fill="none"><path d="M3 9.5L12 3l9 6.5V21a1 1 0 01-1 1H5a1 1 0 01-1-1V9.5z" stroke="#555" strokeWidth="1.6" strokeLinejoin="round"/><path d="M9 21V12h6v9" stroke="#555" strokeWidth="1.6" strokeLinejoin="round"/></svg>,
-        <svg key="s" width="23" height="23" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="#555" strokeWidth="1.6"/><circle cx="12" cy="12" r="3" fill="#555"/><line x1="12" y1="3" x2="12" y2="6" stroke="#555" strokeWidth="1.4"/><line x1="12" y1="18" x2="12" y2="21" stroke="#555" strokeWidth="1.4"/><line x1="3" y1="12" x2="6" y2="12" stroke="#555" strokeWidth="1.4"/><line x1="18" y1="12" x2="21" y2="12" stroke="#555" strokeWidth="1.4"/></svg>,
-        <div key="c" style={{width:42,height:42,borderRadius:"50%",background:"linear-gradient(180deg,#6a9fc0,#4a7fa0)",border:"2px solid #3a6a88",display:"flex",alignItems:"center",justifyContent:"center",boxShadow:"0 2px 6px rgba(0,0,0,0.3)",marginBottom:10}}><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><rect x="2" y="6" width="20" height="14" rx="2" stroke="#fff" strokeWidth="1.8"/><circle cx="12" cy="13" r="4" stroke="#fff" strokeWidth="1.8"/><path d="M8 6l1.5-2.5h5L16 6" stroke="#fff" strokeWidth="1.6" strokeLinejoin="round"/></svg></div>,
-        <svg key="hrt" width="23" height="23" viewBox="0 0 24 24" fill="none"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z" stroke="#555" strokeWidth="1.6" strokeLinejoin="round"/></svg>,
-        <svg key="p" width="23" height="23" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="4" stroke="#4a7fa0" strokeWidth="1.8"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" stroke="#4a7fa0" strokeWidth="1.8" strokeLinecap="round"/></svg>,
-      ].map((icon,i)=>(
-        <div key={i} style={{flex:1,display:"flex",alignItems:"center",justifyContent:"center",height:"100%",cursor:"pointer"}}>{icon}</div>
-      ))}
-    </div>
-  );
-
+  // ── Vue post individuel ──
   if(view==="post" && activePost) {
     const p = activePost;
+    const postAuthor = p.author || charKey;
+    const postHandle = p.handle || handleLo;
+    const postAvatar = p.avatar || sharedAvatars[postAuthor] || avatar;
     return (
       <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden",background:"#fff"}}>
-        <Header title="Photo" left={<BackBtn label={handle} onClick={()=>setView("profile")}/>}/>
+        <Header title="Photo" left={<BackArrow onClick={()=>setView(p._fromFeed?"feed":"profile")}/>}/>
         <div style={{flex:1,overflowY:"auto"}}>
+          {/* Auteur */}
+          <div style={{display:"flex",alignItems:"center",gap:8,padding:"8px 10px",borderBottom:"1px solid #f0f0f0"}}>
+            <div style={{width:32,height:32,borderRadius:"50%",overflow:"hidden",background:"#d0d0d0",display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,fontWeight:700,color:"#fff",flexShrink:0}}>
+              {postAvatar?<img src={postAvatar} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:(postHandle||"?")[0].toUpperCase()}
+            </div>
+            <span style={{fontSize:13,fontWeight:700,color:"#262626"}}>{postHandle}</span>
+            <span style={{marginLeft:"auto",color:"#999",fontSize:11}}>{p.date||""}</span>
+          </div>
+          {/* Photo */}
           <div style={{width:"100%",aspectRatio:"1",background:"#efefef",overflow:"hidden"}}>
             {p.src?<img src={p.src} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:<div style={{width:"100%",height:"100%",display:"flex",alignItems:"center",justifyContent:"center",fontSize:40,color:"#ccc"}}>📷</div>}
           </div>
+          {/* Actions */}
           <div style={{display:"flex",alignItems:"center",padding:"8px 10px",gap:16,borderBottom:"1px solid #efefef"}}>
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z" stroke="#555" strokeWidth="1.8" strokeLinejoin="round"/></svg>
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" stroke="#555" strokeWidth="1.8" strokeLinejoin="round"/></svg>
-            <span style={{marginLeft:"auto",color:"#999",fontSize:12}}>{p.date||""}</span>
           </div>
           {(p.likes||0)>0&&<div style={{padding:"6px 12px",fontSize:13,fontWeight:700,color:"#262626",borderBottom:"1px solid #f5f5f5"}}>{p.likes} J'aime</div>}
-          {p.caption&&<div style={{padding:"8px 12px",fontSize:13,color:"#262626",lineHeight:1.5,borderBottom:"1px solid #f5f5f5"}}><span style={{fontWeight:700}}>{handleLo} </span>{p.caption}</div>}
+          {p.caption&&<div style={{padding:"8px 12px",fontSize:13,color:"#262626",lineHeight:1.5,borderBottom:"1px solid #f5f5f5"}}><span style={{fontWeight:700}}>{postHandle} </span>{p.caption}</div>}
           {(p.comments||[]).map((c,i)=>(
             <div key={i} style={{display:"flex",alignItems:"flex-start",gap:8,padding:"8px 12px",borderBottom:"1px solid #f9f9f9"}}>
               <div style={{width:28,height:28,borderRadius:"50%",background:"#d0d0d0",flexShrink:0,overflow:"hidden",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:700,color:"#fff"}}>{(c.user||"?")[0].toUpperCase()}</div>
@@ -22529,15 +22649,70 @@ const InstaScreen = ({data, isIos, accent, onBack}) => {
             </div>
           ))}
         </div>
-        <TabBar/>
+        <TabBar active="feed"/>
       </div>
     );
   }
 
+  // ── Vue feed (fil amis) ──
+  if(view==="feed") {
+    const feedPosts = [...sharedIg].sort((a,b)=>{
+      const t = s => { const m=s?.match(/(\d+)\s*(h|min|s|oct|sep|jan|fév|mar|avr|mai|juin|juil|août|nov|déc)/i); return m?parseInt(m[1]):999; };
+      return t(a.date)-t(b.date);
+    });
+    return (
+      <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden",background:"#fafafa"}}>
+        <Header title="Instagram" left={null}/>
+        <div style={{flex:1,overflowY:"auto"}}>
+          {feedPosts.length===0&&(
+            <div style={{padding:"40px 24px",textAlign:"center",color:"#999",fontSize:13}}>
+              <div style={{fontSize:36,marginBottom:8}}>📷</div>
+              Aucun post dans le fil.<br/>Ajoutez des posts partagés dans l'admin Instagram.
+            </div>
+          )}
+          {feedPosts.map((p,i)=>{
+            const postHandle = p.handle || p.author || "";
+            const postAvatar = p.avatar || sharedAvatars[p.author] || null;
+            return (
+              <div key={p.id||i} style={{background:"#fff",marginBottom:8,borderTop:i===0?"none":"none"}}>
+                {/* Header du post */}
+                <div style={{display:"flex",alignItems:"center",gap:8,padding:"8px 10px",borderBottom:"1px solid #f0f0f0"}}>
+                  <div style={{width:36,height:36,borderRadius:"50%",overflow:"hidden",background:"#d0d0d0",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,fontWeight:700,color:"#fff"}}>
+                    {postAvatar?<img src={postAvatar} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:(postHandle||"?")[0].toUpperCase()}
+                  </div>
+                  <div style={{flex:1}}>
+                    <div style={{fontSize:13,fontWeight:700,color:"#262626"}}>{postHandle}</div>
+                  </div>
+                  <span style={{color:"#999",fontSize:11}}>{p.date||""}</span>
+                </div>
+                {/* Photo */}
+                <div onClick={()=>{setPost({...p,_fromFeed:true});setView("post");}} style={{cursor:"pointer",background:"#efefef",overflow:"hidden",aspectRatio:"1"}}>
+                  {p.src?<img src={p.src} style={{width:"100%",display:"block",objectFit:"cover"}}/>:<div style={{width:"100%",height:"100%",display:"flex",alignItems:"center",justifyContent:"center",fontSize:40,color:"#ccc"}}>📷</div>}
+                </div>
+                {/* Actions */}
+                <div style={{padding:"8px 10px",borderBottom:"1px solid #f5f5f5"}}>
+                  <div style={{display:"flex",gap:14,marginBottom:6}}>
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z" stroke="#555" strokeWidth="1.8" strokeLinejoin="round"/></svg>
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" stroke="#555" strokeWidth="1.8" strokeLinejoin="round"/></svg>
+                  </div>
+                  {(p.likes||0)>0&&<div style={{fontSize:12,fontWeight:700,color:"#262626",marginBottom:3}}>{p.likes} J'aime</div>}
+                  {p.caption&&<div style={{fontSize:13,color:"#262626",lineHeight:1.4}}><span style={{fontWeight:700}}>{postHandle} </span>{p.caption}</div>}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+        <TabBar active="feed"/>
+      </div>
+    );
+  }
+
+  // ── Vue profil ──
   return (
     <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden",background:"#fff"}}>
       <Header title={handle} left={null}/>
       <div style={{flex:1,overflowY:"auto",background:"#fafafa"}}>
+        {/* Bloc profil */}
         <div style={{background:"#fff",borderBottom:"1px solid #dbdbdb"}}>
           <div style={{display:"flex",alignItems:"flex-start",padding:"14px 12px 10px",gap:12}}>
             <div style={{width:70,height:70,borderRadius:4,overflow:"hidden",flexShrink:0,border:"1px solid #d0d0d0",background:"#e0e0e0",display:"flex",alignItems:"center",justifyContent:"center",color:"#888",fontWeight:700,fontSize:26}}>
@@ -22557,11 +22732,13 @@ const InstaScreen = ({data, isIos, accent, onBack}) => {
             <svg width="10" height="16" viewBox="0 0 10 16" fill="none"><path d="M1 1l7 7-7 7" stroke="#bbb" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
           </div>
         </div>
+        {/* Nom + bio */}
         <div style={{background:"#fff",padding:"10px 12px 12px",borderBottom:"1px solid #dbdbdb"}}>
           <div style={{fontSize:14,fontWeight:700,color:"#262626",marginBottom:3}}>{name}</div>
           {bio&&<div style={{fontSize:13,color:"#262626",lineHeight:1.5,whiteSpace:"pre-wrap"}}>{bio}</div>}
           {ig.link&&<div style={{fontSize:13,color:IG_BLUE,marginTop:2}}>{ig.link}</div>}
         </div>
+        {/* Séparateur + onglets */}
         <div style={{background:"#efefef",height:8,borderTop:"1px solid #dbdbdb",borderBottom:"1px solid #dbdbdb"}}/>
         <div style={{background:"#fff",display:"flex",alignItems:"center",borderBottom:"1px solid #dbdbdb"}}>
           <button onClick={()=>setInstaTab("grid")} style={{flex:1,height:42,border:"none",borderBottom:instaTab==="grid"?"2px solid #4a7fa0":"none",background:"none",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>
@@ -22576,11 +22753,12 @@ const InstaScreen = ({data, isIos, accent, onBack}) => {
             <svg width="8" height="12" viewBox="0 0 8 12" fill="none"><path d="M1 1l5 5-5 5" stroke={instaTab==="map"?"#4a7fa0":"#bbb"} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
           </button>
         </div>
+        {/* Contenu grille */}
         {instaTab==="grid"&&(gridPosts.length===0
           ?<div style={{padding:"40px 24px",textAlign:"center",color:"#999",fontSize:13,background:"#fff"}}><div style={{fontSize:36,marginBottom:8}}>📷</div>Aucun post pour l'instant</div>
           :<div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:2,background:"#e8e8e8"}}>
             {gridPosts.map((p,i)=>(
-              <div key={p.id||i} onClick={()=>{setPost(p);setView("post");}} style={{aspectRatio:"1",overflow:"hidden",cursor:"pointer",background:"#d8d8d8"}}>
+              <div key={p.id||i} onClick={()=>{setPost({...p,_fromFeed:false});setView("post");}} style={{aspectRatio:"1",overflow:"hidden",cursor:"pointer",background:"#d8d8d8"}}>
                 {p.src?<img src={p.src} style={{width:"100%",height:"100%",objectFit:"cover",display:"block"}}/>:<div style={{width:"100%",height:"100%",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,color:"#bbb"}}>📷</div>}
               </div>
             ))}
@@ -22588,24 +22766,23 @@ const InstaScreen = ({data, isIos, accent, onBack}) => {
         )}
         {instaTab==="list"&&(gridPosts.length===0
           ?<div style={{padding:"40px 24px",textAlign:"center",color:"#999",fontSize:13,background:"#fff"}}>Aucun post</div>
-          :<div style={{display:"flex",flexDirection:"column",gap:0}}>
-            {gridPosts.map((p,i)=>(
-              <div key={p.id||i} onClick={()=>{setPost(p);setView("post");}} style={{display:"flex",gap:10,padding:"10px 12px",borderBottom:"1px solid #efefef",cursor:"pointer",background:"#fff",alignItems:"flex-start"}}>
+          :<div>{gridPosts.map((p,i)=>(
+              <div key={p.id||i} onClick={()=>{setPost({...p,_fromFeed:false});setView("post");}} style={{display:"flex",gap:10,padding:"10px 12px",borderBottom:"1px solid #efefef",cursor:"pointer",background:"#fff",alignItems:"flex-start"}}>
                 <div style={{width:60,height:60,borderRadius:3,overflow:"hidden",flexShrink:0,background:"#e8e8e8"}}>{p.src?<img src={p.src} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:<div style={{width:"100%",height:"100%",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,color:"#bbb"}}>📷</div>}</div>
                 <div style={{flex:1,minWidth:0}}>
                   {p.caption&&<div style={{fontSize:13,color:"#262626",lineHeight:1.4,overflow:"hidden",display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical"}}>{p.caption}</div>}
                   <div style={{fontSize:11,color:"#999",marginTop:4,display:"flex",gap:10}}><span>❤ {p.likes||0}</span><span>💬 {(p.comments||[]).length}</span><span style={{marginLeft:"auto"}}>{p.date||""}</span></div>
                 </div>
               </div>
-            ))}
-          </div>
+            ))}</div>
         )}
         {instaTab==="map"&&<div style={{padding:"40px 24px",textAlign:"center",color:"#999",fontSize:13,background:"#fff"}}><div style={{fontSize:36,marginBottom:8}}>🗺️</div>Aucune photo géolocalisée</div>}
       </div>
-      <TabBar/>
+      <TabBar active="profile"/>
     </div>
   );
 };
+
 
 
 const EMAILS_BY_CHAR = {
