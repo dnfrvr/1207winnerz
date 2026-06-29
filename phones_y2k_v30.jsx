@@ -18846,7 +18846,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                       <span style={{fontSize:13}}>👥</span>
                       {isSharedGroup ? (
                         <input value={meta.name||""} onChange={e=>{
-                          const newMeta={...(data.groupMeta||{}),[gid]:{...meta,name:e.target.value}};
+                          const newMeta={...(dataRef.current.groupMeta||{}),[gid]:{...meta,name:e.target.value}};
                           onUpdate("groupMeta",newMeta);
                           // Sync le nom dans tous les messages de tous les persos
                           ['glinda','eoghan','drew','elias'].forEach(k=>{
@@ -18873,7 +18873,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                               <button key={k} onClick={()=>{
                                 const cur=meta.members||[];
                                 const next=isMember?cur.filter(m=>m!==k):[...cur,k];
-                                const newMeta={...(data.groupMeta||{}),[gid]:{...meta,members:next}};
+                                const newMeta={...(dataRef.current.groupMeta||{}),[gid]:{...meta,members:next}};
                                 onUpdate("groupMeta",newMeta);
                                 // Ajouter/retirer la conv groupe du perso
                                 const kd=data[k];if(!kd)return;
@@ -18899,7 +18899,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                               {extMember}
                               <button onClick={()=>{
                                 const next=(meta.members||[]).filter(m=>m!==extMember);
-                                const newMeta={...(data.groupMeta||{}),[gid]:{...meta,members:next}};
+                                const newMeta={...(dataRef.current.groupMeta||{}),[gid]:{...meta,members:next}};
                                 onUpdate("groupMeta",newMeta);
                               }} style={{background:"none",border:"none",color:"#999",cursor:"pointer",fontSize:12,padding:0,lineHeight:1}}>×</button>
                             </span>
@@ -18909,7 +18909,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                             if(e.key==="Enter"&&e.target.value.trim()){
                               const newMember=e.target.value.trim();
                               const next=[...(meta.members||[]),newMember];
-                              const newMeta={...(data.groupMeta||{}),[gid]:{...meta,members:next}};
+                              const newMeta={...(dataRef.current.groupMeta||{}),[gid]:{...meta,members:next}};
                               onUpdate("groupMeta",newMeta);
                               e.target.value="";
                             }
@@ -18922,7 +18922,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                     {gOpen && isSharedGroup && (()=>{
                       const CHAR_COLORS={glinda:"#e91e8c",eoghan:"#00d435",drew:"#aa6caa",elias:"#6672d0"};
                       const allMembers = meta.members||[];
-                      const thread = data.sharedThreads?.[gid]||[];
+                      const thread = dataRef.current.sharedThreads?.[gid]||[];
                       // Toutes les options : membres du groupe
                       const senderOptions = allMembers.map(m=>({
                         key:m, label:CHAR_NAMES[m]||m, color:CHAR_COLORS[m]||"#6366f1"
@@ -19008,7 +19008,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                 const gid="group_"+Date.now();
                 const defaultMembers=[tab];
                 onUpdate(gid,[]);
-                const newMeta={...(data.groupMeta||{}),[gid]:{name:"Nouveau groupe",members:defaultMembers}};
+                const newMeta={...(dataRef.current.groupMeta||{}),[gid]:{name:"Nouveau groupe",members:defaultMembers}};
                 onUpdate("groupMeta",newMeta);
                 upd("messages",[{id:Date.now(),contact:"Nouveau groupe",sharedThreadId:gid,isGroup:true,unread:false,thread:[]},...(d.messages||[])]);
               }} style={{background:"rgba(99,102,241,0.07)",border:"1px dashed rgba(99,102,241,0.35)",color:"#6366f1",borderRadius:8,padding:"8px 14px",cursor:"pointer",fontSize:11,fontWeight:600,alignSelf:"flex-start"}}>
@@ -19097,20 +19097,20 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                   <input type="file" accept="image/*" style={{display:"none"}} onChange={e=>{
                     const f=e.target.files?.[0]; if(!f) return;
                     const r=new UploadReader(); r.onload=ev=>{
-                      if(isShared){const cur=[...(data.sharedThreads?.[msg.sharedThreadId]||[])];cur[mi]={...cur[mi],img:ev.target.result};onUpdate(msg.sharedThreadId,cur);}
+                      if(isShared){const cur=[...(dataRef.current.sharedThreads?.[msg.sharedThreadId]||[])];cur[mi]={...cur[mi],img:ev.target.result};onUpdate(msg.sharedThreadId,cur);}
                       else{const t=[...rawThread];t[mi]={...t[mi],img:ev.target.result};updMsg(t);}
                     };
                     r.readAsDataURL(f); e.target.value="";
                   }}/>
                 </label>
                 {msg2.img && <button onClick={()=>{
-                  if(isShared){const cur=[...(data.sharedThreads?.[msg.sharedThreadId]||[])];cur[mi]={...cur[mi],img:null};onUpdate(msg.sharedThreadId,cur);}
+                  if(isShared){const cur=[...(dataRef.current.sharedThreads?.[msg.sharedThreadId]||[])];cur[mi]={...cur[mi],img:null};onUpdate(msg.sharedThreadId,cur);}
                   else{const t=[...rawThread];t[mi]={...t[mi],img:null};updMsg(t);}
                 }} title="Retirer l'image" style={{background:"none",border:"none",color:"#ef4444",cursor:"pointer",fontSize:13,padding:"0 2px",flexShrink:0}}>✕</button>}
                 <select value={msg2.from} onChange={e=>{
                   if(isShared){
                     const myL=msg.perspective||'a';const otherL=myL==='a'?'b':'a';
-                    const cur=[...(data.sharedThreads?.[msg.sharedThreadId]||[])];
+                    const cur=[...(dataRef.current.sharedThreads?.[msg.sharedThreadId]||[])];
                     cur[mi]={...cur[mi],from:e.target.value==='me'?myL:otherL};
                     onUpdate(msg.sharedThreadId,cur);
                   }else{const t=[...rawThread];t[mi]={...t[mi],from:e.target.value};updMsg(t);}
@@ -19118,15 +19118,15 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                   <option value="me">moi</option><option value="them">eux</option>
                 </select>
                 <input value={msg2.text} onChange={e=>{
-                  if(isShared){const cur=[...(data.sharedThreads?.[msg.sharedThreadId]||[])];cur[mi]={...cur[mi],text:e.target.value};onUpdate(msg.sharedThreadId,cur);}
+                  if(isShared){const cur=[...(dataRef.current.sharedThreads?.[msg.sharedThreadId]||[])];cur[mi]={...cur[mi],text:e.target.value};onUpdate(msg.sharedThreadId,cur);}
                   else{const t=[...rawThread];t[mi]={...t[mi],text:e.target.value};updMsg(t);}
                 }} className="adm-input" style={{flex:"1 1 140px",minWidth:0,background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#1a1a2e",padding:"6px 10px",fontSize:12,borderRadius:7}}/>
                 <LoreDateTimeInput value={msg2.time} onChange={v=>{
-                  if(isShared){const cur=[...(data.sharedThreads?.[msg.sharedThreadId]||[])];cur[mi]={...cur[mi],time:v};onUpdate(msg.sharedThreadId,cur);}
+                  if(isShared){const cur=[...(dataRef.current.sharedThreads?.[msg.sharedThreadId]||[])];cur[mi]={...cur[mi],time:v};onUpdate(msg.sharedThreadId,cur);}
                   else{const t=[...rawThread];t[mi]={...t[mi],time:v};updMsg(t);}
                 }} width="190px" showLabel={false}/>
                 <button onClick={()=>{
-                  if(isShared){const cur=[...(data.sharedThreads?.[msg.sharedThreadId]||[])];cur.splice(mi,1);onUpdate(msg.sharedThreadId,cur);}
+                  if(isShared){const cur=[...(dataRef.current.sharedThreads?.[msg.sharedThreadId]||[])];cur.splice(mi,1);onUpdate(msg.sharedThreadId,cur);}
                   else{updMsg(rawThread.filter((_,tj)=>tj!==mi));}
                 }} className="adm-del-btn" style={{background:"none",border:"none",color:"#d1d5db",cursor:"pointer",fontSize:16,padding:"2px 6px",flexShrink:0,borderRadius:5}}>×</button>
               </div>
@@ -19134,12 +19134,12 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
             <button onClick={()=>{
               if(msg.sharedThreadId){
                 const myL=msg.perspective||'a';
-                onUpdate(msg.sharedThreadId,[...(data.sharedThreads?.[msg.sharedThreadId]||[]),{from:myL,text:"",time:"maintenant"}]);
+                onUpdate(msg.sharedThreadId,[...(dataRef.current.sharedThreads?.[msg.sharedThreadId]||[]),{from:myL,text:"",time:"maintenant"}]);
               }else{upd("messages",d.messages.map(mm=>mm===msg?{...mm,thread:[...(mm.thread||[]),{from:"me",text:"",time:"maintenant"}]}:mm));}
             }} style={{background:"rgba(0,0,0,0.04)",border:"1px dashed rgba(0,0,0,0.15)",color:"#9ca3af",borderRadius:6,padding:"5px 12px",cursor:"pointer",fontSize:11,marginTop:4}}>+ message</button>
             <ThreadComposer isGroup={false} tab={tab} onApply={(parsed,mode)=>{
               if(msg.sharedThreadId){
-                const cur=data.sharedThreads?.[msg.sharedThreadId]||[];
+                const cur=dataRef.current.sharedThreads?.[msg.sharedThreadId]||[];
                 const myL=msg.perspective||'a';const otherL=myL==='a'?'b':'a';
                 const raw=parsed.map(p=>({from:p.from==='me'?myL:otherL,text:p.text,time:p.time}));
                 onUpdate(msg.sharedThreadId,mode==="append"?[...cur,...raw]:raw);
@@ -19798,8 +19798,12 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
       const specificUsers = d.twitterUsers || {};
       const updTwUser = (key, field, val) => {
         if(isCommon(key)) {
-          const cur = twUsers[key] || COMMON_KNOWN.find(u=>u.key===key) || {h:"",name:""};
-          onUpdate("_sharedTwitterUsers", {...twUsers, [key]:{...cur, [field]:val}});
+          // Même fix que pour les posts partagés : on relit l'état le plus frais avant de
+          // patcher une seule clé, pour ne pas écraser les modifs faites par un autre perso
+          // sur un AUTRE compte commun (ex: Glinda édite @cynthiak pendant qu'Eoghan édite @boquma).
+          const freshTwUsers = dataRef.current.sharedThreads?._sharedTwitterUsers || {};
+          const cur = freshTwUsers[key] || twUsers[key] || COMMON_KNOWN.find(u=>u.key===key) || {h:"",name:""};
+          onUpdate("_sharedTwitterUsers", {...freshTwUsers, [key]:{...cur, [field]:val}});
         } else {
           const cur = specificUsers[key] || (SPECIFIC_KNOWN[tab]||[]).find(u=>u.key===key) || {h:"",name:""};
           upd("twitterUsers", {...specificUsers, [key]:{...cur, [field]:val}});
@@ -19807,7 +19811,8 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
       };
       const addCommonAccount = () => {
         const newKey = "common"+Date.now();
-        onUpdate("_sharedTwitterAccountsExtra", [...commonExtra, {key:newKey, h:"@nouveau_compte", name:"Nouveau compte"}]);
+        const freshExtra = dataRef.current.sharedThreads?._sharedTwitterAccountsExtra || [];
+        onUpdate("_sharedTwitterAccountsExtra", [...freshExtra, {key:newKey, h:"@nouveau_compte", name:"Nouveau compte"}]);
       };
       const addSpecificAccount = () => {
         const newKey = "spec"+Date.now();
@@ -19942,7 +19947,16 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
 
           {twTab==="shared" && (()=>{
             const allShared = data.sharedThreads?._sharedTweets || [];
-            const updAllShared = (list) => onUpdate("_sharedTweets", list);
+            // Fix anti-écrasement : on ne réinjecte JAMAIS la liste reçue telle quelle (elle peut être basée
+            // sur un `data` périmé si un autre joueur a écrit pendant ce temps). On relit l'état le plus frais
+            // possible via dataRef, on garde les posts des AUTRES auteurs tels qu'ils sont en base, et on ne
+            // remplace que les posts de "tab" — exactement ce que l'UI promet ("tu ne peux modifier que les tiens").
+            const updAllShared = (list) => {
+              const freshAll = dataRef.current.sharedThreads?._sharedTweets || [];
+              const others = freshAll.filter(p => p.author !== tab);
+              const mine = list.filter(p => p.author === tab);
+              onUpdate("_sharedTweets", [...mine, ...others]);
+            };
             return (
               <SharedPostsEditor
                 posts={allShared} onChange={updAllShared} tab={tab} accent="#1da1f2"
@@ -20357,7 +20371,15 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
     case "tumblr": {
       const TB_COLOR = "#35465c";
       const sharedPosts = data.sharedThreads?._sharedTumblrPosts || [];
-      const updShared = (list) => onUpdate("_sharedTumblrPosts", list);
+      // Même fix anti-écrasement que Twitter/Facebook : ne jamais réécrire la liste entière à partir
+      // d'un `data` potentiellement périmé. On repart de dataRef (toujours à jour) et on ne touche
+      // qu'aux posts de "tab", en préservant ceux des 3 autres persos tels qu'ils sont en base.
+      const updShared = (list) => {
+        const freshShared = dataRef.current.sharedThreads?._sharedTumblrPosts || [];
+        const others = freshShared.filter(p => p.author !== tab);
+        const mine = list.filter(p => p.author === tab);
+        onUpdate("_sharedTumblrPosts", [...mine, ...others]);
+      };
       // Profil Tumblr du perso courant — stocké dans data[tab] + partagé via _sharedAvatars
       const tbProfile = d.tumblr || {};
       const updTbProfile = (patch) => upd("tumblr", {...tbProfile, ...patch});
@@ -20467,7 +20489,15 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
         const freshIg = fresh.instagram || {};
         onUpdate(tab, {...fresh, instagram: {...freshIg, posts: list}});
       };
-      const updSharedIg = (list) => onUpdate("_sharedInstaPosts", list);
+      // Même fix anti-écrasement que Facebook/Twitter/Tumblr : ne jamais réécrire tout le tableau
+      // à partir d'un `data` potentiellement périmé. On relit dataRef et on ne touche qu'aux posts
+      // de "tab", en préservant ceux des autres persos tels qu'ils sont en base.
+      const updSharedIg = (list) => {
+        const freshShared = dataRef.current.sharedThreads?._sharedInstaPosts || [];
+        const others = freshShared.filter(p => p.author !== tab);
+        const mine = list.filter(p => p.author === tab);
+        onUpdate("_sharedInstaPosts", [...mine, ...others]);
+      };
 
       const SubTabs = [["profile","👤 Profil"],["posts","📷 Ma grille"],["feed","🏠 Fil partagé"]];
       return (
@@ -21160,7 +21190,21 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
       const nameToKey = Object.fromEntries(Object.entries(CHAR_NAMES).map(([k,v])=>[v,k]));
       const sharedFeed = (data.sharedThreads?._sharedFacebookPosts || [])
         .map(p => p.author ? p : {...p, author: nameToKey[p.name] || p.author});
-      const updFeed = (list) => onUpdate("_sharedFacebookPosts", list);
+      // FIX BUG ÉCRASEMENT : avant, updFeed réécrivait tout le tableau "_sharedFacebookPosts" avec la
+      // liste reçue de SharedPostsEditor, construite à partir de `sharedFeed` (donc du `data` figé au
+      // moment du rendu). Si ce `data` était périmé — sync Firebase pas encore arrivée, ou juste après
+      // l'ouverture de l'admin — ajouter UN post écrasait silencieusement TOUS les posts des 3 autres
+      // persos (et les anciens posts du perso courant) avec cette version périmée.
+      // Fix : on relit toujours l'état le plus frais via dataRef (mis à jour en continu, indépendant du
+      // re-render), on garde les posts des AUTRES auteurs strictement tels qu'ils sont en base à cet
+      // instant, et on ne remplace que les posts de "tab" — ce que l'UI promettait déjà ("Tu ne peux
+      // modifier que tes propres posts.") mais que l'écriture ne respectait pas réellement.
+      const updFeed = (list) => {
+        const freshFeed = dataRef.current.sharedThreads?._sharedFacebookPosts || [];
+        const others = freshFeed.filter(p => p.author !== tab);
+        const mine = list.filter(p => p.author === tab);
+        onUpdate("_sharedFacebookPosts", [...mine, ...others]);
+      };
       const pages = d.facebookPages?.[tab] || [];
       const updPages = (list) => upd("facebookPages", {...(d.facebookPages||{}), [tab]: list});
 
