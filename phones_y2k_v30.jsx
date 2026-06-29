@@ -18524,13 +18524,36 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
   useEffect(()=>{ dataRef.current = data; }, [data]);
   // ── Import JSON (additif) ──────────────────────────────────────────────────
   const [importOpen, setImportOpen]     = useState(false);
-  const [importParsed, setImportParsed] = useState(null);   // JSON parsé du fichier choisi
+  const [importParsed, setImportParsed] = useState(null);
   const [importError, setImportError]   = useState(null);
   const [importFileName, setImportFileName] = useState("");
+  const [importSelectedApps, setImportSelectedApps] = useState(new Set()); // appLabel cochés au niveau app
   const [importSelected, setImportSelected] = useState(new Set()); // ids des IMPORT_DEFS cochés
-  const [importDone, setImportDone]     = useState(null);   // résumé après import {added, skipped}
+  const [importDone, setImportDone]     = useState(null);
   const importScan = importParsed ? scanImportJson(importParsed, dataRef.current) : [];
-  const resetImport = () => { setImportParsed(null); setImportError(null); setImportFileName(""); setImportSelected(new Set()); setImportDone(null); };
+  // Calcule les ids sélectionnés en croisant filtre app + sélection fine par catégorie
+  const importEffectiveSelected = new Set(
+    [...importSelected].filter(id => {
+      const def = IMPORT_DEFS.find(d => d.id === id);
+      return def && importSelectedApps.has(def.appLabel);
+    })
+  );
+  const toggleImportApp = (appLabel, defs) => {
+    const allIds = defs.map(d => d.id);
+    const allOn  = allIds.every(id => importSelected.has(id));
+    const nextSel  = new Set(importSelected);
+    const nextApps = new Set(importSelectedApps);
+    if(allOn) {
+      allIds.forEach(id => nextSel.delete(id));
+      nextApps.delete(appLabel);
+    } else {
+      allIds.filter(id => defs.find(d=>d.id===id)?.newCount > 0).forEach(id => nextSel.add(id));
+      nextApps.add(appLabel);
+    }
+    setImportSelected(nextSel);
+    setImportSelectedApps(nextApps);
+  };
+  const resetImport = () => { setImportParsed(null); setImportError(null); setImportFileName(""); setImportSelected(new Set()); setImportSelectedApps(new Set()); setImportDone(null); };
   const handleImportFile = (file) => {
     setImportDone(null); setImportError(null); setImportFileName(file.name);
     const reader = new FileReader();
@@ -18540,7 +18563,10 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
         setImportParsed(parsed);
         // Pré-cocher uniquement les catégories qui contiennent au moins un item nouveau
         const scan = scanImportJson(parsed, dataRef.current);
-        setImportSelected(new Set(scan.filter(s=>s.newCount>0).map(s=>s.id)));
+        const newIds = new Set(scan.filter(s=>s.newCount>0).map(s=>s.id));
+        setImportSelected(newIds);
+        // Pré-cocher les apps correspondantes
+        setImportSelectedApps(new Set(IMPORT_DEFS.filter(d=>newIds.has(d.id)).map(d=>d.appLabel)));
       } catch (e) {
         setImportError("Fichier JSON invalide ou illisible : " + e.message);
         setImportParsed(null);
@@ -18552,13 +18578,13 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
   const runImport = () => {
     const fresh = dataRef.current;
     let added = 0, skipped = 0;
-    const charPatches = {}; // ck -> objet patché en cours de construction
+    const charPatches = {};
     importScan.forEach(def => {
-      if(!importSelected.has(def.id)) return;
+      if(!importEffectiveSelected.has(def.id)) return;
       if(def.scope==="shared") {
         const current = def.getList(fresh) || [];
         const currentKeys = new Set(current.map(def.dedup));
-        const toAdd = def.newItems.filter(it => !currentKeys.has(def.dedup(it))); // re-vérifie au cas où
+        const toAdd = def.newItems.filter(it => !currentKeys.has(def.dedup(it)));
         if(toAdd.length===0) return;
         onUpdate(def.writeKey, [...toAdd, ...current]);
         added += toAdd.length;
@@ -18571,8 +18597,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
           const currentKeys = new Set(current.map(def.dedup));
           const toAdd = newItems.filter(it => !currentKeys.has(def.dedup(it)));
           if(toAdd.length===0) { skipped += incomingCount; return; }
-          const merged = [...toAdd, ...current];
-          charPatches[ck] = def.applyChar(freshChar, ck, merged);
+          charPatches[ck] = def.applyChar(freshChar, ck, [...toAdd, ...current]);
           added += toAdd.length;
           skipped += incomingCount - toAdd.length;
         });
@@ -18581,6 +18606,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
     Object.entries(charPatches).forEach(([ck, patch]) => onUpdate(ck, patch));
     setImportDone({added, skipped});
     setImportSelected(new Set());
+    setImportSelectedApps(new Set());
   };
   const [section, setSection] = useState(()=>firstAppSectionKey(data?.glinda));
   const [saved, setSaved]     = useState(false);
@@ -21412,7 +21438,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                   <div key={i} className="adm-card" style={{background:"rgba(255,255,255,0.85)",borderRadius:10,padding:"10px 12px",border:"1px solid rgba(0,0,0,0.07)",display:"flex",flexDirection:"column",gap:6}}>
                     <div style={{display:"flex",gap:6,flexWrap:"wrap",alignItems:"flex-end"}}>
                       <Field label="Page" value={p.name||""} onChange={v=>updPage({name:v})} style={{flex:1}} placeholder="ex: Stephen King…"/>
-                      <Field label="Quand" value={p.time||""} onChange={v=>updPage({time:v})} width="130px"/>
+                      <LoreDateTimeInput value={p.time||""} onChange={v=>updPage({time:v})} width="190px" showLabel={true}/>
                       <div style={{display:"flex",gap:4,alignItems:"flex-start"}}>
                         <MoveButtons index={i} length={pages.length}
                           onMoveUp={()=>{const l=[...pages];[l[i-1],l[i]]=[l[i],l[i-1]];updPages(l);}}
@@ -21754,34 +21780,66 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                   <div style={{fontSize:12,color:"#9ca3af",fontStyle:"italic"}}>Aucune donnée reconnue (Facebook / Twitter / Tumblr / Instagram) trouvée dans ce fichier.</div>
                 );
                 const grouped = visible.reduce((acc,s)=>{ (acc[s.appLabel]=acc[s.appLabel]||[]).push(s); return acc; },{});
-                return Object.entries(grouped).map(([appLabel, defs])=>(
-                  <div key={appLabel} style={{display:"flex",flexDirection:"column",gap:6}}>
-                    <div style={{fontSize:12,fontWeight:700,color:"#374151"}}>{appLabel}</div>
-                    {defs.map(def=>(
-                      <label key={def.id} style={{display:"flex",alignItems:"center",gap:8,background:"rgba(0,0,0,0.02)",border:"1px solid rgba(0,0,0,0.06)",borderRadius:8,padding:"8px 10px",cursor:def.newCount>0?"pointer":"default",opacity:def.newCount>0?1:0.55}}>
-                        <input type="checkbox" checked={importSelected.has(def.id)} disabled={def.newCount===0}
-                          onChange={e=>{
-                            const next = new Set(importSelected);
-                            e.target.checked ? next.add(def.id) : next.delete(def.id);
-                            setImportSelected(next);
-                          }}/>
-                        <div style={{flex:1}}>
-                          <div style={{fontSize:12,color:"#1a1a2e"}}>{def.label}</div>
-                          <div style={{fontSize:10,color:"#9ca3af"}}>
-                            {def.incomingCount} trouvé(s) dans le fichier — {def.newCount>0 ? `${def.newCount} nouveau(x)` : "déjà tous présents"}
-                          </div>
-                        </div>
-                      </label>
-                    ))}
+                return (<div style={{display:"flex",flexDirection:"column",gap:10}}>
+                  {/* ── Niveau 1 : sélecteurs d'app ── */}
+                  <div style={{fontSize:11,fontWeight:700,color:"#9ca3af",letterSpacing:0.5,textTransform:"uppercase"}}>Apps à importer</div>
+                  <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+                    {Object.entries(grouped).map(([appLabel, defs])=>{
+                      const appOn = importSelectedApps.has(appLabel);
+                      const totalNew = defs.reduce((s,d)=>s+d.newCount,0);
+                      return (
+                        <button key={appLabel} onClick={()=>toggleImportApp(appLabel, defs)}
+                          disabled={totalNew===0}
+                          style={{
+                            display:"flex",alignItems:"center",gap:6,
+                            padding:"8px 14px",borderRadius:8,border:"none",
+                            background:appOn?"linear-gradient(135deg,#6366f1,#8b5cf6)":"rgba(0,0,0,0.05)",
+                            color:appOn?"#fff":totalNew===0?"#d1d5db":"#374151",
+                            fontWeight:appOn?700:500,fontSize:12,cursor:totalNew===0?"default":"pointer",
+                            transition:"all 0.15s",
+                          }}>
+                          {appLabel}
+                          <span style={{fontSize:10,background:appOn?"rgba(255,255,255,0.25)":"rgba(0,0,0,0.08)",borderRadius:10,padding:"1px 7px",fontWeight:700}}>
+                            {totalNew} nv.
+                          </span>
+                        </button>
+                      );
+                    })}
                   </div>
-                ));
+
+                  {/* ── Niveau 2 : catégories (seulement si l'app est cochée) ── */}
+                  {Object.entries(grouped).map(([appLabel, defs])=>{
+                    if(!importSelectedApps.has(appLabel)) return null;
+                    return (
+                      <div key={appLabel} style={{display:"flex",flexDirection:"column",gap:5,background:"rgba(99,102,241,0.03)",border:"1px solid rgba(99,102,241,0.1)",borderRadius:10,padding:"10px 12px"}}>
+                        <div style={{fontSize:11,fontWeight:700,color:"#6366f1",marginBottom:2}}>{appLabel} — catégories</div>
+                        {defs.map(def=>(
+                          <label key={def.id} style={{display:"flex",alignItems:"center",gap:8,background:importEffectiveSelected.has(def.id)?"rgba(99,102,241,0.06)":"rgba(0,0,0,0.02)",border:`1px solid ${importEffectiveSelected.has(def.id)?"rgba(99,102,241,0.2)":"rgba(0,0,0,0.06)"}`,borderRadius:8,padding:"7px 10px",cursor:def.newCount>0?"pointer":"default",opacity:def.newCount>0?1:0.5}}>
+                            <input type="checkbox" checked={importEffectiveSelected.has(def.id)} disabled={def.newCount===0}
+                              onChange={e=>{
+                                const next = new Set(importSelected);
+                                e.target.checked ? next.add(def.id) : next.delete(def.id);
+                                setImportSelected(next);
+                              }}/>
+                            <div style={{flex:1}}>
+                              <div style={{fontSize:12,color:"#1a1a2e"}}>{def.label}</div>
+                              <div style={{fontSize:10,color:"#9ca3af"}}>
+                                {def.incomingCount} trouvé(s) — {def.newCount>0 ? `${def.newCount} nouveau(x)` : "déjà tous présents"}
+                              </div>
+                            </div>
+                          </label>
+                        ))}
+                      </div>
+                    );
+                  })}
+                </div>);
               })()}
             </div>
             {importParsed && !importDone && (
               <div style={{padding:"14px 20px",borderTop:"1px solid #e5e7eb",display:"flex",justifyContent:"flex-end",gap:8}}>
                 <button onClick={()=>setImportOpen(false)} style={{background:"transparent",border:"1px solid #e5e7eb",color:"#374151",padding:"8px 14px",borderRadius:7,fontSize:12,cursor:"pointer"}}>Annuler</button>
-                <button onClick={runImport} disabled={importSelected.size===0}
-                  style={{background:importSelected.size===0?"#d1d5db":"linear-gradient(135deg,#6366f1,#8b5cf6)",border:"none",color:"#fff",padding:"8px 16px",borderRadius:7,fontWeight:600,fontSize:12,cursor:importSelected.size===0?"default":"pointer"}}>
+                <button onClick={runImport} disabled={importEffectiveSelected.size===0}
+                  style={{background:importEffectiveSelected.size===0?"#d1d5db":"linear-gradient(135deg,#6366f1,#8b5cf6)",border:"none",color:"#fff",padding:"8px 16px",borderRadius:7,fontWeight:600,fontSize:12,cursor:importEffectiveSelected.size===0?"default":"pointer"}}>
                   Importer la sélection
                 </button>
               </div>
@@ -22541,15 +22599,27 @@ const FacebookScreen = ({data, isIos, accent}) => {
   const me = FACEBOOK_PROFILES_DEFAULT[charKey];
   const friendsFeed = data.sharedThreads?._sharedFacebookPosts || FACEBOOK_FRIENDS_FEED_DEFAULT;
   const pagePosts   = data.facebookPages?.[charKey] || FACEBOOK_PAGES_DEFAULT[charKey] || [];
-  // Tri approximatif par ancienneté relative ("2 minutes ago" < "3 hours ago" < "1 day ago"...) pour mélanger
-  // naturellement le fil d'amis (partagé) et les pages suivies (propres à ce perso) comme un vrai fil Facebook.
-  const relAgeToMinutes = (t) => {
-    const m = (t||"").match(/(\d+)\s*(minute|hour|day)/);
-    if(!m) return 0;
-    const n = parseInt(m[1]);
-    return m[2]==="minute" ? n : m[2]==="hour" ? n*60 : n*1440;
+  // Tri unifié : le lore par défaut / les pages utilisent du relatif ("2 minutes ago", "3 hours
+  // ago"...), mais "Mes posts (partagés)" utilise le sélecteur LoreDateTimeInput qui produit une
+  // date ABSOLUE ("6 oct, 9:00am") — l'ancien tri ne comprenait QUE le relatif, donc tout post réel
+  // (date absolue) retombait à 0 et se retrouvait mal placé. On convertit les deux formats vers une
+  // même échelle (minutes depuis le début de l'année lore), ancrée sur "maintenant" = fin de la
+  // journée lore en cours (loreDate), pour que les deux types de dates s'entremêlent correctement.
+  const [, FB_LORE_MONTH, FB_LORE_DAY] = getLoreDate().split('-').map(Number);
+  const loreAbsMinutes = (month, day, hour=0, min=0) => (month||0)*44640 + (day||0)*1440 + hour*60 + min;
+  const FB_NOW_ABS = loreAbsMinutes(FB_LORE_MONTH, FB_LORE_DAY, 23, 59);
+  const toAbsMinutes = (t) => {
+    const rel = (t||"").match(/(\d+)\s*(minute|hour|day)/);
+    if(rel) {
+      const n = parseInt(rel[1]);
+      const agoMin = rel[2]==="minute" ? n : rel[2]==="hour" ? n*60 : n*1440;
+      return FB_NOW_ABS - agoMin;
+    }
+    const p = parseLoreTime(t);
+    if(p) return loreAbsMinutes(p.month, p.day, p.hour||0, p.min||0);
+    return -Infinity; // format non reconnu → en bas du fil plutôt qu'en tête
   };
-  const posts = [...friendsFeed, ...pagePosts].sort((a,b)=>relAgeToMinutes(a.time)-relAgeToMinutes(b.time));
+  const posts = [...friendsFeed, ...pagePosts].sort((a,b)=>toAbsMinutes(b.time)-toAbsMinutes(a.time));
 
   const sharedAvatars = data.sharedThreads?._sharedAvatars || {};
   const NAME_TO_KEY = {
