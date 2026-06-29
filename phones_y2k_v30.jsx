@@ -18001,7 +18001,7 @@ const loadData = () => {
 };
 
 // Version des seeds — incrémenter à chaque correction des données initiales pour forcer une re-migration.
-const SEED_VERSION = 5;
+const SEED_VERSION = 6;
 
 
 // Injectés dans loadData() si les clés partagées sont absentes ou vides.
@@ -18437,6 +18437,83 @@ const firstAppSectionKey = (charData) => {
   return sections[0]?.key || "messages";
 };
 
+// ─── IMPORT JSON (additif uniquement) ───────────────────────────────────────────
+// Permet d'importer le contenu d'un export JSON (ex: une sauvegarde Firebase) catégorie par
+// catégorie, sans jamais écraser ce qui existe déjà : pour chaque catégorie choisie, on calcule
+// la liste actuelle la plus fraîche (dataRef), on ne garde du JSON importé que les items qui n'y
+// sont pas déjà (dédupliqués via `dedup`), et on les AJOUTE à la liste actuelle (jamais de
+// remplacement intégral). Mêmes principes anti-écrasement que le fix appliqué plus haut sur
+// Facebook/Twitter/Tumblr/Instagram.
+// scope "shared"  → un seul tableau dans sharedThreads, visible par les 4 persos.
+// scope "perChar" → un tableau séparé pour chacun des 4 persos (glinda/eoghan/drew/elias).
+const IMPORT_DEFS = [
+  { id:"fb_shared", app:"facebook", appLabel:"📘 Facebook", label:"Fil d'amis partagé (posts)", scope:"shared",
+    getList: (obj) => obj?.sharedThreads?._sharedFacebookPosts || [],
+    writeKey: "_sharedFacebookPosts",
+    dedup: (p) => p.id ?? `${p.author||p.name}|${p.time}|${p.text}` },
+  { id:"fb_pages", app:"facebook", appLabel:"📘 Facebook", label:"Pages suivies (par perso)", scope:"perChar",
+    getList: (obj, ck) => obj?.[ck]?.facebookPages?.[ck] || [],
+    applyChar: (fresh, ck, merged) => ({...fresh, facebookPages:{...(fresh.facebookPages||{}), [ck]:merged}}),
+    dedup: (p) => `${p.name}|${p.time}|${p.text}` },
+
+  { id:"tw_shared", app:"twitter", appLabel:"🐦 Twitter", label:"Tweets partagés", scope:"shared",
+    getList: (obj) => obj?.sharedThreads?._sharedTweets || [],
+    writeKey: "_sharedTweets",
+    dedup: (p) => p.id ?? `${p.author}|${p.time}|${p.text}` },
+  { id:"tw_common_extra", app:"twitter", appLabel:"🐦 Twitter", label:"Comptes communs ajoutés", scope:"shared",
+    getList: (obj) => obj?.sharedThreads?._sharedTwitterAccountsExtra || [],
+    writeKey: "_sharedTwitterAccountsExtra",
+    dedup: (p) => p.key ?? p.h },
+  { id:"tw_home", app:"twitter", appLabel:"🐦 Twitter", label:"Timeline déco (par perso)", scope:"perChar",
+    getList: (obj, ck) => obj?.[ck]?.homeBaseTweets || [],
+    applyChar: (fresh, ck, merged) => ({...fresh, homeBaseTweets: merged}),
+    dedup: (p) => p.id ?? `${p.h}|${p.time}|${p.text}` },
+  { id:"tw_specific_extra", app:"twitter", appLabel:"🐦 Twitter", label:"Comptes suivis spécifiques (par perso)", scope:"perChar",
+    getList: (obj, ck) => obj?.[ck]?.twitterAccountsExtra || [],
+    applyChar: (fresh, ck, merged) => ({...fresh, twitterAccountsExtra: merged}),
+    dedup: (p) => p.key ?? p.h },
+
+  { id:"tb_shared", app:"tumblr", appLabel:"📓 Tumblr", label:"Posts partagés", scope:"shared",
+    getList: (obj) => obj?.sharedThreads?._sharedTumblrPosts || [],
+    writeKey: "_sharedTumblrPosts",
+    dedup: (p) => p.id ?? `${p.username||p.author}|${p.date}|${p.body}` },
+  { id:"tb_feed", app:"tumblr", appLabel:"📓 Tumblr", label:"Fil décoratif (par perso)", scope:"perChar",
+    getList: (obj, ck) => obj?.[ck]?.tumblr?.feedPosts || [],
+    applyChar: (fresh, ck, merged) => ({...fresh, tumblr:{...(fresh.tumblr||{}), feedPosts:merged}}),
+    dedup: (p) => p.id ?? `${p.username}|${p.date}|${p.body}` },
+
+  { id:"ig_shared", app:"insta", appLabel:"📷 Instagram", label:"Fil partagé", scope:"shared",
+    getList: (obj) => obj?.sharedThreads?._sharedInstaPosts || [],
+    writeKey: "_sharedInstaPosts",
+    dedup: (p) => p.id ?? `${p.author}|${p.date}|${p.caption}` },
+  { id:"ig_grid", app:"insta", appLabel:"📷 Instagram", label:"Grille perso (par perso)", scope:"perChar",
+    getList: (obj, ck) => obj?.[ck]?.instagram?.posts || [],
+    applyChar: (fresh, ck, merged) => ({...fresh, instagram:{...(fresh.instagram||{}), posts:merged}}),
+    dedup: (p) => p.id ?? `${p.date}|${p.caption}` },
+];
+const IMPORT_CHAR_KEYS = ["glinda","eoghan","drew","elias"];
+
+// Calcule, pour un JSON importé et l'état live (dataRef.current), la liste des catégories trouvées
+// avec leur nombre d'items et le nombre d'items réellement NOUVEAUX (pas déjà présents en live).
+const scanImportJson = (parsed, liveData) => IMPORT_DEFS.map(def => {
+  if(def.scope==="shared") {
+    const incoming = def.getList(parsed) || [];
+    const current  = def.getList(liveData) || [];
+    const currentKeys = new Set(current.map(def.dedup));
+    const newItems = incoming.filter(it => !currentKeys.has(def.dedup(it)));
+    return {...def, incomingCount: incoming.length, newCount: newItems.length, newItems};
+  }
+  const perChar = IMPORT_CHAR_KEYS.map(ck => {
+    const incoming = def.getList(parsed, ck) || [];
+    const current  = def.getList(liveData, ck) || [];
+    const currentKeys = new Set(current.map(def.dedup));
+    const newItems = incoming.filter(it => !currentKeys.has(def.dedup(it)));
+    return {ck, incomingCount: incoming.length, newCount: newItems.length, newItems};
+  });
+  return {...def, incomingCount: perChar.reduce((s,p)=>s+p.incomingCount,0),
+    newCount: perChar.reduce((s,p)=>s+p.newCount,0), perChar};
+});
+
 const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDate, onLoreDateChange}) => {
   const [tab, setTab]         = useState("glinda");
   // Toujours à jour, contrairement à `data`/`d` qui sont figés dans la closure du render en cours.
@@ -18445,6 +18522,66 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
   // au moment d'écrire évite d'écraser ces changements avec une version périmée.
   const dataRef = useRef(data);
   useEffect(()=>{ dataRef.current = data; }, [data]);
+  // ── Import JSON (additif) ──────────────────────────────────────────────────
+  const [importOpen, setImportOpen]     = useState(false);
+  const [importParsed, setImportParsed] = useState(null);   // JSON parsé du fichier choisi
+  const [importError, setImportError]   = useState(null);
+  const [importFileName, setImportFileName] = useState("");
+  const [importSelected, setImportSelected] = useState(new Set()); // ids des IMPORT_DEFS cochés
+  const [importDone, setImportDone]     = useState(null);   // résumé après import {added, skipped}
+  const importScan = importParsed ? scanImportJson(importParsed, dataRef.current) : [];
+  const resetImport = () => { setImportParsed(null); setImportError(null); setImportFileName(""); setImportSelected(new Set()); setImportDone(null); };
+  const handleImportFile = (file) => {
+    setImportDone(null); setImportError(null); setImportFileName(file.name);
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      try {
+        const parsed = JSON.parse(ev.target.result);
+        setImportParsed(parsed);
+        // Pré-cocher uniquement les catégories qui contiennent au moins un item nouveau
+        const scan = scanImportJson(parsed, dataRef.current);
+        setImportSelected(new Set(scan.filter(s=>s.newCount>0).map(s=>s.id)));
+      } catch (e) {
+        setImportError("Fichier JSON invalide ou illisible : " + e.message);
+        setImportParsed(null);
+      }
+    };
+    reader.onerror = () => setImportError("Impossible de lire ce fichier.");
+    reader.readAsText(file);
+  };
+  const runImport = () => {
+    const fresh = dataRef.current;
+    let added = 0, skipped = 0;
+    const charPatches = {}; // ck -> objet patché en cours de construction
+    importScan.forEach(def => {
+      if(!importSelected.has(def.id)) return;
+      if(def.scope==="shared") {
+        const current = def.getList(fresh) || [];
+        const currentKeys = new Set(current.map(def.dedup));
+        const toAdd = def.newItems.filter(it => !currentKeys.has(def.dedup(it))); // re-vérifie au cas où
+        if(toAdd.length===0) return;
+        onUpdate(def.writeKey, [...toAdd, ...current]);
+        added += toAdd.length;
+        skipped += def.incomingCount - toAdd.length;
+      } else {
+        def.perChar.forEach(({ck, newItems, incomingCount}) => {
+          if(newItems.length===0) { skipped += incomingCount; return; }
+          const freshChar = charPatches[ck] || fresh[ck] || {};
+          const current = def.getList({[ck]: freshChar}, ck) || [];
+          const currentKeys = new Set(current.map(def.dedup));
+          const toAdd = newItems.filter(it => !currentKeys.has(def.dedup(it)));
+          if(toAdd.length===0) { skipped += incomingCount; return; }
+          const merged = [...toAdd, ...current];
+          charPatches[ck] = def.applyChar(freshChar, ck, merged);
+          added += toAdd.length;
+          skipped += incomingCount - toAdd.length;
+        });
+      }
+    });
+    Object.entries(charPatches).forEach(([ck, patch]) => onUpdate(ck, patch));
+    setImportDone({added, skipped});
+    setImportSelected(new Set());
+  };
   const [section, setSection] = useState(()=>firstAppSectionKey(data?.glinda));
   const [saved, setSaved]     = useState(false);
   const [cropSrc, setCropSrc] = useState(null);
@@ -21188,8 +21325,11 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
     case "facebook": {
       const FB_COLOR = "#3B5998";
       const nameToKey = Object.fromEntries(Object.entries(CHAR_NAMES).map(([k,v])=>[v,k]));
-      const sharedFeed = (data.sharedThreads?._sharedFacebookPosts || [])
-        .map(p => p.author ? p : {...p, author: nameToKey[p.name] || p.author});
+      const withAuthors = (list) => list.map(p => p.author ? p : {...p, author: nameToKey[p.name] || p.author});
+      // Fallback restauré (avait disparu entre la version du 27/06 et celle-ci) : tant que personne n'a
+      // encore écrit de vrai post, on retombe sur le contenu de lore par défaut au lieu d'un fil vide.
+      const rawShared = data.sharedThreads?._sharedFacebookPosts;
+      const sharedFeed = withAuthors(rawShared && rawShared.length ? rawShared : FACEBOOK_FRIENDS_FEED_DEFAULT);
       // FIX BUG ÉCRASEMENT : avant, updFeed réécrivait tout le tableau "_sharedFacebookPosts" avec la
       // liste reçue de SharedPostsEditor, construite à partir de `sharedFeed` (donc du `data` figé au
       // moment du rendu). Si ce `data` était périmé — sync Firebase pas encore arrivée, ou juste après
@@ -21199,13 +21339,15 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
       // re-render), on garde les posts des AUTRES auteurs strictement tels qu'ils sont en base à cet
       // instant, et on ne remplace que les posts de "tab" — ce que l'UI promettait déjà ("Tu ne peux
       // modifier que tes propres posts.") mais que l'écriture ne respectait pas réellement.
+      // (même fallback ici : sinon le 1er post réel écraserait le lore par défaut des 3 autres persos)
       const updFeed = (list) => {
-        const freshFeed = dataRef.current.sharedThreads?._sharedFacebookPosts || [];
+        const rawFresh = dataRef.current.sharedThreads?._sharedFacebookPosts;
+        const freshFeed = withAuthors(rawFresh && rawFresh.length ? rawFresh : FACEBOOK_FRIENDS_FEED_DEFAULT);
         const others = freshFeed.filter(p => p.author !== tab);
         const mine = list.filter(p => p.author === tab);
         onUpdate("_sharedFacebookPosts", [...mine, ...others]);
       };
-      const pages = d.facebookPages?.[tab] || [];
+      const pages = d.facebookPages?.[tab] || FACEBOOK_PAGES_DEFAULT[tab] || [];
       const updPages = (list) => upd("facebookPages", {...(d.facebookPages||{}), [tab]: list});
 
       const SubTabs = [["users","👤 Mon profil"],["shared","📰 Mes posts (partagés)"],["pages","📄 Pages suivies"]];
@@ -21482,6 +21624,12 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
               style={{background:"transparent",border:"none",color:"#6366f1",fontSize:11,cursor:"pointer",outline:"none",fontFamily:"monospace",fontWeight:600,width:110}}/>
           </div>}
 
+          {/* Import JSON */}
+          <button onClick={()=>{ resetImport(); setImportOpen(true); }}
+            style={{background:"transparent",border:"1px solid #e5e7eb",color:"#374151",padding:"6px 12px",borderRadius:7,fontSize:12,cursor:"pointer",fontWeight:500}}>
+            📥 Importer JSON
+          </button>
+
           {/* Back */}
           <button onClick={onExit}
             style={{background:"transparent",border:"1px solid #e5e7eb",color:"#374151",padding:"6px 12px",borderRadius:7,fontSize:12,cursor:"pointer",fontWeight:500}}>
@@ -21566,6 +21714,81 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
           </div>
         </div>
       </div>
+
+      {/* ── MODAL IMPORT JSON ────────────────────────────────────────────────── */}
+      {importOpen && (
+        <div onClick={()=>setImportOpen(false)} style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.5)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:1000,padding:16}}>
+          <div onClick={e=>e.stopPropagation()} style={{background:"#fff",borderRadius:14,width:"min(640px,100%)",maxHeight:"85vh",display:"flex",flexDirection:"column",overflow:"hidden",boxShadow:"0 20px 60px rgba(0,0,0,0.3)"}}>
+            <div style={{padding:"16px 20px",borderBottom:"1px solid #e5e7eb",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+              <div style={{fontWeight:700,fontSize:14,color:"#1a1a2e"}}>📥 Importer un JSON</div>
+              <button onClick={()=>setImportOpen(false)} style={{background:"none",border:"none",fontSize:18,color:"#9ca3af",cursor:"pointer"}}>×</button>
+            </div>
+            <div style={{padding:"16px 20px",overflowY:"auto",flex:1,display:"flex",flexDirection:"column",gap:14}}>
+              <div style={{fontSize:11,color:"#6b7280",lineHeight:1.5}}>
+                Choisis un fichier JSON (ex: une sauvegarde exportée depuis Firebase). Seules les catégories
+                listées ci-dessous sont prises en charge. L'import est <strong>toujours additif</strong> : les
+                items déjà présents (détectés par contenu) ne sont jamais dupliqués, et rien n'est supprimé
+                ni écrasé — ni dans cette catégorie, ni ailleurs.
+              </div>
+
+              <label style={{alignSelf:"flex-start",background:"rgba(99,102,241,0.08)",border:"1px dashed rgba(99,102,241,0.4)",color:"#6366f1",borderRadius:8,padding:"8px 14px",fontSize:12,fontWeight:600,cursor:"pointer"}}>
+                {importFileName ? `📄 ${importFileName}` : "Choisir un fichier .json"}
+                <input type="file" accept=".json,application/json" style={{display:"none"}} onChange={e=>{
+                  const f = e.target.files?.[0]; if(!f) return; handleImportFile(f); e.target.value="";
+                }}/>
+              </label>
+
+              {importError && (
+                <div style={{background:"rgba(239,68,68,0.07)",border:"1px solid rgba(239,68,68,0.2)",color:"#ef4444",borderRadius:8,padding:"8px 12px",fontSize:11}}>{importError}</div>
+              )}
+
+              {importDone && (
+                <div style={{background:"rgba(16,185,129,0.08)",border:"1px solid rgba(16,185,129,0.25)",color:"#059669",borderRadius:8,padding:"8px 12px",fontSize:12,fontWeight:600}}>
+                  ✓ {importDone.added} élément(s) importé(s){importDone.skipped>0 ? `, ${importDone.skipped} déjà présent(s) ignoré(s)` : ""}.
+                </div>
+              )}
+
+              {importParsed && !importDone && (()=>{
+                const visible = importScan.filter(s=>s.incomingCount>0);
+                if(visible.length===0) return (
+                  <div style={{fontSize:12,color:"#9ca3af",fontStyle:"italic"}}>Aucune donnée reconnue (Facebook / Twitter / Tumblr / Instagram) trouvée dans ce fichier.</div>
+                );
+                const grouped = visible.reduce((acc,s)=>{ (acc[s.appLabel]=acc[s.appLabel]||[]).push(s); return acc; },{});
+                return Object.entries(grouped).map(([appLabel, defs])=>(
+                  <div key={appLabel} style={{display:"flex",flexDirection:"column",gap:6}}>
+                    <div style={{fontSize:12,fontWeight:700,color:"#374151"}}>{appLabel}</div>
+                    {defs.map(def=>(
+                      <label key={def.id} style={{display:"flex",alignItems:"center",gap:8,background:"rgba(0,0,0,0.02)",border:"1px solid rgba(0,0,0,0.06)",borderRadius:8,padding:"8px 10px",cursor:def.newCount>0?"pointer":"default",opacity:def.newCount>0?1:0.55}}>
+                        <input type="checkbox" checked={importSelected.has(def.id)} disabled={def.newCount===0}
+                          onChange={e=>{
+                            const next = new Set(importSelected);
+                            e.target.checked ? next.add(def.id) : next.delete(def.id);
+                            setImportSelected(next);
+                          }}/>
+                        <div style={{flex:1}}>
+                          <div style={{fontSize:12,color:"#1a1a2e"}}>{def.label}</div>
+                          <div style={{fontSize:10,color:"#9ca3af"}}>
+                            {def.incomingCount} trouvé(s) dans le fichier — {def.newCount>0 ? `${def.newCount} nouveau(x)` : "déjà tous présents"}
+                          </div>
+                        </div>
+                      </label>
+                    ))}
+                  </div>
+                ));
+              })()}
+            </div>
+            {importParsed && !importDone && (
+              <div style={{padding:"14px 20px",borderTop:"1px solid #e5e7eb",display:"flex",justifyContent:"flex-end",gap:8}}>
+                <button onClick={()=>setImportOpen(false)} style={{background:"transparent",border:"1px solid #e5e7eb",color:"#374151",padding:"8px 14px",borderRadius:7,fontSize:12,cursor:"pointer"}}>Annuler</button>
+                <button onClick={runImport} disabled={importSelected.size===0}
+                  style={{background:importSelected.size===0?"#d1d5db":"linear-gradient(135deg,#6366f1,#8b5cf6)",border:"none",color:"#fff",padding:"8px 16px",borderRadius:7,fontWeight:600,fontSize:12,cursor:importSelected.size===0?"default":"pointer"}}>
+                  Importer la sélection
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
@@ -21640,13 +21863,21 @@ export default function App() {
             if(!st._tumblrFollows)  patches['sharedThreads/_tumblrFollows']  = mutualFollows;
 
             // _sharedFacebookPosts : ajouter author si manquant
-            if (st._sharedFacebookPosts) {
+            if (st._sharedFacebookPosts && st._sharedFacebookPosts.length > 0) {
               const needsAuthor = st._sharedFacebookPosts.some(p => !p.author);
               if (needsAuthor) {
                 patches['sharedThreads/_sharedFacebookPosts'] = st._sharedFacebookPosts.map(p =>
                   p.author ? p : {...p, author: FB_NAME_TO_AUTHOR[p.name] || null}
                 );
               }
+            } else {
+              // Seed v6 : le fil d'amis Facebook par défaut n'existait jusqu'ici que côté client
+              // (fallback de rendu si la base était vide) — donc invisible/non éditable de façon
+              // garantie dans Firebase. On le pousse en dur une seule fois, uniquement si rien
+              // n'existe déjà en base (jamais d'écrasement de vraies données de joueur).
+              patches['sharedThreads/_sharedFacebookPosts'] = FACEBOOK_FRIENDS_FEED_DEFAULT.map(p =>
+                ({...p, author: FB_NAME_TO_AUTHOR[p.name] || null})
+              );
             }
 
             // homeBaseTweets + feedPosts Tumblr par perso : toujours remplacer (séparation corrigée)
@@ -21670,6 +21901,11 @@ export default function App() {
                   elias:  {handle:"noteliasgreen",displayName:"Elias Green",bio:"",followers:445,following:48,posts:[],avatar:null},
                 };
                 if(igDefaults[k]) patches[`${k}/instagram`] = igDefaults[k];
+              }
+              // Seed v6 : pages Facebook suivies par défaut — même logique que le fil d'amis ci-dessus,
+              // seedé une seule fois et seulement si ce perso n'a encore aucune page enregistrée.
+              if(!remote[k]?.facebookPages) {
+                patches[`${k}/facebookPages`] = { [k]: FACEBOOK_PAGES_DEFAULT[k] || [] };
               }
             });
 
@@ -22298,8 +22534,8 @@ const FacebookScreen = ({data, isIos, accent}) => {
   const FB_BG   = "#e8eaf0";
 
   const me = FACEBOOK_PROFILES_DEFAULT[charKey];
-  const friendsFeed = data.sharedThreads?._sharedFacebookPosts || [];
-  const pagePosts   = data.facebookPages?.[charKey] || [];
+  const friendsFeed = data.sharedThreads?._sharedFacebookPosts || FACEBOOK_FRIENDS_FEED_DEFAULT;
+  const pagePosts   = data.facebookPages?.[charKey] || FACEBOOK_PAGES_DEFAULT[charKey] || [];
   // Tri approximatif par ancienneté relative ("2 minutes ago" < "3 hours ago" < "1 day ago"...) pour mélanger
   // naturellement le fil d'amis (partagé) et les pages suivies (propres à ce perso) comme un vrai fil Facebook.
   const relAgeToMinutes = (t) => {
