@@ -18001,7 +18001,7 @@ const loadData = () => {
 };
 
 // Version des seeds — incrémenter à chaque correction des données initiales pour forcer une re-migration.
-const SEED_VERSION = 6;
+const SEED_VERSION = 7;
 
 
 // Injectés dans loadData() si les clés partagées sont absentes ou vides.
@@ -21862,22 +21862,27 @@ export default function App() {
             if(!st._twitterFollows) patches['sharedThreads/_twitterFollows'] = mutualFollows;
             if(!st._tumblrFollows)  patches['sharedThreads/_tumblrFollows']  = mutualFollows;
 
-            // _sharedFacebookPosts : ajouter author si manquant
-            if (st._sharedFacebookPosts && st._sharedFacebookPosts.length > 0) {
-              const needsAuthor = st._sharedFacebookPosts.some(p => !p.author);
-              if (needsAuthor) {
-                patches['sharedThreads/_sharedFacebookPosts'] = st._sharedFacebookPosts.map(p =>
-                  p.author ? p : {...p, author: FB_NAME_TO_AUTHOR[p.name] || null}
-                );
-              }
-            } else {
-              // Seed v6 : le fil d'amis Facebook par défaut n'existait jusqu'ici que côté client
-              // (fallback de rendu si la base était vide) — donc invisible/non éditable de façon
-              // garantie dans Firebase. On le pousse en dur une seule fois, uniquement si rien
-              // n'existe déjà en base (jamais d'écrasement de vraies données de joueur).
-              patches['sharedThreads/_sharedFacebookPosts'] = FACEBOOK_FRIENDS_FEED_DEFAULT.map(p =>
+            // _sharedFacebookPosts : merge additif avec le lore par défaut (jamais un remplacement).
+            // v6 ne le faisait QUE si le champ était totalement vide — donc dès qu'un perso avait déjà
+            // un vrai post (ex: Elias après l'incident), le lore par défaut des 3 autres n'était jamais
+            // ajouté. v7 corrige ça : on garde tout ce qui existe déjà, on ajoute juste les posts du
+            // lore par défaut qui ne sont pas déjà présents (dédupliqués par contenu), et on complète
+            // le champ "author" manquant — sans jamais rien supprimer ni écraser.
+            {
+              const currentFeed = (st._sharedFacebookPosts || []).map(p =>
+                p.author ? p : {...p, author: FB_NAME_TO_AUTHOR[p.name] || null}
+              );
+              const feedKey = (p) => p.id ?? `${p.author||p.name}|${p.time}|${p.text}`;
+              const existingKeys = new Set(currentFeed.map(feedKey));
+              const defaultsWithAuthor = FACEBOOK_FRIENDS_FEED_DEFAULT.map(p =>
                 ({...p, author: FB_NAME_TO_AUTHOR[p.name] || null})
               );
+              const missingDefaults = defaultsWithAuthor.filter(p => !existingKeys.has(feedKey(p)));
+              const rawFeed = st._sharedFacebookPosts || [];
+              const authorWasMissing = rawFeed.some(p => !p.author);
+              if (missingDefaults.length > 0 || authorWasMissing) {
+                patches['sharedThreads/_sharedFacebookPosts'] = [...currentFeed, ...missingDefaults];
+              }
             }
 
             // homeBaseTweets + feedPosts Tumblr par perso : toujours remplacer (séparation corrigée)
