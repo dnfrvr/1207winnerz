@@ -687,9 +687,16 @@ const MusicScreen = ({data,admin,update,accent,isIos=false,goHome=()=>{}}) => {
   const [openAlbum, setOpenAlbum] = useState(null);
   const len = data.music.length;
 
-  const music       = data.music       || [];
-  const coverImg    = data.musicCover  || null;   // pochette album (grande)
-  const playlistImg = data.playlistCover || null; // image playlist
+  const music = data.music || [];
+  // AVANT : deux champs distincts cohabitaient sans qu'aucun des deux ne fonctionne vraiment.
+  // - data.musicCover : lu ici pour le fallback "rien en cours de lecture", mais AUCUNE UI admin
+  //   n'écrivait jamais dedans (toujours null) → fallback mort.
+  // - data.playlistCover : la seule à avoir un upload fonctionnel dans l'admin (onglet Musique,
+  //   "Cover de la playlist"), mais jamais lue nulle part dans le rendu → upload qui "marche"
+  //   (l'image est bien sauvegardée) mais reste invisible partout, exactement le symptôme remonté.
+  // APRÈS : un seul champ réellement branché bout en bout — playlistCover sert de pochette de
+  // secours quand rien ne joue, c'est la seule pochette "globale" qui ait jamais été éditable.
+  const coverImg = data.playlistCover || null;
 
   // ── Drag to reorder ───────────────────────────────────────────────────────
   const onDragStart = (i) => setDragIdx(i);
@@ -705,6 +712,7 @@ const MusicScreen = ({data,admin,update,accent,isIos=false,goHome=()=>{}}) => {
   };
 
   const current = playing!==null ? music[playing] : null;
+  // Pochette affichée : celle du morceau en cours en priorité, sinon la pochette de playlist.
   const coverSrc = current?.cover || coverImg;
 
   // ── iOS 6 Music library UI ─────────────────────────────────────────────
@@ -760,7 +768,11 @@ const MusicScreen = ({data,admin,update,accent,isIos=false,goHome=()=>{}}) => {
                 <React.Fragment key={key}>
                   <div id={`ms-${key}`} style={{background:'#e2e2e7',padding:'3px 14px',fontSize:13,fontWeight:'700',color:'#333',borderTop:'0.5px solid #c8c7cc',borderBottom:'0.5px solid #c8c7cc'}}>{key}</div>
                   {sections[key].map(track=>(
-                    <div key={track.id} onClick={()=>setPlaying(music.indexOf(track))} style={{padding:'10px 14px',borderBottom:'0.5px solid #e5e5ea',cursor:'pointer',background:current===track?'#ddeeff':'#fff'}}>
+                    <div key={track.id} onClick={()=>setPlaying(music.indexOf(track))} style={{padding:'10px 14px',borderBottom:'0.5px solid #e5e5ea',cursor:'pointer',background:current===track?'#ddeeff':'#fff',display:'flex',alignItems:'center',gap:10}}>
+                      <div style={{width:34,height:34,borderRadius:3,flexShrink:0,overflow:'hidden',background:'#e2e2e7',display:'flex',alignItems:'center',justifyContent:'center'}}>
+                        {track.cover?<img src={track.cover} style={{width:'100%',height:'100%',objectFit:'cover'}}/>:<span style={{color:'#bbb',fontSize:14}}>♫</span>}
+                      </div>
+                      <div style={{flex:1,minWidth:0}}>
                       {admin
                         ?<div style={{display:'flex',gap:6,flexDirection:'column'}}>
                           <input value={track.title} onClick={e=>e.stopPropagation()} onChange={e=>{const m=[...music];const idx=m.indexOf(track);m[idx]={...m[idx],title:e.target.value};update('music',m);}} style={{background:'rgba(255,200,0,0.1)',border:'1px dashed #ffc107',color:'#1a1a1a',fontSize:13,width:'100%'}}/>
@@ -770,6 +782,7 @@ const MusicScreen = ({data,admin,update,accent,isIos=false,goHome=()=>{}}) => {
                           <div style={{fontWeight:'700',fontSize:15,color:current===track?'#007aff':'#1a1a1a'}}>{track.title}</div>
                           <div style={{fontSize:12,color:'#8e8e93',marginTop:1}}>{track.artist}</div>
                         </>}
+                      </div>
                     </div>
                   ))}
                 </React.Fragment>
@@ -18528,6 +18541,23 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
   // au moment d'écrire évite d'écraser ces changements avec une version périmée.
   const dataRef = useRef(data);
   useEffect(()=>{ dataRef.current = data; }, [data]);
+  // ── Musique : auto-fix des ids de pistes manquants ──────────────────────────
+  // AVANT : ce correctif tournait DANS le rendu lui-même (un setTimeout posé à chaque passage du
+  // bloc "case music", pas dans un useEffect). À chaque re-render où needsId était vrai, ça posait
+  // une NOUVELLE écriture Firebase en plus de celles déjà en vol — y compris juste après un upload
+  // de pochette, dont l'écriture pouvait se faire écraser par cette écriture concurrente basée sur
+  // un état pas encore à jour. Classique anti-pattern "effet de bord pendant le rendu".
+  // APRÈS : un vrai useEffect, qui ne se déclenche qu'après le commit, une seule fois par changement
+  // réel de `tab` ou de la musique du perso courant — plus de course avec les autres écritures.
+  useEffect(()=>{
+    const freshChar = dataRef.current[tab] || {};
+    const freshMusic = freshChar.music || [];
+    if(freshMusic.length > 0 && freshMusic.some(t=>!t.id)) {
+      const fixed = freshMusic.map((t,j)=>t.id?t:{...t,id:Date.now()+j});
+      onUpdate(tab, {...freshChar, music: fixed});
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tab, data[tab]?.music]);
   // ── Import JSON (additif) ──────────────────────────────────────────────────
   const [importOpen, setImportOpen]     = useState(false);
   const [importParsed, setImportParsed] = useState(null);
@@ -19899,14 +19929,6 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
             const nextMusic = mutate(freshMusic);
             onUpdate(tab, {...freshChar, music: nextMusic});
           };
-          // S'assurer que toutes les tracks ont un id stable avant de rendre — évite le bug d'upload
-          // où l'id dans le DOM (basé sur l'index) ne correspond plus à la track après un tri ou ajout.
-          const needsId = music.some(t=>!t.id);
-          if(needsId) {
-            setTimeout(()=>updMusic(freshMusic =>
-              freshMusic.some(t=>!t.id) ? freshMusic.map((t,j)=>t.id?t:{...t,id:Date.now()+j}) : freshMusic
-            ),0);
-          }
           return music.map((track,i)=>(
             <MusicTrackRow
               key={track.id||i}
