@@ -22661,7 +22661,10 @@ export default function App() {
             const ALL_CK = ["glinda","eoghan","drew","elias"];
             const enriched = Object.fromEntries(ALL_CK.filter(ck=>data[ck]?.avatar).map(ck=>[ck,data[ck].avatar]));
             const mergedAvatars = {...enriched, ...(data.sharedThreads?._sharedAvatars||{})};
-            const sharedThreadsEnriched = {...data.sharedThreads, _sharedAvatars: mergedAvatars};
+            // Handles Instagram de chaque perso — utilisés dans IgCommentThread pour afficher
+            // le vrai @handle du joueur sur ses commentaires, plutôt que son prénom ou un fallback.
+            const mergedHandles = Object.fromEntries(ALL_CK.filter(ck=>data[ck]?.instagram?.handle).map(ck=>[ck,data[ck].instagram.handle]));
+            const sharedThreadsEnriched = {...data.sharedThreads, _sharedAvatars: mergedAvatars, _sharedIgHandles: mergedHandles};
             // Posts Instagram "en commun" (taggedWith) : un post posté par perso A avec
             // taggedWith="B" doit aussi apparaître dans la grille de B. Comme InstaScreen ne reçoit
             // que les données du perso actif, on rassemble ici — au même endroit que l'avatar
@@ -23320,33 +23323,39 @@ const GmailScreen = ({data, isIos, accent, onBack}) => {
 
 // ── Composant d'affichage des commentaires Instagram (récursif) ──────────────
 const IG_CHAR_NAMES = {glinda:"Glinda",eoghan:"Eoghan",drew:"Drew",elias:"Elias"};
-const IgCommentThread = ({comments, depth=0, sharedAvatars={}}) => {
+// Handles par défaut pour les commentaires quand authorKey est posé — remplacés si le perso a
+// un handle perso en base (passé via sharedHandles). Ces valeurs correspondent aux handles
+// des 4 persos définis dans les seeds Instagram.
+const IG_CHAR_HANDLES = {glinda:"glindarvf",eoghan:"eoghan_masuda",drew:"dreww_orms",elias:"noteliasgreen"};
+const IgCommentThread = ({comments, depth=0, sharedAvatars={}, sharedHandles={}}) => {
   if(!comments||comments.length===0) return null;
   return (
     <>
       {comments.map((c,i)=>{
         const isPlayer = !!c.authorKey;
-        const displayName = isPlayer ? (IG_CHAR_NAMES[c.authorKey]||c.authorKey) : c.user;
+        // Pour un joueur : afficher son @ Instagram (handle) plutôt que son prénom
+        const handle = isPlayer ? (sharedHandles[c.authorKey] || IG_CHAR_HANDLES[c.authorKey] || c.authorKey) : null;
+        const displayName = isPlayer ? `@${handle}` : c.user;
         const avatarSrc = isPlayer ? (sharedAvatars[c.authorKey] || null) : null;
         return (
         <div key={i}>
-          <div style={{display:"flex",alignItems:"flex-start",gap:8,
-            padding: depth===0 ? "8px 12px" : "6px 12px 6px "+(12+depth*20)+"px",
+          <div style={{display:"flex",alignItems:"flex-start",gap:7,
+            padding: depth===0 ? "7px 12px" : "5px 12px 5px "+(12+depth*20)+"px",
             borderBottom:"1px solid #f9f9f9",
             background: depth>0 ? "rgba(0,0,0,0.015)" : "transparent"}}>
-            <div style={{width:depth===0?28:22,height:depth===0?28:22,borderRadius:depth===0?5:4,
+            <div style={{width:depth===0?26:20,height:depth===0?26:20,borderRadius:depth===0?5:4,
               background:"#d0d0d0",flexShrink:0,overflow:"hidden",
               display:"flex",alignItems:"center",justifyContent:"center",
-              fontSize:depth===0?12:10,fontWeight:700,color:"#fff"}}>
+              fontSize:depth===0?11:9,fontWeight:700,color:"#fff"}}>
               {avatarSrc?<img src={avatarSrc} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:(displayName||"?")[0]?.toUpperCase()}
             </div>
-            <div style={{flex:1,fontSize:depth===0?13:12,color:"#262626",lineHeight:1.4}}>
-              <span style={{fontWeight:700}}>{displayName} </span>{c.text}
-              {c.time&&<div style={{fontSize:10,color:"#999",marginTop:2}}>{c.time}</div>}
+            <div style={{flex:1,fontSize:depth===0?11.5:11,color:"#262626",lineHeight:1.4}}>
+              <span style={{fontWeight:700,color:isPlayer?"#3b88c3":"#262626"}}>{displayName} </span>{c.text}
+              {c.time&&<div style={{fontSize:9.5,color:"#999",marginTop:1}}>{c.time}</div>}
             </div>
           </div>
           {(c.replies||[]).length>0&&(
-            <IgCommentThread comments={c.replies} depth={depth+1} sharedAvatars={sharedAvatars}/>
+            <IgCommentThread comments={c.replies} depth={depth+1} sharedAvatars={sharedAvatars} sharedHandles={sharedHandles}/>
           )}
         </div>
         );
@@ -23586,7 +23595,7 @@ const InstaScreen = ({data, isIos, accent, onBack}) => {
           </div>
           {(p.likes||0)>0&&<div style={{padding:"6px 12px",fontSize:13,fontWeight:700,color:"#262626",borderBottom:"1px solid #f5f5f5"}}>{p.likes} J'aime</div>}
           {p.caption&&<div style={{padding:"8px 12px",fontSize:13,color:"#262626",lineHeight:1.5,borderBottom:"1px solid #f5f5f5"}}><span style={{fontWeight:700}}>{postHandle} </span>{p.caption}</div>}
-          <IgCommentThread comments={p.comments||[]} depth={0} sharedAvatars={sharedAvatars}/>
+          <IgCommentThread comments={p.comments||[]} depth={0} sharedAvatars={sharedAvatars} sharedHandles={data.sharedThreads?._sharedIgHandles||{}}/>
         </div>
         <TabBar active="feed"/>
       </div>
