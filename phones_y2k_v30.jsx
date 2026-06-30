@@ -19876,14 +19876,36 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
           </div>
         </div>
 
-        {/* S'assurer que toutes les tracks ont un id stable avant de rendre — évite le bug d'upload
-            où l'id dans le DOM (basé sur l'index) ne correspond plus à la track après un tri ou ajout. */}
+        {/* ── Logique musique réécrite de zéro ──────────────────────────────────
+            AVANT : seul onCoverChange lisait/écrivait via dataRef.current (état le plus frais).
+            Tous les autres champs (titre/artiste/album/durée, réordonnancement, suppression,
+            ajout, et même l'auto-fix des ids manquants) passaient par upd(), qui réécrit TOUT
+            l'objet du perso ({...d, music: ...}) à partir de `d`, une copie figée au rendu
+            précédent. Comme l'upload de pochette est asynchrone (FileReader) et donc plus lent
+            qu'une frappe clavier, taper quoi que ce soit juste après un upload écrasait
+            silencieusement la pochette qui venait d'être posée (et potentiellement d'autres
+            champs du perso au passage) — exactement la même classe de bug que celui déjà
+            corrigé sur Facebook/Twitter/Tumblr/Instagram/Messages plus tôt dans la conversation.
+            APRÈS : toute mutation de `music` relit dataRef.current[tab] juste avant d'écrire,
+            et n'écrit QUE la clé "music" (jamais tout l'objet du perso). */}
         {(()=>{
           const music = d.music||[];
+          // updMusic : seul point d'écriture pour le tableau music, toujours basé sur l'état frais.
+          // `mutate` reçoit le tableau music le plus à jour et retourne le nouveau tableau voulu —
+          // ça élimine toute fenêtre de course entre deux mutations rapprochées (texte + upload).
+          const updMusic = (mutate) => {
+            const freshChar = dataRef.current[tab] || {};
+            const freshMusic = freshChar.music || [];
+            const nextMusic = mutate(freshMusic);
+            onUpdate(tab, {...freshChar, music: nextMusic});
+          };
+          // S'assurer que toutes les tracks ont un id stable avant de rendre — évite le bug d'upload
+          // où l'id dans le DOM (basé sur l'index) ne correspond plus à la track après un tri ou ajout.
           const needsId = music.some(t=>!t.id);
           if(needsId) {
-            const fixed = music.map((t,j)=>t.id?t:{...t,id:Date.now()+j});
-            setTimeout(()=>upd("music",fixed),0);
+            setTimeout(()=>updMusic(freshMusic =>
+              freshMusic.some(t=>!t.id) ? freshMusic.map((t,j)=>t.id?t:{...t,id:Date.now()+j}) : freshMusic
+            ),0);
           }
           return music.map((track,i)=>(
             <MusicTrackRow
@@ -19894,23 +19916,57 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
               onCoverChange={file=>{
                 const trackId = track.id;
                 const r = new UploadReader();
-                r.onload = ev => {
-                  const freshMusic = [...(dataRef.current[tab]?.music||[])];
+                r.onload = ev => updMusic(freshMusic => {
                   const idx = trackId ? freshMusic.findIndex(t=>t.id===trackId) : i;
-                  if(idx<0||idx>=freshMusic.length) return;
-                  freshMusic[idx] = {...freshMusic[idx], cover: ev.target.result};
-                  onUpdate(tab, {...dataRef.current[tab], music: freshMusic});
-                };
+                  if(idx<0||idx>=freshMusic.length) return freshMusic;
+                  const next = [...freshMusic];
+                  next[idx] = {...next[idx], cover: ev.target.result};
+                  return next;
+                });
                 r.readAsDataURL(file);
               }}
-              onFieldChange={(field,val)=>{const m=[...d.music];m[i]={...m[i],[field]:val};upd("music",m);}}
-              onMoveUp={()=>{const m=[...d.music];[m[i-1],m[i]]=[m[i],m[i-1]];upd("music",m);}}
-              onMoveDown={()=>{const m=[...d.music];[m[i+1],m[i]]=[m[i],m[i+1]];upd("music",m);}}
-              onDelete={()=>upd("music",d.music.filter((_,j)=>j!==i))}
+              onFieldChange={(field,val)=>{
+                const trackId = track.id;
+                updMusic(freshMusic => {
+                  const idx = trackId ? freshMusic.findIndex(t=>t.id===trackId) : i;
+                  if(idx<0||idx>=freshMusic.length) return freshMusic;
+                  const next = [...freshMusic];
+                  next[idx] = {...next[idx], [field]:val};
+                  return next;
+                });
+              }}
+              onMoveUp={()=>{
+                const trackId = track.id;
+                updMusic(freshMusic => {
+                  const idx = trackId ? freshMusic.findIndex(t=>t.id===trackId) : i;
+                  if(idx<=0||idx>=freshMusic.length) return freshMusic;
+                  const next = [...freshMusic];
+                  [next[idx-1],next[idx]] = [next[idx],next[idx-1]];
+                  return next;
+                });
+              }}
+              onMoveDown={()=>{
+                const trackId = track.id;
+                updMusic(freshMusic => {
+                  const idx = trackId ? freshMusic.findIndex(t=>t.id===trackId) : i;
+                  if(idx<0||idx>=freshMusic.length-1) return freshMusic;
+                  const next = [...freshMusic];
+                  [next[idx+1],next[idx]] = [next[idx],next[idx+1]];
+                  return next;
+                });
+              }}
+              onDelete={()=>{
+                const trackId = track.id;
+                updMusic(freshMusic => trackId ? freshMusic.filter(t=>t.id!==trackId) : freshMusic.filter((_,j)=>j!==i));
+              }}
             />
           ));
         })()}
-        <button onClick={()=>upd("music",[{id:Date.now(),title:"",artist:"",duration:"3:00"},...(d.music||[])])}
+        <button onClick={()=>{
+          const freshChar = dataRef.current[tab] || {};
+          const freshMusic = freshChar.music || [];
+          onUpdate(tab, {...freshChar, music: [{id:Date.now(),title:"",artist:"",duration:"3:00"},...freshMusic]});
+        }}
           style={{background:"rgba(99,102,241,0.08)",border:"1px dashed rgba(99,102,241,0.4)",color:"#6366f1",borderRadius:8,padding:"10px 18px",cursor:"pointer",fontSize:12,fontWeight:600}}>+ Add manually</button>
       </div>
     );
@@ -20151,7 +20207,18 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
               {effectiveTweets.map((t,i)=>{
                 const upTw = (patch) => updEffective(effectiveTweets.map((t2,j)=>j===i?{...t2,...patch,id:t2.id||Date.now()+j}:{...t2,id:t2.id||Date.now()+j}));
                 return (
-                <div key={t.id??i} className="adm-card" style={{background:"rgba(255,255,255,0.9)",borderRadius:10,padding:"10px 12px",border:"1px solid rgba(0,0,0,0.07)",display:"flex",flexDirection:"column",gap:6}}>
+                <div key={t.id??i} className="adm-card" style={{background:"rgba(255,255,255,0.9)",borderRadius:10,padding:"10px 12px",border:"1px solid rgba(0,0,0,0.07)",display:"flex",gap:10,alignItems:"flex-start"}}>
+                  {/* Avatar du compte */}
+                  <label style={{width:44,height:44,borderRadius:6,overflow:"hidden",background:"#f3f4f6",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",flexShrink:0,border:"1px solid rgba(0,0,0,0.08)",fontSize:16}}>
+                    {(typeof t.av==="string" && (t.av.startsWith("data:")||t.av.startsWith("http")||t.av.startsWith("/")))
+                      ? <img src={t.av} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+                      : "🐦"}
+                    <input type="file" accept="image/*" style={{display:"none"}} onChange={e=>{
+                      const f=e.target.files?.[0]; if(!f) return;
+                      const r=new UploadReader(); r.onload=ev=>upTw({av:ev.target.result}); r.readAsDataURL(f); e.target.value="";
+                    }}/>
+                  </label>
+                  <div style={{flex:1,minWidth:0,display:"flex",flexDirection:"column",gap:6}}>
                   <div style={{display:"flex",gap:6}}>
                     <Field label="Handle" value={t.h||""} onChange={v=>upTw({h:v})} style={{flex:1}}/>
                     <Field label="Nom"    value={t.name||""} onChange={v=>upTw({name:v})} style={{flex:1}}/>
@@ -20171,6 +20238,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                     <Field label="💬" value={String(t.rp??0)}  onChange={v=>upTw({rp:parseInt(v)||0})} style={{flex:1}}/>
                     <Field label="🔁" value={String(t.rt??0)}  onChange={v=>upTw({rt:parseInt(v)||0})} style={{flex:1}}/>
                     <Field label="❤"  value={String(t.fav??0)} onChange={v=>upTw({fav:parseInt(v)||0})} style={{flex:1}}/>
+                  </div>
                   </div>
                 </div>
               );})}
@@ -20622,15 +20690,26 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
               <div style={{display:"flex",flexDirection:"column",gap:8}}>
                 <div style={{fontSize:11,color:"#6b7280",lineHeight:1.5}}>Tweets décoratifs de comptes fictifs visibles dans la timeline de <strong>{CHAR_NAMES[tab]||tab}</strong> uniquement — non partagés entre persos.</div>
                 {effectiveFeed.map((post,i)=>(
-                  <div key={post.id??i} className="adm-card" style={{background:"rgba(255,255,255,0.85)",borderRadius:10,padding:"10px 12px",border:"1px solid rgba(0,0,0,0.07)",display:"flex",flexDirection:"column",gap:6}}>
+                  <div key={post.id??i} className="adm-card" style={{background:"rgba(255,255,255,0.85)",borderRadius:10,padding:"10px 12px",border:"1px solid rgba(0,0,0,0.07)",display:"flex",gap:10,alignItems:"flex-start"}}>
+                    {/* Avatar du compte */}
+                    <label style={{width:44,height:44,borderRadius:6,overflow:"hidden",background:post.avatar?"transparent":(post.avatarBg||"#8e7cc3"),display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",flexShrink:0,border:"1px solid rgba(0,0,0,0.08)",fontSize:16,color:"#fff",fontWeight:700}}>
+                      {post.avatar?<img src={post.avatar} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:(post.username||"?")[0]?.toUpperCase()}
+                      <input type="file" accept="image/*" style={{display:"none"}} onChange={e=>{
+                        const f=e.target.files?.[0]; if(!f) return;
+                        const r=new UploadReader(); r.onload=ev=>{const p=[...effectiveFeed];p[i]={...p[i],avatar:ev.target.result};updFeed(p);}; r.readAsDataURL(f); e.target.value="";
+                      }}/>
+                    </label>
+                    <div style={{flex:1,minWidth:0,display:"flex",flexDirection:"column",gap:6}}>
                     <div style={{display:"flex",gap:6,flexWrap:"wrap",alignItems:"flex-end"}}>
                       <Field label="Pseudo" value={post.username||""} onChange={v=>{const p=[...effectiveFeed];p[i]={...p[i],username:v};updFeed(p);}} width="130px"/>
                       <Field label="Titre (opt.)" value={post.title||""} onChange={v=>{const p=[...effectiveFeed];p[i]={...p[i],title:v};updFeed(p);}} style={{flex:1}}/>
                       <LoreDateTimeInput value={post.date||""} onChange={v=>{const p=[...effectiveFeed];p[i]={...p[i],date:v};updFeed(p);}} width="190px" showLabel={true}/>
                       <Field label="Notes" value={String(post.notes||0)} onChange={v=>{const p=[...effectiveFeed];p[i]={...p[i],notes:parseInt(v)||0};updFeed(p);}} width="70px"/>
+                      {post.avatar && <button onClick={()=>{const p=[...effectiveFeed];p[i]={...p[i],avatar:null};updFeed(p);}} style={{fontSize:10,color:"#ef4444",background:"none",border:"none",cursor:"pointer",padding:0,alignSelf:"center"}}>× Suppr. photo</button>}
                       <button onClick={()=>updFeed(effectiveFeed.filter((_,j)=>j!==i))} className="adm-del-btn" style={{background:"rgba(239,68,68,0.06)",border:"1px solid rgba(239,68,68,0.2)",color:"#ef4444",borderRadius:6,padding:"5px 8px",cursor:"pointer",fontSize:11,marginTop:18}}>✕</button>
                     </div>
                     <Field label="Texte" value={post.body||""} onChange={v=>{const p=[...effectiveFeed];p[i]={...p[i],body:v};updFeed(p);}} textarea/>
+                    </div>
                   </div>
                 ))}
                 <button onClick={()=>updFeed([{id:Date.now(),username:"",avatarBg:"#8e7cc3",body:"",notes:0,date:"1 oct",type:"text"},...effectiveFeed])}
@@ -20668,7 +20747,10 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
         onUpdate("_sharedInstaPosts", [...mine, ...others]);
       };
 
-      const SubTabs = [["profile","👤 Profil"],["posts","📷 Ma grille"],["feed","🏠 Fil partagé"]];
+      const decoIg = d.instagramDecorative || [];
+      const updDecoIg = (list) => upd("instagramDecorative", list);
+
+      const SubTabs = [["profile","👤 Profil"],["posts","📷 Ma grille"],["feed","🏠 Fil partagé"],["deco","🌐 Comptes déco"]];
       return (
         <div style={{display:"flex",flexDirection:"column",gap:12}}>
           {/* Tab bar */}
@@ -20829,6 +20911,48 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
               </div>
             );
           })()}
+
+          {/* ── COMPTES DÉCO ── */}
+          {igTab==="deco" && (
+            <div style={{display:"flex",flexDirection:"column",gap:8}}>
+              <div style={{fontSize:11,color:"#6b7280",lineHeight:1.5}}>Posts de comptes fictifs visibles dans le fil de <strong>{CHAR_NAMES[tab]||tab}</strong> uniquement — non partagés entre persos. Même principe que la "Timeline déco" sur Twitter ou le "Fil" sur Tumblr.</div>
+              {decoIg.map((post,i)=>{
+                const updDeco = (patch) => updDecoIg(decoIg.map((p2,j)=>j===i?{...p2,...patch}:p2));
+                return (
+                  <div key={post.id??i} className="adm-card" style={{background:"rgba(255,255,255,0.85)",borderRadius:10,padding:"10px 12px",border:"1px solid rgba(0,0,0,0.07)",display:"flex",gap:10,alignItems:"flex-start"}}>
+                    {/* Avatar du compte */}
+                    <label style={{width:48,height:48,borderRadius:"50%",overflow:"hidden",background:"#efefef",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",flexShrink:0,border:"1px solid rgba(0,0,0,0.08)",fontSize:18,fontWeight:700,color:"#9ca3af"}}>
+                      {post.avatar?<img src={post.avatar} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:(post.handle||"?")[0]?.toUpperCase()}
+                      <input type="file" accept="image/*" style={{display:"none"}} onChange={e=>{
+                        const f=e.target.files?.[0]; if(!f) return;
+                        const r=new UploadReader(); r.onload=ev=>updDeco({avatar:ev.target.result}); r.readAsDataURL(f); e.target.value="";
+                      }}/>
+                    </label>
+                    {/* Photo du post */}
+                    <label style={{width:64,height:64,borderRadius:6,overflow:"hidden",background:"#efefef",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",flexShrink:0,border:"1px solid rgba(0,0,0,0.08)"}}>
+                      {post.src?<img src={post.src} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:<span style={{fontSize:22}}>📷</span>}
+                      <input type="file" accept="image/*" style={{display:"none"}} onChange={e=>{
+                        const f=e.target.files?.[0]; if(!f) return;
+                        const r=new UploadReader(); r.onload=ev=>updDeco({src:ev.target.result}); r.readAsDataURL(f); e.target.value="";
+                      }}/>
+                    </label>
+                    <div style={{flex:1,minWidth:0,display:"flex",flexDirection:"column",gap:6}}>
+                      <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+                        <Field label="Handle" value={post.handle||""} onChange={v=>updDeco({handle:v})} style={{flex:1,minWidth:100}} placeholder="ex: stephenking"/>
+                        <LoreDateTimeInput value={post.date||""} onChange={v=>updDeco({date:v})} width="160px" showLabel={true}/>
+                        <Field label="Likes" value={String(post.likes??"")} onChange={v=>updDeco({likes:parseInt(v)||0})} width="70px"/>
+                        {post.avatar && <button onClick={()=>updDeco({avatar:null})} style={{fontSize:10,color:"#ef4444",background:"none",border:"none",cursor:"pointer",padding:0,alignSelf:"center"}}>× Suppr. photo</button>}
+                        <button onClick={()=>updDecoIg(decoIg.filter((_,j)=>j!==i))} style={{background:"rgba(239,68,68,0.06)",border:"1px solid rgba(239,68,68,0.2)",color:"#ef4444",borderRadius:6,padding:"5px 8px",cursor:"pointer",fontSize:11,alignSelf:"flex-start"}}>✕</button>
+                      </div>
+                      <Field label="Légende" value={post.caption||""} onChange={v=>updDeco({caption:v})} textarea/>
+                    </div>
+                  </div>
+                );
+              })}
+              <button onClick={()=>updDecoIg([{id:Date.now(),handle:"",avatar:null,src:null,caption:"",likes:0,date:"1 oct",location:null,comments:[]},...decoIg])}
+                style={{background:"rgba(61,107,143,0.08)",border:"1px dashed rgba(61,107,143,0.4)",color:IG_COLOR,borderRadius:8,padding:"10px 18px",cursor:"pointer",fontSize:12,fontWeight:600}}>+ Post déco</button>
+            </div>
+          )}
         </div>
       );
     }
@@ -21442,10 +21566,20 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
               {pages.map((p,i)=>{
                 const updPage = (patch) => updPages(pages.map((p2,j)=>j===i?{...p2,...patch}:p2));
                 return (
-                  <div key={i} className="adm-card" style={{background:"rgba(255,255,255,0.85)",borderRadius:10,padding:"10px 12px",border:"1px solid rgba(0,0,0,0.07)",display:"flex",flexDirection:"column",gap:6}}>
+                  <div key={i} className="adm-card" style={{background:"rgba(255,255,255,0.85)",borderRadius:10,padding:"10px 12px",border:"1px solid rgba(0,0,0,0.07)",display:"flex",gap:10,alignItems:"flex-start"}}>
+                    {/* Avatar de la page */}
+                    <label style={{width:44,height:44,borderRadius:6,overflow:"hidden",background:FB_COLOR,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",flexShrink:0,border:"1px solid rgba(0,0,0,0.08)",fontSize:16,color:"#fff",fontWeight:700}}>
+                      {p.avatar?<img src={p.avatar} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:(p.name||"?")[0]?.toUpperCase()}
+                      <input type="file" accept="image/*" style={{display:"none"}} onChange={e=>{
+                        const f=e.target.files?.[0]; if(!f) return;
+                        const r=new UploadReader(); r.onload=ev=>updPage({avatar:ev.target.result}); r.readAsDataURL(f); e.target.value="";
+                      }}/>
+                    </label>
+                    <div style={{flex:1,minWidth:0,display:"flex",flexDirection:"column",gap:6}}>
                     <div style={{display:"flex",gap:6,flexWrap:"wrap",alignItems:"flex-end"}}>
                       <Field label="Page" value={p.name||""} onChange={v=>updPage({name:v})} style={{flex:1}} placeholder="ex: Stephen King…"/>
                       <LoreDateTimeInput value={p.time||""} onChange={v=>updPage({time:v})} width="190px" showLabel={true}/>
+                      {p.avatar && <button onClick={()=>updPage({avatar:null})} style={{fontSize:10,color:"#ef4444",background:"none",border:"none",cursor:"pointer",padding:0,alignSelf:"center"}}>× Suppr. photo</button>}
                       <div style={{display:"flex",gap:4,alignItems:"flex-start"}}>
                         <MoveButtons index={i} length={pages.length}
                           onMoveUp={()=>{const l=[...pages];[l[i-1],l[i]]=[l[i],l[i-1]];updPages(l);}}
@@ -21457,6 +21591,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                     <div style={{display:"flex",gap:6}}>
                       <Field label="👍 Likes" value={String(p.likes??0)} onChange={v=>updPage({likes:parseInt(v)||0})} style={{flex:1}}/>
                       <Field label="💬 Comm." value={String(p.comments??0)} onChange={v=>updPage({comments:parseInt(v)||0})} style={{flex:1}}/>
+                    </div>
                     </div>
                   </div>
                 );
@@ -22645,7 +22780,7 @@ const FacebookScreen = ({data, isIos, accent}) => {
     "Glinda Ravingfool":"glinda", "Eoghan Masuda":"eoghan",
     "Drew Buckley":"drew", "Elias Green":"elias",
   };
-  const Avatar = ({name,author,size=36,forMe=false}) => {
+  const Avatar = ({name,author,avatar,size=36,forMe=false}) => {
     // FIX : avant, l'avatar ne se résolvait QUE via NAME_TO_KEY[name] — une correspondance fragile
     // sur le texte exact du nom affiché. Si le nom tapé dans l'admin différait même légèrement de
     // "Eoghan Masuda"/"Drew Buckley" (espace, abréviation, surnom...), la résolution échouait
@@ -22653,8 +22788,10 @@ const FacebookScreen = ({data, isIos, accent}) => {
     // contenait bien la photo. Désormais on utilise post.author en priorité (toujours fiable, posé
     // automatiquement sur chaque post) et on ne retombe sur NAME_TO_KEY que pour les rares posts
     // historiques qui n'auraient pas encore d'author.
+    // `avatar` (prop directe) a la priorité absolue : c'est ce qu'utilisent les pages suivies
+    // (comptes fictifs sans clé perso, donc author/NAME_TO_KEY ne peuvent rien résoudre pour elles).
     const ck = forMe ? charKey : (author || NAME_TO_KEY[name]);
-    const profilePic = ck === charKey ? (data.avatar || sharedAvatars[ck]) : sharedAvatars[ck];
+    const profilePic = avatar || (ck === charKey ? (data.avatar || sharedAvatars[ck]) : sharedAvatars[ck]);
     return profilePic
       ? <div style={{width:size,height:size,borderRadius:4,overflow:"hidden",flexShrink:0}}><img src={profilePic} style={{width:"100%",height:"100%",objectFit:"cover"}}/></div>
       : <div style={{width:size,height:size,borderRadius:4,background:FB_BLUE,border:"1px solid #2a4a7a",display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontWeight:700,fontSize:size*0.38,flexShrink:0}}>
@@ -22700,7 +22837,7 @@ const FacebookScreen = ({data, isIos, accent}) => {
           <div key={i} style={{background:"#fff",marginBottom:8,borderTop:"1px solid #dde3ea",borderBottom:"1px solid #dde3ea"}}>
             {/* Post header */}
             <div style={{padding:"8px 10px",display:"flex",gap:8,alignItems:"flex-start"}}>
-              <Avatar name={p.name} author={p.author}/>
+              <Avatar name={p.name} author={p.author} avatar={p.avatar}/>
               <div style={{flex:1,minWidth:0}}>
                 <div style={{fontSize:13,fontWeight:700,color:"#1d2129"}}>{p.name}</div>
                 <div style={{fontSize:11,color:"#90949c",display:"flex",alignItems:"center",gap:4}}>
@@ -23200,7 +23337,10 @@ const InstaScreen = ({data, isIos, accent, onBack}) => {
 
   // ── Vue feed (fil amis) ──
   if(view==="feed") {
-    const feedPosts = [...sharedIg].sort((a,b)=>{
+    // Fil = posts partagés (vrais persos) + posts décoratifs (comptes fictifs, propres à ce perso,
+    // même principe que la Timeline déco Twitter / le Fil Tumblr).
+    const decoIg = data.instagramDecorative || [];
+    const feedPosts = [...sharedIg, ...decoIg].sort((a,b)=>{
       const pa = parseLoreTime(a.date), pb = parseLoreTime(b.date);
       if(!pa && !pb) return 0; if(!pa) return 1; if(!pb) return -1;
       const va = pa.month*10000+(pa.day||0)*100+(pa.hour||0);
