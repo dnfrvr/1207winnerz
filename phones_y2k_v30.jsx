@@ -18660,6 +18660,24 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
   const [twTab, setTwTab] = useState("users"); // "users" | "shared" | "tweets"
   const [tbTab, setTbTab] = useState("users"); // "users" | "shared" | "feed"
   const [igTab, setIgTab] = useState("profile"); // "profile" | "posts"
+  // Posts Instagram repliés par défaut (plus pratique pour scroller la liste) — un Set d'ids
+  // "ouverts" par section ; vide au départ = tout fermé. Réutilisé par les 3 listes (grille,
+  // fil partagé, comptes déco).
+  const [igPostsOpen, setIgPostsOpen] = useState(()=>new Set());
+  const [igFeedOpen,  setIgFeedOpen]  = useState(()=>new Set());
+  const [igDecoOpen,  setIgDecoOpen]  = useState(()=>new Set());
+  const toggleInSet = (setFn) => (id) => setFn(prev => {
+    const next = new Set(prev);
+    next.has(id) ? next.delete(id) : next.add(id);
+    return next;
+  });
+  // Tri anti-chronologique (plus récent en premier) basé sur le format de date lore. Les dates non
+  // reconnues (ex: anciens posts "Oct 2012" sans jour précis) retombent en bas plutôt que de planter.
+  const igDateKey = (dateStr) => {
+    const p = parseLoreTime(dateStr);
+    return p ? p.month*44640 + p.day*1440 + (p.hour||0)*60 + (p.min||0) : -Infinity;
+  };
+  const sortIgDesc = (list) => [...list].sort((a,b)=>igDateKey(b.date)-igDateKey(a.date));
   const [fbTab, setFbTab] = useState("users"); // "users" | "shared" | "pages"
   const [phoneSubTab, setPhoneSubTab] = useState("calls"); // "calls" | "contacts" | "voicemail"
   const [grindrTab, setGrindrTab] = useState("grid"); // "grid" | "dms" | "profile"
@@ -20828,17 +20846,31 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
           {/* ── POSTS ── */}
           {igTab==="posts" && (
             <div style={{display:"flex",flexDirection:"column",gap:8}}>
-              <div style={{fontSize:11,color:"#6b7280",lineHeight:1.5}}>Photos visibles dans la grille Instagram du perso. Chaque post peut avoir une légende, des likes et des commentaires.</div>
-              {igPosts.map((post,i)=>{
+              <div style={{fontSize:11,color:"#6b7280",lineHeight:1.5}}>Photos visibles dans la grille Instagram du perso. Chaque post peut avoir une légende, des likes et des commentaires. Triés du plus récent au plus ancien — clique sur un post pour le déplier.</div>
+              {sortIgDesc(igPosts).map((post,i)=>{
+                const isOpen = igPostsOpen.has(post.id??i);
+                const toggle = toggleInSet(setIgPostsOpen);
                 const updPost = (patch) => {
                   const fresh = dataRef.current[tab] || {};
                   const freshIg = fresh.instagram || {};
-                  const fp = [...(freshIg.posts||[])];
-                  fp[i] = {...fp[i], ...patch};
+                  const fp = (freshIg.posts||[]).map(p2 => p2.id===post.id ? {...p2,...patch} : p2);
                   onUpdate(tab, {...fresh, instagram: {...freshIg, posts: fp}});
                 };
                 return (
-                  <div key={post.id||i} style={{background:"rgba(255,255,255,0.85)",borderRadius:10,padding:"10px 12px",border:"1px solid rgba(0,0,0,0.07)",display:"flex",flexDirection:"column",gap:8}}>
+                  <div key={post.id||i} style={{background:"rgba(255,255,255,0.85)",borderRadius:10,border:"1px solid rgba(0,0,0,0.07)",overflow:"hidden"}}>
+                    {/* En-tête repliable */}
+                    <div onClick={()=>toggle(post.id??i)} style={{display:"flex",gap:10,alignItems:"center",padding:"8px 12px",cursor:"pointer"}}>
+                      <div style={{width:36,height:36,borderRadius:6,overflow:"hidden",background:"#efefef",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                        {post.src?<img src={post.src} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:<span style={{fontSize:16}}>📷</span>}
+                      </div>
+                      <div style={{flex:1,minWidth:0}}>
+                        <div style={{fontSize:12,color:"#374151",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{post.caption||<em style={{color:"#9ca3af"}}>(sans légende)</em>}</div>
+                        <div style={{fontSize:10,color:"#9ca3af"}}>{post.date||"—"}{post.archived?" · archivé":""}</div>
+                      </div>
+                      <span style={{fontSize:11,color:"#9ca3af",transform:isOpen?"rotate(180deg)":"none",transition:"transform 0.15s"}}>▾</span>
+                    </div>
+                    {isOpen && (
+                    <div style={{display:"flex",flexDirection:"column",gap:8,padding:"0 12px 12px"}}>
                     {/* Photo + date */}
                     <div style={{display:"flex",gap:10,alignItems:"flex-start"}}>
                       <label style={{width:70,height:70,borderRadius:6,overflow:"hidden",background:"#efefef",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",flexShrink:0,border:"1px solid rgba(0,0,0,0.08)"}}>
@@ -20849,13 +20881,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                         <input type="file" accept="image/*" style={{display:"none"}} onChange={e=>{
                           const f=e.target.files?.[0];if(!f)return;
                           const r=new UploadReader();
-                          r.onload=ev=>{
-                            const fresh=dataRef.current[tab]||{};
-                            const freshIg=fresh.instagram||{};
-                            const fp=[...(freshIg.posts||[])];
-                            fp[i]={...fp[i],src:ev.target.result};
-                            onUpdate(tab,{...fresh,instagram:{...freshIg,posts:fp}});
-                          };
+                          r.onload=ev=>updPost({src:ev.target.result});
                           r.readAsDataURL(f);e.target.value="";
                         }}/>
                       </label>
@@ -20870,13 +20896,15 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                               Archivé
                             </label>
                           </div>
-                          <button onClick={()=>updPosts(igPosts.filter((_,j)=>j!==i))} style={{background:"rgba(239,68,68,0.06)",border:"1px solid rgba(239,68,68,0.2)",color:"#ef4444",borderRadius:6,padding:"5px 8px",cursor:"pointer",fontSize:11,alignSelf:"flex-end"}}>✕</button>
+                          <button onClick={()=>updPosts(igPosts.filter(p2=>p2.id!==post.id))} style={{background:"rgba(239,68,68,0.06)",border:"1px solid rgba(239,68,68,0.2)",color:"#ef4444",borderRadius:6,padding:"5px 8px",cursor:"pointer",fontSize:11,alignSelf:"flex-end"}}>✕</button>
                         </div>
                         <Field label="Légende" value={post.caption||""} onChange={v=>updPost({caption:v})} textarea/>
                       </div>
                     </div>
                     {/* Commentaires */}
                     <IgCommentEditor comments={post.comments||[]} onChange={cm=>updPost({comments:cm})} accentColor={IG_COLOR}/>
+                    </div>
+                    )}
                   </div>
                 );
               })}
@@ -20888,38 +20916,54 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
           {/* ── FIL PARTAGÉ ── */}
           {igTab==="feed" && (()=>{
             const myHandle = igProfile.handle || d.username || tab;
+            const myPosts = sortIgDesc(sharedIgPosts.filter(p=>p.author===tab));
             return (
               <div style={{display:"flex",flexDirection:"column",gap:8}}>
                 <div style={{fontSize:11,color:"#6b7280",lineHeight:1.5,background:"rgba(61,107,143,0.07)",border:"1px solid rgba(61,107,143,0.2)",borderRadius:8,padding:"8px 12px"}}>
-                  Posts visibles dans le <strong>fil d'accueil</strong> de tous les persos. Seul toi peux modifier ou supprimer tes propres posts.
+                  Posts visibles dans le <strong>fil d'accueil</strong> de tous les persos. Seul toi peux modifier ou supprimer tes propres posts. Triés du plus récent au plus ancien — clique pour déplier.
                 </div>
-                {sharedIgPosts.filter(p=>p.author===tab).map((post,i)=>{
-                  const idx = sharedIgPosts.findIndex(p=>p.id===post.id);
-                  const updPost = (patch) => { const list=[...sharedIgPosts]; list[idx]={...list[idx],...patch}; updSharedIg(list); };
+                {myPosts.map((post,i)=>{
+                  const isOpen = igFeedOpen.has(post.id??i);
+                  const toggle = toggleInSet(setIgFeedOpen);
+                  const updPost = (patch) => { const list=sharedIgPosts.map(p2=>p2.id===post.id?{...p2,...patch}:p2); updSharedIg(list); };
                   return (
-                    <div key={post.id||i} style={{background:"rgba(255,255,255,0.85)",borderRadius:10,padding:"10px 12px",border:"1px solid rgba(0,0,0,0.07)",display:"flex",gap:10,alignItems:"flex-start"}}>
-                      <label style={{width:64,height:64,borderRadius:6,overflow:"hidden",background:"#efefef",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",flexShrink:0,border:"1px solid rgba(0,0,0,0.08)"}}>
-                        {post.src?<img src={post.src} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:<span style={{fontSize:22}}>📷</span>}
-                        <input type="file" accept="image/*" style={{display:"none"}} onChange={e=>{
-                          const f=e.target.files?.[0];if(!f)return;
-                          const r=new UploadReader();
-                          r.onload=ev=>{
-                            const list=[...((dataRef.current.sharedThreads?._sharedInstaPosts)||[])];
-                            const ii=list.findIndex(p=>p.id===post.id);
-                            if(ii>=0){list[ii]={...list[ii],src:ev.target.result};updSharedIg(list);}
-                          };
-                          r.readAsDataURL(f);e.target.value="";
-                        }}/>
-                      </label>
-                      <div style={{flex:1,minWidth:0,display:"flex",flexDirection:"column",gap:6}}>
-                        <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
-                          <LoreDateTimeInput value={post.date||""} onChange={v=>updPost({date:v})} width="160px" showLabel={true}/>
-                          <Field label="Likes" value={String(post.likes??"")} onChange={v=>updPost({likes:parseInt(v)||0})} width="70px"/>
-                          <Field label="📍 Lieu" value={post.location||""} onChange={v=>updPost({location:v||null})} style={{flex:1,minWidth:100}}/>
-                          <button onClick={()=>updSharedIg(sharedIgPosts.filter(p=>p.id!==post.id))} style={{background:"rgba(239,68,68,0.06)",border:"1px solid rgba(239,68,68,0.2)",color:"#ef4444",borderRadius:6,padding:"5px 8px",cursor:"pointer",fontSize:11,alignSelf:"flex-end"}}>✕</button>
+                    <div key={post.id||i} style={{background:"rgba(255,255,255,0.85)",borderRadius:10,border:"1px solid rgba(0,0,0,0.07)",overflow:"hidden"}}>
+                      <div onClick={()=>toggle(post.id??i)} style={{display:"flex",gap:10,alignItems:"center",padding:"8px 12px",cursor:"pointer"}}>
+                        <div style={{width:36,height:36,borderRadius:6,overflow:"hidden",background:"#efefef",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                          {post.src?<img src={post.src} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:<span style={{fontSize:16}}>📷</span>}
                         </div>
-                        <Field label="Légende" value={post.caption||""} onChange={v=>updPost({caption:v})} textarea/>
+                        <div style={{flex:1,minWidth:0}}>
+                          <div style={{fontSize:12,color:"#374151",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{post.caption||<em style={{color:"#9ca3af"}}>(sans légende)</em>}</div>
+                          <div style={{fontSize:10,color:"#9ca3af"}}>{post.date||"—"}</div>
+                        </div>
+                        <span style={{fontSize:11,color:"#9ca3af",transform:isOpen?"rotate(180deg)":"none",transition:"transform 0.15s"}}>▾</span>
                       </div>
+                      {isOpen && (
+                      <div style={{display:"flex",gap:10,alignItems:"flex-start",padding:"0 12px 12px"}}>
+                        <label style={{width:64,height:64,borderRadius:6,overflow:"hidden",background:"#efefef",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",flexShrink:0,border:"1px solid rgba(0,0,0,0.08)"}}>
+                          {post.src?<img src={post.src} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:<span style={{fontSize:22}}>📷</span>}
+                          <input type="file" accept="image/*" style={{display:"none"}} onChange={e=>{
+                            const f=e.target.files?.[0];if(!f)return;
+                            const r=new UploadReader();
+                            r.onload=ev=>{
+                              const list=[...((dataRef.current.sharedThreads?._sharedInstaPosts)||[])];
+                              const ii=list.findIndex(p=>p.id===post.id);
+                              if(ii>=0){list[ii]={...list[ii],src:ev.target.result};updSharedIg(list);}
+                            };
+                            r.readAsDataURL(f);e.target.value="";
+                          }}/>
+                        </label>
+                        <div style={{flex:1,minWidth:0,display:"flex",flexDirection:"column",gap:6}}>
+                          <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+                            <LoreDateTimeInput value={post.date||""} onChange={v=>updPost({date:v})} width="160px" showLabel={true}/>
+                            <Field label="Likes" value={String(post.likes??"")} onChange={v=>updPost({likes:parseInt(v)||0})} width="70px"/>
+                            <Field label="📍 Lieu" value={post.location||""} onChange={v=>updPost({location:v||null})} style={{flex:1,minWidth:100}}/>
+                            <button onClick={()=>updSharedIg(sharedIgPosts.filter(p2=>p2.id!==post.id))} style={{background:"rgba(239,68,68,0.06)",border:"1px solid rgba(239,68,68,0.2)",color:"#ef4444",borderRadius:6,padding:"5px 8px",cursor:"pointer",fontSize:11,alignSelf:"flex-end"}}>✕</button>
+                          </div>
+                          <Field label="Légende" value={post.caption||""} onChange={v=>updPost({caption:v})} textarea/>
+                        </div>
+                      </div>
+                      )}
                     </div>
                   );
                 })}
@@ -20937,11 +20981,25 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
           {/* ── COMPTES DÉCO ── */}
           {igTab==="deco" && (
             <div style={{display:"flex",flexDirection:"column",gap:8}}>
-              <div style={{fontSize:11,color:"#6b7280",lineHeight:1.5}}>Posts de comptes fictifs visibles dans le fil de <strong>{CHAR_NAMES[tab]||tab}</strong> uniquement — non partagés entre persos. Même principe que la "Timeline déco" sur Twitter ou le "Fil" sur Tumblr.</div>
-              {decoIg.map((post,i)=>{
-                const updDeco = (patch) => updDecoIg(decoIg.map((p2,j)=>j===i?{...p2,...patch}:p2));
+              <div style={{fontSize:11,color:"#6b7280",lineHeight:1.5}}>Posts de comptes fictifs visibles dans le fil de <strong>{CHAR_NAMES[tab]||tab}</strong> uniquement — non partagés entre persos. Même principe que la "Timeline déco" sur Twitter ou le "Fil" sur Tumblr. Triés du plus récent au plus ancien — clique pour déplier.</div>
+              {sortIgDesc(decoIg).map((post,i)=>{
+                const isOpen = igDecoOpen.has(post.id??i);
+                const toggle = toggleInSet(setIgDecoOpen);
+                const updDeco = (patch) => updDecoIg(decoIg.map(p2=>p2.id===post.id?{...p2,...patch}:p2));
                 return (
-                  <div key={post.id??i} className="adm-card" style={{background:"rgba(255,255,255,0.85)",borderRadius:10,padding:"10px 12px",border:"1px solid rgba(0,0,0,0.07)",display:"flex",gap:10,alignItems:"flex-start"}}>
+                  <div key={post.id??i} className="adm-card" style={{background:"rgba(255,255,255,0.85)",borderRadius:10,border:"1px solid rgba(0,0,0,0.07)",overflow:"hidden"}}>
+                    <div onClick={()=>toggle(post.id??i)} style={{display:"flex",gap:10,alignItems:"center",padding:"8px 12px",cursor:"pointer"}}>
+                      <div style={{width:30,height:30,borderRadius:"50%",overflow:"hidden",background:"#efefef",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,fontSize:13,fontWeight:700,color:"#9ca3af"}}>
+                        {post.avatar?<img src={post.avatar} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:(post.handle||"?")[0]?.toUpperCase()}
+                      </div>
+                      <div style={{flex:1,minWidth:0}}>
+                        <div style={{fontSize:12,color:"#374151",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{post.handle?`@${post.handle}`:<em style={{color:"#9ca3af"}}>(sans handle)</em>} {post.caption?`— ${post.caption}`:""}</div>
+                        <div style={{fontSize:10,color:"#9ca3af"}}>{post.date||"—"}</div>
+                      </div>
+                      <span style={{fontSize:11,color:"#9ca3af",transform:isOpen?"rotate(180deg)":"none",transition:"transform 0.15s"}}>▾</span>
+                    </div>
+                    {isOpen && (
+                    <div style={{display:"flex",gap:10,alignItems:"flex-start",padding:"0 12px 12px"}}>
                     {/* Avatar du compte */}
                     <label style={{width:48,height:48,borderRadius:"50%",overflow:"hidden",background:"#efefef",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",flexShrink:0,border:"1px solid rgba(0,0,0,0.08)",fontSize:18,fontWeight:700,color:"#9ca3af"}}>
                       {post.avatar?<img src={post.avatar} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:(post.handle||"?")[0]?.toUpperCase()}
@@ -20964,10 +21022,12 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                         <LoreDateTimeInput value={post.date||""} onChange={v=>updDeco({date:v})} width="160px" showLabel={true}/>
                         <Field label="Likes" value={String(post.likes??"")} onChange={v=>updDeco({likes:parseInt(v)||0})} width="70px"/>
                         {post.avatar && <button onClick={()=>updDeco({avatar:null})} style={{fontSize:10,color:"#ef4444",background:"none",border:"none",cursor:"pointer",padding:0,alignSelf:"center"}}>× Suppr. photo</button>}
-                        <button onClick={()=>updDecoIg(decoIg.filter((_,j)=>j!==i))} style={{background:"rgba(239,68,68,0.06)",border:"1px solid rgba(239,68,68,0.2)",color:"#ef4444",borderRadius:6,padding:"5px 8px",cursor:"pointer",fontSize:11,alignSelf:"flex-start"}}>✕</button>
+                        <button onClick={()=>updDecoIg(decoIg.filter(p2=>p2.id!==post.id))} style={{background:"rgba(239,68,68,0.06)",border:"1px solid rgba(239,68,68,0.2)",color:"#ef4444",borderRadius:6,padding:"5px 8px",cursor:"pointer",fontSize:11,alignSelf:"flex-start"}}>✕</button>
                       </div>
                       <Field label="Légende" value={post.caption||""} onChange={v=>updDeco({caption:v})} textarea/>
                     </div>
+                    </div>
+                    )}
                   </div>
                 );
               })}
