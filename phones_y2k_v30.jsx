@@ -2334,12 +2334,16 @@ const TumblrScreen = ({data,admin,update,onUpdateShared=()=>{},accent,onBack=nul
         <div style={{display:"flex",alignItems:"center",padding:"9px 10px 8px",gap:8,borderBottom:`1px solid ${SEP}`}}>
           <div onClick={goToProfile} style={{width:36,height:36,borderRadius:5,flexShrink:0,overflow:"hidden",background:post.avatarBg||TB,display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontWeight:700,fontSize:15,cursor:clickable?"pointer":"default"}}>
             {(()=>{
-              // Résout l'avatar : priorité au champ propre au post, sinon à l'avatar partagé du vrai
-              // perso (s'il s'agit bien de l'un des 4, identifié par username), sinon initiale.
+              // Résout l'avatar : on priorise post.author (clé directe du perso, toujours posée par
+              // SharedPostsEditor) sur charKeyOfUsername (déduit du handle, absent des posts admin).
+              // Avant ce fix, !charKeyOfUsername → isCurrentChar=true → data.avatar (proprio du
+              // téléphone) s'affichait sur TOUS les posts sans username reconnu.
               const sharedAvatars = data.sharedThreads?._sharedAvatars || {};
-              // Si le post appartient au perso courant → data.avatar, sinon → _sharedAvatars[auteur]
-              const isCurrentChar = !charKeyOfUsername || charKeyOfUsername === charKey;
-              const resolvedAvatar = post.avatar || (isCurrentChar ? data.avatar : null) || sharedAvatars[charKeyOfUsername];
+              const authorKey = post.author || charKeyOfUsername;
+              const isCurrentChar = authorKey === charKey;
+              const resolvedAvatar = post.avatar
+                || (isCurrentChar ? data.avatar : null)
+                || (authorKey ? sharedAvatars[authorKey] : null);
               return resolvedAvatar
                 ? <img src={resolvedAvatar} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
                 : (post.username||data.username||"?")[0].toUpperCase();
@@ -6350,10 +6354,12 @@ const IOSPhone = ({data,admin,onUpdate,onUpdateShared=()=>{},loreDate:loreDatePr
 
       // Helpers
       const resolveGmail = (n) => {
-        const mailList = data.mail_override?.[data.username] ?? (EMAILS_BY_CHAR[data.username] || []);
-        const mail = mailList.find(m => m.from === n.title || m.from.startsWith(n.title));
+        const rawMailList = data.mail_override?.[data.username] ?? (EMAILS_BY_CHAR[data.username] || []);
+        const mailList = Array.isArray(rawMailList) ? rawMailList : [];
+        const mail = mailList.find(m => m.from && (m.from === n.title || m.from.startsWith(n.title)));
         if(mail) {
-          const cropped = mail.preview.length > 60 ? mail.preview.slice(0,60).trimEnd()+"…" : mail.preview;
+          const preview = mail.preview || "";
+          const cropped = preview.length > 60 ? preview.slice(0,60).trimEnd()+"…" : preview;
           return {title:mail.from, text:cropped, time:fmtTime(n.time), raw:n.time, ...notifIcon("gmail")};
         }
         return {title:n.title, text:n.text, time:fmtTime(n.time), raw:n.time, ...notifIcon("gmail")};
@@ -21298,7 +21304,8 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
       ];
       const curTabDef = MAIL_TAB_DEFS.find(t=>t.key===mailAdmTab);
       const un = d.username || "glindatheverygood";
-      const mails = d[curTabDef.storageKey]?.[un] ?? curTabDef.defaultFn(un);
+      const rawMails = d[curTabDef.storageKey]?.[un] ?? curTabDef.defaultFn(un);
+      const mails = Array.isArray(rawMails) ? rawMails : curTabDef.defaultFn(un);
       const updMailList = (list) => upd(curTabDef.storageKey, {...(d[curTabDef.storageKey]||{}), [un]: list});
       const newMail = () => updMailList([...mails, {id:Date.now(), from:"", subj:"", preview:"", time:"6 oct, 10:00am", unread:mailAdmTab==="inbox"}]);
       return (
@@ -22298,9 +22305,21 @@ export default function App() {
             </div>
           </div>
 
-          {charData.os==="ios"
-            ?<IOSPhone data={{...charData, sharedThreads:data.sharedThreads}} admin={false} loreDate={loreDate} onUpdate={d=>updateChar(selected.key,d)} onUpdateShared={(tid,raw)=>updateChar(tid,raw)}/>
-            :<AndroidPhone data={{...charData, sharedThreads:data.sharedThreads}} admin={false} loreDate={loreDate} onUpdate={d=>updateChar(selected.key,d)} sharedAndroidIcons={sharedAndroidIcons} onUpdateShared={updateSharedAndroid} onUpdateSharedThread={(tid,raw)=>updateChar(tid,raw)}/>}
+          {(()=>{
+            // Enrichit _sharedAvatars à la volée : data[ck].avatar est toujours l'avatar "vrai"
+            // d'un perso (uploadé depuis n'importe quel onglet admin), mais il n'est dupliqué dans
+            // _sharedAvatars QUE quand l'upload se fait depuis l'onglet Facebook/Tumblr/Twitter.
+            // Si Eoghan/Drew ont uploadé leur avatar depuis un autre onglet, FB/Twitter ne le voient
+            // pas → pas de photo dans le fil. Fix : on fusionne ici tous les data[ck].avatar dans
+            // _sharedAvatars, _sharedAvatars ayant la priorité (upload explicite reste prioritaire).
+            const ALL_CK = ["glinda","eoghan","drew","elias"];
+            const enriched = Object.fromEntries(ALL_CK.filter(ck=>data[ck]?.avatar).map(ck=>[ck,data[ck].avatar]));
+            const mergedAvatars = {...enriched, ...(data.sharedThreads?._sharedAvatars||{})};
+            const sharedThreadsEnriched = {...data.sharedThreads, _sharedAvatars: mergedAvatars};
+            return charData.os==="ios"
+              ?<IOSPhone data={{...charData, sharedThreads:sharedThreadsEnriched}} admin={false} loreDate={loreDate} onUpdate={d=>updateChar(selected.key,d)} onUpdateShared={(tid,raw)=>updateChar(tid,raw)}/>
+              :<AndroidPhone data={{...charData, sharedThreads:sharedThreadsEnriched}} admin={false} loreDate={loreDate} onUpdate={d=>updateChar(selected.key,d)} sharedAndroidIcons={sharedAndroidIcons} onUpdateShared={updateSharedAndroid} onUpdateSharedThread={(tid,raw)=>updateChar(tid,raw)}/>;
+          })()}
 
           
           <div style={{display:"flex",gap:8,marginTop:8}}>
@@ -22626,8 +22645,15 @@ const FacebookScreen = ({data, isIos, accent}) => {
     "Glinda Ravingfool":"glinda", "Eoghan Masuda":"eoghan",
     "Drew Buckley":"drew", "Elias Green":"elias",
   };
-  const Avatar = ({name,size=36,forMe=false}) => {
-    const ck = forMe ? charKey : NAME_TO_KEY[name];
+  const Avatar = ({name,author,size=36,forMe=false}) => {
+    // FIX : avant, l'avatar ne se résolvait QUE via NAME_TO_KEY[name] — une correspondance fragile
+    // sur le texte exact du nom affiché. Si le nom tapé dans l'admin différait même légèrement de
+    // "Eoghan Masuda"/"Drew Buckley" (espace, abréviation, surnom...), la résolution échouait
+    // silencieusement et affichait l'initiale au lieu de la vraie photo — même si _sharedAvatars
+    // contenait bien la photo. Désormais on utilise post.author en priorité (toujours fiable, posé
+    // automatiquement sur chaque post) et on ne retombe sur NAME_TO_KEY que pour les rares posts
+    // historiques qui n'auraient pas encore d'author.
+    const ck = forMe ? charKey : (author || NAME_TO_KEY[name]);
     const profilePic = ck === charKey ? (data.avatar || sharedAvatars[ck]) : sharedAvatars[ck];
     return profilePic
       ? <div style={{width:size,height:size,borderRadius:4,overflow:"hidden",flexShrink:0}}><img src={profilePic} style={{width:"100%",height:"100%",objectFit:"cover"}}/></div>
@@ -22674,7 +22700,7 @@ const FacebookScreen = ({data, isIos, accent}) => {
           <div key={i} style={{background:"#fff",marginBottom:8,borderTop:"1px solid #dde3ea",borderBottom:"1px solid #dde3ea"}}>
             {/* Post header */}
             <div style={{padding:"8px 10px",display:"flex",gap:8,alignItems:"flex-start"}}>
-              <Avatar name={p.name}/>
+              <Avatar name={p.name} author={p.author}/>
               <div style={{flex:1,minWidth:0}}>
                 <div style={{fontSize:13,fontWeight:700,color:"#1d2129"}}>{p.name}</div>
                 <div style={{fontSize:11,color:"#90949c",display:"flex",alignItems:"center",gap:4}}>
@@ -22721,9 +22747,14 @@ const GmailScreen = ({data, isIos, accent, onBack}) => {
   const [showMenu, setShowMenu] = useState(false);
 
   const charUsername = data.username || "glindatheverygood";
-  const inbox   = data.mail_override?.[charUsername] ?? EMAILS_BY_CHAR[charUsername] ?? EMAILS_BY_CHAR.glindatheverygood;
-  const drafts  = data.mail_drafts?.[charUsername]   ?? MAIL_DRAFTS_BY_CHAR[charUsername]  ?? [];
-  const deleted = data.mail_deleted?.[charUsername]  ?? MAIL_DELETED_BY_CHAR[charUsername]  ?? [];
+  // Garde défensive : si data.mail_override[charUsername] (ou drafts/deleted) n'est pas un tableau
+  // pour une raison ou une autre, .filter/.map plantait plus bas et faisait planter TOUT l'écran
+  // Mail (écran noir au clic sur l'app, sur iOS comme Android, car c'est le même composant pour
+  // les deux). On retombe sur le tableau par défaut au lieu de laisser planter le rendu.
+  const asArr = (v, fallback) => Array.isArray(v) ? v : fallback;
+  const inbox   = asArr(data.mail_override?.[charUsername] ?? EMAILS_BY_CHAR[charUsername] ?? EMAILS_BY_CHAR.glindatheverygood, []);
+  const drafts  = asArr(data.mail_drafts?.[charUsername]   ?? MAIL_DRAFTS_BY_CHAR[charUsername]  ?? [], []);
+  const deleted = asArr(data.mail_deleted?.[charUsername]  ?? MAIL_DELETED_BY_CHAR[charUsername]  ?? [], []);
 
   const FOLDERS = [
     {key:"inbox",  label:"Inbox",   icon:"inbox",  count:inbox.filter(e=>e.unread).length, list:inbox,   badge:true},
@@ -23358,6 +23389,16 @@ const MAIL_DRAFTS_BY_CHAR = {
     {from:"Elias G.",subj:"[Brouillon] Lettre hôpital — Anna",preview:"Je souhaitais vous faire part de mes inquiétudes concernant le suivi de ma sœur Anna Green, admise le 4 octobre. Les informations qui m'ont été communiquées...",time:"6 oct, 1:04am",unread:false},
     {from:"Elias G.",subj:"[Brouillon] chapitre 4 Five Nights",preview:"La forêt derrière Derry ne ressemble à aucune autre. Les arbres y poussent trop serrés, trop droits, comme s'ils attendaient quelque chose...",time:"5 oct, 11:00pm",unread:false},
   ],
+};
+// Boîte "Supprimés" — vide par défaut pour les 4 persos (personne n'a encore rien supprimé dans le
+// lore). Cette constante était référencée (admin + GmailScreen) mais n'avait jamais été définie lors
+// de l'ajout des onglets Drafts/Deleted — une ReferenceError plantait donc le rendu de l'app Mail
+// pour tout le monde, dès l'ouverture, dès que mail_deleted n'avait pas encore de valeur en base.
+const MAIL_DELETED_BY_CHAR = {
+  glindatheverygood: [],
+  eoghan_masuda: [],
+  dreww_orms: [],
+  noteliasgreen: [],
 };
 // Facebook
 
