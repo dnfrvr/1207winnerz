@@ -22213,9 +22213,14 @@ export default function App() {
         queueFirebaseUpdate({ _sharedAndroidIcons: d });
         return {...prev, _sharedAndroidIcons: d};
       }
-      // Force playlists to stay hardcoded
-      const forced = FORCED_PLAYLISTS[key];
-      const merged = forced ? {...d, ...forced} : d;
+      // RETIRÉ : "Force playlists to stay hardcoded" réécrasait `music`/`playlistName` avec la
+      // version figée du lore (FORCED_PLAYLISTS, sans aucune pochette) à CHAQUE appel updateChar
+      // pour ce perso — pas seulement pour les changements de musique, n'importe quelle modif
+      // (avatar, wallpaper, autre app...) suffisait à effacer silencieusement les pochettes et
+      // tout autre edit musical qui venaient d'être enregistrés. FORCED_PLAYLISTS reste utilisée
+      // une seule fois, à l'initialisation des données par défaut (forcePlaylists() dans mkData()),
+      // ce qui suffit à fournir la playlist de lore de base sans plus jamais l'imposer ensuite.
+      const merged = d;
       let next = {...prev, [key]:merged};
       if(skipSync) { queueFirebaseUpdate({ [key]: merged }); return next; }
       // Sync icônes entre tous les persos du même OS — état React local uniquement.
