@@ -18255,7 +18255,10 @@ const SharedPostsEditor = ({
   showTitle=false, statFields=[], addExtra={}, addLabel="+ Post", textLabel="Texte", hint,
 }) => {
   const F = fieldMap;
-  const mine = posts.filter(p=>p.author===tab);
+  const [openIds, setOpenIds] = useState(()=>new Set());
+  const toggle = (id) => setOpenIds(prev => { const n=new Set(prev); n.has(id)?n.delete(id):n.add(id); return n; });
+  const sortKey = (p) => { const t = parseLoreTime(p[F.time]); return t ? t.month*44640+t.day*1440+(t.hour||0)*60+(t.min||0) : -Infinity; };
+  const mine = posts.filter(p=>p.author===tab).sort((a,b)=>sortKey(b)-sortKey(a));
   const updPost = (id, patch) => onChange(posts.map(p=>p.id===id?{...p,...patch}:p));
   const removePost = (id) => onChange(posts.filter(p=>p.id!==id));
   const addPost = () => {
@@ -18265,9 +18268,21 @@ const SharedPostsEditor = ({
   };
   return (
     <div style={{display:"flex",flexDirection:"column",gap:10}}>
-      {hint && <div style={{fontSize:11,color:"#9ca3af"}}>{hint}</div>}
-      {mine.map(post=>(
-        <div key={post.id} className="adm-card" style={{background:"rgba(255,255,255,0.9)",borderRadius:10,padding:"10px 12px",border:"1px solid rgba(0,0,0,0.07)",display:"flex",flexDirection:"column",gap:6}}>
+      {hint && <div style={{fontSize:11,color:"#9ca3af"}}>{hint} Triés du plus récent au plus ancien — clique pour déplier.</div>}
+      {mine.map(post=>{
+        const isOpen = openIds.has(post.id);
+        return (
+        <div key={post.id} className="adm-card" style={{background:"rgba(255,255,255,0.9)",borderRadius:10,border:"1px solid rgba(0,0,0,0.07)",overflow:"hidden"}}>
+          <div onClick={()=>toggle(post.id)} style={{display:"flex",gap:10,alignItems:"center",padding:"8px 12px",cursor:"pointer"}}>
+            {post[F.img] && <div style={{width:32,height:32,borderRadius:5,overflow:"hidden",flexShrink:0}}><img src={post[F.img]} style={{width:"100%",height:"100%",objectFit:"cover"}}/></div>}
+            <div style={{flex:1,minWidth:0}}>
+              <div style={{fontSize:12,color:"#374151",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{post[F.text]||<em style={{color:"#9ca3af"}}>(vide)</em>}</div>
+              <div style={{fontSize:10,color:"#9ca3af"}}>{post[F.time]||"—"}</div>
+            </div>
+            <span style={{fontSize:11,color:"#9ca3af",transform:isOpen?"rotate(180deg)":"none",transition:"transform 0.15s"}}>▾</span>
+          </div>
+          {isOpen && (
+          <div style={{display:"flex",flexDirection:"column",gap:6,padding:"0 12px 12px"}}>
           <div style={{display:"flex",gap:6,flexWrap:"wrap",alignItems:"flex-end"}}>
             {showTitle && <Field label="Titre (opt.)" value={post.title||""} onChange={v=>updPost(post.id,{title:v})} width="160px"/>}
             <LoreDateTimeInput value={post[F.time]||""} onChange={v=>updPost(post.id,{[F.time]:v})} width="190px" showLabel={true}/>
@@ -18292,8 +18307,11 @@ const SharedPostsEditor = ({
               ))}
             </div>
           )}
+          </div>
+          )}
         </div>
-      ))}
+        );
+      })}
       <button onClick={addPost}
         style={{background:`${accent}14`,border:`1px dashed ${accent}66`,color:accent,borderRadius:8,padding:"10px 18px",cursor:"pointer",fontSize:12,fontWeight:600,alignSelf:"flex-start"}}>{addLabel}</button>
     </div>
@@ -18666,6 +18684,11 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
   const [igPostsOpen, setIgPostsOpen] = useState(()=>new Set());
   const [igFeedOpen,  setIgFeedOpen]  = useState(()=>new Set());
   const [igDecoOpen,  setIgDecoOpen]  = useState(()=>new Set());
+  const [twTweetsOpen, setTwTweetsOpen] = useState(()=>new Set());
+  const [fbPagesOpen,  setFbPagesOpen]  = useState(()=>new Set());
+  const [tbFeedOpen,   setTbFeedOpen]   = useState(()=>new Set());
+  const [mailOpen,     setMailOpen]     = useState(()=>new Set());
+  const [eventsOpen,   setEventsOpen]   = useState(()=>new Set());
   const toggleInSet = (setFn) => (id) => setFn(prev => {
     const next = new Set(prev);
     next.has(id) ? next.delete(id) : next.add(id);
@@ -18682,7 +18705,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
   const [phoneSubTab, setPhoneSubTab] = useState("calls"); // "calls" | "contacts" | "voicemail"
   const [grindrTab, setGrindrTab] = useState("grid"); // "grid" | "dms" | "profile"
   const [galSection, setGalSection] = useState("roll"); // "roll" | "deleted" | "albums"
-  const [calCollapsedSet, setCalCollapsedSet] = useState(new Set()); // togglable day groups
+  const [calCollapsedSet, setCalCollapsedSet] = useState(new Set()); // jours du calendrier explicitement OUVERTS (fermé par défaut)
   const [isMobile, setIsMobile] = useState(() => document.documentElement.clientWidth < 700);
   const [isNarrow, setIsNarrow] = useState(() => document.documentElement.clientWidth < 500);
   const adminRootRef = React.useRef(null);
@@ -20246,8 +20269,25 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
 
               {effectiveTweets.map((t,i)=>{
                 const upTw = (patch) => updEffective(effectiveTweets.map((t2,j)=>j===i?{...t2,...patch,id:t2.id||Date.now()+j}:{...t2,id:t2.id||Date.now()+j}));
+                const tid = t.id??i;
+                const isOpen = twTweetsOpen.has(tid);
+                const toggle = toggleInSet(setTwTweetsOpen);
                 return (
-                <div key={t.id??i} className="adm-card" style={{background:"rgba(255,255,255,0.9)",borderRadius:10,padding:"10px 12px",border:"1px solid rgba(0,0,0,0.07)",display:"flex",gap:10,alignItems:"flex-start"}}>
+                <div key={tid} className="adm-card" style={{background:"rgba(255,255,255,0.9)",borderRadius:10,border:"1px solid rgba(0,0,0,0.07)",overflow:"hidden"}}>
+                  <div onClick={()=>toggle(tid)} style={{display:"flex",gap:10,alignItems:"center",padding:"8px 12px",cursor:"pointer"}}>
+                    <div style={{width:30,height:30,borderRadius:6,overflow:"hidden",background:"#f3f4f6",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,fontSize:14}}>
+                      {(typeof t.av==="string" && (t.av.startsWith("data:")||t.av.startsWith("http")||t.av.startsWith("/")))
+                        ? <img src={t.av} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+                        : "🐦"}
+                    </div>
+                    <div style={{flex:1,minWidth:0}}>
+                      <div style={{fontSize:12,color:"#374151",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{t.h?`@${t.h}`:<em style={{color:"#9ca3af"}}>(sans handle)</em>} {t.text?`— ${t.text}`:""}</div>
+                      <div style={{fontSize:10,color:"#9ca3af"}}>{t.time||"—"}</div>
+                    </div>
+                    <span style={{fontSize:11,color:"#9ca3af",transform:isOpen?"rotate(180deg)":"none",transition:"transform 0.15s"}}>▾</span>
+                  </div>
+                  {isOpen && (
+                  <div style={{display:"flex",gap:10,alignItems:"flex-start",padding:"0 12px 12px"}}>
                   {/* Avatar du compte */}
                   <label style={{width:44,height:44,borderRadius:6,overflow:"hidden",background:"#f3f4f6",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",flexShrink:0,border:"1px solid rgba(0,0,0,0.08)",fontSize:16}}>
                     {(typeof t.av==="string" && (t.av.startsWith("data:")||t.av.startsWith("http")||t.av.startsWith("/")))
@@ -20280,6 +20320,8 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                     <Field label="❤"  value={String(t.fav??0)} onChange={v=>upTw({fav:parseInt(v)||0})} style={{flex:1}}/>
                   </div>
                   </div>
+                  </div>
+                  )}
                 </div>
               );})}
 
@@ -20724,35 +20766,57 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
 
           {/* ── FIL DÉCORATIF ── */}
           {tbTab==="feed" && (()=>{
-            const effectiveFeed = d.tumblr?.feedPosts || [];
+            const effectiveFeedRaw = d.tumblr?.feedPosts || [];
             const updFeed = (list) => upd("tumblr",{...(d.tumblr||{}),feedPosts:list});
+            const fkey = (p) => { const t=parseLoreTime(p.date); return t?t.month*44640+t.day*1440+(t.hour||0)*60+(t.min||0):-Infinity; };
+            const effectiveFeed = [...effectiveFeedRaw].sort((a,b)=>fkey(b)-fkey(a));
+            const updAt = (id,i,patch) => updFeed(effectiveFeedRaw.map((p2,j)=> (id!=null?p2.id===id:j===i) ? {...p2,...patch} : p2));
             return (
               <div style={{display:"flex",flexDirection:"column",gap:8}}>
-                <div style={{fontSize:11,color:"#6b7280",lineHeight:1.5}}>Tweets décoratifs de comptes fictifs visibles dans la timeline de <strong>{CHAR_NAMES[tab]||tab}</strong> uniquement — non partagés entre persos.</div>
-                {effectiveFeed.map((post,i)=>(
-                  <div key={post.id??i} className="adm-card" style={{background:"rgba(255,255,255,0.85)",borderRadius:10,padding:"10px 12px",border:"1px solid rgba(0,0,0,0.07)",display:"flex",gap:10,alignItems:"flex-start"}}>
+                <div style={{fontSize:11,color:"#6b7280",lineHeight:1.5}}>Tweets décoratifs de comptes fictifs visibles dans la timeline de <strong>{CHAR_NAMES[tab]||tab}</strong> uniquement — non partagés entre persos. Triés du plus récent au plus ancien — clique pour déplier.</div>
+                {effectiveFeed.map((post,i)=>{
+                  const tid = post.id??i;
+                  const isOpen = tbFeedOpen.has(tid);
+                  const toggle = toggleInSet(setTbFeedOpen);
+                  return (
+                  <div key={tid} className="adm-card" style={{background:"rgba(255,255,255,0.85)",borderRadius:10,border:"1px solid rgba(0,0,0,0.07)",overflow:"hidden"}}>
+                    <div onClick={()=>toggle(tid)} style={{display:"flex",gap:10,alignItems:"center",padding:"8px 12px",cursor:"pointer"}}>
+                      <div style={{width:30,height:30,borderRadius:6,overflow:"hidden",background:post.avatar?"transparent":(post.avatarBg||"#8e7cc3"),display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,fontSize:13,color:"#fff",fontWeight:700}}>
+                        {post.avatar?<img src={post.avatar} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:(post.username||"?")[0]?.toUpperCase()}
+                      </div>
+                      <div style={{flex:1,minWidth:0}}>
+                        <div style={{fontSize:12,color:"#374151",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{post.username?`@${post.username}`:<em style={{color:"#9ca3af"}}>(sans pseudo)</em>} {post.body?`— ${post.body}`:""}</div>
+                        <div style={{fontSize:10,color:"#9ca3af"}}>{post.date||"—"}</div>
+                      </div>
+                      <span style={{fontSize:11,color:"#9ca3af",transform:isOpen?"rotate(180deg)":"none",transition:"transform 0.15s"}}>▾</span>
+                    </div>
+                    {isOpen && (
+                    <div style={{display:"flex",gap:10,alignItems:"flex-start",padding:"0 12px 12px"}}>
                     {/* Avatar du compte */}
                     <label style={{width:44,height:44,borderRadius:6,overflow:"hidden",background:post.avatar?"transparent":(post.avatarBg||"#8e7cc3"),display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",flexShrink:0,border:"1px solid rgba(0,0,0,0.08)",fontSize:16,color:"#fff",fontWeight:700}}>
                       {post.avatar?<img src={post.avatar} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:(post.username||"?")[0]?.toUpperCase()}
                       <input type="file" accept="image/*" style={{display:"none"}} onChange={e=>{
                         const f=e.target.files?.[0]; if(!f) return;
-                        const r=new UploadReader(); r.onload=ev=>{const p=[...effectiveFeed];p[i]={...p[i],avatar:ev.target.result};updFeed(p);}; r.readAsDataURL(f); e.target.value="";
+                        const r=new UploadReader(); r.onload=ev=>updAt(post.id,i,{avatar:ev.target.result}); r.readAsDataURL(f); e.target.value="";
                       }}/>
                     </label>
                     <div style={{flex:1,minWidth:0,display:"flex",flexDirection:"column",gap:6}}>
                     <div style={{display:"flex",gap:6,flexWrap:"wrap",alignItems:"flex-end"}}>
-                      <Field label="Pseudo" value={post.username||""} onChange={v=>{const p=[...effectiveFeed];p[i]={...p[i],username:v};updFeed(p);}} width="130px"/>
-                      <Field label="Titre (opt.)" value={post.title||""} onChange={v=>{const p=[...effectiveFeed];p[i]={...p[i],title:v};updFeed(p);}} style={{flex:1}}/>
-                      <LoreDateTimeInput value={post.date||""} onChange={v=>{const p=[...effectiveFeed];p[i]={...p[i],date:v};updFeed(p);}} width="190px" showLabel={true}/>
-                      <Field label="Notes" value={String(post.notes||0)} onChange={v=>{const p=[...effectiveFeed];p[i]={...p[i],notes:parseInt(v)||0};updFeed(p);}} width="70px"/>
-                      {post.avatar && <button onClick={()=>{const p=[...effectiveFeed];p[i]={...p[i],avatar:null};updFeed(p);}} style={{fontSize:10,color:"#ef4444",background:"none",border:"none",cursor:"pointer",padding:0,alignSelf:"center"}}>× Suppr. photo</button>}
-                      <button onClick={()=>updFeed(effectiveFeed.filter((_,j)=>j!==i))} className="adm-del-btn" style={{background:"rgba(239,68,68,0.06)",border:"1px solid rgba(239,68,68,0.2)",color:"#ef4444",borderRadius:6,padding:"5px 8px",cursor:"pointer",fontSize:11,marginTop:18}}>✕</button>
+                      <Field label="Pseudo" value={post.username||""} onChange={v=>updAt(post.id,i,{username:v})} width="130px"/>
+                      <Field label="Titre (opt.)" value={post.title||""} onChange={v=>updAt(post.id,i,{title:v})} style={{flex:1}}/>
+                      <LoreDateTimeInput value={post.date||""} onChange={v=>updAt(post.id,i,{date:v})} width="190px" showLabel={true}/>
+                      <Field label="Notes" value={String(post.notes||0)} onChange={v=>updAt(post.id,i,{notes:parseInt(v)||0})} width="70px"/>
+                      {post.avatar && <button onClick={()=>updAt(post.id,i,{avatar:null})} style={{fontSize:10,color:"#ef4444",background:"none",border:"none",cursor:"pointer",padding:0,alignSelf:"center"}}>× Suppr. photo</button>}
+                      <button onClick={()=>updFeed(effectiveFeedRaw.filter(p2=>post.id!=null ? p2.id!==post.id : p2!==post))} className="adm-del-btn" style={{background:"rgba(239,68,68,0.06)",border:"1px solid rgba(239,68,68,0.2)",color:"#ef4444",borderRadius:6,padding:"5px 8px",cursor:"pointer",fontSize:11,marginTop:18}}>✕</button>
                     </div>
-                    <Field label="Texte" value={post.body||""} onChange={v=>{const p=[...effectiveFeed];p[i]={...p[i],body:v};updFeed(p);}} textarea/>
+                    <Field label="Texte" value={post.body||""} onChange={v=>updAt(post.id,i,{body:v})} textarea/>
                     </div>
+                    </div>
+                    )}
                   </div>
-                ))}
-                <button onClick={()=>updFeed([{id:Date.now(),username:"",avatarBg:"#8e7cc3",body:"",notes:0,date:"1 oct",type:"text"},...effectiveFeed])}
+                  );
+                })}
+                <button onClick={()=>updFeed([{id:Date.now(),username:"",avatarBg:"#8e7cc3",body:"",notes:0,date:"1 oct",type:"text"},...effectiveFeedRaw])}
                   style={{background:"rgba(53,70,92,0.08)",border:"1px dashed rgba(53,70,92,0.4)",color:TB_COLOR,borderRadius:8,padding:"10px 18px",cursor:"pointer",fontSize:12,fontWeight:600}}>+ Post du fil</button>
               </div>
             );
@@ -20846,7 +20910,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
           {/* ── POSTS ── */}
           {igTab==="posts" && (
             <div style={{display:"flex",flexDirection:"column",gap:8}}>
-              <div style={{fontSize:11,color:"#6b7280",lineHeight:1.5}}>Photos visibles dans la grille Instagram du perso. Chaque post peut avoir une légende, des likes et des commentaires. Triés du plus récent au plus ancien — clique sur un post pour le déplier.</div>
+              <div style={{fontSize:11,color:"#6b7280",lineHeight:1.5}}>Photos visibles dans la grille Instagram du perso. Chaque post peut avoir une légende, des likes et des commentaires, plusieurs photos, un tag (post en commun avec un autre perso), et être épinglé en tête de grille. Triés du plus récent au plus ancien (épinglé toujours en premier) — clique sur un post pour le déplier.</div>
               {sortIgDesc(igPosts).map((post,i)=>{
                 const isOpen = igPostsOpen.has(post.id??i);
                 const toggle = toggleInSet(setIgPostsOpen);
@@ -20856,41 +20920,70 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                   const fp = (freshIg.posts||[]).map(p2 => p2.id===post.id ? {...p2,...patch} : p2);
                   onUpdate(tab, {...fresh, instagram: {...freshIg, posts: fp}});
                 };
+                const setPinned = (val) => {
+                  // Un seul post épinglé à la fois : on dépose les autres en même temps qu'on pose celui-ci.
+                  const fresh = dataRef.current[tab] || {};
+                  const freshIg = fresh.instagram || {};
+                  const fp = (freshIg.posts||[]).map(p2 => ({...p2, pinned: p2.id===post.id ? val : false}));
+                  onUpdate(tab, {...fresh, instagram: {...freshIg, posts: fp}});
+                };
+                const photos = post.photos&&post.photos.length ? post.photos : (post.src?[post.src]:[]);
+                const setPhotos = (list) => updPost({photos:list, src:list[0]||null});
+                const otherChars = ["glinda","eoghan","drew","elias"].filter(ck=>ck!==tab);
                 return (
                   <div key={post.id||i} style={{background:"rgba(255,255,255,0.85)",borderRadius:10,border:"1px solid rgba(0,0,0,0.07)",overflow:"hidden"}}>
                     {/* En-tête repliable */}
                     <div onClick={()=>toggle(post.id??i)} style={{display:"flex",gap:10,alignItems:"center",padding:"8px 12px",cursor:"pointer"}}>
-                      <div style={{width:36,height:36,borderRadius:6,overflow:"hidden",background:"#efefef",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-                        {post.src?<img src={post.src} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:<span style={{fontSize:16}}>📷</span>}
+                      <div style={{width:36,height:36,borderRadius:6,overflow:"hidden",background:"#efefef",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,position:"relative"}}>
+                        {photos[0]?<img src={photos[0]} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:<span style={{fontSize:16}}>📷</span>}
+                        {post.pinned && <span style={{position:"absolute",top:-2,right:-2,fontSize:10}}>📌</span>}
                       </div>
                       <div style={{flex:1,minWidth:0}}>
                         <div style={{fontSize:12,color:"#374151",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{post.caption||<em style={{color:"#9ca3af"}}>(sans légende)</em>}</div>
-                        <div style={{fontSize:10,color:"#9ca3af"}}>{post.date||"—"}{post.archived?" · archivé":""}</div>
+                        <div style={{fontSize:10,color:"#9ca3af"}}>{post.date||"—"}{post.archived?" · archivé":""}{post.taggedWith?` · avec ${CHAR_NAMES[post.taggedWith]||post.taggedWith}`:""}{photos.length>1?` · ${photos.length} photos`:""}</div>
                       </div>
                       <span style={{fontSize:11,color:"#9ca3af",transform:isOpen?"rotate(180deg)":"none",transition:"transform 0.15s"}}>▾</span>
                     </div>
                     {isOpen && (
                     <div style={{display:"flex",flexDirection:"column",gap:8,padding:"0 12px 12px"}}>
-                    {/* Photo + date */}
-                    <div style={{display:"flex",gap:10,alignItems:"flex-start"}}>
-                      <label style={{width:70,height:70,borderRadius:6,overflow:"hidden",background:"#efefef",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",flexShrink:0,border:"1px solid rgba(0,0,0,0.08)"}}>
-                        {post.src
-                          ? <img src={post.src} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
-                          : <span style={{fontSize:24}}>📷</span>
-                        }
+                    {/* Galerie de photos (plusieurs possibles) */}
+                    <div style={{display:"flex",gap:6,flexWrap:"wrap",alignItems:"flex-start"}}>
+                      {photos.map((src,pi)=>(
+                        <div key={pi} style={{position:"relative",width:70,height:70,flexShrink:0}}>
+                          <img src={src} style={{width:"100%",height:"100%",objectFit:"cover",borderRadius:6,border:"1px solid rgba(0,0,0,0.08)"}}/>
+                          <button onClick={()=>setPhotos(photos.filter((_,j)=>j!==pi))} style={{position:"absolute",top:-5,right:-5,background:"#ef4444",border:"2px solid #fff",color:"#fff",borderRadius:"50%",width:18,height:18,fontSize:10,cursor:"pointer",lineHeight:1,padding:0}}>✕</button>
+                          {pi>0 && <button onClick={()=>{const l=[...photos];[l[pi-1],l[pi]]=[l[pi],l[pi-1]];setPhotos(l);}} title="Avancer" style={{position:"absolute",bottom:2,left:2,background:"rgba(0,0,0,0.55)",border:"none",color:"#fff",borderRadius:4,width:16,height:16,fontSize:9,cursor:"pointer",lineHeight:1,padding:0}}>‹</button>}
+                          {pi===0 && <span style={{position:"absolute",bottom:2,left:2,background:"rgba(0,0,0,0.55)",color:"#fff",fontSize:8,borderRadius:3,padding:"1px 4px"}}>1ère</span>}
+                        </div>
+                      ))}
+                      <label style={{width:70,height:70,borderRadius:6,overflow:"hidden",background:"#efefef",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",flexShrink:0,border:"1px dashed rgba(0,0,0,0.2)"}}>
+                        <span style={{fontSize:20,color:"#9ca3af"}}>+</span>
                         <input type="file" accept="image/*" style={{display:"none"}} onChange={e=>{
                           const f=e.target.files?.[0];if(!f)return;
                           const r=new UploadReader();
-                          r.onload=ev=>updPost({src:ev.target.result});
+                          r.onload=ev=>setPhotos([...photos, ev.target.result]);
                           r.readAsDataURL(f);e.target.value="";
                         }}/>
                       </label>
+                    </div>
+                    <div style={{display:"flex",gap:10,alignItems:"flex-start"}}>
                       <div style={{flex:1,minWidth:0,display:"flex",flexDirection:"column",gap:6}}>
-                        <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+                        <div style={{display:"flex",gap:6,flexWrap:"wrap",alignItems:"flex-end"}}>
                           <LoreDateTimeInput value={post.date||""} onChange={v=>updPost({date:v})} width="160px" showLabel={true}/>
                           <Field label="Likes" value={String(post.likes??"")} onChange={v=>updPost({likes:parseInt(v)||0})} width="70px"/>
                           <Field label="📍 Lieu" value={post.location||""} onChange={v=>updPost({location:v||null})} style={{flex:1,minWidth:100}}/>
-                          <div style={{display:"flex",alignItems:"flex-end",gap:4}}>
+                          <div style={{display:"flex",flexDirection:"column",gap:2}}>
+                            <label style={{color:"#9ca3af",fontSize:9,letterSpacing:0.5,fontWeight:600,textTransform:"uppercase"}}>Avec (tag)</label>
+                            <select value={post.taggedWith||""} onChange={e=>updPost({taggedWith:e.target.value||null})} className="adm-input" style={{background:"rgba(255,255,255,0.9)",border:"1px solid rgba(0,0,0,0.1)",color:"#1a1a2e",padding:"6px 8px",fontSize:12,borderRadius:7}}>
+                              <option value="">— Aucun —</option>
+                              {otherChars.map(ck=><option key={ck} value={ck}>{CHAR_NAMES[ck]||ck}</option>)}
+                            </select>
+                          </div>
+                          <div style={{display:"flex",alignItems:"flex-end",gap:10}}>
+                            <label style={{display:"flex",alignItems:"center",gap:4,fontSize:11,color:"#6b7280",cursor:"pointer",paddingBottom:4}}>
+                              <input type="checkbox" checked={!!post.pinned} onChange={e=>setPinned(e.target.checked)} style={{cursor:"pointer"}}/>
+                              📌 Épinglé
+                            </label>
                             <label style={{display:"flex",alignItems:"center",gap:4,fontSize:11,color:"#6b7280",cursor:"pointer",paddingBottom:4}}>
                               <input type="checkbox" checked={!!post.archived} onChange={e=>updPost({archived:e.target.checked})} style={{cursor:"pointer"}}/>
                               Archivé
@@ -20908,7 +21001,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                   </div>
                 );
               })}
-              <button onClick={()=>updPosts([...igPosts,{id:Date.now(),src:null,caption:"",likes:0,date:"Oct 2012",location:null,comments:[],archived:false}])}
+              <button onClick={()=>updPosts([...igPosts,{id:Date.now(),src:null,photos:[],pinned:false,taggedWith:null,caption:"",likes:0,date:"Oct 2012",location:null,comments:[],archived:false}])}
                 style={{background:"rgba(61,107,143,0.08)",border:"1px dashed rgba(61,107,143,0.4)",color:IG_COLOR,borderRadius:8,padding:"10px 18px",cursor:"pointer",fontSize:12,fontWeight:600}}>+ Post Instagram</button>
             </div>
           )}
@@ -21085,14 +21178,14 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
             return acc;
           }, {});
           const dayKeys = Object.keys(grouped).sort();
-          const [collapsed, setCollapsed] = [calCollapsedSet, setCalCollapsedSet];
-          const toggleDay = k => setCollapsed(prev=>{const s=new Set(prev);s.has(k)?s.delete(k):s.add(k);return s;});
+          const [openDays, setOpenDays] = [calCollapsedSet, setCalCollapsedSet];
+          const toggleDay = k => setOpenDays(prev=>{const s=new Set(prev);s.has(k)?s.delete(k):s.add(k);return s;});
           const CAL_RED="#e04444";
           return (<>
             
             {dayKeys.map(k=>{
               const {label, indices} = grouped[k];
-              const isOpen = !collapsed.has(k);
+              const isOpen = openDays.has(k);
               return (
                 <div key={k}>
                   {/* Day header — togglable */}
@@ -21532,8 +21625,21 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
           {/* Liste des mails */}
           {mails.map((m,i)=>{
             const updMail = (patch) => { const l=[...mails]; l[i]={...l[i],...patch}; updMailList(l); };
+            const mid = m.id??i;
+            const isOpen = mailOpen.has(mid);
+            const toggle = toggleInSet(setMailOpen);
             return (
-              <div key={m.id||i} style={{background:"rgba(255,255,255,0.9)",borderRadius:10,border:"1px solid rgba(0,0,0,0.07)",padding:"12px 14px",display:"flex",flexDirection:"column",gap:8}}>
+              <div key={m.id||i} style={{background:"rgba(255,255,255,0.9)",borderRadius:10,border:"1px solid rgba(0,0,0,0.07)",overflow:"hidden"}}>
+                <div onClick={()=>toggle(mid)} style={{display:"flex",gap:10,alignItems:"center",padding:"10px 14px",cursor:"pointer"}}>
+                  {mailAdmTab==="inbox" && <span style={{width:7,height:7,borderRadius:"50%",background:m.unread?"#4a7ab5":"transparent",flexShrink:0}}/>}
+                  <div style={{flex:1,minWidth:0}}>
+                    <div style={{fontSize:12,fontWeight:m.unread?700:400,color:"#374151",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{m.from||<em style={{color:"#9ca3af"}}>(sans expéditeur)</em>} {m.subj?`— ${m.subj}`:""}</div>
+                    <div style={{fontSize:10,color:"#9ca3af"}}>{m.time||"—"}</div>
+                  </div>
+                  <span style={{fontSize:11,color:"#9ca3af",transform:isOpen?"rotate(180deg)":"none",transition:"transform 0.15s"}}>▾</span>
+                </div>
+                {isOpen && (
+                <div style={{display:"flex",flexDirection:"column",gap:8,padding:"0 14px 14px"}}>
                 <div style={{display:"flex",gap:8,alignItems:"center",flexWrap:"wrap"}}>
                   <Field label="Expéditeur" value={m.from||""} onChange={v=>updMail({from:v})} style={{flex:1,minWidth:140}}/>
                   <LoreDateTimeInput value={m.time||""} onChange={v=>updMail({time:v})} width="180px"/>
@@ -21553,6 +21659,8 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                 </div>
                 <Field label="Objet" value={m.subj||""} onChange={v=>updMail({subj:v})} style={{width:"100%"}}/>
                 <Field label="Aperçu / Corps" value={m.preview||""} onChange={v=>updMail({preview:v})} textarea style={{width:"100%"}}/>
+                </div>
+                )}
               </div>
             );
           })}
@@ -21647,8 +21755,22 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
               <div style={{fontSize:11,color:"#6b7280",lineHeight:1.5}}>Posts de pages suivies par <strong>{CHAR_NAMES[tab]||tab}</strong> uniquement — non partagés entre persos.</div>
               {pages.map((p,i)=>{
                 const updPage = (patch) => updPages(pages.map((p2,j)=>j===i?{...p2,...patch}:p2));
+                const isOpen = fbPagesOpen.has(i);
+                const toggle = toggleInSet(setFbPagesOpen);
                 return (
-                  <div key={i} className="adm-card" style={{background:"rgba(255,255,255,0.85)",borderRadius:10,padding:"10px 12px",border:"1px solid rgba(0,0,0,0.07)",display:"flex",gap:10,alignItems:"flex-start"}}>
+                  <div key={i} className="adm-card" style={{background:"rgba(255,255,255,0.85)",borderRadius:10,border:"1px solid rgba(0,0,0,0.07)",overflow:"hidden"}}>
+                    <div onClick={()=>toggle(i)} style={{display:"flex",gap:10,alignItems:"center",padding:"8px 12px",cursor:"pointer"}}>
+                      <div style={{width:30,height:30,borderRadius:6,overflow:"hidden",background:FB_COLOR,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,fontSize:13,color:"#fff",fontWeight:700}}>
+                        {p.avatar?<img src={p.avatar} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:(p.name||"?")[0]?.toUpperCase()}
+                      </div>
+                      <div style={{flex:1,minWidth:0}}>
+                        <div style={{fontSize:12,color:"#374151",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{p.name||<em style={{color:"#9ca3af"}}>(sans nom)</em>} {p.text?`— ${p.text}`:""}</div>
+                        <div style={{fontSize:10,color:"#9ca3af"}}>{p.time||"—"}</div>
+                      </div>
+                      <span style={{fontSize:11,color:"#9ca3af",transform:isOpen?"rotate(180deg)":"none",transition:"transform 0.15s"}}>▾</span>
+                    </div>
+                    {isOpen && (
+                    <div style={{display:"flex",gap:10,alignItems:"flex-start",padding:"0 12px 12px"}}>
                     {/* Avatar de la page */}
                     <label style={{width:44,height:44,borderRadius:6,overflow:"hidden",background:FB_COLOR,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",flexShrink:0,border:"1px solid rgba(0,0,0,0.08)",fontSize:16,color:"#fff",fontWeight:700}}>
                       {p.avatar?<img src={p.avatar} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:(p.name||"?")[0]?.toUpperCase()}
@@ -21675,6 +21797,8 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                       <Field label="💬 Comm." value={String(p.comments??0)} onChange={v=>updPage({comments:parseInt(v)||0})} style={{flex:1}}/>
                     </div>
                     </div>
+                    </div>
+                    )}
                   </div>
                 );
               })}
@@ -22538,9 +22662,19 @@ export default function App() {
             const enriched = Object.fromEntries(ALL_CK.filter(ck=>data[ck]?.avatar).map(ck=>[ck,data[ck].avatar]));
             const mergedAvatars = {...enriched, ...(data.sharedThreads?._sharedAvatars||{})};
             const sharedThreadsEnriched = {...data.sharedThreads, _sharedAvatars: mergedAvatars};
+            // Posts Instagram "en commun" (taggedWith) : un post posté par perso A avec
+            // taggedWith="B" doit aussi apparaître dans la grille de B. Comme InstaScreen ne reçoit
+            // que les données du perso actif, on rassemble ici — au même endroit que l'avatar
+            // ci-dessus — les posts des 3 AUTRES persos qui taguent le perso actif, et on les passe
+            // sous une clé dédiée que InstaScreen viendra fusionner dans sa grille.
+            const coTagged = ALL_CK.filter(ck=>ck!==selected.key)
+              .flatMap(ck => (data[ck]?.instagram?.posts||[])
+                .filter(p=>p.taggedWith===selected.key)
+                .map(p=>({...p, author:ck})));
+            const charDataEnriched = {...charData, _coTaggedInstaPosts: coTagged};
             return charData.os==="ios"
-              ?<IOSPhone data={{...charData, sharedThreads:sharedThreadsEnriched}} admin={false} loreDate={loreDate} onUpdate={d=>updateChar(selected.key,d)} onUpdateShared={(tid,raw)=>updateChar(tid,raw)}/>
-              :<AndroidPhone data={{...charData, sharedThreads:sharedThreadsEnriched}} admin={false} loreDate={loreDate} onUpdate={d=>updateChar(selected.key,d)} sharedAndroidIcons={sharedAndroidIcons} onUpdateShared={updateSharedAndroid} onUpdateSharedThread={(tid,raw)=>updateChar(tid,raw)}/>;
+              ?<IOSPhone data={{...charDataEnriched, sharedThreads:sharedThreadsEnriched}} admin={false} loreDate={loreDate} onUpdate={d=>updateChar(selected.key,d)} onUpdateShared={(tid,raw)=>updateChar(tid,raw)}/>
+              :<AndroidPhone data={{...charDataEnriched, sharedThreads:sharedThreadsEnriched}} admin={false} loreDate={loreDate} onUpdate={d=>updateChar(selected.key,d)} sharedAndroidIcons={sharedAndroidIcons} onUpdateShared={updateSharedAndroid} onUpdateSharedThread={(tid,raw)=>updateChar(tid,raw)}/>;
           })()}
 
           
@@ -23185,32 +23319,38 @@ const GmailScreen = ({data, isIos, accent, onBack}) => {
 
 
 // ── Composant d'affichage des commentaires Instagram (récursif) ──────────────
-const IgCommentThread = ({comments, depth=0}) => {
+const IG_CHAR_NAMES = {glinda:"Glinda",eoghan:"Eoghan",drew:"Drew",elias:"Elias"};
+const IgCommentThread = ({comments, depth=0, sharedAvatars={}}) => {
   if(!comments||comments.length===0) return null;
   return (
     <>
-      {comments.map((c,i)=>(
+      {comments.map((c,i)=>{
+        const isPlayer = !!c.authorKey;
+        const displayName = isPlayer ? (IG_CHAR_NAMES[c.authorKey]||c.authorKey) : c.user;
+        const avatarSrc = isPlayer ? (sharedAvatars[c.authorKey] || null) : null;
+        return (
         <div key={i}>
           <div style={{display:"flex",alignItems:"flex-start",gap:8,
             padding: depth===0 ? "8px 12px" : "6px 12px 6px "+(12+depth*20)+"px",
             borderBottom:"1px solid #f9f9f9",
             background: depth>0 ? "rgba(0,0,0,0.015)" : "transparent"}}>
-            <div style={{width:depth===0?28:22,height:depth===0?28:22,borderRadius:"50%",
+            <div style={{width:depth===0?28:22,height:depth===0?28:22,borderRadius:depth===0?5:4,
               background:"#d0d0d0",flexShrink:0,overflow:"hidden",
               display:"flex",alignItems:"center",justifyContent:"center",
               fontSize:depth===0?12:10,fontWeight:700,color:"#fff"}}>
-              {(c.user||"?")[0].toUpperCase()}
+              {avatarSrc?<img src={avatarSrc} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:(displayName||"?")[0]?.toUpperCase()}
             </div>
             <div style={{flex:1,fontSize:depth===0?13:12,color:"#262626",lineHeight:1.4}}>
-              <span style={{fontWeight:700}}>{c.user} </span>{c.text}
+              <span style={{fontWeight:700}}>{displayName} </span>{c.text}
               {c.time&&<div style={{fontSize:10,color:"#999",marginTop:2}}>{c.time}</div>}
             </div>
           </div>
           {(c.replies||[]).length>0&&(
-            <IgCommentThread comments={c.replies} depth={depth+1}/>
+            <IgCommentThread comments={c.replies} depth={depth+1} sharedAvatars={sharedAvatars}/>
           )}
         </div>
-      ))}
+        );
+      })}
     </>
   );
 };
@@ -23246,10 +23386,25 @@ const IgCommentEditor = ({comments, onChange, accentColor="#3d6b8f", depth=0}) =
         }}>
           {/* Ligne principale */}
           <div style={{display:"flex",gap:4,alignItems:"flex-end",flexWrap:"wrap"}}>
-            <input value={c.user||""} onChange={e=>updComment(ci,{user:e.target.value})}
-              placeholder="@pseudo" className="adm-input"
-              style={{width:100,background:"rgba(255,255,255,0.9)",border:"1px solid rgba(0,0,0,0.1)",
-                color:"#1a1a2e",padding:"6px 8px",fontSize:11,borderRadius:6}}/>
+            <div style={{display:"flex",flexDirection:"column",gap:2}}>
+              <label style={{color:"#9ca3af",fontSize:9,letterSpacing:0.5,fontWeight:600,textTransform:"uppercase"}}>Auteur</label>
+              <select value={c.authorKey||"__custom__"} onChange={e=>{
+                const v = e.target.value;
+                v==="__custom__" ? updComment(ci,{authorKey:null}) : updComment(ci,{authorKey:v, user:""});
+              }} className="adm-input" style={{background:"rgba(255,255,255,0.9)",border:"1px solid rgba(0,0,0,0.1)",color:"#1a1a2e",padding:"6px 8px",fontSize:11,borderRadius:6,width:100}}>
+                <option value="__custom__">Personnalisé</option>
+                <option value="glinda">Glinda</option>
+                <option value="eoghan">Eoghan</option>
+                <option value="drew">Drew</option>
+                <option value="elias">Elias</option>
+              </select>
+            </div>
+            {!c.authorKey && (
+              <input value={c.user||""} onChange={e=>updComment(ci,{user:e.target.value})}
+                placeholder="@pseudo" className="adm-input"
+                style={{width:100,background:"rgba(255,255,255,0.9)",border:"1px solid rgba(0,0,0,0.1)",
+                  color:"#1a1a2e",padding:"6px 8px",fontSize:11,borderRadius:6}}/>
+            )}
             <input value={c.text||""} onChange={e=>updComment(ci,{text:e.target.value})}
               placeholder="commentaire" className="adm-input"
               style={{flex:1,minWidth:120,background:"rgba(255,255,255,0.9)",border:"1px solid rgba(0,0,0,0.1)",
@@ -23292,6 +23447,8 @@ const InstaScreen = ({data, isIos, accent, onBack}) => {
   const [view, setView]         = useState("profile"); // "profile" | "feed" | "post"
   const [activePost, setPost]   = useState(null);
   const [instaTab, setInstaTab] = useState("grid");
+  const [activePhotoIdx, setActivePhotoIdx] = useState(0);
+  const openPost = (post) => { setPost(post); setActivePhotoIdx(0); setView("post"); };
 
   const ig        = data.instagram || {};
   const myPosts   = ig.posts    || [];
@@ -23307,16 +23464,14 @@ const InstaScreen = ({data, isIos, accent, onBack}) => {
   // Nom affiché spécifique Instagram, sinon nom générique
   const name      = ig.displayName || {glinda:"Glinda Rosalind",eoghan:"Eoghan Masuda",drew:"Drew Bates",elias:"Elias Green"}[charKey] || handleLo;
   const sharedAvatars = data.sharedThreads?._sharedAvatars || {};
-  // Tri inversement chronologique — les posts les plus récents en premier.
-  // parseLoreTime renvoie {month, day, hour, min} ou null si le format n'est pas reconnu.
-  const gridPosts = [...myPosts.filter(p=>!p.archived)].sort((a,b)=>{
-    const pa = parseLoreTime(a.date), pb = parseLoreTime(b.date);
-    if(!pa && !pb) return 0;
-    if(!pa) return 1;
-    if(!pb) return -1;
-    const va = pa.month*10000 + (pa.day||0)*100 + (pa.hour||0);
-    const vb = pb.month*10000 + (pb.day||0)*100 + (pb.hour||0);
-    return vb - va; // décroissant
+  const coTaggedPosts = data._coTaggedInstaPosts || [];
+  // Tri : épinglé toujours en premier, puis inversement chronologique pour le reste.
+  // gridPosts mélange mes propres posts ET les posts "en commun" où un autre perso m'a tagué
+  // (taggedWith === ce perso) — un post en commun apparaît donc sur les deux grilles à la fois.
+  const dateKey = (p) => { const t=parseLoreTime(p.date); return t ? t.month*10000+(t.day||0)*100+(t.hour||0) : -1; };
+  const gridPosts = [...myPosts.filter(p=>!p.archived), ...coTaggedPosts].sort((a,b)=>{
+    if(!!a.pinned !== !!b.pinned) return a.pinned ? -1 : 1;
+    return dateKey(b) - dateKey(a);
   });
 
   const IG_HDR  = "linear-gradient(180deg,#6497b8,#4a7fa8)";
@@ -23339,26 +23494,30 @@ const InstaScreen = ({data, isIos, accent, onBack}) => {
         {btn(()=>setView("feed"),
           ic(a=><><path d="M3 11L12 3l9 8v9a1 1 0 01-1 1H5a1 1 0 01-1-1v-9z" fill={a?"#fff":"none"} stroke="#fff" strokeWidth={a?0:"1.8"} strokeLinejoin="round"/><path d="M9 21V13h6v8" stroke={a?"rgba(0,0,0,0.35)":"#fff"} strokeWidth="1.8" strokeLinejoin="round"/></>, active==="feed"),
           "feed")}
-        {/* Explore */}
+        {/* Explore — vraie aiguille de boussole (losange biseauté), plus fidèle que l'étoile crue d'avant */}
         {btn(()=>{},
-          ic(a=><><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z" stroke="#fff" strokeWidth="1.8"/><polygon points="16.24,7.76 14.12,14.12 7.76,16.24 9.88,9.88" fill="#fff" stroke="none"/></>,false),
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+            <circle cx="12" cy="12" r="9.2" stroke="#fff" strokeWidth="1.7"/>
+            <path d="M15.6 8.4l-2.3 5-5 2.3 2.3-5z" fill="#fff"/>
+            <path d="M15.6 8.4l-2.3 5-1.1-3.9z" fill="rgba(0,0,0,0.32)"/>
+            <circle cx="12" cy="12" r="1.1" fill="#fff"/>
+          </svg>,
           "explore")}
         {/* Camera */}
         {btn(()=>{},
-          ic(a=><><rect x="2" y="6" width="20" height="15" rx="2" stroke="#fff" strokeWidth="1.8"/><path d="M8 6l1.5-3h5L16 6" stroke="#fff" strokeWidth="1.8" strokeLinejoin="round"/><circle cx="12" cy="13.5" r="3.5" stroke="#fff" strokeWidth="1.8"/></>,false),
+          ic(a=><><rect x="2" y="6.5" width="20" height="14.5" rx="2.5" stroke="#fff" strokeWidth="1.8"/><path d="M8.3 6.5l1.3-2.6h4.8l1.3 2.6" stroke="#fff" strokeWidth="1.8" strokeLinejoin="round"/><circle cx="12" cy="13.7" r="3.6" stroke="#fff" strokeWidth="1.8"/><circle cx="18" cy="9.5" r="0.9" fill="#fff"/></>,false),
           "camera")}
         {/* Heart */}
         {btn(()=>{},
           ic(a=><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z" stroke="#fff" strokeWidth="1.8" strokeLinejoin="round"/>,false),
           "heart")}
-        {/* Profile — grille 4 carrés */}
+        {/* Profile — vraie miniature de la photo de profil, pas une icône générique */}
         {btn(()=>setView("profile"),
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-            <rect x="2"  y="2"  width="9" height="9" rx="0" fill={active==="profile"?"#fff":"none"} stroke="#fff" strokeWidth="1.8"/>
-            <rect x="13" y="2"  width="9" height="9" rx="0" fill={active==="profile"?"#fff":"none"} stroke="#fff" strokeWidth="1.8"/>
-            <rect x="2"  y="13" width="9" height="9" rx="0" fill={active==="profile"?"#fff":"none"} stroke="#fff" strokeWidth="1.8"/>
-            <rect x="13" y="13" width="9" height="9" rx="0" fill={active==="profile"?"#fff":"none"} stroke="#fff" strokeWidth="1.8"/>
-          </svg>,
+          <div style={{width:22,height:22,borderRadius:"50%",overflow:"hidden",border:active==="profile"?"2px solid #fff":"1.5px solid rgba(255,255,255,0.7)",boxSizing:"border-box",background:"#555",display:"flex",alignItems:"center",justifyContent:"center"}}>
+            {avatar
+              ? <img src={avatar} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+              : <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="4" fill="#fff" opacity="0.85"/><path d="M4 20c0-4.4 3.6-7 8-7s8 2.6 8 7" fill="#fff" opacity="0.85"/></svg>}
+          </div>,
           "profile")}
       </div>
     );
@@ -23389,24 +23548,36 @@ const InstaScreen = ({data, isIos, accent, onBack}) => {
     const postAuthor = p.author || charKey;
     const postHandle = p.handle || handleLo;
     const postAvatar = p.avatar || sharedAvatars[postAuthor] || avatar;
+    const photos = (p.photos&&p.photos.length) ? p.photos : (p.src?[p.src]:[]);
+    const [photoIdx, setPhotoIdx] = [activePhotoIdx, setActivePhotoIdx];
+    const curPhoto = photos[Math.min(photoIdx,photos.length-1)] || null;
+    const taggedName = p.taggedWith ? ({glinda:"Glinda",eoghan:"Eoghan",drew:"Drew",elias:"Elias"}[p.taggedWith]) : null;
     return (
       <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden",background:"#fff"}}>
         <Header title="Photo" left={<BackArrow onClick={()=>setView(p._fromFeed?"feed":"profile")}/>}/>
         <div style={{flex:1,overflowY:"auto"}}>
-          {/* Auteur */}
+          {/* Auteur — photo de profil carrée (pas ronde) */}
           <div style={{display:"flex",alignItems:"center",gap:8,padding:"8px 10px",borderBottom:"1px solid #f0f0f0"}}>
-            <div style={{width:32,height:32,borderRadius:"50%",overflow:"hidden",background:"#d0d0d0",display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,fontWeight:700,color:"#fff",flexShrink:0}}>
+            <div style={{width:32,height:32,borderRadius:5,overflow:"hidden",background:"#d0d0d0",display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,fontWeight:700,color:"#fff",flexShrink:0}}>
               {postAvatar?<img src={postAvatar} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:(postHandle||"?")[0].toUpperCase()}
             </div>
             <div style={{flex:1}}>
               <span style={{fontSize:13,fontWeight:700,color:"#262626"}}>{postHandle}</span>
+              {taggedName && <span style={{fontSize:12,color:"#3b88c3"}}> avec {taggedName}</span>}
               {p.location&&<div style={{fontSize:11,color:"#3b88c3",marginTop:1,display:"flex",alignItems:"center",gap:2}}><span style={{fontSize:10}}>📍</span>{p.location}</div>}
             </div>
             <span style={{color:"#999",fontSize:11}}>{p.date||""}</span>
           </div>
-          {/* Photo */}
-          <div style={{width:"100%",aspectRatio:"1",background:"#efefef",overflow:"hidden"}}>
-            {p.src?<img src={p.src} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:<div style={{width:"100%",height:"100%",display:"flex",alignItems:"center",justifyContent:"center",fontSize:40,color:"#ccc"}}>📷</div>}
+          {/* Photo(s) — carrousel si plusieurs */}
+          <div style={{width:"100%",aspectRatio:"1",background:"#efefef",overflow:"hidden",position:"relative"}}>
+            {curPhoto?<img src={curPhoto} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:<div style={{width:"100%",height:"100%",display:"flex",alignItems:"center",justifyContent:"center",fontSize:40,color:"#ccc"}}>📷</div>}
+            {photos.length>1 && <>
+              {photoIdx>0 && <button onClick={()=>setPhotoIdx(photoIdx-1)} style={{position:"absolute",left:6,top:"50%",transform:"translateY(-50%)",background:"rgba(255,255,255,0.85)",border:"none",borderRadius:"50%",width:26,height:26,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}><svg width="7" height="12" viewBox="0 0 7 12" fill="none"><path d="M6 1L1 6l5 5" stroke="#333" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/></svg></button>}
+              {photoIdx<photos.length-1 && <button onClick={()=>setPhotoIdx(photoIdx+1)} style={{position:"absolute",right:6,top:"50%",transform:"translateY(-50%)",background:"rgba(255,255,255,0.85)",border:"none",borderRadius:"50%",width:26,height:26,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}><svg width="7" height="12" viewBox="0 0 7 12" fill="none"><path d="M1 1l5 5-5 5" stroke="#333" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/></svg></button>}
+              <div style={{position:"absolute",bottom:8,left:0,right:0,display:"flex",justifyContent:"center",gap:5}}>
+                {photos.map((_,pi)=>(<span key={pi} style={{width:6,height:6,borderRadius:"50%",background:pi===photoIdx?"#3b88c3":"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.15)"}}/>))}
+              </div>
+            </>}
           </div>
           {/* Actions */}
           <div style={{display:"flex",alignItems:"center",padding:"8px 10px",gap:16,borderBottom:"1px solid #efefef"}}>
@@ -23415,7 +23586,7 @@ const InstaScreen = ({data, isIos, accent, onBack}) => {
           </div>
           {(p.likes||0)>0&&<div style={{padding:"6px 12px",fontSize:13,fontWeight:700,color:"#262626",borderBottom:"1px solid #f5f5f5"}}>{p.likes} J'aime</div>}
           {p.caption&&<div style={{padding:"8px 12px",fontSize:13,color:"#262626",lineHeight:1.5,borderBottom:"1px solid #f5f5f5"}}><span style={{fontWeight:700}}>{postHandle} </span>{p.caption}</div>}
-          <IgCommentThread comments={p.comments||[]} depth={0}/>
+          <IgCommentThread comments={p.comments||[]} depth={0} sharedAvatars={sharedAvatars}/>
         </div>
         <TabBar active="feed"/>
       </div>
@@ -23461,8 +23632,10 @@ const InstaScreen = ({data, isIos, accent, onBack}) => {
                   <span style={{color:"#999",fontSize:11}}>{p.date||""}</span>
                 </div>
                 {/* Photo */}
-                <div onClick={()=>{setPost({...p,_fromFeed:true});setView("post");}} style={{cursor:"pointer",background:"#efefef",overflow:"hidden",aspectRatio:"1"}}>
-                  {p.src?<img src={p.src} style={{width:"100%",display:"block",objectFit:"cover"}}/>:<div style={{width:"100%",height:"100%",display:"flex",alignItems:"center",justifyContent:"center",fontSize:40,color:"#ccc"}}>📷</div>}
+                <div onClick={()=>openPost({...p,_fromFeed:true})} style={{cursor:"pointer",background:"#efefef",overflow:"hidden",aspectRatio:"1",position:"relative"}}>
+                  {(()=>{ const ph=(p.photos&&p.photos.length)?p.photos[0]:p.src;
+                    return ph?<img src={ph} style={{width:"100%",display:"block",objectFit:"cover"}}/>:<div style={{width:"100%",height:"100%",display:"flex",alignItems:"center",justifyContent:"center",fontSize:40,color:"#ccc"}}>📷</div>; })()}
+                  {p.photos&&p.photos.length>1 && <div style={{position:"absolute",top:8,right:8,filter:"drop-shadow(0 1px 2px rgba(0,0,0,0.6))"}}><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><rect x="3" y="6" width="14" height="14" rx="2" fill="#fff"/><rect x="7" y="2" width="14" height="14" rx="2" fill="none" stroke="#fff" strokeWidth="1.6"/></svg></div>}
                 </div>
                 {/* Actions */}
                 <div style={{padding:"8px 10px",borderBottom:"1px solid #f5f5f5"}}>
@@ -23532,19 +23705,25 @@ const InstaScreen = ({data, isIos, accent, onBack}) => {
         {instaTab==="grid"&&(gridPosts.length===0
           ?<div style={{padding:"40px 24px",textAlign:"center",color:"#999",fontSize:13,background:"#fff"}}><div style={{fontSize:36,marginBottom:8}}>📷</div>Aucun post pour l'instant</div>
           :<div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:4,padding:4,background:"#e0e0e0"}}>
-            {gridPosts.map((p,i)=>(
-              <div key={p.id||i} onClick={()=>{setPost({...p,_fromFeed:false});setView("post");}} style={{aspectRatio:"1",overflow:"hidden",cursor:"pointer",background:"#d8d8d8",border:"2px solid #fff",boxSizing:"border-box"}}>
-                {p.src?<img src={p.src} style={{width:"100%",height:"100%",objectFit:"cover",display:"block"}}/>:<div style={{width:"100%",height:"100%",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,color:"#bbb"}}>📷</div>}
+            {gridPosts.map((p,i)=>{
+              const photos = (p.photos&&p.photos.length) ? p.photos : (p.src?[p.src]:[]);
+              return (
+              <div key={p.id||i} onClick={()=>openPost({...p,_fromFeed:false})} style={{position:"relative",aspectRatio:"1",overflow:"hidden",cursor:"pointer",background:"#d8d8d8",border:"2px solid #fff",boxSizing:"border-box"}}>
+                {photos[0]?<img src={photos[0]} style={{width:"100%",height:"100%",objectFit:"cover",display:"block"}}/>:<div style={{width:"100%",height:"100%",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,color:"#bbb"}}>📷</div>}
+                {p.pinned && <div style={{position:"absolute",top:4,right:4,filter:"drop-shadow(0 1px 2px rgba(0,0,0,0.6))"}}><svg width="14" height="14" viewBox="0 0 24 24" fill="#fff"><path d="M16 3l5 5-4 4 1 5-5-1-5 5-1-5-5 1 1-5-4-4 5-1 4-5z"/></svg></div>}
+                {photos.length>1 && <div style={{position:"absolute",top:4,right:p.pinned?22:4,filter:"drop-shadow(0 1px 2px rgba(0,0,0,0.6))"}}><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><rect x="3" y="6" width="14" height="14" rx="2" fill="#fff"/><rect x="7" y="2" width="14" height="14" rx="2" fill="none" stroke="#fff" strokeWidth="1.6"/></svg></div>}
               </div>
-            ))}
+              );
+            })}
           </div>
         )}
         {instaTab==="list"&&(gridPosts.length===0
           ?<div style={{padding:"40px 24px",textAlign:"center",color:"#999",fontSize:13,background:"#fff"}}>Aucun post</div>
           :<div>{gridPosts.map((p,i)=>(
-              <div key={p.id||i} onClick={()=>{setPost({...p,_fromFeed:false});setView("post");}} style={{display:"flex",gap:10,padding:"10px 12px",borderBottom:"1px solid #efefef",cursor:"pointer",background:"#fff",alignItems:"flex-start"}}>
-                <div style={{width:60,height:60,borderRadius:3,overflow:"hidden",flexShrink:0,background:"#e8e8e8"}}>{p.src?<img src={p.src} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:<div style={{width:"100%",height:"100%",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,color:"#bbb"}}>📷</div>}</div>
+              <div key={p.id||i} onClick={()=>openPost({...p,_fromFeed:false})} style={{display:"flex",gap:10,padding:"10px 12px",borderBottom:"1px solid #efefef",cursor:"pointer",background:"#fff",alignItems:"flex-start"}}>
+                <div style={{width:60,height:60,borderRadius:3,overflow:"hidden",flexShrink:0,background:"#e8e8e8"}}>{(()=>{ const ph=(p.photos&&p.photos.length)?p.photos[0]:p.src; return ph?<img src={ph} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:<div style={{width:"100%",height:"100%",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,color:"#bbb"}}>📷</div>; })()}</div>
                 <div style={{flex:1,minWidth:0}}>
+                  {p.pinned&&<div style={{fontSize:10,color:"#3b88c3",fontWeight:700,marginBottom:2}}>📌 Épinglé</div>}
                   {p.caption&&<div style={{fontSize:13,color:"#262626",lineHeight:1.4,overflow:"hidden",display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical"}}>{p.caption}</div>}
                   <div style={{fontSize:11,color:"#999",marginTop:4,display:"flex",gap:10}}><span>❤ {p.likes||0}</span><span>💬 {(p.comments||[]).length}</span><span style={{marginLeft:"auto"}}>{p.date||""}</span></div>
                 </div>
