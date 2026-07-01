@@ -18249,6 +18249,32 @@ const Field = ({label, value, onChange, textarea=false, width="100%"}) => (
 // entre les 4 persos, chacun ne voit/modifie que les posts dont il est l'auteur, ajout d'image et
 // de date intégrés). Utilisé par Twitter, Tumblr et Facebook — seule la "forme" des données change
 // (fieldMap), la mécanique (lister/ajouter/éditer/supprimer ses propres posts) est écrite une fois.
+// ── Composants de toggle admin ────────────────────────────────────────────────
+// Remplace les caractères › / ▾ dispersés partout dans l'admin par un vrai SVG
+// cohérent, avec une zone cliquable de 44px minimum (recommandation iOS HIG pour
+// le tactile), une couleur plus visible, et une animation de rotation fluide.
+const AdminChevron = ({open, size=16, color="#6b7280"}) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" style={{
+    transform:open?"rotate(180deg)":"rotate(0deg)",
+    transition:"transform 0.18s ease",
+    flexShrink:0,
+  }}>
+    <path d="M6 9l6 6 6-6" stroke={color} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
+  </svg>
+);
+// Header cliquable pour les sections repliables — zone tactile ≥ 44px.
+const ToggleHeader = ({onClick, open, children, style={}}) => (
+  <div onClick={onClick} style={{
+    display:"flex", alignItems:"center", gap:10,
+    padding:"12px 14px", cursor:"pointer", userSelect:"none",
+    minHeight:44, WebkitTapHighlightColor:"transparent",
+    ...style
+  }}>
+    {children}
+    <AdminChevron open={open}/>
+  </div>
+);
+
 const SharedPostsEditor = ({
   posts, onChange, tab, accent="#6366f1",
   fieldMap={text:"text", img:"img", time:"time"},
@@ -18273,13 +18299,13 @@ const SharedPostsEditor = ({
         const isOpen = openIds.has(post.id);
         return (
         <div key={post.id} className="adm-card" style={{background:"rgba(255,255,255,0.9)",borderRadius:10,border:"1px solid rgba(0,0,0,0.07)",overflow:"hidden"}}>
-          <div onClick={()=>toggle(post.id)} style={{display:"flex",gap:10,alignItems:"center",padding:"8px 12px",cursor:"pointer"}}>
+          <div onClick={()=>toggle(post.id)} style={{display:"flex",gap:10,alignItems:"center",padding:"10px 14px",cursor:"pointer",minHeight:44,WebkitTapHighlightColor:"transparent"}}>
             {post[F.img] && <div style={{width:32,height:32,borderRadius:5,overflow:"hidden",flexShrink:0}}><img src={post[F.img]} style={{width:"100%",height:"100%",objectFit:"cover"}}/></div>}
             <div style={{flex:1,minWidth:0}}>
               <div style={{fontSize:12,color:"#374151",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{post[F.text]||<em style={{color:"#9ca3af"}}>(vide)</em>}</div>
               <div style={{fontSize:10,color:"#9ca3af"}}>{post[F.time]||"—"}</div>
             </div>
-            <span style={{fontSize:11,color:"#9ca3af",transform:isOpen?"rotate(180deg)":"none",transition:"transform 0.15s"}}>▾</span>
+            <AdminChevron open={isOpen}/>
           </div>
           {isOpen && (
           <div style={{display:"flex",flexDirection:"column",gap:6,padding:"0 12px 12px"}}>
@@ -19081,8 +19107,8 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                 return (
                   <div key={gid||gMsg.id} style={{background:"#fff",borderRadius:8,border:"1px solid rgba(0,0,0,0.07)",overflow:"hidden"}}>
                     {/* ── Header toggle ── */}
-                    <div onClick={()=>toggleConv(gKey)} style={{display:"flex",gap:8,alignItems:"center",padding:"10px 12px",cursor:"pointer",userSelect:"none"}}>
-                      <span style={{fontSize:13,transition:"transform 0.15s",display:"inline-block",transform:gOpen?"rotate(90deg)":"rotate(0deg)",color:"#9ca3af"}}>›</span>
+                    <div onClick={()=>toggleConv(gKey)} style={{display:"flex",gap:10,alignItems:"center",padding:"12px 14px",cursor:"pointer",userSelect:"none",minHeight:48}}>
+                      <span style={{fontSize:18,transition:"transform 0.15s",display:"inline-block",transform:gOpen?"rotate(90deg)":"rotate(0deg)",color:"#9ca3af",flexShrink:0,lineHeight:1,width:20,textAlign:"center"}}>›</span>
                       <span style={{fontSize:13}}>👥</span>
                       {isSharedGroup ? (
                         <input value={meta.name||""} onChange={e=>{
@@ -19173,24 +19199,24 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                           <div style={{fontSize:10,color:"#9ca3af",fontWeight:600,letterSpacing:0.5,textTransform:"uppercase",marginBottom:2}}>Messages ({thread.length})</div>
                           {thread.map((m2,mi)=>{
                             const mc=CHAR_COLORS[m2.from]||"#6366f1";
+                            const updMsg = (patch) => {
+                              const cur=[...thread]; cur[mi]={...cur[mi],...patch}; onUpdate(gid,cur);
+                            };
                             return (
-                            <div key={mi} style={{display:"flex",gap:6,alignItems:"center"}}>
-                              <select value={m2.from} onChange={e=>{
-                                const newFrom=e.target.value;
-                                const cur=[...thread];
-                                cur[mi]={...cur[mi],from:newFrom,senderKey:newFrom,senderName:CHAR_NAMES[newFrom]||newFrom};
-                                onUpdate(gid,cur);
-                              }} className="adm-input" style={{background:mc+"14",border:"1px solid "+mc+"55",color:mc,padding:"4px 5px",fontSize:10,borderRadius:6,flexShrink:0,fontWeight:700,minWidth:74}}>
-                                {senderOptions.map(s=><option key={s.key} value={s.key}>{s.label}</option>)}
-                              </select>
-                              <input value={m2.text} onChange={e=>{
-                                const cur=[...thread];cur[mi]={...cur[mi],text:e.target.value};onUpdate(gid,cur);
-                              }} className="adm-input" style={{flex:1,background:"rgba(255,255,255,0.9)",border:"1px solid rgba(0,0,0,0.08)",color:"#1a1a2e",padding:"4px 8px",fontSize:11,borderRadius:6}}/>
-                              <input value={m2.time} onChange={e=>{
-                                const cur=[...thread];cur[mi]={...cur[mi],time:e.target.value};onUpdate(gid,cur);
-                              }} className="adm-input" style={{width:86,background:"rgba(255,255,255,0.9)",border:"1px solid rgba(0,0,0,0.08)",color:"#6b7280",padding:"4px 7px",fontSize:10,borderRadius:6}}/>
-                              <button onClick={()=>{const cur=[...thread];cur.splice(mi,1);onUpdate(gid,cur);}}
-                                className="adm-del-btn" style={{background:"none",border:"none",color:"#d1d5db",cursor:"pointer",fontSize:15,padding:"0 4px",flexShrink:0}}>×</button>
+                            <div key={mi} style={{display:"flex",flexDirection:"column",gap:4,background:"rgba(0,0,0,0.02)",borderRadius:8,padding:"8px 10px",border:"1px solid rgba(0,0,0,0.05)"}}>
+                              <div style={{display:"flex",gap:6,alignItems:"center"}}>
+                                <select value={m2.from} onChange={e=>{
+                                  updMsg({from:e.target.value,senderKey:e.target.value,senderName:CHAR_NAMES[e.target.value]||e.target.value});
+                                }} className="adm-input" style={{background:mc+"14",border:"1px solid "+mc+"55",color:mc,padding:"4px 5px",fontSize:10,borderRadius:6,flexShrink:0,fontWeight:700,minWidth:74}}>
+                                  {senderOptions.map(s=><option key={s.key} value={s.key}>{s.label}</option>)}
+                                </select>
+                                <div style={{flex:1}}><LoreDateTimeInput value={m2.time||""} onChange={v=>updMsg({time:v})} width="100%" showLabel={false}/></div>
+                                <button onClick={()=>{const cur=[...thread];cur.splice(mi,1);onUpdate(gid,cur);}}
+                                  className="adm-del-btn" style={{background:"none",border:"none",color:"#d1d5db",cursor:"pointer",fontSize:16,padding:"0 4px",flexShrink:0}}>×</button>
+                              </div>
+                              <textarea value={m2.text} onChange={e=>updMsg({text:e.target.value})}
+                                rows={Math.max(1,Math.ceil((m2.text||"").length/40))}
+                                className="adm-input" style={{width:"100%",resize:"vertical",background:"rgba(255,255,255,0.9)",border:"1px solid rgba(0,0,0,0.08)",color:"#1a1a2e",padding:"6px 10px",fontSize:12,borderRadius:6,lineHeight:1.4,minHeight:36,boxSizing:"border-box"}}/>
                             </div>
                           )})}
                           <button onClick={()=>{
@@ -19211,27 +19237,28 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                           {localThread.map((m2,mi)=>{
                             const isMe = m2.from==="me";
                             const mc = isMe ? charColor : "#6b7280";
+                            const updMsg = (patch) => {
+                              const cur=[...localThread]; cur[mi]={...cur[mi],...patch}; updLocalThread(cur);
+                            };
                             return (
-                            <div key={mi} style={{display:"flex",gap:6,alignItems:"center"}}>
-                              <select value={m2.from} onChange={e=>{
-                                const cur=[...localThread];cur[mi]={...cur[mi],from:e.target.value};updLocalThread(cur);
-                              }} className="adm-input" style={{background:mc+"14",border:"1px solid "+mc+"55",color:mc,padding:"4px 5px",fontSize:10,borderRadius:6,flexShrink:0,fontWeight:700,minWidth:64}}>
-                                <option value="me">{char?.label}</option>
-                                <option value="them">Eux</option>
-                              </select>
-                              {!isMe && (
-                                <input value={m2.senderName||""} placeholder="Nom" onChange={e=>{
-                                  const cur=[...localThread];cur[mi]={...cur[mi],senderName:e.target.value,senderKey:(e.target.value||"").toLowerCase()};updLocalThread(cur);
-                                }} className="adm-input" style={{width:74,background:"rgba(255,255,255,0.9)",border:"1px solid rgba(0,0,0,0.08)",color:"#1a1a2e",padding:"4px 6px",fontSize:10,borderRadius:6,flexShrink:0}}/>
-                              )}
-                              <input value={m2.text} onChange={e=>{
-                                const cur=[...localThread];cur[mi]={...cur[mi],text:e.target.value};updLocalThread(cur);
-                              }} className="adm-input" style={{flex:1,background:"rgba(255,255,255,0.9)",border:"1px solid rgba(0,0,0,0.08)",color:"#1a1a2e",padding:"4px 8px",fontSize:11,borderRadius:6}}/>
-                              <input value={m2.time} onChange={e=>{
-                                const cur=[...localThread];cur[mi]={...cur[mi],time:e.target.value};updLocalThread(cur);
-                              }} className="adm-input" style={{width:86,background:"rgba(255,255,255,0.9)",border:"1px solid rgba(0,0,0,0.08)",color:"#6b7280",padding:"4px 7px",fontSize:10,borderRadius:6}}/>
-                              <button onClick={()=>{const cur=[...localThread];cur.splice(mi,1);updLocalThread(cur);}}
-                                className="adm-del-btn" style={{background:"none",border:"none",color:"#d1d5db",cursor:"pointer",fontSize:15,padding:"0 4px",flexShrink:0}}>×</button>
+                            <div key={mi} style={{display:"flex",flexDirection:"column",gap:4,background:"rgba(0,0,0,0.02)",borderRadius:8,padding:"8px 10px",border:"1px solid rgba(0,0,0,0.05)"}}>
+                              <div style={{display:"flex",gap:6,alignItems:"center",flexWrap:"wrap"}}>
+                                <select value={m2.from} onChange={e=>updMsg({from:e.target.value})}
+                                  className="adm-input" style={{background:mc+"14",border:"1px solid "+mc+"55",color:mc,padding:"4px 5px",fontSize:10,borderRadius:6,flexShrink:0,fontWeight:700,minWidth:64}}>
+                                  <option value="me">{char?.label}</option>
+                                  <option value="them">Eux</option>
+                                </select>
+                                {!isMe && (
+                                  <input value={m2.senderName||""} placeholder="Nom" onChange={e=>updMsg({senderName:e.target.value,senderKey:(e.target.value||"").toLowerCase()})}
+                                    className="adm-input" style={{width:80,background:"rgba(255,255,255,0.9)",border:"1px solid rgba(0,0,0,0.08)",color:"#1a1a2e",padding:"4px 6px",fontSize:10,borderRadius:6,flexShrink:0}}/>
+                                )}
+                                <div style={{flex:1,minWidth:120}}><LoreDateTimeInput value={m2.time||""} onChange={v=>updMsg({time:v})} width="100%" showLabel={false}/></div>
+                                <button onClick={()=>{const cur=[...localThread];cur.splice(mi,1);updLocalThread(cur);}}
+                                  className="adm-del-btn" style={{background:"none",border:"none",color:"#d1d5db",cursor:"pointer",fontSize:16,padding:"0 4px",flexShrink:0}}>×</button>
+                              </div>
+                              <textarea value={m2.text} onChange={e=>updMsg({text:e.target.value})}
+                                rows={Math.max(1,Math.ceil((m2.text||"").length/40))}
+                                className="adm-input" style={{width:"100%",resize:"vertical",background:"rgba(255,255,255,0.9)",border:"1px solid rgba(0,0,0,0.08)",color:"#1a1a2e",padding:"6px 10px",fontSize:12,borderRadius:6,lineHeight:1.4,minHeight:36,boxSizing:"border-box"}}/>
                             </div>
                           )})}
                           <button onClick={()=>{
@@ -19275,7 +19302,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
           return (
           <div key={cKey} className="adm-card" style={{background:"rgba(255,255,255,0.85)",borderRadius:12,border:"1px solid rgba(0,0,0,0.07)",boxShadow:"0 2px 8px rgba(0,0,0,0.04)",overflow:"hidden"}}>
             {/* ── Header toggle ── */}
-            <div style={{display:"flex",gap:8,alignItems:"center",padding:"10px 14px",cursor:"pointer",userSelect:"none"}}
+            <div style={{display:"flex",gap:8,alignItems:"center",padding:"10px 14px",cursor:"pointer",userSelect:"none",minHeight:44,WebkitTapHighlightColor:"transparent"}}
               onClick={()=>toggleConv(cKey)}>
               {/* Reorder arrows */}
               <div style={{display:"flex",flexDirection:"column",gap:2,flexShrink:0}} onClick={e=>e.stopPropagation()}>
@@ -19288,7 +19315,6 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                   if(ni===all.length-1)return;[all[ni+1],all[ni]]=[all[ni],all[ni+1]];upd("messages",all);
                 }} style={{background:"none",border:"1px solid rgba(0,0,0,0.1)",borderRadius:4,width:18,height:18,cursor:"pointer",color:"#6366f1",fontSize:10,display:"flex",alignItems:"center",justifyContent:"center",padding:0}}><svg width="8" height="8" viewBox="0 0 10 10" fill="currentColor"><path d="M5 9L1 1H9z"/></svg></button>
               </div>
-              <span style={{fontSize:12,transition:"transform 0.15s",display:"inline-block",transform:cOpen?"rotate(90deg)":"rotate(0deg)",color:"#9ca3af",flexShrink:0}}>›</span>
               {/* Contact name — editable inline, stop propagation so click doesn't toggle */}
               <input value={msg.contact} onClick={e=>e.stopPropagation()}
                 onChange={v=>{const m=[...d.messages];const ni=m.indexOf(msg);m[ni]={...m[ni],contact:v.target.value};upd("messages",m);}}
@@ -19297,6 +19323,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                 <span style={{fontSize:11,color:"#9ca3af",flex:2,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",minWidth:0}}>{preview}</span>
               )}
               <span style={{fontSize:10,color:"#9ca3af",flexShrink:0,whiteSpace:"nowrap"}}>{threadLen} msg</span>
+              <AdminChevron open={cOpen}/>
               {/* Move between inbox / deleted */}
               <button onClick={e=>{e.stopPropagation();toggleDeleted(msg);}}
                 title={msg.deleted ? "Restaurer dans la boîte de réception" : "Déplacer vers Supprimés récemment"}
@@ -19329,7 +19356,9 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                 : (msg.thread||[]);
               const updMsg = (newThread) => upd("messages", d.messages.map(mm=>mm===msg?{...mm,thread:newThread}:mm));
               return rawThread.map((msg2,mi)=>(
-              <div key={mi} style={{display:"flex",gap:8,marginBottom:6,alignItems:"center",flexWrap:"wrap"}}>
+              <div key={mi} style={{display:"flex",flexDirection:"column",gap:4,background:"rgba(0,0,0,0.02)",borderRadius:8,padding:"8px 10px",border:"1px solid rgba(0,0,0,0.05)",marginBottom:4}}>
+                {/* Row 1: image, sender, time, delete */}
+                <div style={{display:"flex",gap:6,alignItems:"center",flexWrap:"wrap"}}>
                 <label style={{width:34,height:34,borderRadius:7,overflow:"hidden",flexShrink:0,background:"rgba(99,102,241,0.08)",border:"1px dashed rgba(99,102,241,0.3)",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",position:"relative"}}>
                   {msg2.img
                     ? <img src={msg2.img} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
@@ -19357,18 +19386,21 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                 }} className="adm-input" style={{background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#374151",padding:"5px 6px",fontSize:11,borderRadius:7,flexShrink:0,minWidth:70}}>
                   <option value="me">moi</option><option value="them">eux</option>
                 </select>
-                <input value={msg2.text} onChange={e=>{
-                  if(isShared){const cur=[...(dataRef.current.sharedThreads?.[msg.sharedThreadId]||[])];cur[mi]={...cur[mi],text:e.target.value};onUpdate(msg.sharedThreadId,cur);}
-                  else{const t=[...rawThread];t[mi]={...t[mi],text:e.target.value};updMsg(t);}
-                }} className="adm-input" style={{flex:"1 1 140px",minWidth:0,background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#1a1a2e",padding:"6px 10px",fontSize:12,borderRadius:7}}/>
-                <LoreDateTimeInput value={msg2.time} onChange={v=>{
+                <div style={{flex:1,minWidth:120}}><LoreDateTimeInput value={msg2.time} onChange={v=>{
                   if(isShared){const cur=[...(dataRef.current.sharedThreads?.[msg.sharedThreadId]||[])];cur[mi]={...cur[mi],time:v};onUpdate(msg.sharedThreadId,cur);}
                   else{const t=[...rawThread];t[mi]={...t[mi],time:v};updMsg(t);}
-                }} width="190px" showLabel={false}/>
+                }} width="100%" showLabel={false}/></div>
                 <button onClick={()=>{
                   if(isShared){const cur=[...(dataRef.current.sharedThreads?.[msg.sharedThreadId]||[])];cur.splice(mi,1);onUpdate(msg.sharedThreadId,cur);}
                   else{updMsg(rawThread.filter((_,tj)=>tj!==mi));}
                 }} className="adm-del-btn" style={{background:"none",border:"none",color:"#d1d5db",cursor:"pointer",fontSize:16,padding:"2px 6px",flexShrink:0,borderRadius:5}}>×</button>
+                </div>
+                {/* Row 2: message text */}
+                <textarea value={msg2.text} onChange={e=>{
+                  if(isShared){const cur=[...(dataRef.current.sharedThreads?.[msg.sharedThreadId]||[])];cur[mi]={...cur[mi],text:e.target.value};onUpdate(msg.sharedThreadId,cur);}
+                  else{const t=[...rawThread];t[mi]={...t[mi],text:e.target.value};updMsg(t);}
+                }} rows={Math.max(1,Math.ceil((msg2.text||"").length/40))}
+                  className="adm-input" style={{width:"100%",resize:"vertical",background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#1a1a2e",padding:"6px 10px",fontSize:12,borderRadius:7,lineHeight:1.4,minHeight:36,boxSizing:"border-box"}}/>
               </div>
             ))})()}
             <button onClick={()=>{
@@ -20284,7 +20316,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                       <div style={{fontSize:12,color:"#374151",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{t.h?`@${t.h}`:<em style={{color:"#9ca3af"}}>(sans handle)</em>} {t.text?`— ${t.text}`:""}</div>
                       <div style={{fontSize:10,color:"#9ca3af"}}>{t.time||"—"}</div>
                     </div>
-                    <span style={{fontSize:11,color:"#9ca3af",transform:isOpen?"rotate(180deg)":"none",transition:"transform 0.15s"}}>▾</span>
+                    <AdminChevron open={isOpen}/>
                   </div>
                   {isOpen && (
                   <div style={{display:"flex",gap:10,alignItems:"flex-start",padding:"0 12px 12px"}}>
@@ -20580,8 +20612,8 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                 return (
                 <div key={conv.id??ci} className="adm-card" style={{background:"rgba(255,255,255,0.85)",borderRadius:12,border:"1px solid rgba(0,0,0,0.07)",overflow:"hidden"}}>
                   {/* Toggle header */}
-                  <div onClick={()=>toggleGrindrDm(dmKey)} style={{display:"flex",gap:8,padding:14,cursor:"pointer",userSelect:"none",alignItems:"center"}}>
-                    <span style={{fontSize:13,transition:"transform 0.15s",display:"inline-block",transform:isOpen?"rotate(90deg)":"rotate(0deg)",color:"#9ca3af"}}>›</span>
+                  <div onClick={()=>toggleGrindrDm(dmKey)} style={{display:"flex",gap:8,padding:14,cursor:"pointer",minHeight:44,WebkitTapHighlightColor:"transparent",userSelect:"none",alignItems:"center"}}>
+                    <AdminChevron open={isOpen}/>
                     <label style={{width:36,height:36,borderRadius:4,overflow:"hidden",cursor:"pointer",flexShrink:0,background:"#1a1a1a",border:`1px solid ${OR}44`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,pointerEvents:"none"}}>
                       {conv.photo?<img src={conv.photo} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:<span style={{color:"#555"}}>📷</span>}
                     </label>
@@ -20788,7 +20820,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                         <div style={{fontSize:12,color:"#374151",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{post.username?`@${post.username}`:<em style={{color:"#9ca3af"}}>(sans pseudo)</em>} {post.body?`— ${post.body}`:""}</div>
                         <div style={{fontSize:10,color:"#9ca3af"}}>{post.date||"—"}</div>
                       </div>
-                      <span style={{fontSize:11,color:"#9ca3af",transform:isOpen?"rotate(180deg)":"none",transition:"transform 0.15s"}}>▾</span>
+                      <AdminChevron open={isOpen}/>
                     </div>
                     {isOpen && (
                     <div style={{display:"flex",gap:10,alignItems:"flex-start",padding:"0 12px 12px"}}>
@@ -20942,7 +20974,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                         <div style={{fontSize:12,color:"#374151",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{post.caption||<em style={{color:"#9ca3af"}}>(sans légende)</em>}</div>
                         <div style={{fontSize:10,color:"#9ca3af"}}>{post.date||"—"}{post.archived?" · archivé":""}{post.taggedWith?` · avec ${CHAR_NAMES[post.taggedWith]||post.taggedWith}`:""}{photos.length>1?` · ${photos.length} photos`:""}</div>
                       </div>
-                      <span style={{fontSize:11,color:"#9ca3af",transform:isOpen?"rotate(180deg)":"none",transition:"transform 0.15s"}}>▾</span>
+                      <AdminChevron open={isOpen}/>
                     </div>
                     {isOpen && (
                     <div style={{display:"flex",flexDirection:"column",gap:8,padding:"0 12px 12px"}}>
@@ -21029,7 +21061,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                           <div style={{fontSize:12,color:"#374151",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{post.caption||<em style={{color:"#9ca3af"}}>(sans légende)</em>}</div>
                           <div style={{fontSize:10,color:"#9ca3af"}}>{post.date||"—"}</div>
                         </div>
-                        <span style={{fontSize:11,color:"#9ca3af",transform:isOpen?"rotate(180deg)":"none",transition:"transform 0.15s"}}>▾</span>
+                        <AdminChevron open={isOpen}/>
                       </div>
                       {isOpen && (
                       <div style={{display:"flex",gap:10,alignItems:"flex-start",padding:"0 12px 12px"}}>
@@ -21089,7 +21121,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                         <div style={{fontSize:12,color:"#374151",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{post.handle?`@${post.handle}`:<em style={{color:"#9ca3af"}}>(sans handle)</em>} {post.caption?`— ${post.caption}`:""}</div>
                         <div style={{fontSize:10,color:"#9ca3af"}}>{post.date||"—"}</div>
                       </div>
-                      <span style={{fontSize:11,color:"#9ca3af",transform:isOpen?"rotate(180deg)":"none",transition:"transform 0.15s"}}>▾</span>
+                      <AdminChevron open={isOpen}/>
                     </div>
                     {isOpen && (
                     <div style={{display:"flex",gap:10,alignItems:"flex-start",padding:"0 12px 12px"}}>
@@ -21189,8 +21221,8 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
               return (
                 <div key={k}>
                   {/* Day header — togglable */}
-                  <button onClick={()=>toggleDay(k)} style={{width:"100%",display:"flex",alignItems:"center",gap:8,background:"rgba(224,68,68,0.07)",border:"1px solid rgba(224,68,68,0.18)",borderRadius:8,padding:"7px 12px",cursor:"pointer",textAlign:"left"}}>
-                    <span style={{fontSize:12,color:isOpen?"▾":"▸",width:12,flexShrink:0}}>{isOpen?"▾":"▸"}</span>
+                  <button onClick={()=>toggleDay(k)} style={{width:"100%",display:"flex",alignItems:"center",gap:8,minHeight:44,WebkitTapHighlightColor:"transparent",background:"rgba(224,68,68,0.07)",border:"1px solid rgba(224,68,68,0.18)",borderRadius:8,padding:"7px 12px",cursor:"pointer",textAlign:"left"}}>
+                    <AdminChevron open={isOpen} size={14}/>
                     <span style={{fontSize:12,fontWeight:700,color:"#c0392b",flex:1}}>{label}</span>
                     <span style={{fontSize:10,color:"#9ca3af"}}>{indices.length} événement{indices.length>1?"s":""}</span>
                   </button>
@@ -21630,13 +21662,13 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
             const toggle = toggleInSet(setMailOpen);
             return (
               <div key={m.id||i} style={{background:"rgba(255,255,255,0.9)",borderRadius:10,border:"1px solid rgba(0,0,0,0.07)",overflow:"hidden"}}>
-                <div onClick={()=>toggle(mid)} style={{display:"flex",gap:10,alignItems:"center",padding:"10px 14px",cursor:"pointer"}}>
+                <div onClick={()=>toggle(mid)} style={{display:"flex",gap:10,alignItems:"center",padding:"12px 14px",minHeight:44,WebkitTapHighlightColor:"transparent",cursor:"pointer"}}>
                   {mailAdmTab==="inbox" && <span style={{width:7,height:7,borderRadius:"50%",background:m.unread?"#4a7ab5":"transparent",flexShrink:0}}/>}
                   <div style={{flex:1,minWidth:0}}>
                     <div style={{fontSize:12,fontWeight:m.unread?700:400,color:"#374151",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{m.from||<em style={{color:"#9ca3af"}}>(sans expéditeur)</em>} {m.subj?`— ${m.subj}`:""}</div>
                     <div style={{fontSize:10,color:"#9ca3af"}}>{m.time||"—"}</div>
                   </div>
-                  <span style={{fontSize:11,color:"#9ca3af",transform:isOpen?"rotate(180deg)":"none",transition:"transform 0.15s"}}>▾</span>
+                  <AdminChevron open={isOpen}/>
                 </div>
                 {isOpen && (
                 <div style={{display:"flex",flexDirection:"column",gap:8,padding:"0 14px 14px"}}>
@@ -21767,7 +21799,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                         <div style={{fontSize:12,color:"#374151",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{p.name||<em style={{color:"#9ca3af"}}>(sans nom)</em>} {p.text?`— ${p.text}`:""}</div>
                         <div style={{fontSize:10,color:"#9ca3af"}}>{p.time||"—"}</div>
                       </div>
-                      <span style={{fontSize:11,color:"#9ca3af",transform:isOpen?"rotate(180deg)":"none",transition:"transform 0.15s"}}>▾</span>
+                      <AdminChevron open={isOpen}/>
                     </div>
                     {isOpen && (
                     <div style={{display:"flex",gap:10,alignItems:"flex-start",padding:"0 12px 12px"}}>
