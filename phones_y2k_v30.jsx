@@ -6806,7 +6806,13 @@ const IOSPhone = ({data,admin,onUpdate,onUpdateShared=()=>{},loreDate:loreDatePr
           style={{flex:1,background:"#b2bbc6",overflowY:"auto",padding:"8px 0",display:"flex",flexDirection:"column",minHeight:0,WebkitOverflowScrolling:"touch"}}>
           {resolvedThread.map((msg,mi)=>{
             const isMe=msg.from==="me";
-            const nextMsg = resolvedThread[mi+1]; const showTime = !nextMsg || nextMsg.time!==msg.time || (nextMsg.from!==msg.from) || (conv.isGroup && nextMsg.senderKey!==msg.senderKey);
+            const nextMsg = resolvedThread[mi+1];
+            // Afficher l'heure seulement sous le DERNIER message d'une série consécutive du même
+            // expéditeur — comme iMessage. Avant, nextMsg.time!==msg.time déclenchait l'affichage
+            // dès que deux messages reçus avaient des heures différentes, donc chaque message "them"
+            // avait sa propre heure même au milieu d'une série. Maintenant uniquement au changement
+            // d'expéditeur ou en fin de fil.
+            const showTime = !nextMsg || nextMsg.from!==msg.from || (conv.isGroup && nextMsg.senderKey!==msg.senderKey);
             const dayChanged = loreDayKey(msg.time)!==null && (mi===0 || loreDayKey(resolvedThread[mi-1]?.time)!==loreDayKey(msg.time));
             const dateLabel = loreDateLabel(msg.time);
             return (
@@ -7409,6 +7415,8 @@ const AndroidPhone = ({data,admin,onUpdate,sharedAndroidIcons={},onUpdateShared=
         <div ref={el=>{if(el)setTimeout(()=>{el.scrollTop=el.scrollHeight;},0)}} style={{flex:1,background:"#ece5dd",overflowY:"auto",padding:"8px 10px",display:"flex",flexDirection:"column",gap:3,minHeight:0,WebkitOverflowScrolling:"touch"}}>
           {resolvedThread.map((msg,mi)=>{
             const isMe=msg.from==="me";
+            const nextMsg = resolvedThread[mi+1];
+            const showTime = !nextMsg || nextMsg.from!==msg.from || (conv.isGroup && nextMsg.senderKey!==msg.senderKey);
             const dayChanged = loreDayKey(msg.time)!==null && (mi===0 || loreDayKey(resolvedThread[mi-1]?.time)!==loreDayKey(msg.time));
             const dateLabel = loreDateLabel(msg.time);
             return <React.Fragment key={mi}>
@@ -7433,7 +7441,7 @@ const AndroidPhone = ({data,admin,onUpdate,sharedAndroidIcons={},onUpdateShared=
                   {msg.img && <img src={msg.img} style={{maxWidth:"100%",display:"block",borderRadius:msg.text?"18px 18px 0 0":(isMe?"18px 4px 18px 18px":"4px 18px 18px 18px")}}/>}
                   {msg.text && <div style={{padding:msg.img?"6px 12px":0}}>{msg.text}</div>}
                 </div>
-                <div style={{fontSize:10,color:"#aaa",marginTop:2,textAlign:isMe?"right":"left",padding:"0 4px",fontFamily:FF_IOS}}>{loreRelativeLabel(msg.time,loreDate)}</div>
+                <div style={{fontSize:10,color:"#aaa",marginTop:2,textAlign:isMe?"right":"left",padding:"0 4px",fontFamily:FF_IOS}}>{showTime&&loreRelativeLabel(msg.time,loreDate)}</div>
               </div>
             </div>
             </React.Fragment>;
@@ -19210,7 +19218,12 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                         }} className="adm-input" placeholder="Nom du groupe"
                           style={{flex:1,background:"rgba(255,255,255,0.9)",border:"1px solid rgba(0,0,0,0.1)",color:"#1a1a2e",padding:"5px 9px",fontSize:12,borderRadius:7,fontWeight:600}}/>
                       ) : (
-                        <span style={{fontSize:12,fontWeight:600,color:"#374151"}}>{gMsg.contact} <span style={{color:"#9ca3af",fontSize:10,fontWeight:400}}>(groupe local)</span></span>
+                        <input value={gMsg.contact||""} onClick={e=>e.stopPropagation()}
+                          onChange={e=>{
+                            upd("messages", d.messages.map(m=>m===gMsg ? {...m, contact:e.target.value} : m));
+                          }}
+                          className="adm-input" style={{flex:1,background:"transparent",border:"none",color:"#374151",padding:"2px 0",fontSize:12,fontWeight:600,outline:"none",minWidth:0}}
+                          placeholder="Nom du groupe"/>
                       )}
                       <span style={{fontSize:10,color:"#9ca3af",flexShrink:0,marginLeft:"auto"}}>{threadLen} msg</span>
                     </div>
