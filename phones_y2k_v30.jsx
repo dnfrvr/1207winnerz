@@ -5423,17 +5423,22 @@ const IOSPhone = ({data,admin,onUpdate,onUpdateShared=()=>{},loreDate:loreDatePr
   // Resolve shared thread with correct perspective
   const getThread = (msg) => {
     if(!msg) return [];
+    let thread;
     if(msg.isGroup) {
-      if(!msg.sharedThreadId) return msg.thread||[];
-      const raw = data.sharedThreads?.[msg.sharedThreadId] || [];
-      return raw.map(m=>({...m, senderKey:m.from, senderName:CHAR_NAMES[m.from]||m.from, from: m.from===charKey ? 'me' : 'them'}));
-    }
-    if(msg.sharedThreadId) {
+      if(!msg.sharedThreadId) thread = msg.thread||[];
+      else {
+        const raw = data.sharedThreads?.[msg.sharedThreadId] || [];
+        thread = raw.map(m=>({...m, senderKey:m.from, senderName:CHAR_NAMES[m.from]||m.from, from: m.from===charKey ? 'me' : 'them'}));
+      }
+    } else if(msg.sharedThreadId) {
       const raw = data.sharedThreads?.[msg.sharedThreadId] || msg.thread || [];
       const myLetter = msg.perspective || 'a';
-      return raw.map(m=>({...m, from: m.from===myLetter ? 'me' : 'them'}));
+      thread = raw.map(m=>({...m, from: m.from===myLetter ? 'me' : 'them'}));
+    } else {
+      thread = msg.thread||[];
     }
-    return msg.thread||[];
+    // Tri chronologique côté affichage téléphone — cohérent avec l'admin.
+    return [...thread].sort((a,b)=>loreSortKey(a.time)-loreSortKey(b.time));
   };
   const saveThread = (msg, newThread) => {
     if(!msg) return;
@@ -6899,17 +6904,22 @@ const AndroidPhone = ({data,admin,onUpdate,sharedAndroidIcons={},onUpdateShared=
   // Resolve shared thread with correct perspective
   const getThread = (msg) => {
     if(!msg) return [];
+    let thread;
     if(msg.isGroup) {
-      if(!msg.sharedThreadId) return msg.thread||[];
-      const raw = data.sharedThreads?.[msg.sharedThreadId] || [];
-      return raw.map(m=>({...m, senderKey:m.from, senderName:CHAR_NAMES[m.from]||m.from, from: m.from===charKey ? 'me' : 'them'}));
-    }
-    if(msg.sharedThreadId) {
+      if(!msg.sharedThreadId) thread = msg.thread||[];
+      else {
+        const raw = data.sharedThreads?.[msg.sharedThreadId] || [];
+        thread = raw.map(m=>({...m, senderKey:m.from, senderName:CHAR_NAMES[m.from]||m.from, from: m.from===charKey ? 'me' : 'them'}));
+      }
+    } else if(msg.sharedThreadId) {
       const raw = data.sharedThreads?.[msg.sharedThreadId] || msg.thread || [];
       const myLetter = msg.perspective || 'a';
-      return raw.map(m=>({...m, from: m.from===myLetter ? 'me' : 'them'}));
+      thread = raw.map(m=>({...m, from: m.from===myLetter ? 'me' : 'them'}));
+    } else {
+      thread = msg.thread||[];
     }
-    return msg.thread||[];
+    // Tri chronologique côté affichage téléphone — cohérent avec l'admin.
+    return [...thread].sort((a,b)=>loreSortKey(a.time)-loreSortKey(b.time));
   };
   const saveThread = (msg, newThread) => {
     if(!msg) return;
