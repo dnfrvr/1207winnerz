@@ -18603,6 +18603,34 @@ const scanImportJson = (parsed, liveData) => IMPORT_DEFS.map(def => {
     newCount: perChar.reduce((s,p)=>s+p.newCount,0), perChar};
 });
 
+// Bouton "+" entre deux messages pour en insérer un nouveau à cette position
+const InsertMsgBtn = ({onClick}) => (
+  <div style={{display:"flex",alignItems:"center",gap:6,margin:"2px 0",opacity:0.6,transition:"opacity 0.15s"}}
+    onMouseEnter={e=>e.currentTarget.style.opacity="1"}
+    onMouseLeave={e=>e.currentTarget.style.opacity="0.6"}>
+    <div style={{flex:1,height:1,background:"rgba(99,102,241,0.2)"}}/>
+    <button onClick={onClick} style={{
+      background:"rgba(99,102,241,0.1)",border:"1px dashed rgba(99,102,241,0.4)",color:"#6366f1",
+      borderRadius:20,width:26,height:26,cursor:"pointer",fontSize:15,display:"flex",
+      alignItems:"center",justifyContent:"center",flexShrink:0,padding:0,lineHeight:1,
+    }}>+</button>
+    <div style={{flex:1,height:1,background:"rgba(99,102,241,0.2)"}}/>
+  </div>
+);
+// Boutons fléchés haut/bas pour déplacer un message dans la liste triée
+const MsgMoveBtn = ({dir, onClick, disabled}) => (
+  <button onClick={onClick} disabled={disabled} style={{
+    background:"none",border:"1px solid rgba(0,0,0,0.12)",borderRadius:4,
+    width:20,height:20,cursor:disabled?"default":"pointer",
+    color:disabled?"#d1d5db":"#6366f1",fontSize:9,
+    display:"flex",alignItems:"center",justifyContent:"center",padding:0,flexShrink:0,
+  }}>
+    <svg width="8" height="8" viewBox="0 0 10 10" fill="currentColor">
+      {dir==="up" ? <path d="M5 1L9 9H1z"/> : <path d="M5 9L1 1H9z"/>}
+    </svg>
+  </button>
+);
+
 const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDate, onLoreDateChange}) => {
   const [tab, setTab]         = useState("glinda");
   // Toujours à jour, contrairement à `data`/`d` qui sont figés dans la closure du render en cours.
@@ -19215,60 +19243,85 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                       const CHAR_COLORS={glinda:"#e91e8c",eoghan:"#00d435",drew:"#aa6caa",elias:"#6672d0"};
                       const allMembers = meta.members||[];
                       const thread = dataRef.current.sharedThreads?.[gid]||[];
-                      // Toutes les options : membres du groupe
+                      // Tri chronologique croissant pour affichage — le tableau écrit en retour suit cet ordre,
+                      // Firebase stocke donc toujours les messages dans l'ordre chronologique.
+                      const sortedThread = [...thread].sort((a,b)=>loreSortKey(a.time)-loreSortKey(b.time));
+                      const writeThread = (t) => onUpdate(gid, t);
                       const senderOptions = allMembers.map(m=>({
                         key:m, label:CHAR_NAMES[m]||m, color:CHAR_COLORS[m]||"#6366f1"
                       }));
                       const defaultSender = allMembers[0]||"glinda";
+                      const insertAt = (si) => {
+                        const prev = sortedThread[si-1];
+                        const next = sortedThread[si];
+                        const time = next?.time || prev?.time || "maintenant";
+                        const t=[...sortedThread];
+                        t.splice(si,0,{from:defaultSender,senderKey:defaultSender,senderName:CHAR_NAMES[defaultSender]||defaultSender,text:"",time});
+                        writeThread(t);
+                      };
                       return (
-                        <div style={{borderTop:"1px solid rgba(0,0,0,0.06)",paddingTop:8,marginTop:4,display:"flex",flexDirection:"column",gap:4}}>
-                          <div style={{fontSize:10,color:"#9ca3af",fontWeight:600,letterSpacing:0.5,textTransform:"uppercase",marginBottom:2}}>Messages ({thread.length})</div>
-                          {thread.map((m2,mi)=>{
+                        <div style={{borderTop:"1px solid rgba(0,0,0,0.06)",paddingTop:8,marginTop:4,display:"flex",flexDirection:"column",gap:0}}>
+                          <div style={{fontSize:10,color:"#9ca3af",fontWeight:600,letterSpacing:0.5,textTransform:"uppercase",marginBottom:6}}>Messages ({sortedThread.length}) — triés par date</div>
+                          <InsertMsgBtn onClick={()=>insertAt(0)}/>
+                          {sortedThread.map((m2,si)=>{
                             const mc=CHAR_COLORS[m2.from]||"#6366f1";
                             const updMsg = (patch) => {
-                              const cur=[...thread]; cur[mi]={...cur[mi],...patch}; onUpdate(gid,cur);
+                              const t=[...sortedThread]; t[si]={...t[si],...patch}; writeThread(t);
                             };
                             return (
-                            <div key={mi} style={{display:"flex",flexDirection:"column",gap:4,background:"rgba(0,0,0,0.02)",borderRadius:8,padding:"8px 10px",border:"1px solid rgba(0,0,0,0.05)"}}>
+                            <React.Fragment key={si}>
+                            <div style={{display:"flex",flexDirection:"column",gap:4,background:"rgba(0,0,0,0.02)",borderRadius:8,padding:"8px 10px",border:"1px solid rgba(0,0,0,0.05)"}}>
                               <div style={{display:"flex",gap:6,alignItems:"center"}}>
-                                <select value={m2.from} onChange={e=>{
-                                  updMsg({from:e.target.value,senderKey:e.target.value,senderName:CHAR_NAMES[e.target.value]||e.target.value});
-                                }} className="adm-input" style={{background:mc+"14",border:"1px solid "+mc+"55",color:mc,padding:"4px 5px",fontSize:10,borderRadius:6,flexShrink:0,fontWeight:700,minWidth:74}}>
+                                <div style={{display:"flex",flexDirection:"column",gap:2,flexShrink:0}}>
+                                  <MsgMoveBtn dir="up" disabled={si===0} onClick={()=>{const t=[...sortedThread];[t[si-1],t[si]]=[t[si],t[si-1]];writeThread(t);}}/>
+                                  <MsgMoveBtn dir="down" disabled={si===sortedThread.length-1} onClick={()=>{const t=[...sortedThread];[t[si+1],t[si]]=[t[si],t[si+1]];writeThread(t);}}/>
+                                </div>
+                                <select value={m2.from} onChange={e=>updMsg({from:e.target.value,senderKey:e.target.value,senderName:CHAR_NAMES[e.target.value]||e.target.value})}
+                                  className="adm-input" style={{background:mc+"14",border:"1px solid "+mc+"55",color:mc,padding:"4px 5px",fontSize:10,borderRadius:6,flexShrink:0,fontWeight:700,minWidth:74}}>
                                   {senderOptions.map(s=><option key={s.key} value={s.key}>{s.label}</option>)}
                                 </select>
                                 <div style={{flex:1}}><LoreDateTimeInput value={m2.time||""} onChange={v=>updMsg({time:v})} width="100%" showLabel={false}/></div>
-                                <button onClick={()=>{const cur=[...thread];cur.splice(mi,1);onUpdate(gid,cur);}}
+                                <button onClick={()=>{const t=[...sortedThread];t.splice(si,1);writeThread(t);}}
                                   className="adm-del-btn" style={{background:"none",border:"none",color:"#d1d5db",cursor:"pointer",fontSize:16,padding:"0 4px",flexShrink:0}}>×</button>
                               </div>
                               <textarea value={m2.text} onChange={e=>updMsg({text:e.target.value})}
                                 rows={Math.max(1,Math.ceil((m2.text||"").length/40))}
                                 className="adm-input" style={{width:"100%",resize:"vertical",background:"rgba(255,255,255,0.9)",border:"1px solid rgba(0,0,0,0.08)",color:"#1a1a2e",padding:"6px 10px",fontSize:12,borderRadius:6,lineHeight:1.4,minHeight:36,boxSizing:"border-box"}}/>
                             </div>
+                            <InsertMsgBtn onClick={()=>insertAt(si+1)}/>
+                            </React.Fragment>
                           )})}
-                          <button onClick={()=>{
-                            onUpdate(gid,[...thread,{from:defaultSender,senderKey:defaultSender,senderName:CHAR_NAMES[defaultSender]||defaultSender,text:"",time:"maintenant"}]);
-                          }} style={{background:"rgba(0,0,0,0.03)",border:"1px dashed rgba(0,0,0,0.12)",color:"#9ca3af",borderRadius:6,padding:"4px 10px",cursor:"pointer",fontSize:10,alignSelf:"flex-start",marginTop:2}}>+ message</button>
+                          <button onClick={()=>writeThread([...sortedThread,{from:defaultSender,senderKey:defaultSender,senderName:CHAR_NAMES[defaultSender]||defaultSender,text:"",time:"maintenant"}])}
+                            style={{background:"rgba(0,0,0,0.03)",border:"1px dashed rgba(0,0,0,0.12)",color:"#9ca3af",borderRadius:6,padding:"4px 10px",cursor:"pointer",fontSize:10,alignSelf:"flex-start",marginTop:4}}>+ message</button>
                         </div>
                       );
                     })()}
                     {/* ── Éditeur de messages du groupe — groupe LOCAL (pas de sharedThreadId) ── */}
                     {gOpen && !isSharedGroup && (()=>{
-                      const localThread = gMsg.thread||[];
-                      const updLocalThread = (newThread) => {
-                        upd("messages", d.messages.map(m=>m===gMsg ? {...m, thread:newThread} : m));
+                      const rawLocal = gMsg.thread||[];
+                      const sortedLocal = [...rawLocal].sort((a,b)=>loreSortKey(a.time)-loreSortKey(b.time));
+                      const writeLocal = (t) => upd("messages", d.messages.map(m=>m===gMsg ? {...m, thread:t} : m));
+                      const insertAt = (si) => {
+                        const prev=sortedLocal[si-1]; const next=sortedLocal[si];
+                        const time=next?.time||prev?.time||"maintenant";
+                        const t=[...sortedLocal]; t.splice(si,0,{from:"them",senderName:"",senderKey:"",text:"",time}); writeLocal(t);
                       };
                       return (
-                        <div style={{padding:"0 12px 12px",display:"flex",flexDirection:"column",gap:4,borderTop:"1px solid rgba(0,0,0,0.05)"}}>
-                          <div style={{fontSize:10,color:"#9ca3af",fontWeight:600,letterSpacing:0.5,textTransform:"uppercase",marginTop:10,marginBottom:2}}>Messages ({localThread.length})</div>
-                          {localThread.map((m2,mi)=>{
+                        <div style={{padding:"0 12px 12px",display:"flex",flexDirection:"column",gap:0,borderTop:"1px solid rgba(0,0,0,0.05)"}}>
+                          <div style={{fontSize:10,color:"#9ca3af",fontWeight:600,letterSpacing:0.5,textTransform:"uppercase",marginTop:10,marginBottom:6}}>Messages ({sortedLocal.length}) — triés par date</div>
+                          <InsertMsgBtn onClick={()=>insertAt(0)}/>
+                          {sortedLocal.map((m2,si)=>{
                             const isMe = m2.from==="me";
                             const mc = isMe ? charColor : "#6b7280";
-                            const updMsg = (patch) => {
-                              const cur=[...localThread]; cur[mi]={...cur[mi],...patch}; updLocalThread(cur);
-                            };
+                            const updMsg = (patch) => { const t=[...sortedLocal]; t[si]={...t[si],...patch}; writeLocal(t); };
                             return (
-                            <div key={mi} style={{display:"flex",flexDirection:"column",gap:4,background:"rgba(0,0,0,0.02)",borderRadius:8,padding:"8px 10px",border:"1px solid rgba(0,0,0,0.05)"}}>
+                            <React.Fragment key={si}>
+                            <div style={{display:"flex",flexDirection:"column",gap:4,background:"rgba(0,0,0,0.02)",borderRadius:8,padding:"8px 10px",border:"1px solid rgba(0,0,0,0.05)"}}>
                               <div style={{display:"flex",gap:6,alignItems:"center",flexWrap:"wrap"}}>
+                                <div style={{display:"flex",flexDirection:"column",gap:2,flexShrink:0}}>
+                                  <MsgMoveBtn dir="up" disabled={si===0} onClick={()=>{const t=[...sortedLocal];[t[si-1],t[si]]=[t[si],t[si-1]];writeLocal(t);}}/>
+                                  <MsgMoveBtn dir="down" disabled={si===sortedLocal.length-1} onClick={()=>{const t=[...sortedLocal];[t[si+1],t[si]]=[t[si],t[si+1]];writeLocal(t);}}/>
+                                </div>
                                 <select value={m2.from} onChange={e=>updMsg({from:e.target.value})}
                                   className="adm-input" style={{background:mc+"14",border:"1px solid "+mc+"55",color:mc,padding:"4px 5px",fontSize:10,borderRadius:6,flexShrink:0,fontWeight:700,minWidth:64}}>
                                   <option value="me">{char?.label}</option>
@@ -19279,17 +19332,18 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                                     className="adm-input" style={{width:80,background:"rgba(255,255,255,0.9)",border:"1px solid rgba(0,0,0,0.08)",color:"#1a1a2e",padding:"4px 6px",fontSize:10,borderRadius:6,flexShrink:0}}/>
                                 )}
                                 <div style={{flex:1,minWidth:120}}><LoreDateTimeInput value={m2.time||""} onChange={v=>updMsg({time:v})} width="100%" showLabel={false}/></div>
-                                <button onClick={()=>{const cur=[...localThread];cur.splice(mi,1);updLocalThread(cur);}}
+                                <button onClick={()=>{const t=[...sortedLocal];t.splice(si,1);writeLocal(t);}}
                                   className="adm-del-btn" style={{background:"none",border:"none",color:"#d1d5db",cursor:"pointer",fontSize:16,padding:"0 4px",flexShrink:0}}>×</button>
                               </div>
                               <textarea value={m2.text} onChange={e=>updMsg({text:e.target.value})}
                                 rows={Math.max(1,Math.ceil((m2.text||"").length/40))}
                                 className="adm-input" style={{width:"100%",resize:"vertical",background:"rgba(255,255,255,0.9)",border:"1px solid rgba(0,0,0,0.08)",color:"#1a1a2e",padding:"6px 10px",fontSize:12,borderRadius:6,lineHeight:1.4,minHeight:36,boxSizing:"border-box"}}/>
                             </div>
+                            <InsertMsgBtn onClick={()=>insertAt(si+1)}/>
+                            </React.Fragment>
                           )})}
-                          <button onClick={()=>{
-                            updLocalThread([...localThread,{from:"them",senderName:"",senderKey:"",text:"",time:"maintenant"}]);
-                          }} style={{background:"rgba(0,0,0,0.03)",border:"1px dashed rgba(0,0,0,0.12)",color:"#9ca3af",borderRadius:6,padding:"4px 10px",cursor:"pointer",fontSize:10,alignSelf:"flex-start",marginTop:2}}>+ message</button>
+                          <button onClick={()=>writeLocal([...sortedLocal,{from:"them",senderName:"",senderKey:"",text:"",time:"maintenant"}])}
+                            style={{background:"rgba(0,0,0,0.03)",border:"1px dashed rgba(0,0,0,0.12)",color:"#9ca3af",borderRadius:6,padding:"4px 10px",cursor:"pointer",fontSize:10,alignSelf:"flex-start",marginTop:4}}>+ message</button>
                         </div>
                       );
                     })()}
@@ -19375,16 +19429,44 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
               </div>
             {(()=>{
               const isShared = !!msg.sharedThreadId;
-              const rawThread = isShared
-                ? (data.sharedThreads?.[msg.sharedThreadId]||[]).map(m=>({
-                    ...m, from: m.from===(msg.perspective||'a') ? 'me' : 'them'
-                  }))
-                : (msg.thread||[]);
-              const updMsg = (newThread) => upd("messages", d.messages.map(mm=>mm===msg?{...mm,thread:newThread}:mm));
-              return rawThread.map((msg2,mi)=>(
-              <div key={mi} style={{display:"flex",flexDirection:"column",gap:4,background:"rgba(0,0,0,0.02)",borderRadius:8,padding:"8px 10px",border:"1px solid rgba(0,0,0,0.05)",marginBottom:4}}>
-                {/* Row 1: image, sender, time, delete */}
+              const myL = msg.perspective||'a';
+              const otherL = myL==='a'?'b':'a';
+              // Tri chronologique — les messages périmés (temps non reconnu) restent en fin.
+              // Pour les convs partagées, on travaille directement sur l'array a/b (pas de
+              // conversion me/them pour ne pas avoir à reconvertir à l'écriture).
+              const rawShared = isShared ? (dataRef.current.sharedThreads?.[msg.sharedThreadId]||[]) : null;
+              const rawLocal  = isShared ? null : (msg.thread||[]);
+              // thread d'affichage avec from=me/them pour le sélecteur
+              const displayThread = isShared
+                ? rawShared.map(m=>({...m, from: m.from===myL?'me':'them'}))
+                : rawLocal;
+              const sortedDisplay = [...displayThread].sort((a,b)=>loreSortKey(a.time)-loreSortKey(b.time));
+              const writeThread = (newDisplay) => {
+                if(isShared){
+                  const raw = newDisplay.map(m=>({...m, from: m.from==='me'?myL:otherL}));
+                  onUpdate(msg.sharedThreadId, raw);
+                } else {
+                  upd("messages", d.messages.map(mm=>mm===msg?{...mm,thread:newDisplay}:mm));
+                }
+              };
+              const insertAt = (si) => {
+                const prev=sortedDisplay[si-1]; const next=sortedDisplay[si];
+                const time=next?.time||prev?.time||"maintenant";
+                const t=[...sortedDisplay];
+                t.splice(si,0,{from:"them",text:"",time});
+                writeThread(t);
+              };
+              return (<>
+              <InsertMsgBtn onClick={()=>insertAt(0)}/>
+              {sortedDisplay.map((msg2,si)=>(
+              <React.Fragment key={si}>
+              <div style={{display:"flex",flexDirection:"column",gap:4,background:"rgba(0,0,0,0.02)",borderRadius:8,padding:"8px 10px",border:"1px solid rgba(0,0,0,0.05)"}}>
+                {/* Row 1: image, sender, time, move, delete */}
                 <div style={{display:"flex",gap:6,alignItems:"center",flexWrap:"wrap"}}>
+                <div style={{display:"flex",flexDirection:"column",gap:2,flexShrink:0}}>
+                  <MsgMoveBtn dir="up" disabled={si===0} onClick={()=>{const t=[...sortedDisplay];[t[si-1],t[si]]=[t[si],t[si-1]];writeThread(t);}}/>
+                  <MsgMoveBtn dir="down" disabled={si===sortedDisplay.length-1} onClick={()=>{const t=[...sortedDisplay];[t[si+1],t[si]]=[t[si],t[si+1]];writeThread(t);}}/>
+                </div>
                 <label style={{width:34,height:34,borderRadius:7,overflow:"hidden",flexShrink:0,background:"rgba(99,102,241,0.08)",border:"1px dashed rgba(99,102,241,0.3)",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",position:"relative"}}>
                   {msg2.img
                     ? <img src={msg2.img} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
@@ -19392,46 +19474,33 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                   <input type="file" accept="image/*" style={{display:"none"}} onChange={e=>{
                     const f=e.target.files?.[0]; if(!f) return;
                     const r=new UploadReader(); r.onload=ev=>{
-                      if(isShared){const cur=[...(dataRef.current.sharedThreads?.[msg.sharedThreadId]||[])];cur[mi]={...cur[mi],img:ev.target.result};onUpdate(msg.sharedThreadId,cur);}
-                      else{const t=[...rawThread];t[mi]={...t[mi],img:ev.target.result};updMsg(t);}
+                      const t=[...sortedDisplay]; t[si]={...t[si],img:ev.target.result}; writeThread(t);
                     };
                     r.readAsDataURL(f); e.target.value="";
                   }}/>
                 </label>
-                {msg2.img && <button onClick={()=>{
-                  if(isShared){const cur=[...(dataRef.current.sharedThreads?.[msg.sharedThreadId]||[])];cur[mi]={...cur[mi],img:null};onUpdate(msg.sharedThreadId,cur);}
-                  else{const t=[...rawThread];t[mi]={...t[mi],img:null};updMsg(t);}
-                }} title="Retirer l'image" style={{background:"none",border:"none",color:"#ef4444",cursor:"pointer",fontSize:13,padding:"0 2px",flexShrink:0}}>✕</button>}
-                <select value={msg2.from} onChange={e=>{
-                  if(isShared){
-                    const myL=msg.perspective||'a';const otherL=myL==='a'?'b':'a';
-                    const cur=[...(dataRef.current.sharedThreads?.[msg.sharedThreadId]||[])];
-                    cur[mi]={...cur[mi],from:e.target.value==='me'?myL:otherL};
-                    onUpdate(msg.sharedThreadId,cur);
-                  }else{const t=[...rawThread];t[mi]={...t[mi],from:e.target.value};updMsg(t);}
-                }} className="adm-input" style={{background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#374151",padding:"5px 6px",fontSize:11,borderRadius:7,flexShrink:0,minWidth:70}}>
+                {msg2.img && <button onClick={()=>{const t=[...sortedDisplay];t[si]={...t[si],img:null};writeThread(t);}}
+                  title="Retirer l'image" style={{background:"none",border:"none",color:"#ef4444",cursor:"pointer",fontSize:13,padding:"0 2px",flexShrink:0}}>✕</button>}
+                <select value={msg2.from} onChange={e=>{const t=[...sortedDisplay];t[si]={...t[si],from:e.target.value};writeThread(t);}}
+                  className="adm-input" style={{background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#374151",padding:"5px 6px",fontSize:11,borderRadius:7,flexShrink:0,minWidth:70}}>
                   <option value="me">moi</option><option value="them">eux</option>
                 </select>
-                <div style={{flex:1,minWidth:120}}><LoreDateTimeInput value={msg2.time} onChange={v=>{
-                  if(isShared){const cur=[...(dataRef.current.sharedThreads?.[msg.sharedThreadId]||[])];cur[mi]={...cur[mi],time:v};onUpdate(msg.sharedThreadId,cur);}
-                  else{const t=[...rawThread];t[mi]={...t[mi],time:v};updMsg(t);}
-                }} width="100%" showLabel={false}/></div>
-                <button onClick={()=>{
-                  if(isShared){const cur=[...(dataRef.current.sharedThreads?.[msg.sharedThreadId]||[])];cur.splice(mi,1);onUpdate(msg.sharedThreadId,cur);}
-                  else{updMsg(rawThread.filter((_,tj)=>tj!==mi));}
-                }} className="adm-del-btn" style={{background:"none",border:"none",color:"#d1d5db",cursor:"pointer",fontSize:16,padding:"2px 6px",flexShrink:0,borderRadius:5}}>×</button>
+                <div style={{flex:1,minWidth:120}}><LoreDateTimeInput value={msg2.time} onChange={v=>{const t=[...sortedDisplay];t[si]={...t[si],time:v};writeThread(t);}} width="100%" showLabel={false}/></div>
+                <button onClick={()=>{const t=[...sortedDisplay];t.splice(si,1);writeThread(t);}}
+                  className="adm-del-btn" style={{background:"none",border:"none",color:"#d1d5db",cursor:"pointer",fontSize:16,padding:"2px 6px",flexShrink:0,borderRadius:5}}>×</button>
                 </div>
                 {/* Row 2: message text */}
-                <textarea value={msg2.text} onChange={e=>{
-                  if(isShared){const cur=[...(dataRef.current.sharedThreads?.[msg.sharedThreadId]||[])];cur[mi]={...cur[mi],text:e.target.value};onUpdate(msg.sharedThreadId,cur);}
-                  else{const t=[...rawThread];t[mi]={...t[mi],text:e.target.value};updMsg(t);}
-                }} rows={Math.max(1,Math.ceil((msg2.text||"").length/40))}
+                <textarea value={msg2.text} onChange={e=>{const t=[...sortedDisplay];t[si]={...t[si],text:e.target.value};writeThread(t);}}
+                  rows={Math.max(1,Math.ceil((msg2.text||"").length/40))}
                   className="adm-input" style={{width:"100%",resize:"vertical",background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#1a1a2e",padding:"6px 10px",fontSize:12,borderRadius:7,lineHeight:1.4,minHeight:36,boxSizing:"border-box"}}/>
               </div>
-            ))})()}
+              <InsertMsgBtn onClick={()=>insertAt(si+1)}/>
+              </React.Fragment>
+              ))}
+              </>);
+            })()}
             <button onClick={()=>{
               if(msg.sharedThreadId){
-                const myL=msg.perspective||'a';
                 onUpdate(msg.sharedThreadId,[...(dataRef.current.sharedThreads?.[msg.sharedThreadId]||[]),{from:myL,text:"",time:"maintenant"}]);
               }else{upd("messages",d.messages.map(mm=>mm===msg?{...mm,thread:[...(mm.thread||[]),{from:"me",text:"",time:"maintenant"}]}:mm));}
             }} style={{background:"rgba(0,0,0,0.04)",border:"1px dashed rgba(0,0,0,0.15)",color:"#9ca3af",borderRadius:6,padding:"5px 12px",cursor:"pointer",fontSize:11,marginTop:4}}>+ message</button>
