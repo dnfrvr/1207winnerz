@@ -18604,6 +18604,29 @@ const scanImportJson = (parsed, liveData) => IMPORT_DEFS.map(def => {
 });
 
 // Bouton "+" entre deux messages pour en insérer un nouveau à cette position
+// Décale une chaîne de temps lore ("17 fév, 9:00am") de ±delta minutes.
+// Utilisé pour que déplacer un message dans l'admin ajuste automatiquement son
+// heure d'une minute, évitant que le tri annule immédiatement le déplacement.
+const LORE_MONTHS_IDX = {jan:1,fév:2,mar:3,avr:4,mai:5,juin:6,juil:7,'aoû':8,sep:9,oct:10,nov:11,'déc':12};
+const LORE_MONTHS_OUT = ['','jan','fév','mar','avr','mai','juin','juil','aoû','sep','oct','nov','déc'];
+const shiftLoreTime = (str, deltaMin) => {
+  const p = parseLoreTime(str);
+  if(!p) return str; // format non reconnu, on ne touche pas
+  const DAYS_IN_MONTH = [0,31,29,31,30,31,30,31,31,30,31,30,31]; // 2012 est bissextile
+  let totalMin = (p.month*60*24*31) + ((p.day||1)*60*24) + ((p.hour||0)*60) + (p.min||0) + deltaMin;
+  // Reconstruire day/month depuis totalMin (approximation suffisante pour ±1 min)
+  let min  = ((totalMin % 60) + 60) % 60;
+  let hrs  = Math.floor(totalMin / 60);
+  let hour = ((hrs % 24) + 24) % 24;
+  let days = Math.floor(hrs / 24);
+  let month = ((Math.floor(days / 31) % 12) + 12) % 12 || 12; // approx
+  let day   = (days % 31) || 1;
+  if(day < 1) { day = 1; } if(day > 28) day = Math.min(day, DAYS_IN_MONTH[month]||28);
+  const period = hour < 12 ? 'am' : 'pm';
+  const h12    = hour % 12 === 0 ? 12 : hour % 12;
+  return `${day} ${LORE_MONTHS_OUT[month]}, ${h12}:${String(min).padStart(2,'0')}${period}`;
+};
+
 const InsertMsgBtn = ({onClick}) => (
   <div style={{display:"flex",alignItems:"center",gap:6,margin:"2px 0",opacity:0.6,transition:"opacity 0.15s"}}
     onMouseEnter={e=>e.currentTarget.style.opacity="1"}
@@ -19273,8 +19296,8 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                             <div style={{display:"flex",flexDirection:"column",gap:4,background:"rgba(0,0,0,0.02)",borderRadius:8,padding:"8px 10px",border:"1px solid rgba(0,0,0,0.05)"}}>
                               <div style={{display:"flex",gap:6,alignItems:"center"}}>
                                 <div style={{display:"flex",flexDirection:"column",gap:2,flexShrink:0}}>
-                                  <MsgMoveBtn dir="up" disabled={si===0} onClick={()=>{const t=[...sortedThread];[t[si-1],t[si]]=[t[si],t[si-1]];writeThread(t);}}/>
-                                  <MsgMoveBtn dir="down" disabled={si===sortedThread.length-1} onClick={()=>{const t=[...sortedThread];[t[si+1],t[si]]=[t[si],t[si+1]];writeThread(t);}}/>
+                                  <MsgMoveBtn dir="up" disabled={si===0} onClick={()=>{const t=[...sortedThread];[t[si-1],t[si]]=[t[si],t[si-1]];t[si]={...t[si],time:shiftLoreTime(t[si].time,-1)};writeThread(t);}}/>
+                                  <MsgMoveBtn dir="down" disabled={si===sortedThread.length-1} onClick={()=>{const t=[...sortedThread];[t[si+1],t[si]]=[t[si],t[si+1]];t[si]={...t[si],time:shiftLoreTime(t[si].time,+1)};writeThread(t);}}/>
                                 </div>
                                 <select value={m2.from} onChange={e=>updMsg({from:e.target.value,senderKey:e.target.value,senderName:CHAR_NAMES[e.target.value]||e.target.value})}
                                   className="adm-input" style={{background:mc+"14",border:"1px solid "+mc+"55",color:mc,padding:"4px 5px",fontSize:10,borderRadius:6,flexShrink:0,fontWeight:700,minWidth:74}}>
@@ -19319,8 +19342,8 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                             <div style={{display:"flex",flexDirection:"column",gap:4,background:"rgba(0,0,0,0.02)",borderRadius:8,padding:"8px 10px",border:"1px solid rgba(0,0,0,0.05)"}}>
                               <div style={{display:"flex",gap:6,alignItems:"center",flexWrap:"wrap"}}>
                                 <div style={{display:"flex",flexDirection:"column",gap:2,flexShrink:0}}>
-                                  <MsgMoveBtn dir="up" disabled={si===0} onClick={()=>{const t=[...sortedLocal];[t[si-1],t[si]]=[t[si],t[si-1]];writeLocal(t);}}/>
-                                  <MsgMoveBtn dir="down" disabled={si===sortedLocal.length-1} onClick={()=>{const t=[...sortedLocal];[t[si+1],t[si]]=[t[si],t[si+1]];writeLocal(t);}}/>
+                                  <MsgMoveBtn dir="up" disabled={si===0} onClick={()=>{const t=[...sortedLocal];[t[si-1],t[si]]=[t[si],t[si-1]];t[si]={...t[si],time:shiftLoreTime(t[si].time,-1)};writeLocal(t);}}/>
+                                  <MsgMoveBtn dir="down" disabled={si===sortedLocal.length-1} onClick={()=>{const t=[...sortedLocal];[t[si+1],t[si]]=[t[si],t[si+1]];t[si]={...t[si],time:shiftLoreTime(t[si].time,+1)};writeLocal(t);}}/>
                                 </div>
                                 <select value={m2.from} onChange={e=>updMsg({from:e.target.value})}
                                   className="adm-input" style={{background:mc+"14",border:"1px solid "+mc+"55",color:mc,padding:"4px 5px",fontSize:10,borderRadius:6,flexShrink:0,fontWeight:700,minWidth:64}}>
@@ -19464,8 +19487,8 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                 {/* Row 1: image, sender, time, move, delete */}
                 <div style={{display:"flex",gap:6,alignItems:"center",flexWrap:"wrap"}}>
                 <div style={{display:"flex",flexDirection:"column",gap:2,flexShrink:0}}>
-                  <MsgMoveBtn dir="up" disabled={si===0} onClick={()=>{const t=[...sortedDisplay];[t[si-1],t[si]]=[t[si],t[si-1]];writeThread(t);}}/>
-                  <MsgMoveBtn dir="down" disabled={si===sortedDisplay.length-1} onClick={()=>{const t=[...sortedDisplay];[t[si+1],t[si]]=[t[si],t[si+1]];writeThread(t);}}/>
+                  <MsgMoveBtn dir="up" disabled={si===0} onClick={()=>{const t=[...sortedDisplay];[t[si-1],t[si]]=[t[si],t[si-1]];t[si]={...t[si],time:shiftLoreTime(t[si].time,-1)};writeThread(t);}}/>
+                  <MsgMoveBtn dir="down" disabled={si===sortedDisplay.length-1} onClick={()=>{const t=[...sortedDisplay];[t[si+1],t[si]]=[t[si],t[si+1]];t[si]={...t[si],time:shiftLoreTime(t[si].time,+1)};writeThread(t);}}/>
                 </div>
                 <label style={{width:34,height:34,borderRadius:7,overflow:"hidden",flexShrink:0,background:"rgba(99,102,241,0.08)",border:"1px dashed rgba(99,102,241,0.3)",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",position:"relative"}}>
                   {msg2.img
