@@ -154,6 +154,32 @@ const getLoreDate = () => LORE_DATE_DEFAULT;
 const parseLoreTime = (str) => {
   if(!str) return null;
   const s = str.toLowerCase().trim();
+
+  // Format DD/MM/YY ou DD/MM/YYYY — ex: "17/02/12", "20/01/2012"
+  // (ancien format de saisie manuel avant l'ajout de LoreDateTimeInput)
+  const mSlash = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})(?:\s+(.+))?$/);
+  if(mSlash) {
+    const day = parseInt(mSlash[1]);
+    const month = parseInt(mSlash[2]);
+    if(month >= 1 && month <= 12 && day >= 1 && day <= 31) {
+      // Heure optionnelle après la date : "17/02/12 14h30"
+      let hour = null, min = 0;
+      if(mSlash[4]) {
+        const mT12 = mSlash[4].match(/(\d{1,2}):(\d{2})\s*(am|pm)/);
+        const mT24 = mSlash[4].match(/(\d+)h(\d*)/);
+        if(mT12) {
+          let h = parseInt(mT12[1]);
+          if(mT12[3]==='pm' && h!==12) h+=12;
+          if(mT12[3]==='am' && h===12) h=0;
+          hour=h; min=parseInt(mT12[2]);
+        } else if(mT24) {
+          hour=parseInt(mT24[1]); min=mT24[2]?parseInt(mT24[2]):0;
+        }
+      }
+      return {day, month, hour, min};
+    }
+  }
+
   const MONTHS = {jan:1,fév:2,feb:2,mar:3,avr:4,apr:4,mai:5,may:5,juin:6,jun:6,juil:7,jul:7,'aoû':8,aug:8,sep:9,oct:10,nov:11,'déc':12,dec:12};
   const mDay = s.match(/(\d+)\s+(jan|fév|feb|mar|avr|apr|mai|may|juin|jun|juil|jul|aoû|aug|sep|oct|nov|déc|dec)/);
   if(!mDay) return null;
