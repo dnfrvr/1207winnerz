@@ -18392,6 +18392,7 @@ const SharedPostsEditor = ({
 // group=true → expéditeurs nommés (glinda/eoghan/drew/elias/moi) ; sinon moi/eux.
 const parseComposerLines = (text, group, tab) => {
   const out = [];
+  let lastDate = null; // mémorise la date (jour+mois) du dernier message pour raccourci heure seule
   for(const rawLine of (text||"").split("\n")) {
     const line = rawLine.trim();
     if(!line) continue;
@@ -18401,7 +18402,24 @@ const parseComposerLines = (text, group, tab) => {
     let rest = m[2];
     let time = "maintenant";
     const tm = rest.match(/\|\s*(.+)$/);
-    if(tm) { time = tm[1].trim(); rest = rest.slice(0, tm.index).trim(); }
+    if(tm) {
+      const rawTime = tm[1].trim();
+      rest = rest.slice(0, tm.index).trim();
+      // Raccourci "heure seule" : si le segment après | est juste une heure (ex: 9:30am, 14h00)
+      // sans jour/mois, on la colle à la date du message précédent pour former un timestamp complet.
+      const isTimeOnly = /^(\d{1,2}:\d{2}\s*(am|pm)|\d{1,2}h\d{0,2})$/i.test(rawTime);
+      if(isTimeOnly && lastDate) {
+        time = `${lastDate}, ${rawTime}`;
+      } else {
+        time = rawTime;
+        // Mémoriser la partie "jour mois" ou "DD/MM/YY" pour le prochain raccourci
+        const p = parseLoreTime(rawTime);
+        if(p) {
+          const MONTHS_OUT=['','jan','fév','mar','avr','mai','juin','juil','aoû','sep','oct','nov','déc'];
+          lastDate = `${p.day} ${MONTHS_OUT[p.month]}`;
+        }
+      }
+    }
     if(group) {
       let from = (who==="moi"||who==="me") ? tab
         : (["glinda","eoghan","drew","elias"].includes(who) ? who : null);
@@ -18419,8 +18437,8 @@ const ThreadComposer = ({isGroup, tab, onApply}) => {
   const [open, setOpen] = useState(false);
   const [txt, setTxt]   = useState("");
   const placeholder = isGroup
-    ? "glinda: coucou tout le monde | 1 oct, 14h30\ndrew: salut\nmoi: j'arrive"
-    : "moi: salut ça va ?\neux: ouais et toi | 14h32";
+    ? "glinda: coucou tout le monde | 17 fév, 9:00am\ndrew: salut | 9:01am\nelias: j'arrive | 9:02am"
+    : "moi: salut ça va ? | 17 fév, 9:00am\neux: ouais et toi | 9:01am\neux: t'as vu le truc | 9:01am";
   const apply = (mode) => {
     const parsed = parseComposerLines(txt, isGroup, tab);
     if(!parsed.length) return;
@@ -18443,9 +18461,14 @@ const ThreadComposer = ({isGroup, tab, onApply}) => {
             <button onClick={()=>apply("append")}
               style={{background:"#fff",border:"1px solid #4f46e5",color:"#4f46e5",borderRadius:6,padding:"6px 14px",cursor:"pointer",fontSize:11,fontWeight:600}}>+ Ajouter à la fin</button>
           </div>
-          <div style={{fontSize:10,color:"#6b7280",lineHeight:1.5}}>
-            Une ligne par message : <code>expéditeur: texte | heure</code> (heure optionnelle).<br/>
-            Expéditeurs : {isGroup ? "glinda, eoghan, drew, elias, moi" : "moi, eux"}.
+          <div style={{fontSize:10,color:"#6b7280",lineHeight:1.8,background:"rgba(0,0,0,0.03)",borderRadius:6,padding:"8px 10px"}}>
+            <strong>Format :</strong> <code>expéditeur: texte | date+heure</code> — une ligne par message.<br/>
+            <strong>Expéditeurs :</strong> {isGroup ? "glinda, eoghan, drew, elias, moi" : "moi, eux"}<br/>
+            <strong>Formats de date+heure acceptés :</strong><br/>
+            &nbsp;• <code>17 fév, 9:00am</code> — format complet (jour mois, heure)<br/>
+            &nbsp;• <code>9:01am</code> — heure seule → hérite du jour du message précédent<br/>
+            &nbsp;• <code>17/02/12</code> — format DD/MM/YY (anciens échanges)<br/>
+            &nbsp;• Si omis, le message reçoit l'horodatage "maintenant"
           </div>
         </div>
       )}
