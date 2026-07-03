@@ -9061,7 +9061,7 @@ const mkData = () => ({
     },
     "instagram": {
       "handle": "glindarvf",
-      "displayName": "Glinda Rosalind",
+      "displayName": "Glinda Ravingfool",
       "bio": "éco @ uma · she/her · nouveau départ 🌸",
       "followers": 1204,
       "following": 312,
@@ -21803,8 +21803,18 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
       const mails = Array.isArray(rawMails) ? rawMails : curTabDef.defaultFn(un);
       const updMailList = (list) => upd(curTabDef.storageKey, {...(d[curTabDef.storageKey]||{}), [un]: list});
       const newMail = () => updMailList([...mails, {id:Date.now(), from:"", subj:"", preview:"", time:"6 oct, 10:00am", unread:mailAdmTab==="inbox"}]);
+      const DEFAULT_EMAILS = {glindatheverygood:"glindatheverygood@uma.edu",eoghan_masuda:"eoghan_masuda@uma.edu",dreww_orms:"dreww_orms@uma.edu",noteliasgreen:"noteliasgreen@uma.edu"};
+      const currentEmail = d.mailEmail || DEFAULT_EMAILS[un] || `${un}@uma.edu`;
       return (
         <div style={{display:"flex",flexDirection:"column",gap:12}}>
+          {/* Adresse mail du perso */}
+          <div style={{background:"rgba(255,255,255,0.85)",border:"1px solid rgba(0,0,0,0.07)",borderRadius:10,padding:"10px 14px",display:"flex",alignItems:"center",gap:10}}>
+            <div style={{flex:1}}>
+              <div style={{fontSize:10,color:"#9ca3af",fontWeight:600,letterSpacing:0.5,textTransform:"uppercase",marginBottom:4}}>Adresse email du perso</div>
+              <Field value={currentEmail} onChange={v=>upd("mailEmail",v)} style={{width:"100%"}} placeholder={`${un}@uma.edu`}/>
+            </div>
+            <div style={{fontSize:10,color:"#9ca3af",lineHeight:1.4,maxWidth:200}}>S'affiche dans le champ "À" des mails reçus sur ce téléphone</div>
+          </div>
           {/* 3 onglets */}
           <div className="adm-subtabs" style={{display:"flex",gap:0,background:"rgba(0,0,0,0.05)",borderRadius:10,padding:3,alignSelf:"stretch"}}>
             {MAIL_TAB_DEFS.map(t=>(
@@ -22502,7 +22512,7 @@ export default function App() {
               // Initialiser instagram si absent (nouvelle fonctionnalité v5)
               if(!remote[k]?.instagram) {
                 const igDefaults = {
-                  glinda: {handle:"glindarvf",displayName:"Glinda Rosalind",bio:"éco @ uma · she/her · nouveau départ 🌸",followers:1204,following:312,posts:[],avatar:null},
+                  glinda: {handle:"glindarvf",displayName:"Glinda Ravingfool",bio:"éco @ uma · she/her · nouveau départ 🌸",followers:1204,following:312,posts:[],avatar:null},
                   eoghan: {handle:"eoghan_masuda",displayName:"Eoghan Masuda",bio:"maths & STAPS @ uma · him/bo · si je poste c'est que glinda m'a dit de le faire",followers:614,following:88,posts:[],avatar:null},
                   drew:   {handle:"dreww_orms",displayName:"Drew Bates",bio:"",followers:234,following:102,posts:[],avatar:null},
                   elias:  {handle:"noteliasgreen",displayName:"Elias Green",bio:"",followers:445,following:48,posts:[],avatar:null},
@@ -23330,11 +23340,17 @@ const GmailScreen = ({data, isIos, accent, onBack}) => {
   const GM_AVATAR_COLORS = ["#E53935","#8E24AA","#1E88E5","#00897B","#F4511E","#3949AB","#039BE5","#7CB342","#D81B60","#F6BF26"];
   const gmAvatar = name => GM_AVATAR_COLORS[(name||" ").charCodeAt(0) % GM_AVATAR_COLORS.length];
 
-  const CHAR_DISPLAY = {
-    glindatheverygood: "Glinda Rosalind <glindatheverygood@uma.edu>",
+  const CHAR_DISPLAY_DEFAULTS = {
+    glindatheverygood: "Glinda Ravingfool <glindatheverygood@uma.edu>",
     eoghan_masuda:     "Eoghan Masuda <eoghan_masuda@uma.edu>",
     dreww_orms:        "Drew B. <dreww_orms@uma.edu>",
     noteliasgreen:     "Elias Green <noteliasgreen@uma.edu>",
+  };
+  // Utilise l'adresse mail personnalisée du perso si définie dans l'admin (data.mailEmail)
+  const charDisplayEmail = data.mailEmail || CHAR_DISPLAY_DEFAULTS[charUsername] || charUsername;
+  const CHAR_DISPLAY = {
+    ...CHAR_DISPLAY_DEFAULTS,
+    [charUsername]: charDisplayEmail,
   };
   const toAddress   = m => m.to || CHAR_DISPLAY[charUsername] || charUsername;
   const fromAddress = m => m.fromFull || m.from || "";
@@ -23344,15 +23360,19 @@ const GmailScreen = ({data, isIos, accent, onBack}) => {
   // ── Mail ouvert ──
   if(openMail) {
     const m = openMail;
+    const senderInitial = (m.from||"?")[0].toUpperCase();
+    const senderColor = gmAvatar(m.from);
+    const formattedTime = m.time ? loreRelativeLabel(m.time, data.loreDate||"2012-10-06") : "";
     return (
       <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden"}}>
+        {/* ── Navbar ── */}
         {isIos ? (
           <div style={{background:"linear-gradient(180deg,#6a8fc0,#3d5f8a)",padding:"6px 10px",display:"flex",alignItems:"center",gap:8,flexShrink:0,boxShadow:"0 1px 3px rgba(0,0,0,0.4)"}}>
-            <button onClick={()=>setOpenMail(null)} style={{background:`linear-gradient(180deg,#6a8fc0,#3d5f8a)`,border:"1px solid rgba(0,0,0,0.45)",borderRadius:6,color:"#fff",fontSize:11,fontWeight:"600",cursor:"pointer",padding:"3px 10px 3px 7px",display:"flex",alignItems:"center",gap:2,textShadow:"0 -1px 0 rgba(0,0,0,0.5)",boxShadow:"inset 0 1px 0 rgba(255,255,255,0.2)"}}>
+            <button onClick={()=>setOpenMail(null)} style={{background:"linear-gradient(180deg,#6a8fc0,#3d5f8a)",border:"1px solid rgba(0,0,0,0.45)",borderRadius:6,color:"#fff",fontSize:11,fontWeight:"600",cursor:"pointer",padding:"3px 10px 3px 7px",display:"flex",alignItems:"center",gap:2,textShadow:"0 -1px 0 rgba(0,0,0,0.5)",boxShadow:"inset 0 1px 0 rgba(255,255,255,0.2)"}}>
               <svg width="8" height="14" viewBox="0 0 8 14" fill="none"><path d="M7 1L1 7l6 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
               <span style={{fontSize:12,marginLeft:2}}>{curFolder.label}</span>
             </button>
-            <span style={{flex:1,textAlign:"center",color:"#fff",fontSize:13,fontWeight:600,textShadow:"0 1px 1px rgba(0,0,0,0.4)"}}>{curFolder.label}</span>
+            <span style={{flex:1,textAlign:"center",color:"#fff",fontSize:13,fontWeight:600,textShadow:"0 1px 1px rgba(0,0,0,0.4)"}}>Message</span>
             <span style={{width:70}}/>
           </div>
         ) : (
@@ -23366,42 +23386,61 @@ const GmailScreen = ({data, isIos, accent, onBack}) => {
         <div style={{flex:1,overflowY:"auto",background:"#fff"}}>
           {isIos ? (
             <>
-              <div style={{padding:"12px 14px 10px",borderBottom:"1px solid #e0dfe0"}}>
-                <div style={{fontSize:16,fontWeight:700,color:"#1a1a1a",lineHeight:1.3,fontFamily:"Helvetica,'Helvetica Neue',Arial,sans-serif"}}>{m.subj}</div>
+              {/* Objet */}
+              <div style={{padding:"14px 16px 10px",borderBottom:"1px solid #e8e8e8"}}>
+                <div style={{fontSize:17,fontWeight:700,color:"#1a1a1a",lineHeight:1.3,fontFamily:"Helvetica,'Helvetica Neue',Arial,sans-serif"}}>{m.subj||<em style={{color:"#999"}}>Sans objet</em>}</div>
               </div>
-              <div style={{background:"#f7f6f1",borderBottom:"1px solid #d9d8d2"}}>
-                {[["De",fromAddress(m)],["À",toAddress(m)],["Date",m.time||""]].map(([label,value],i,arr)=>(
-                  <div key={label} style={{display:"flex",alignItems:"flex-start",padding:"7px 14px",borderBottom:i<arr.length-1?"1px solid #e0dfe0":"none",gap:8,minHeight:30}}>
-                    <span style={{fontSize:12,fontWeight:600,color:"#888",width:36,flexShrink:0,paddingTop:1}}>{label}</span>
-                    <span style={{fontSize:12,color:"#1a1a1a",flex:1,lineHeight:1.4,wordBreak:"break-word"}}>{value}</span>
+              {/* Métadonnées expéditeur */}
+              <div style={{display:"flex",gap:12,alignItems:"flex-start",padding:"12px 16px",borderBottom:"1px solid #e8e8e8",background:"#fafafa"}}>
+                <div style={{width:38,height:38,borderRadius:"50%",background:senderColor,display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontWeight:700,fontSize:15,flexShrink:0}}>{senderInitial}</div>
+                <div style={{flex:1,minWidth:0}}>
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",gap:6}}>
+                    <span style={{fontSize:14,fontWeight:600,color:"#1a1a1a",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{fromAddress(m)}</span>
+                    <span style={{fontSize:11,color:"#888",flexShrink:0}}>{formattedTime}</span>
                   </div>
-                ))}
+                  <div style={{marginTop:3,fontSize:12,color:"#888",display:"flex",gap:4}}>
+                    <span>À</span>
+                    <span style={{flex:1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",color:"#555"}}>{toAddress(m)}</span>
+                  </div>
+                </div>
               </div>
-              <div style={{padding:"14px",fontSize:13,color:"#1a1a1a",lineHeight:1.7,whiteSpace:"pre-wrap"}}>{m.preview}</div>
+              {/* Corps du mail */}
+              <div style={{padding:"16px",fontSize:14,color:"#1a1a1a",lineHeight:1.75,whiteSpace:"pre-wrap",fontFamily:"Helvetica,'Helvetica Neue',Arial,sans-serif"}}>{m.preview||<span style={{color:"#ccc",fontStyle:"italic"}}>(corps vide)</span>}</div>
             </>
           ) : (
             <>
               <div style={{padding:"16px 16px 0"}}>
-                <div style={{fontSize:20,fontWeight:400,color:"#202124",lineHeight:1.3,marginBottom:16}}>{m.subj}</div>
+                <div style={{fontSize:20,fontWeight:400,color:"#202124",lineHeight:1.3,marginBottom:14}}>{m.subj||<em style={{color:"#999",fontSize:16}}>Sans objet</em>}</div>
               </div>
-              <div style={{padding:"0 16px 12px",display:"flex",gap:12,alignItems:"flex-start"}}>
-                <div style={{width:40,height:40,borderRadius:"50%",background:gmAvatar(m.from),display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontWeight:700,fontSize:16,flexShrink:0}}>{(m.from||"?")[0]}</div>
+              {/* Métadonnées Gmail */}
+              <div style={{padding:"0 16px 14px",display:"flex",gap:12,alignItems:"flex-start"}}>
+                <div style={{width:40,height:40,borderRadius:"50%",background:senderColor,display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontWeight:700,fontSize:16,flexShrink:0}}>{senderInitial}</div>
                 <div style={{flex:1,minWidth:0}}>
                   <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",gap:8,flexWrap:"wrap"}}>
                     <span style={{fontSize:14,fontWeight:600,color:"#202124"}}>{fromAddress(m)}</span>
-                    <span style={{fontSize:11,color:"#5f6368",flexShrink:0}}>{m.time||""}</span>
+                    <span style={{fontSize:11,color:"#5f6368",flexShrink:0}}>{formattedTime}</span>
                   </div>
-                  <div style={{marginTop:2,fontSize:12,color:"#5f6368",display:"flex",gap:4,alignItems:"baseline"}}>
+                  <div style={{marginTop:3,fontSize:12,color:"#5f6368",display:"flex",gap:4,alignItems:"baseline"}}>
                     <span style={{fontWeight:500}}>À</span>
                     <span style={{flex:1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{toAddress(m)}</span>
                   </div>
                 </div>
               </div>
-              <div style={{height:1,background:"#e0e0e0",margin:"0 16px 14px"}}/>
-              <div style={{padding:"0 16px 24px",fontSize:14,color:"#202124",lineHeight:1.7,whiteSpace:"pre-wrap"}}>{m.preview}</div>
+              <div style={{height:1,background:"#e0e0e0",margin:"0 16px 16px"}}/>
+              <div style={{padding:"0 16px 32px",fontSize:14,color:"#202124",lineHeight:1.75,whiteSpace:"pre-wrap"}}>{m.preview||<span style={{color:"#ccc",fontStyle:"italic"}}>(corps vide)</span>}</div>
             </>
           )}
         </div>
+        {/* ── Actions bottom (iOS) ── */}
+        {isIos && (
+          <div style={{borderTop:"1px solid #e0dfe0",padding:"6px 16px",display:"flex",justifyContent:"space-around",background:"linear-gradient(180deg,#b0b8c8,#a0a8b8)",flexShrink:0}}>
+            {[["↩","Répondre"],["→","Transférer"],["🗑","Supprimer"]].map(([ic,label])=>(
+              <button key={label} style={{background:"none",border:"none",color:"#fff",cursor:"default",display:"flex",flexDirection:"column",alignItems:"center",gap:2,fontSize:10,padding:"4px 8px",textShadow:"0 -1px 0 rgba(0,0,0,0.4)"}}>
+                <span style={{fontSize:18}}>{ic}</span>{label}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
     );
   }
@@ -23667,7 +23706,7 @@ const InstaScreen = ({data, isIos, accent, onBack}) => {
   const avatar    = ig.avatar   || data.avatar || null;
   const charKey   = data.username?.includes("glinda")?"glinda":data.username?.includes("eoghan")?"eoghan":data.username?.includes("drew")?"drew":"elias";
   // Nom affiché spécifique Instagram, sinon nom générique
-  const name      = ig.displayName || {glinda:"Glinda Rosalind",eoghan:"Eoghan Masuda",drew:"Drew Bates",elias:"Elias Green"}[charKey] || handleLo;
+  const name      = ig.displayName || {glinda:"Glinda Ravingfool",eoghan:"Eoghan Masuda",drew:"Drew Bates",elias:"Elias Green"}[charKey] || handleLo;
   const sharedAvatars = data.sharedThreads?._sharedAvatars || {};
   const coTaggedPosts = data._coTaggedInstaPosts || [];
   // Tri : épinglé toujours en premier, puis inversement chronologique pour le reste.
