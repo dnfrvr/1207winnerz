@@ -18723,8 +18723,61 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
   // ── Import JSON (additif) ──────────────────────────────────────────────────
   const [importOpen, setImportOpen]     = useState(false);
   const [restoreOpen, setRestoreOpen]   = useState(false);
+  const [exportOpen, setExportOpen]     = useState(false);
   const [snapshots, setSnapshots]       = useState([]);
-  const [restoreStatus, setRestoreStatus] = useState(null); // null | "loading" | "done" | "error"
+  const [restoreStatus, setRestoreStatus] = useState(null);
+  // Options d'export : scope (all | perso), contenu (full | textOnly | imagesOnly), et perso ciblé
+  const [exportScope, setExportScope]   = useState("all");     // "all" | "char"
+  const [exportChar, setExportChar]     = useState("glinda");  // clé du perso si scope=char
+  const [exportContent, setExportContent] = useState("full"); // "full" | "text" | "images"
+
+  // Filtrage du contenu selon le mode d'export
+  const IMG_FIELDS = new Set(["avatar","playlistCover","wallpaper","lockWallpaper","cover"]);
+  const isBase64 = v => typeof v === "string" && v.startsWith("data:");
+
+  const stripImages = (obj) => {
+    if(Array.isArray(obj)) return obj.map(stripImages);
+    if(obj && typeof obj === "object") {
+      return Object.fromEntries(Object.entries(obj).map(([k,v]) => [k, isBase64(v) ? null : stripImages(v)]));
+    }
+    return obj;
+  };
+  const keepOnlyImages = (obj) => {
+    if(Array.isArray(obj)) return obj.map(keepOnlyImages);
+    if(obj && typeof obj === "object") {
+      return Object.fromEntries(Object.entries(obj).map(([k,v]) => [k, isBase64(v) ? v : typeof v==="object"&&v!==null ? keepOnlyImages(v) : null]));
+    }
+    return obj;
+  };
+
+  const doExport = () => {
+    const raw = dataRef.current;
+    let payload;
+    if(exportScope === "char") {
+      const ck = exportChar;
+      payload = { [ck]: raw[ck], sharedThreads: raw.sharedThreads };
+    } else {
+      payload = raw;
+    }
+    let final;
+    if(exportContent === "text")   final = stripImages(payload);
+    else if(exportContent === "images") final = keepOnlyImages(payload);
+    else final = payload;
+
+    const json = JSON.stringify(final, null, 2);
+    const blob = new Blob([json], {type:"application/json"});
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement("a");
+    const charLabel = exportScope==="char" ? `_${exportChar}` : "";
+    const contentLabel = exportContent==="text"?"_texte":exportContent==="images"?"_images":"";
+    const d = new Date();
+    const dateStr = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+    a.href = url;
+    a.download = `findanna${charLabel}${contentLabel}_${dateStr}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    setExportOpen(false);
+  }; // null | "loading" | "done" | "error"
   const openRestorePanel = async () => {
     setRestoreOpen(true); setRestoreStatus("loading"); setSnapshots([]);
     if (!firebaseDb) { setRestoreStatus("error"); return; }
@@ -22239,6 +22292,12 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
               style={{background:"transparent",border:"none",color:"#6366f1",fontSize:11,cursor:"pointer",outline:"none",fontFamily:"monospace",fontWeight:600,width:110}}/>
           </div>}
 
+          {/* Export JSON */}
+          <button onClick={()=>setExportOpen(true)}
+            style={{background:"transparent",border:"1px solid #e5e7eb",color:"#374151",padding:"6px 12px",borderRadius:7,fontSize:12,cursor:"pointer",fontWeight:500}}>
+            📤 Exporter JSON
+          </button>
+
           {/* Import JSON */}
           <button onClick={()=>{ resetImport(); setImportOpen(true); }}
             style={{background:"transparent",border:"1px solid #e5e7eb",color:"#374151",padding:"6px 12px",borderRadius:7,fontSize:12,cursor:"pointer",fontWeight:500}}>
@@ -22336,6 +22395,75 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
         </div>
       </div>
 
+      {/* ── MODAL EXPORT JSON ────────────────────────────────────────────────── */}
+      {exportOpen && (
+        <div onClick={()=>setExportOpen(false)} style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.5)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:1002,padding:16}}>
+          <div onClick={e=>e.stopPropagation()} style={{background:"#fff",borderRadius:14,width:"min(480px,100%)",display:"flex",flexDirection:"column",overflow:"hidden",boxShadow:"0 20px 60px rgba(0,0,0,0.3)"}}>
+            <div style={{padding:"16px 20px",borderBottom:"1px solid #e5e7eb",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+              <div style={{fontWeight:700,fontSize:14,color:"#1a1a2e"}}>📤 Exporter JSON</div>
+              <button onClick={()=>setExportOpen(false)} style={{background:"none",border:"none",fontSize:18,color:"#9ca3af",cursor:"pointer"}}>×</button>
+            </div>
+            <div style={{padding:"16px 20px",display:"flex",flexDirection:"column",gap:16}}>
+              {/* Scope */}
+              <div>
+                <div style={{fontSize:11,fontWeight:700,color:"#6b7280",letterSpacing:0.5,textTransform:"uppercase",marginBottom:8}}>Périmètre</div>
+                <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+                  {[["all","🌍 Tout le projet"],["char","👤 Un seul perso"]].map(([v,label])=>(
+                    <button key={v} onClick={()=>setExportScope(v)}
+                      style={{padding:"8px 16px",borderRadius:8,border:"none",cursor:"pointer",fontSize:12,fontWeight:exportScope===v?700:500,
+                        background:exportScope===v?"linear-gradient(135deg,#6366f1,#8b5cf6)":"rgba(0,0,0,0.05)",
+                        color:exportScope===v?"#fff":"#374151",transition:"all 0.15s"}}>
+                      {label}
+                    </button>
+                  ))}
+                </div>
+                {exportScope==="char" && (
+                  <div style={{display:"flex",gap:8,flexWrap:"wrap",marginTop:8}}>
+                    {[["glinda","🌸 Glinda"],["eoghan","🌈 Eoghan"],["drew","🪱 Drew"],["elias","🖤 Elias"]].map(([ck,label])=>(
+                      <button key={ck} onClick={()=>setExportChar(ck)}
+                        style={{padding:"6px 14px",borderRadius:7,border:"none",cursor:"pointer",fontSize:11,fontWeight:exportChar===ck?700:500,
+                          background:exportChar===ck?"rgba(99,102,241,0.15)":"rgba(0,0,0,0.04)",
+                          color:exportChar===ck?"#6366f1":"#6b7280",transition:"all 0.15s"}}>
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+              {/* Contenu */}
+              <div>
+                <div style={{fontSize:11,fontWeight:700,color:"#6b7280",letterSpacing:0.5,textTransform:"uppercase",marginBottom:8}}>Contenu</div>
+                <div style={{display:"flex",flexDirection:"column",gap:6}}>
+                  {[
+                    ["full",   "📦 Texte + images", "Export complet — plus lourd mais rien ne manque"],
+                    ["text",   "📝 Texte uniquement", "Sans les photos en base64 — léger, rapide, lisible"],
+                    ["images", "🖼️ Images uniquement", "Seulement les photos (avatars, galerie, pochettes...)"],
+                  ].map(([v,label,desc])=>(
+                    <label key={v} onClick={()=>setExportContent(v)} style={{display:"flex",alignItems:"flex-start",gap:10,background:exportContent===v?"rgba(99,102,241,0.06)":"rgba(0,0,0,0.02)",border:`1px solid ${exportContent===v?"rgba(99,102,241,0.25)":"rgba(0,0,0,0.07)"}`,borderRadius:8,padding:"10px 12px",cursor:"pointer"}}>
+                      <input type="radio" readOnly checked={exportContent===v} style={{marginTop:2,flexShrink:0,accentColor:"#6366f1"}}/>
+                      <div>
+                        <div style={{fontSize:12,fontWeight:exportContent===v?700:500,color:exportContent===v?"#6366f1":"#374151"}}>{label}</div>
+                        <div style={{fontSize:11,color:"#9ca3af",marginTop:2}}>{desc}</div>
+                      </div>
+                    </label>
+                  ))}
+                </div>
+              </div>
+              <div style={{fontSize:11,color:"#9ca3af",lineHeight:1.5}}>
+                Le fichier téléchargé reflète l'état Firebase le plus récent — pas seulement ce qui est affiché à l'écran.
+              </div>
+            </div>
+            <div style={{padding:"12px 20px",borderTop:"1px solid #e5e7eb",display:"flex",justifyContent:"flex-end",gap:8}}>
+              <button onClick={()=>setExportOpen(false)} style={{background:"transparent",border:"1px solid #e5e7eb",color:"#374151",padding:"8px 14px",borderRadius:7,fontSize:12,cursor:"pointer"}}>Annuler</button>
+              <button onClick={doExport}
+                style={{background:"linear-gradient(135deg,#6366f1,#8b5cf6)",border:"none",color:"#fff",padding:"8px 18px",borderRadius:7,fontWeight:700,fontSize:12,cursor:"pointer"}}>
+                ⬇️ Télécharger
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ── MODAL RESTAURATION SNAPSHOT ─────────────────────────────────────── */}
       {restoreOpen && (
         <div onClick={()=>setRestoreOpen(false)} style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.5)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:1001,padding:16}}>
@@ -22378,7 +22506,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
             </div>
             <div style={{padding:"16px 20px",overflowY:"auto",flex:1,display:"flex",flexDirection:"column",gap:14}}>
               <div style={{fontSize:11,color:"#6b7280",lineHeight:1.5}}>
-                Choisis un fichier JSON (ex: une sauvegarde exportée depuis Firebase). Seules les catégories
+                Choisis un fichier JSON (export complet ou export par perso). Seules les catégories
                 listées ci-dessous sont prises en charge. L'import est <strong>toujours additif</strong> : les
                 items déjà présents (détectés par contenu) ne sont jamais dupliqués, et rien n'est supprimé
                 ni écrasé — ni dans cette catégorie, ni ailleurs.
