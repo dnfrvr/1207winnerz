@@ -18722,6 +18722,33 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
   }, [tab, data[tab]?.music]);
   // ── Import JSON (additif) ──────────────────────────────────────────────────
   const [importOpen, setImportOpen]     = useState(false);
+  const [restoreOpen, setRestoreOpen]   = useState(false);
+  const [snapshots, setSnapshots]       = useState([]);
+  const [restoreStatus, setRestoreStatus] = useState(null); // null | "loading" | "done" | "error"
+  const openRestorePanel = async () => {
+    setRestoreOpen(true); setRestoreStatus("loading"); setSnapshots([]);
+    if (!firebaseDb) { setRestoreStatus("error"); return; }
+    try {
+      const unsub = onValue(ref(firebaseDb, "_snapshots"), s => {
+        unsub();
+        const val = s.val() || {};
+        const list = Object.entries(val)
+          .map(([ts, snap]) => ({ts, label: snap.label, data: snap.data}))
+          .sort((a,b) => b.ts - a.ts); // plus récent en premier
+        setSnapshots(list);
+        setRestoreStatus(list.length ? null : "empty");
+      });
+    } catch(e) { setRestoreStatus("error"); }
+  };
+  const doRestore = async (snap) => {
+    if (!firebaseDb || !snap.data) return;
+    if (!window.confirm(`Restaurer l'état du ${snap.label} ?\nToutes les données actuelles seront remplacées.`)) return;
+    setRestoreStatus("loading");
+    try {
+      await set(ref(firebaseDb), snap.data);
+      setRestoreOpen(false); setRestoreStatus(null);
+    } catch(e) { setRestoreStatus("error"); }
+  };
   const [importParsed, setImportParsed] = useState(null);
   const [importError, setImportError]   = useState(null);
   const [importFileName, setImportFileName] = useState("");
@@ -18869,10 +18896,18 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
   const char = CHARACTERS.find(c=>c.key===tab);
   const d    = data[tab];
   const upd  = (key, val) => {
-    onUpdate(tab, {...d, [key]:val});
-    // L'avatar d'un perso doit être visible par tous (ex: dans le fil Tumblr des autres) — on le
-    // duplique donc dans une donnée partagée, en plus du champ normal data[tab].avatar.
-    if(key==="avatar") onUpdate("_sharedAvatars", {...(data.sharedThreads?._sharedAvatars||{}), [tab]: val});
+    // FIX CRITIQUE : avant, upd utilisait `{...d, [key]:val}` où `d = data[tab]` est une
+    // copie figée au dernier rendu. Si on fait plusieurs modifications dans la même session
+    // admin (ex: ajouter des messages PUIS uploader une photo de galerie), chaque appel à
+    // upd écrase tout l'objet du perso avec une version qui ne contient que les changements
+    // faits AVANT le dernier rendu — effaçant silencieusement tout ce qui a été ajouté
+    // entre-temps. C'est exactement la même classe de bug que celui corrigé en mai sur
+    // Facebook/Twitter/Tumblr, mais upd() elle-même n'avait jamais été corrigée.
+    // Fix : on lit toujours depuis dataRef.current[tab] (maintenu à jour en continu par
+    // useEffect, indépendamment des re-renders) au moment de l'écriture.
+    const freshChar = dataRef.current[tab] || {};
+    onUpdate(tab, {...freshChar, [key]:val});
+    if(key==="avatar") onUpdate("_sharedAvatars", {...(dataRef.current.sharedThreads?._sharedAvatars||{}), [tab]: val});
   };
 
   const save = () => { setSaved(true); setTimeout(()=>setSaved(false), 2000); };
@@ -22210,6 +22245,12 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
             📥 Importer JSON
           </button>
 
+          {/* Restaurer un snapshot */}
+          <button onClick={openRestorePanel}
+            style={{background:"transparent",border:"1px solid #e5e7eb",color:"#374151",padding:"6px 12px",borderRadius:7,fontSize:12,cursor:"pointer",fontWeight:500}}>
+            🕐 Restaurer
+          </button>
+
           {/* Back */}
           <button onClick={onExit}
             style={{background:"transparent",border:"1px solid #e5e7eb",color:"#374151",padding:"6px 12px",borderRadius:7,fontSize:12,cursor:"pointer",fontWeight:500}}>
@@ -22294,6 +22335,38 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
           </div>
         </div>
       </div>
+
+      {/* ── MODAL RESTAURATION SNAPSHOT ─────────────────────────────────────── */}
+      {restoreOpen && (
+        <div onClick={()=>setRestoreOpen(false)} style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.5)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:1001,padding:16}}>
+          <div onClick={e=>e.stopPropagation()} style={{background:"#fff",borderRadius:14,width:"min(500px,100%)",maxHeight:"80vh",display:"flex",flexDirection:"column",overflow:"hidden",boxShadow:"0 20px 60px rgba(0,0,0,0.3)"}}>
+            <div style={{padding:"16px 20px",borderBottom:"1px solid #e5e7eb",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+              <div>
+                <div style={{fontWeight:700,fontSize:14,color:"#1a1a2e"}}>🕐 Restaurer une version</div>
+                <div style={{fontSize:11,color:"#9ca3af",marginTop:2}}>Un snapshot automatique est pris toutes les 30s lors de tes modifications. Les {snapshots.length||"…"} derniers sont conservés.</div>
+              </div>
+              <button onClick={()=>setRestoreOpen(false)} style={{background:"none",border:"none",fontSize:18,color:"#9ca3af",cursor:"pointer"}}>×</button>
+            </div>
+            <div style={{flex:1,overflowY:"auto",padding:"12px 16px",display:"flex",flexDirection:"column",gap:8}}>
+              {restoreStatus==="loading" && <div style={{textAlign:"center",color:"#9ca3af",padding:24,fontSize:13}}>Chargement…</div>}
+              {restoreStatus==="empty" && <div style={{textAlign:"center",color:"#9ca3af",padding:24,fontSize:13}}>Aucun snapshot trouvé. Les snapshots se créent automatiquement à partir de la prochaine modification.</div>}
+              {restoreStatus==="error" && <div style={{background:"rgba(239,68,68,0.07)",border:"1px solid rgba(239,68,68,0.2)",color:"#ef4444",borderRadius:8,padding:"10px 14px",fontSize:12}}>Erreur de lecture. Vérifie la connexion Firebase.</div>}
+              {snapshots.map((snap,i)=>(
+                <div key={snap.ts} style={{display:"flex",alignItems:"center",gap:12,background:i===0?"rgba(99,102,241,0.05)":"rgba(0,0,0,0.02)",border:`1px solid ${i===0?"rgba(99,102,241,0.2)":"rgba(0,0,0,0.07)"}`,borderRadius:10,padding:"10px 14px"}}>
+                  <div style={{flex:1}}>
+                    <div style={{fontSize:13,fontWeight:i===0?700:500,color:i===0?"#6366f1":"#374151"}}>{snap.label}{i===0?" — le plus récent":""}</div>
+                    <div style={{fontSize:10,color:"#9ca3af",marginTop:2}}>{new Date(parseInt(snap.ts)).toLocaleString("fr-FR")}</div>
+                  </div>
+                  <button onClick={()=>doRestore(snap)}
+                    style={{background:i===0?"linear-gradient(135deg,#6366f1,#8b5cf6)":"rgba(0,0,0,0.06)",border:"none",color:i===0?"#fff":"#374151",padding:"7px 14px",borderRadius:7,fontWeight:600,fontSize:12,cursor:"pointer"}}>
+                    Restaurer
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── MODAL IMPORT JSON ────────────────────────────────────────────────── */}
       {importOpen && (
@@ -22443,6 +22516,45 @@ export default function App() {
   const [syncStatus, setSyncStatus] = useState(firebaseDb ? "connecting" : "offline"); // "connecting" | "synced" | "offline" | "error"
   const pendingFirebaseUpdate = useRef({});
   const firebaseTimer = useRef(null);
+  const lastSnapshotTime = useRef(0); // pour ne pas spammer les snapshots (1 max toutes les 30s)
+  const MAX_SNAPSHOTS = 10;
+
+  // ── Snapshots automatiques ────────────────────────────────────────────────────
+  // Avant chaque envoi vers Firebase, on sauvegarde une copie de l'état complet dans
+  // _snapshots/{timestamp}. On garde les MAX_SNAPSHOTS derniers et on purge les plus anciens.
+  // Ça donne un rollback en 2 clics depuis l'admin, sans migrer de base de données.
+  // Limite : les snapshots contenant des images base64 volumineuses peuvent être lourds —
+  // on n'en prend donc qu'un au maximum toutes les 30 secondes pour éviter de saturer le
+  // quota gratuit Firebase (1 GB de stockage / 10 GB de bande passante par mois).
+  const takeSnapshot = async (currentData) => {
+    if (!firebaseDb) return;
+    const now = Date.now();
+    if (now - lastSnapshotTime.current < 30_000) return; // throttle 30s
+    lastSnapshotTime.current = now;
+    try {
+      // Lire la liste des snapshots existants pour en supprimer les plus anciens
+      const snapRef = ref(firebaseDb, "_snapshots");
+      const snap = await new Promise(resolve => {
+        const { onValue: ov } = require === undefined ? window.firebaseOnValue || {} : {};
+        // Simple one-time read via onValue with immediate unsubscribe
+        const unsub = onValue(snapRef, s => { resolve(s.val()); unsub(); });
+      });
+      const existing = snap ? Object.keys(snap).sort() : [];
+      const toDelete = existing.length >= MAX_SNAPSHOTS ? existing.slice(0, existing.length - MAX_SNAPSHOTS + 1) : [];
+      const updates = {};
+      toDelete.forEach(ts => { updates[`_snapshots/${ts}`] = null; });
+      // Créer le nouveau snapshot — on exclut les snapshots eux-mêmes pour éviter la récursion
+      const { _snapshots, ...dataWithoutSnapshots } = currentData || {};
+      updates[`_snapshots/${now}`] = {
+        ts: now,
+        label: new Date(now).toLocaleString("fr-FR"),
+        data: dataWithoutSnapshots,
+      };
+      await update(ref(firebaseDb), updates);
+    } catch(e) {
+      console.warn("[snapshot] Échec :", e.message);
+    }
+  };
   const hasReceivedFirstSnapshot = useRef(false);
 
   // Synchro temps réel : écoute la base Firebase et reflète tout changement (fait par n'importe qui,
@@ -22569,6 +22681,8 @@ export default function App() {
     firebaseTimer.current = setTimeout(() => {
       const updates = pendingFirebaseUpdate.current;
       pendingFirebaseUpdate.current = {};
+      // Snapshot avant l'écriture (throttlé à 1 toutes les 30s)
+      takeSnapshot(dataRef.current).catch(()=>{});
       update(ref(firebaseDb), updates).catch((e) => {
         console.error("[sync] Échec d'envoi vers Firebase :", e);
         setSyncStatus("error");
@@ -24109,6 +24223,3 @@ const ShazamScreen = ({isIos, accent}) => (
     </div>
   </AppSkeleton>
 );
-
-// Wikipedia (Drew + Elias)
-
