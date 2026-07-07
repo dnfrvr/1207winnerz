@@ -1,8 +1,11 @@
-# Si un netlify.toml existe déjà à la racine du repo, ajoute juste ce bloc [functions]
-# dedans (ne duplique pas tout le fichier).
+[build]
+  command   = "npm run build"
+  publish   = "dist"
+
 [functions]
   directory = "netlify/functions"
 
-[build]
-  # Adapte si ta commande/dossier de build sont différents.
-  publish = "dist"
+[[redirects]]
+  from   = "/*"
+  to     = "/index.html"
+  status = 200
