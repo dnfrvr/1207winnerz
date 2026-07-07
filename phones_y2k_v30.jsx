@@ -19017,6 +19017,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
   const [galSection, setGalSection] = useState("roll"); // "roll" | "deleted" | "albums"
   const [calCollapsedSet, setCalCollapsedSet] = useState(new Set()); // jours du calendrier explicitement OUVERTS (fermé par défaut)
   const [isMobile, setIsMobile] = useState(() => document.documentElement.clientWidth < 700);
+  const [burgerOpen, setBurgerOpen] = useState(false);
   const [isNarrow, setIsNarrow] = useState(() => document.documentElement.clientWidth < 500);
   const adminRootRef = React.useRef(null);
   useEffect(() => {
@@ -20317,96 +20318,12 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
           </div>
         </div>
 
-        {/* ── Logique musique réécrite de zéro ──────────────────────────────────
-            AVANT : seul onCoverChange lisait/écrivait via dataRef.current (état le plus frais).
-            Tous les autres champs (titre/artiste/album/durée, réordonnancement, suppression,
-            ajout, et même l'auto-fix des ids manquants) passaient par upd(), qui réécrit TOUT
-            l'objet du perso ({...d, music: ...}) à partir de `d`, une copie figée au rendu
-            précédent. Comme l'upload de pochette est asynchrone (FileReader) et donc plus lent
-            qu'une frappe clavier, taper quoi que ce soit juste après un upload écrasait
-            silencieusement la pochette qui venait d'être posée (et potentiellement d'autres
-            champs du perso au passage) — exactement la même classe de bug que celui déjà
-            corrigé sur Facebook/Twitter/Tumblr/Instagram/Messages plus tôt dans la conversation.
-            APRÈS : toute mutation de `music` relit dataRef.current[tab] juste avant d'écrire,
-            et n'écrit QUE la clé "music" (jamais tout l'objet du perso). */}
-        {(()=>{
-          const music = d.music||[];
-          // updMusic : seul point d'écriture pour le tableau music, toujours basé sur l'état frais.
-          // `mutate` reçoit le tableau music le plus à jour et retourne le nouveau tableau voulu —
-          // ça élimine toute fenêtre de course entre deux mutations rapprochées (texte + upload).
-          const updMusic = (mutate) => {
-            const freshChar = dataRef.current[tab] || {};
-            const freshMusic = freshChar.music || [];
-            const nextMusic = mutate(freshMusic);
-            onUpdate(tab, {...freshChar, music: nextMusic});
-          };
-          return music.map((track,i)=>(
-            <MusicTrackRow
-              key={track.id||i}
-              track={track}
-              index={i}
-              total={music.length}
-              onCoverChange={file=>{
-                const trackId = track.id;
-                const r = new UploadReader();
-                r.onload = ev => updMusic(freshMusic => {
-                  const idx = trackId ? freshMusic.findIndex(t=>t.id===trackId) : i;
-                  if(idx<0||idx>=freshMusic.length) return freshMusic;
-                  const next = [...freshMusic];
-                  next[idx] = {...next[idx], cover: ev.target.result};
-                  return next;
-                });
-                r.readAsDataURL(file);
-              }}
-              onFieldChange={(field,val)=>{
-                const trackId = track.id;
-                updMusic(freshMusic => {
-                  const idx = trackId ? freshMusic.findIndex(t=>t.id===trackId) : i;
-                  if(idx<0||idx>=freshMusic.length) return freshMusic;
-                  const next = [...freshMusic];
-                  next[idx] = {...next[idx], [field]:val};
-                  return next;
-                });
-              }}
-              onMoveUp={()=>{
-                const trackId = track.id;
-                updMusic(freshMusic => {
-                  const idx = trackId ? freshMusic.findIndex(t=>t.id===trackId) : i;
-                  if(idx<=0||idx>=freshMusic.length) return freshMusic;
-                  const next = [...freshMusic];
-                  [next[idx-1],next[idx]] = [next[idx],next[idx-1]];
-                  return next;
-                });
-              }}
-              onMoveDown={()=>{
-                const trackId = track.id;
-                updMusic(freshMusic => {
-                  const idx = trackId ? freshMusic.findIndex(t=>t.id===trackId) : i;
-                  if(idx<0||idx>=freshMusic.length-1) return freshMusic;
-                  const next = [...freshMusic];
-                  [next[idx+1],next[idx]] = [next[idx],next[idx+1]];
-                  return next;
-                });
-              }}
-              onDelete={()=>{
-                const trackId = track.id;
-                updMusic(freshMusic => trackId ? freshMusic.filter(t=>t.id!==trackId) : freshMusic.filter((_,j)=>j!==i));
-              }}
-            />
-          ));
-        })()}
-        <button onClick={()=>{
-          const freshChar = dataRef.current[tab] || {};
-          const freshMusic = freshChar.music || [];
-          onUpdate(tab, {...freshChar, music: [{id:Date.now(),title:"",artist:"",duration:"3:00"},...freshMusic]});
-        }}
-          style={{background:"rgba(99,102,241,0.08)",border:"1px dashed rgba(99,102,241,0.4)",color:"#6366f1",borderRadius:8,padding:"10px 18px",cursor:"pointer",fontSize:12,fontWeight:600}}>+ Add manually</button>
-
         {/* ── Playlists ────────────────────────────────────────────────────────
             Même principe anti-closure-périmée que le reste de la musique : updPlaylists relit
             toujours dataRef.current[tab].playlists juste avant d'écrire, et n'écrit que la clé
-            "playlists" (jamais tout l'objet du perso). */}
-        <div style={{marginTop:12,paddingTop:12,borderTop:"1px solid rgba(0,0,0,0.08)",display:"flex",flexDirection:"column",gap:10}}>
+            "playlists" (jamais tout l'objet du perso). Placée avant la liste des chansons pour
+            qu'on gère les playlists avant de scroller tous les morceaux. */}
+        <div style={{display:"flex",flexDirection:"column",gap:10}}>
           <div style={{fontSize:13,fontWeight:700,color:"#374151"}}>Playlists</div>
           {(()=>{
             const playlists = d.playlists || [];
@@ -20422,6 +20339,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
               {playlists.map((pl,pi)=>{
                 const isOpen = openPlaylistAdmin===pl.id;
                 const trackIds = pl.trackIds||[];
+                const allSelected = music.length>0 && music.every(t=>trackIds.includes(t.id));
                 return (
                   <div key={pl.id} className="adm-card" style={{background:"rgba(255,255,255,0.85)",borderRadius:10,border:"1px solid rgba(0,0,0,0.07)",padding:10,display:"flex",flexDirection:"column",gap:8}}>
                     <div style={{display:"flex",gap:8,alignItems:"center",flexWrap:"wrap"}}>
@@ -20461,25 +20379,44 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                       }} className="adm-del-btn" style={{background:"none",border:"none",color:"#d1d5db",cursor:"pointer",fontSize:16,padding:"2px 6px",borderRadius:5}}>×</button>
                     </div>
                     {isOpen && (
-                      <div style={{display:"flex",flexDirection:"column",gap:4,maxHeight:220,overflowY:"auto",background:"rgba(0,0,0,0.02)",borderRadius:8,padding:8}}>
-                        {music.length===0 && <div style={{fontSize:11,color:"#9ca3af"}}>Aucun morceau dans la bibliothèque de ce perso.</div>}
-                        {music.map(track=>{
-                          const checked = trackIds.includes(track.id);
-                          return (
-                            <label key={track.id} style={{display:"flex",alignItems:"center",gap:8,fontSize:12,color:"#374151",cursor:"pointer",padding:"3px 4px"}}>
-                              <input type="checkbox" checked={checked} onChange={()=>{
-                                updPlaylists(fresh=>{
-                                  const idx=fresh.findIndex(p=>p.id===pl.id);
-                                  if(idx<0) return fresh;
-                                  const curIds = fresh[idx].trackIds||[];
-                                  const nextIds = curIds.includes(track.id) ? curIds.filter(id=>id!==track.id) : [...curIds, track.id];
-                                  const next=[...fresh]; next[idx]={...next[idx],trackIds:nextIds}; return next;
-                                });
-                              }}/>
-                              <span style={{flex:1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{track.title||"(sans titre)"} — <span style={{color:"#9ca3af"}}>{track.artist}</span></span>
-                            </label>
-                          );
-                        })}
+                      <div style={{display:"flex",flexDirection:"column",gap:8}}>
+                        <div style={{display:"flex",gap:8}}>
+                          <button onClick={()=>{
+                            updPlaylists(fresh=>{
+                              const idx=fresh.findIndex(p=>p.id===pl.id);
+                              if(idx<0) return fresh;
+                              const allIds = music.map(t=>t.id);
+                              const next=[...fresh]; next[idx]={...next[idx],trackIds:allIds}; return next;
+                            });
+                          }} disabled={allSelected} style={{background:allSelected?"rgba(0,0,0,0.03)":"rgba(34,197,94,0.1)",border:"1px solid rgba(34,197,94,0.3)",color:allSelected?"#9ca3af":"#16a34a",padding:"5px 10px",borderRadius:7,fontWeight:600,fontSize:11,cursor:allSelected?"default":"pointer"}}>+ Tout ajouter</button>
+                          <button onClick={()=>{
+                            updPlaylists(fresh=>{
+                              const idx=fresh.findIndex(p=>p.id===pl.id);
+                              if(idx<0) return fresh;
+                              const next=[...fresh]; next[idx]={...next[idx],trackIds:[]}; return next;
+                            });
+                          }} disabled={trackIds.length===0} style={{background:"transparent",border:"1px solid #e5e7eb",color:trackIds.length===0?"#d1d5db":"#6b7280",padding:"5px 10px",borderRadius:7,fontWeight:600,fontSize:11,cursor:trackIds.length===0?"default":"pointer"}}>Tout retirer</button>
+                        </div>
+                        <div style={{display:"flex",flexDirection:"column",gap:4,maxHeight:220,overflowY:"auto",background:"rgba(0,0,0,0.02)",borderRadius:8,padding:8}}>
+                          {music.length===0 && <div style={{fontSize:11,color:"#9ca3af"}}>Aucun morceau dans la bibliothèque de ce perso.</div>}
+                          {music.map(track=>{
+                            const checked = trackIds.includes(track.id);
+                            return (
+                              <label key={track.id} style={{display:"flex",alignItems:"center",gap:8,fontSize:12,color:"#374151",cursor:"pointer",padding:"3px 4px"}}>
+                                <input type="checkbox" checked={checked} onChange={()=>{
+                                  updPlaylists(fresh=>{
+                                    const idx=fresh.findIndex(p=>p.id===pl.id);
+                                    if(idx<0) return fresh;
+                                    const curIds = fresh[idx].trackIds||[];
+                                    const nextIds = curIds.includes(track.id) ? curIds.filter(id=>id!==track.id) : [...curIds, track.id];
+                                    const next=[...fresh]; next[idx]={...next[idx],trackIds:nextIds}; return next;
+                                  });
+                                }}/>
+                                <span style={{flex:1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{track.title||"(sans titre)"} — <span style={{color:"#9ca3af"}}>{track.artist}</span></span>
+                              </label>
+                            );
+                          })}
+                        </div>
                       </div>
                     )}
                   </div>
@@ -20490,6 +20427,94 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
               }} style={{background:"rgba(99,102,241,0.08)",border:"1px dashed rgba(99,102,241,0.4)",color:"#6366f1",borderRadius:8,padding:"8px 16px",cursor:"pointer",fontSize:12,fontWeight:600,alignSelf:"flex-start"}}>+ Nouvelle playlist</button>
             </>;
           })()}
+        </div>
+
+        <div style={{marginTop:2,paddingTop:12,borderTop:"1px solid rgba(0,0,0,0.08)",display:"flex",flexDirection:"column",gap:10}}>
+          <div style={{fontSize:13,fontWeight:700,color:"#374151"}}>Chansons</div>
+          {/* ── Logique musique réécrite de zéro ──────────────────────────────────
+              AVANT : seul onCoverChange lisait/écrivait via dataRef.current (état le plus frais).
+              Tous les autres champs (titre/artiste/album/durée, réordonnancement, suppression,
+              ajout, et même l'auto-fix des ids manquants) passaient par upd(), qui réécrit TOUT
+              l'objet du perso ({...d, music: ...}) à partir de `d`, une copie figée au rendu
+              précédent. Comme l'upload de pochette est asynchrone (FileReader) et donc plus lent
+              qu'une frappe clavier, taper quoi que ce soit juste après un upload écrasait
+              silencieusement la pochette qui venait d'être posée (et potentiellement d'autres
+              champs du perso au passage) — exactement la même classe de bug que celui déjà
+              corrigé sur Facebook/Twitter/Tumblr/Instagram/Messages plus tôt dans la conversation.
+              APRÈS : toute mutation de `music` relit dataRef.current[tab] juste avant d'écrire,
+              et n'écrit QUE la clé "music" (jamais tout l'objet du perso). */}
+          {(()=>{
+            const music = d.music||[];
+            // updMusic : seul point d'écriture pour le tableau music, toujours basé sur l'état frais.
+            // `mutate` reçoit le tableau music le plus à jour et retourne le nouveau tableau voulu —
+            // ça élimine toute fenêtre de course entre deux mutations rapprochées (texte + upload).
+            const updMusic = (mutate) => {
+              const freshChar = dataRef.current[tab] || {};
+              const freshMusic = freshChar.music || [];
+              const nextMusic = mutate(freshMusic);
+              onUpdate(tab, {...freshChar, music: nextMusic});
+            };
+            return music.map((track,i)=>(
+              <MusicTrackRow
+                key={track.id||i}
+                track={track}
+                index={i}
+                total={music.length}
+                onCoverChange={file=>{
+                  const trackId = track.id;
+                  const r = new UploadReader();
+                  r.onload = ev => updMusic(freshMusic => {
+                    const idx = trackId ? freshMusic.findIndex(t=>t.id===trackId) : i;
+                    if(idx<0||idx>=freshMusic.length) return freshMusic;
+                    const next = [...freshMusic];
+                    next[idx] = {...next[idx], cover: ev.target.result};
+                    return next;
+                  });
+                  r.readAsDataURL(file);
+                }}
+                onFieldChange={(field,val)=>{
+                  const trackId = track.id;
+                  updMusic(freshMusic => {
+                    const idx = trackId ? freshMusic.findIndex(t=>t.id===trackId) : i;
+                    if(idx<0||idx>=freshMusic.length) return freshMusic;
+                    const next = [...freshMusic];
+                    next[idx] = {...next[idx], [field]:val};
+                    return next;
+                  });
+                }}
+                onMoveUp={()=>{
+                  const trackId = track.id;
+                  updMusic(freshMusic => {
+                    const idx = trackId ? freshMusic.findIndex(t=>t.id===trackId) : i;
+                    if(idx<=0||idx>=freshMusic.length) return freshMusic;
+                    const next = [...freshMusic];
+                    [next[idx-1],next[idx]] = [next[idx],next[idx-1]];
+                    return next;
+                  });
+                }}
+                onMoveDown={()=>{
+                  const trackId = track.id;
+                  updMusic(freshMusic => {
+                    const idx = trackId ? freshMusic.findIndex(t=>t.id===trackId) : i;
+                    if(idx<0||idx>=freshMusic.length-1) return freshMusic;
+                    const next = [...freshMusic];
+                    [next[idx+1],next[idx]] = [next[idx],next[idx+1]];
+                    return next;
+                  });
+                }}
+                onDelete={()=>{
+                  const trackId = track.id;
+                  updMusic(freshMusic => trackId ? freshMusic.filter(t=>t.id!==trackId) : freshMusic.filter((_,j)=>j!==i));
+                }}
+              />
+            ));
+          })()}
+          <button onClick={()=>{
+            const freshChar = dataRef.current[tab] || {};
+            const freshMusic = freshChar.music || [];
+            onUpdate(tab, {...freshChar, music: [{id:Date.now(),title:"",artist:"",duration:"3:00"},...freshMusic]});
+          }}
+            style={{background:"rgba(99,102,241,0.08)",border:"1px dashed rgba(99,102,241,0.4)",color:"#6366f1",borderRadius:8,padding:"10px 18px",cursor:"pointer",fontSize:12,fontWeight:600}}>+ Add manually</button>
         </div>
       </div>
     );
@@ -22461,12 +22486,54 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
         {/* Right actions */}
         <div className="adm-topbar-right" style={{display:"flex",alignItems:"center",gap:6,paddingLeft:isMobile?0:12,borderLeft:isMobile?"none":"1px solid #f0f0f0",flexShrink:0,order:isMobile?1:0,marginLeft:isMobile?"auto":0}}>
 
+          {isMobile ? (
+            <div style={{position:"relative"}}>
+              <button onClick={()=>setBurgerOpen(o=>!o)}
+                style={{background:burgerOpen?"#f3f4f6":"transparent",border:"1px solid #e5e7eb",color:"#374151",padding:"6px 10px",borderRadius:7,fontSize:15,cursor:"pointer",lineHeight:1}}>
+                ☰
+              </button>
+              {burgerOpen && <>
+                {/* Overlay invisible pour fermer le menu en cliquant en dehors */}
+                <div onClick={()=>setBurgerOpen(false)} style={{position:"fixed",inset:0,zIndex:40}}/>
+                <div style={{position:"absolute",top:"calc(100% + 6px)",right:0,background:"#fff",border:"1px solid #e5e7eb",borderRadius:10,boxShadow:"0 10px 30px rgba(0,0,0,0.15)",padding:8,display:"flex",flexDirection:"column",gap:6,zIndex:50,minWidth:210}}>
+
+                  <div style={{display:"flex",alignItems:"center",gap:5,background:"#f8fafc",border:"1px solid #e5e7eb",borderRadius:7,padding:"5px 9px"}}>
+                    <span style={{fontSize:12}}>📅</span>
+                    <input type="date" value={loreDate} onChange={e=>onLoreDateChange(e.target.value)}
+                      style={{background:"transparent",border:"none",color:"#6366f1",fontSize:11,cursor:"pointer",outline:"none",fontFamily:"monospace",fontWeight:600,flex:1}}/>
+                  </div>
+
+                  <button onClick={()=>{setExportOpen(true); setBurgerOpen(false);}}
+                    style={{background:"transparent",border:"1px solid #e5e7eb",color:"#374151",padding:"8px 12px",borderRadius:7,fontSize:12,cursor:"pointer",fontWeight:500,textAlign:"left"}}>
+                    📤 Exporter JSON
+                  </button>
+
+                  <button onClick={()=>{ resetImport(); setImportOpen(true); setBurgerOpen(false); }}
+                    style={{background:"transparent",border:"1px solid #e5e7eb",color:"#374151",padding:"8px 12px",borderRadius:7,fontSize:12,cursor:"pointer",fontWeight:500,textAlign:"left"}}>
+                    📥 Importer JSON
+                  </button>
+
+                  <button onClick={()=>{ openRestorePanel(); setBurgerOpen(false); }}
+                    style={{background:"transparent",border:"1px solid #e5e7eb",color:"#374151",padding:"8px 12px",borderRadius:7,fontSize:12,cursor:"pointer",fontWeight:500,textAlign:"left"}}>
+                    🕐 Restaurer
+                  </button>
+
+                  <button onClick={()=>{ setBurgerOpen(false); onExit(); }}
+                    style={{background:"transparent",border:"1px solid #e5e7eb",color:"#374151",padding:"8px 12px",borderRadius:7,fontSize:12,cursor:"pointer",fontWeight:500,textAlign:"left"}}>
+                    ← Retour
+                  </button>
+
+                </div>
+              </>}
+            </div>
+          ) : <>
+
           {/* Date lore */}
-          {!isMobile && <div style={{display:"flex",alignItems:"center",gap:5,background:"#f8fafc",border:"1px solid #e5e7eb",borderRadius:7,padding:"5px 9px"}}>
+          <div style={{display:"flex",alignItems:"center",gap:5,background:"#f8fafc",border:"1px solid #e5e7eb",borderRadius:7,padding:"5px 9px"}}>
             <span style={{fontSize:12}}>📅</span>
             <input type="date" value={loreDate} onChange={e=>onLoreDateChange(e.target.value)}
               style={{background:"transparent",border:"none",color:"#6366f1",fontSize:11,cursor:"pointer",outline:"none",fontFamily:"monospace",fontWeight:600,width:110}}/>
-          </div>}
+          </div>
 
           {/* Export JSON */}
           <button onClick={()=>setExportOpen(true)}
@@ -22491,6 +22558,8 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
             style={{background:"transparent",border:"1px solid #e5e7eb",color:"#374151",padding:"6px 12px",borderRadius:7,fontSize:12,cursor:"pointer",fontWeight:500}}>
             ← Retour
           </button>
+
+          </>}
         </div>
       </div>
 
