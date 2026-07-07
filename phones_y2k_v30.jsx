@@ -18783,6 +18783,8 @@ const MsgMoveBtn = ({dir, onClick, disabled}) => (
 const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDate, onLoreDateChange}) => {
   const [tab, setTab]         = useState("glinda");
   const [openPlaylistAdmin, setOpenPlaylistAdmin] = useState(null);
+  const [spotifyLinkByPl, setSpotifyLinkByPl] = useState({});
+  const [spotifyStatusByPl, setSpotifyStatusByPl] = useState({});
   // Toujours à jour, contrairement à `data`/`d` qui sont figés dans la closure du render en cours.
   // Indispensable pour les callbacks asynchrones (upload d'image) : par le temps que l'upload
   // termine, `data` a pu changer (autre champ modifié, sync Firebase...) — lire dataRef.current
@@ -20380,6 +20382,66 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                     </div>
                     {isOpen && (
                       <div style={{display:"flex",flexDirection:"column",gap:8}}>
+
+                        {/* ── Import Spotify ──────────────────────────────────────────────
+                            Appelle une fonction serverless Netlify (netlify/functions/spotify-playlist.js)
+                            qui fait l'auth Client Credentials + l'appel Spotify côté serveur — le Client
+                            Secret Spotify ne transite jamais côté navigateur. Dédoublonne par titre+artiste
+                            (insensible à la casse) avant d'ajouter les nouveaux morceaux à `music`. */}
+                        <div style={{display:"flex",gap:6,flexWrap:"wrap",alignItems:"center",background:"rgba(30,215,96,0.06)",border:"1px dashed rgba(30,215,96,0.35)",borderRadius:8,padding:8}}>
+                          <span style={{fontSize:14,flexShrink:0}}>🎧</span>
+                          <input
+                            value={spotifyLinkByPl[pl.id]||""}
+                            onChange={e=>setSpotifyLinkByPl(prev=>({...prev,[pl.id]:e.target.value}))}
+                            placeholder="Lien de playlist Spotify (open.spotify.com/playlist/…)"
+                            style={{flex:1,minWidth:180,background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#1a1a2e",padding:"6px 10px",fontSize:11,borderRadius:6}}/>
+                          <button
+                            disabled={spotifyStatusByPl[pl.id]==="loading" || !(spotifyLinkByPl[pl.id]||"").trim()}
+                            onClick={async ()=>{
+                              const link = (spotifyLinkByPl[pl.id]||"").trim();
+                              if(!link) return;
+                              setSpotifyStatusByPl(prev=>({...prev,[pl.id]:"loading"}));
+                              try {
+                                const res = await fetch(`/.netlify/functions/spotify-playlist?url=${encodeURIComponent(link)}`);
+                                const payload = await res.json();
+                                if(!res.ok) throw new Error(payload.error || `Erreur ${res.status}`);
+                                const freshChar = dataRef.current[tab] || {};
+                                const freshMusic = freshChar.music || [];
+                                const freshPlaylists = freshChar.playlists || [];
+                                const norm = s => (s||"").trim().toLowerCase();
+                                const nextMusic = [...freshMusic];
+                                const importedIds = [];
+                                (payload.tracks||[]).forEach(t=>{
+                                  const existing = nextMusic.find(m=>norm(m.title)===norm(t.title) && norm(m.artist)===norm(t.artist));
+                                  if(existing) { importedIds.push(existing.id); return; }
+                                  const id = Date.now()+Math.floor(Math.random()*1000000);
+                                  nextMusic.push({id, title:t.title||"", artist:t.artist||"", album:t.album||"", duration:t.duration||"", cover:t.cover||null});
+                                  importedIds.push(id);
+                                });
+                                const plIdx = freshPlaylists.findIndex(p=>p.id===pl.id);
+                                if(plIdx<0) throw new Error("Playlist introuvable (a-t-elle été supprimée ?)");
+                                const nextPlaylists = [...freshPlaylists];
+                                const mergedIds = Array.from(new Set([...(nextPlaylists[plIdx].trackIds||[]), ...importedIds]));
+                                nextPlaylists[plIdx] = {
+                                  ...nextPlaylists[plIdx],
+                                  trackIds: mergedIds,
+                                  name: (!nextPlaylists[plIdx].name || nextPlaylists[plIdx].name==="Nouvelle playlist") ? (payload.name||nextPlaylists[plIdx].name) : nextPlaylists[plIdx].name,
+                                  cover: nextPlaylists[plIdx].cover || payload.cover || null,
+                                };
+                                onUpdate(tab, {...freshChar, music: nextMusic, playlists: nextPlaylists});
+                                setSpotifyStatusByPl(prev=>({...prev,[pl.id]:`✅ ${importedIds.length} morceau${importedIds.length!==1?"x":""} importé${importedIds.length!==1?"s":""}`}));
+                              } catch(e) {
+                                setSpotifyStatusByPl(prev=>({...prev,[pl.id]:`❌ ${e.message}`}));
+                              }
+                            }}
+                            style={{background:"#1DB954",border:"none",color:"#fff",padding:"6px 14px",borderRadius:6,fontWeight:700,fontSize:11,cursor:spotifyStatusByPl[pl.id]==="loading"?"default":"pointer",opacity:spotifyStatusByPl[pl.id]==="loading"?0.6:1,flexShrink:0}}>
+                            {spotifyStatusByPl[pl.id]==="loading" ? "Import…" : "Importer"}
+                          </button>
+                          {spotifyStatusByPl[pl.id] && spotifyStatusByPl[pl.id]!=="loading" && (
+                            <div style={{fontSize:10,color:spotifyStatusByPl[pl.id].startsWith("❌")?"#dc2626":"#16a34a",width:"100%"}}>{spotifyStatusByPl[pl.id]}</div>
+                          )}
+                        </div>
+
                         <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
                           <button onClick={()=>{
                             updPlaylists(fresh=>{
