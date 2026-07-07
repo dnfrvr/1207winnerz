@@ -20380,7 +20380,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                     </div>
                     {isOpen && (
                       <div style={{display:"flex",flexDirection:"column",gap:8}}>
-                        <div style={{display:"flex",gap:8}}>
+                        <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
                           <button onClick={()=>{
                             updPlaylists(fresh=>{
                               const idx=fresh.findIndex(p=>p.id===pl.id);
@@ -20396,24 +20396,64 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                               const next=[...fresh]; next[idx]={...next[idx],trackIds:[]}; return next;
                             });
                           }} disabled={trackIds.length===0} style={{background:"transparent",border:"1px solid #e5e7eb",color:trackIds.length===0?"#d1d5db":"#6b7280",padding:"5px 10px",borderRadius:7,fontWeight:600,fontSize:11,cursor:trackIds.length===0?"default":"pointer"}}>Tout retirer</button>
+                          <button onClick={()=>{
+                            const freshChar = dataRef.current[tab] || {};
+                            const freshMusic = freshChar.music || [];
+                            const freshPlaylists = freshChar.playlists || [];
+                            const newTrack = {id:Date.now(), title:"", artist:"", duration:"3:00"};
+                            const nextMusic = [newTrack, ...freshMusic];
+                            const nextPlaylists = freshPlaylists.map(p=>p.id===pl.id?{...p, trackIds:[...(p.trackIds||[]), newTrack.id]}:p);
+                            onUpdate(tab, {...freshChar, music: nextMusic, playlists: nextPlaylists});
+                          }} style={{background:"rgba(99,102,241,0.1)",border:"1px dashed rgba(99,102,241,0.4)",color:"#6366f1",padding:"5px 10px",borderRadius:7,fontWeight:600,fontSize:11,cursor:"pointer"}}>🎵 + Nouvelle chanson</button>
                         </div>
-                        <div style={{display:"flex",flexDirection:"column",gap:4,maxHeight:220,overflowY:"auto",background:"rgba(0,0,0,0.02)",borderRadius:8,padding:8}}>
+                        <div style={{display:"flex",flexDirection:"column",gap:5,maxHeight:320,overflowY:"auto",background:"rgba(0,0,0,0.02)",borderRadius:8,padding:8}}>
                           {music.length===0 && <div style={{fontSize:11,color:"#9ca3af"}}>Aucun morceau dans la bibliothèque de ce perso.</div>}
                           {music.map(track=>{
                             const checked = trackIds.includes(track.id);
+                            const toggleTrack = () => updPlaylists(fresh=>{
+                              const idx=fresh.findIndex(p=>p.id===pl.id);
+                              if(idx<0) return fresh;
+                              const curIds = fresh[idx].trackIds||[];
+                              const nextIds = curIds.includes(track.id) ? curIds.filter(id=>id!==track.id) : [...curIds, track.id];
+                              const next=[...fresh]; next[idx]={...next[idx],trackIds:nextIds}; return next;
+                            });
+                            const updTrackField = (field,val) => {
+                              const trackId = track.id;
+                              const freshChar = dataRef.current[tab] || {};
+                              const freshMusic = freshChar.music || [];
+                              const idx = freshMusic.findIndex(t=>t.id===trackId);
+                              if(idx<0) return;
+                              const nextMusic = [...freshMusic];
+                              nextMusic[idx] = {...nextMusic[idx], [field]:val};
+                              onUpdate(tab, {...freshChar, music: nextMusic});
+                            };
                             return (
-                              <label key={track.id} style={{display:"flex",alignItems:"center",gap:8,fontSize:12,color:"#374151",cursor:"pointer",padding:"3px 4px"}}>
-                                <input type="checkbox" checked={checked} onChange={()=>{
-                                  updPlaylists(fresh=>{
-                                    const idx=fresh.findIndex(p=>p.id===pl.id);
-                                    if(idx<0) return fresh;
-                                    const curIds = fresh[idx].trackIds||[];
-                                    const nextIds = curIds.includes(track.id) ? curIds.filter(id=>id!==track.id) : [...curIds, track.id];
-                                    const next=[...fresh]; next[idx]={...next[idx],trackIds:nextIds}; return next;
-                                  });
-                                }}/>
-                                <span style={{flex:1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{track.title||"(sans titre)"} — <span style={{color:"#9ca3af"}}>{track.artist}</span></span>
-                              </label>
+                              <div key={track.id} onClick={toggleTrack} style={{display:"flex",alignItems:"center",gap:8,padding:"6px 8px",borderRadius:7,cursor:"pointer",background:checked?"rgba(99,102,241,0.1)":"rgba(255,255,255,0.7)",border:checked?"1px solid rgba(99,102,241,0.35)":"1px solid rgba(0,0,0,0.06)"}}>
+                                <input type="checkbox" checked={checked} onChange={toggleTrack} onClick={e=>e.stopPropagation()} style={{flexShrink:0}}/>
+                                <label onClick={e=>e.stopPropagation()} style={{width:34,height:34,borderRadius:5,background:"rgba(99,102,241,0.08)",border:"1px dashed rgba(99,102,241,0.3)",overflow:"hidden",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer"}}>
+                                  {track.cover?<img src={track.cover} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:<span style={{fontSize:14}}>🎵</span>}
+                                  <input type="file" accept="image/*" style={{display:"none"}} onChange={e=>{
+                                    const f=e.target.files?.[0]; if(!f) return;
+                                    const trackId = track.id;
+                                    const r=new UploadReader();
+                                    r.onload=ev=>{
+                                      const freshChar = dataRef.current[tab] || {};
+                                      const freshMusic = freshChar.music || [];
+                                      const idx = freshMusic.findIndex(t=>t.id===trackId);
+                                      if(idx<0) return;
+                                      const nextMusic=[...freshMusic]; nextMusic[idx]={...nextMusic[idx],cover:ev.target.result};
+                                      onUpdate(tab, {...freshChar, music: nextMusic});
+                                    };
+                                    r.readAsDataURL(f); e.target.value="";
+                                  }}/>
+                                </label>
+                                <div onClick={e=>e.stopPropagation()} style={{flex:1,minWidth:0,display:"flex",gap:6}}>
+                                  <input value={track.title||""} onChange={e=>updTrackField("title",e.target.value)}
+                                    placeholder="Titre" style={{flex:1,minWidth:0,background:"transparent",border:"none",borderBottom:"1px solid rgba(0,0,0,0.12)",color:"#1a1a2e",fontSize:12,fontWeight:600,padding:"2px 2px"}}/>
+                                  <input value={track.artist||""} onChange={e=>updTrackField("artist",e.target.value)}
+                                    placeholder="Artiste" style={{flex:1,minWidth:0,background:"transparent",border:"none",borderBottom:"1px solid rgba(0,0,0,0.12)",color:"#6b7280",fontSize:11,padding:"2px 2px"}}/>
+                                </div>
+                              </div>
                             );
                           })}
                         </div>
