@@ -780,6 +780,75 @@ const MusicScreen = ({data,admin,update,accent,isIos=false,goHome=()=>{}}) => {
       {id:'more',   icon:'<svg width="22" height="20" viewBox="0 0 24 8" fill="currentColor"><circle cx="4" cy="4" r="2.5"/><circle cx="12" cy="4" r="2.5"/><circle cx="20" cy="4" r="2.5"/></svg>',     label:'More'},
     ];
     const titleMap={playlists:'Playlists',artists:'Artists',songs:'Songs',albums:'Albums',more:'More'};
+
+    // ── Page dédiée "détail de playlist" ──────────────────────────────────
+    // Remplace l'ancien accordéon inline : cliquer une playlist ouvre maintenant un vrai écran
+    // séparé (cover en grand, titre, liste des morceaux dessous), avec un bouton retour vers la
+    // liste des playlists — plus proche du comportement Musique iOS natif.
+    if(musicTab==='playlists' && openPlaylist) {
+      const pl = playlists.find(p=>p.id===openPlaylist);
+      const plTracks = pl ? (pl.trackIds||[]).map(id=>music.find(t=>t.id===id)).filter(Boolean) : [];
+      return (
+        <div style={{flex:1,display:'flex',flexDirection:'column',minHeight:0,fontFamily:FF_IOS}}>
+          <div style={{background:'linear-gradient(180deg,#b8b8b8,#909090 45%,#7c7c7c)',borderBottom:'1px solid #555',height:44,display:'flex',alignItems:'center',padding:'0 8px',flexShrink:0,boxShadow:'0 1px 3px rgba(0,0,0,0.3)'}}>
+            <button onClick={()=>setOpenPlaylist(null)} style={{background:'rgba(255,255,255,0.12)',border:'1px solid rgba(255,255,255,0.4)',borderRadius:6,padding:'4px 10px 4px 7px',color:'rgba(255,255,255,0.95)',fontSize:12,fontWeight:'600',cursor:'pointer',textShadow:'0 -1px 0 rgba(0,0,0,0.4)',flexShrink:0,display:'flex',alignItems:'center',gap:3}}>
+              <svg width="7" height="12" viewBox="0 0 7 12" fill="none"><path d="M6 1L1 6l5 5" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+              Playlists
+            </button>
+            <span style={{flex:1,textAlign:'center',color:'#fff',fontWeight:'700',fontSize:15,textShadow:'0 -1px 0 rgba(0,0,0,0.5)',pointerEvents:'none',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',padding:'0 6px'}}>{pl?.name||'Playlist'}</span>
+            <div style={{width:74}}/>
+          </div>
+
+          <div style={{flex:1,overflowY:'auto',background:'#fff'}}>
+            <div style={{display:'flex',flexDirection:'column',alignItems:'center',padding:'24px 20px 18px',background:'linear-gradient(180deg,#f2f2f2,#fff)'}}>
+              <div style={{width:150,height:150,borderRadius:6,background:'#ddd',overflow:'hidden',boxShadow:'0 4px 14px rgba(0,0,0,0.25)',display:'flex',alignItems:'center',justifyContent:'center',marginBottom:14,flexShrink:0}}>
+                {pl?.cover?<img src={pl.cover} style={{width:'100%',height:'100%',objectFit:'cover'}}/>:<span style={{color:'#bbb',fontSize:48}}>♫</span>}
+              </div>
+              <div style={{fontWeight:'700',fontSize:19,color:'#1a1a1a',textAlign:'center'}}>{pl?.name||'Playlist'}</div>
+              <div style={{fontSize:12,color:'#8e8e93',marginTop:4}}>{plTracks.length} song{plTracks.length!==1?'s':''}</div>
+            </div>
+            {plTracks.length===0
+              ? <div style={{padding:32,textAlign:'center',color:'#8e8e93',fontSize:13}}>Aucun morceau dans cette playlist.</div>
+              : plTracks.map(track=>(
+                <div key={track.id} onClick={()=>setPlaying(music.indexOf(track))} style={{padding:'10px 14px',borderBottom:'0.5px solid #e5e5ea',cursor:'pointer',background:current===track?'#ddeeff':'#fff',display:'flex',alignItems:'center',gap:10}}>
+                  <div style={{width:34,height:34,borderRadius:3,flexShrink:0,overflow:'hidden',background:'#e2e2e7',display:'flex',alignItems:'center',justifyContent:'center'}}>
+                    {track.cover?<img src={track.cover} style={{width:'100%',height:'100%',objectFit:'cover'}}/>:<span style={{color:'#bbb',fontSize:14}}>♫</span>}
+                  </div>
+                  <div style={{flex:1,minWidth:0}}>
+                    <div style={{fontWeight:'700',fontSize:15,color:current===track?'#007aff':'#1a1a1a',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{track.title}</div>
+                    <div style={{fontSize:12,color:'#8e8e93',marginTop:1,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{track.artist}</div>
+                  </div>
+                </div>
+              ))
+            }
+          </div>
+
+          <div style={{background:'linear-gradient(180deg,#e8e8ea,#cfcfd2)',borderTop:'1px solid #aaa',borderBottom:'1px solid #aaa',height:46,display:'flex',alignItems:'center',gap:10,padding:'0 10px',flexShrink:0}}>
+            <div style={{width:32,height:32,background:'#ddd',borderRadius:2,border:'1px solid rgba(0,0,0,0.25)',overflow:'hidden',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,boxShadow:'0 1px 2px rgba(0,0,0,0.15)'}}>
+              {coverSrc?<img src={coverSrc} style={{width:'100%',height:'100%',objectFit:'cover'}}/>:<span style={{color:'#999',fontSize:14}}>♫</span>}
+            </div>
+            <div style={{flex:1,minWidth:0}}>
+              <div style={{color:'#1a1a1a',fontSize:13,fontWeight:'600',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{current?current.title:(data.playlistName||"No track selected")}</div>
+              <div style={{color:'#6b6b6e',fontSize:11,marginTop:1,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{current?current.artist:"—"}</div>
+            </div>
+            <div style={{display:'flex',gap:8,alignItems:'center',flexShrink:0}}>
+              <button onClick={()=>{if(!len)return;setPlaying(p=>((p??1)-1+len)%len);}} style={{background:'none',border:'none',color:'#007aff',cursor:'pointer',padding:'2px 4px',lineHeight:1,display:'flex'}}>
+                <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor"><path d="M4 2.5v11M14 3L5.5 8 14 13z"/></svg>
+              </button>
+              <button onClick={()=>{if(!len)return;setPlaying(p=>p===null?0:null);}} style={{background:'none',border:'none',color:'#007aff',cursor:'pointer',padding:'2px 4px',lineHeight:1,display:'flex'}}>
+                {current
+                  ? <svg width="19" height="19" viewBox="0 0 20 20" fill="currentColor"><rect x="4" y="3" width="4" height="14" rx="1"/><rect x="12" y="3" width="4" height="14" rx="1"/></svg>
+                  : <svg width="19" height="19" viewBox="0 0 20 20" fill="currentColor"><path d="M4 2.5v15l13-7.5z"/></svg>}
+              </button>
+              <button onClick={()=>{if(!len)return;setPlaying(p=>((p??-1)+1)%len);}} style={{background:'none',border:'none',color:'#007aff',cursor:'pointer',padding:'2px 4px',lineHeight:1,display:'flex'}}>
+                <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor"><path d="M12 2.5v11M2 3l8.5 5L2 13z"/></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div style={{flex:1,display:'flex',flexDirection:'column',minHeight:0,fontFamily:FF_IOS}}>
         
@@ -821,33 +890,17 @@ const MusicScreen = ({data,admin,update,accent,isIos=false,goHome=()=>{}}) => {
                 ? <div style={{padding:32,textAlign:'center',color:'#8e8e93',fontSize:13}}>No Playlists</div>
                 : playlists.map(pl=>{
                   const tracks = (pl.trackIds||[]).map(id=>music.find(t=>t.id===id)).filter(Boolean);
-                  const isOpen = openPlaylist===pl.id;
                   return (
-                    <React.Fragment key={pl.id}>
-                      <div onClick={()=>setOpenPlaylist(isOpen?null:pl.id)} style={{padding:'10px 14px',borderBottom:'0.5px solid #e5e5ea',cursor:'pointer',background:isOpen?'#f0f0f3':'#fff',display:'flex',alignItems:'center',gap:10}}>
-                        <div style={{width:36,height:36,borderRadius:2,background:'#ddd',overflow:'hidden',flexShrink:0,display:'flex',alignItems:'center',justifyContent:'center'}}>
-                          {pl.cover?<img src={pl.cover} style={{width:'100%',height:'100%',objectFit:'cover'}}/>:<span style={{color:'#aaa',fontSize:14}}>♫</span>}
-                        </div>
-                        <div style={{flex:1,minWidth:0}}>
-                          <div style={{fontWeight:'700',fontSize:15,color:'#1a1a1a',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{pl.name||'Playlist'}</div>
-                          <div style={{fontSize:12,color:'#8e8e93',marginTop:1}}>{tracks.length} song{tracks.length!==1?'s':''}</div>
-                        </div>
-                        <svg width="8" height="14" viewBox="0 0 8 14" fill="none" style={{transform:isOpen?'rotate(90deg)':'none',flexShrink:0}}><path d="M1 1l6 6-6 6" stroke="#c8c7cc" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                    <div key={pl.id} onClick={()=>setOpenPlaylist(pl.id)} style={{padding:'10px 14px',borderBottom:'0.5px solid #e5e5ea',cursor:'pointer',background:'#fff',display:'flex',alignItems:'center',gap:10}}>
+                      <div style={{width:36,height:36,borderRadius:2,background:'#ddd',overflow:'hidden',flexShrink:0,display:'flex',alignItems:'center',justifyContent:'center'}}>
+                        {pl.cover?<img src={pl.cover} style={{width:'100%',height:'100%',objectFit:'cover'}}/>:<span style={{color:'#aaa',fontSize:14}}>♫</span>}
                       </div>
-                      {isOpen && (tracks.length===0
-                        ? <div style={{padding:'14px 26px',color:'#8e8e93',fontSize:12}}>Aucun morceau dans cette playlist.</div>
-                        : tracks.map(track=>(
-                          <div key={track.id} onClick={()=>setPlaying(music.indexOf(track))} style={{padding:'9px 14px 9px 26px',borderBottom:'0.5px solid #e5e5ea',cursor:'pointer',background:current===track?'#ddeeff':'#fafafa',display:'flex',alignItems:'center',gap:10}}>
-                            <div style={{width:28,height:28,borderRadius:2,background:'#ddd',overflow:'hidden',flexShrink:0,display:'flex',alignItems:'center',justifyContent:'center'}}>
-                              {track.cover?<img src={track.cover} style={{width:'100%',height:'100%',objectFit:'cover'}}/>:<span style={{color:'#aaa',fontSize:11}}>♫</span>}
-                            </div>
-                            <div style={{flex:1,minWidth:0}}>
-                              <div style={{fontWeight:'600',fontSize:13,color:current===track?'#007aff':'#1a1a1a',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{track.title}</div>
-                              <div style={{fontSize:11,color:'#8e8e93',marginTop:1,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{track.artist}</div>
-                            </div>
-                          </div>
-                        )))}
-                    </React.Fragment>
+                      <div style={{flex:1,minWidth:0}}>
+                        <div style={{fontWeight:'700',fontSize:15,color:'#1a1a1a',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{pl.name||'Playlist'}</div>
+                        <div style={{fontSize:12,color:'#8e8e93',marginTop:1}}>{tracks.length} song{tracks.length!==1?'s':''}</div>
+                      </div>
+                      <svg width="8" height="14" viewBox="0 0 8 14" fill="none" style={{flexShrink:0}}><path d="M1 1l6 6-6 6" stroke="#c8c7cc" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                    </div>
                   );
                 })}
             </>}
@@ -968,6 +1021,67 @@ const MusicScreen = ({data,admin,update,accent,isIos=false,goHome=()=>{}}) => {
       </div>
     );
   }
+
+  // ── Page dédiée "détail de playlist" (Android) ──────────────────────────
+  if(musicTab==='playlists' && openPlaylist) {
+    const pl = playlists.find(p=>p.id===openPlaylist);
+    const plTracks = pl ? (pl.trackIds||[]).map(id=>music.find(t=>t.id===id)).filter(Boolean) : [];
+    return (
+      <div style={{flex:1,background:"#1a1a1a",display:"flex",flexDirection:"column",minHeight:0,fontFamily:FF_IOS}}>
+        <div style={{display:"flex",alignItems:"center",gap:8,background:"#111",borderBottom:"1px solid #0a0a0a",padding:"8px 10px",flexShrink:0}}>
+          <button onClick={()=>setOpenPlaylist(null)} style={{background:"none",border:"none",color:accent,cursor:"pointer",padding:"4px 6px",display:"flex",alignItems:"center"}}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M15 18l-6-6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+          </button>
+          <span style={{color:"#fff",fontSize:14,fontWeight:600,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",flex:1}}>{pl?.name||"Playlist"}</span>
+        </div>
+        <div style={{flex:1,overflowY:"auto"}}>
+          <div style={{display:"flex",flexDirection:"column",alignItems:"center",padding:"22px 16px 16px"}}>
+            <div style={{width:140,height:140,borderRadius:6,background:"#272727",overflow:"hidden",boxShadow:"0 4px 14px rgba(0,0,0,0.4)",display:"flex",alignItems:"center",justifyContent:"center",marginBottom:12,flexShrink:0}}>
+              {pl?.cover?<img src={pl.cover} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:<span style={{color:"#444",fontSize:44}}>♫</span>}
+            </div>
+            <div style={{color:"#fff",fontWeight:700,fontSize:17,textAlign:"center"}}>{pl?.name||"Playlist"}</div>
+            <div style={{color:"#666",fontSize:11,marginTop:4}}>{plTracks.length} track{plTracks.length!==1?"s":""}</div>
+          </div>
+          {plTracks.length===0
+            ? <div style={{padding:32,textAlign:"center",color:"#444",fontSize:13}}>Aucun morceau dans cette playlist.</div>
+            : plTracks.map(track=>(
+              <div key={track.id} onClick={()=>setPlaying(music.indexOf(track))} style={{display:"flex",alignItems:"center",gap:12,padding:"10px 14px",borderBottom:"1px solid #111",background:playing===music.indexOf(track)?`${accent}18`:"#1a1a1a",cursor:"pointer"}}>
+                {track.cover
+                  ?<img src={track.cover} style={{width:36,height:36,objectFit:"cover",flexShrink:0,borderRadius:2}}/>
+                  :<div style={{width:36,height:36,borderRadius:2,background:"#272727",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}><span style={{color:"#444",fontSize:14}}>♫</span></div>}
+                <div style={{flex:1,minWidth:0}}>
+                  <div style={{color:"rgba(255,255,255,0.9)",fontSize:13,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{track.title}</div>
+                  <div style={{color:"#777",fontSize:11,marginTop:1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{track.artist}</div>
+                </div>
+              </div>
+            ))
+          }
+        </div>
+        <div style={{background:"#111",borderTop:`2px solid ${accent}44`,padding:"10px 14px",display:"flex",alignItems:"center",gap:12,flexShrink:0}}>
+          <div style={{width:38,height:38,background:"#222",borderRadius:2,border:`1px solid ${accent}33`,overflow:"hidden",display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,flexShrink:0}}>
+            {coverSrc?<img src={coverSrc} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:<span style={{color:accent,opacity:0.6}}>♫</span>}
+          </div>
+          <div style={{flex:1,minWidth:0}}>
+            <div style={{color:"#fff",fontSize:13,fontWeight:500,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{current?current.title:(data.playlistName||"No track selected")}</div>
+            <div style={{color:accent,fontSize:11,marginTop:2,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{current?current.artist:"—"}</div>
+          </div>
+          <div style={{display:"flex",gap:10,alignItems:"center",flexShrink:0}}>
+            <button onClick={()=>{if(!len)return;setPlaying(p=>((p??1)-1+len)%len);}} style={{background:"none",border:"none",color:"rgba(255,255,255,0.6)",cursor:"pointer",padding:"2px 4px",lineHeight:1,display:"flex"}}>
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M4 2.5v11M14 3L5.5 8 14 13z"/></svg>
+            </button>
+            <button onClick={()=>{if(!len)return;setPlaying(p=>p===null?0:null);}} style={{background:"none",border:"none",color:accent,cursor:"pointer",padding:"2px 4px",lineHeight:1,display:"flex"}}>
+              {current
+                ? <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor"><rect x="4" y="3" width="4" height="14" rx="1"/><rect x="12" y="3" width="4" height="14" rx="1"/></svg>
+                : <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor"><path d="M4 2.5v15l13-7.5z"/></svg>}
+            </button>
+            <button onClick={()=>{if(!len)return;setPlaying(p=>((p??-1)+1)%len);}} style={{background:"none",border:"none",color:"rgba(255,255,255,0.6)",cursor:"pointer",padding:"2px 4px",lineHeight:1,display:"flex"}}>
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M12 2.5v11M2 3l8.5 5L2 13z"/></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
   return (
     <div style={{flex:1,background:"#1a1a1a",display:"flex",flexDirection:"column",minHeight:0,fontFamily:FF_IOS}}>
 
@@ -990,30 +1104,16 @@ const MusicScreen = ({data,admin,update,accent,isIos=false,goHome=()=>{}}) => {
           if(playlists.length===0) return <div style={{padding:32,textAlign:"center",color:"#444",fontSize:13}}>No playlists.</div>;
           return playlists.map(pl=>{
             const tracks = (pl.trackIds||[]).map(id=>music.find(t=>t.id===id)).filter(Boolean);
-            const isOpen = openPlaylist===pl.id;
             return (
-              <div key={pl.id}>
-                <div onClick={()=>setOpenPlaylist(isOpen?null:pl.id)} style={{display:"flex",alignItems:"center",gap:10,background:isOpen?"#1a1a1a":"#111",padding:"8px 14px",borderBottom:"1px solid #0a0a0a",cursor:"pointer"}}>
-                  <div style={{width:30,height:30,borderRadius:2,background:"#272727",flexShrink:0,overflow:"hidden",display:"flex",alignItems:"center",justifyContent:"center"}}>
-                    {pl.cover?<img src={pl.cover} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:<span style={{color:"#444",fontSize:12}}>♫</span>}
-                  </div>
-                  <div style={{flex:1,minWidth:0}}>
-                    <div style={{color:accent,fontSize:12,fontWeight:700,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{pl.name||"Playlist"}</div>
-                    <div style={{color:"#555",fontSize:10,marginTop:1}}>{tracks.length} track{tracks.length!==1?"s":""}</div>
-                  </div>
-                  <svg width="8" height="14" viewBox="0 0 8 14" fill="none" style={{transform:isOpen?'rotate(90deg)':'none',flexShrink:0}}><path d="M1 1l6 6-6 6" stroke="#555" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/></svg>
+              <div key={pl.id} onClick={()=>setOpenPlaylist(pl.id)} style={{display:"flex",alignItems:"center",gap:10,background:"#111",padding:"8px 14px",borderBottom:"1px solid #0a0a0a",cursor:"pointer"}}>
+                <div style={{width:30,height:30,borderRadius:2,background:"#272727",flexShrink:0,overflow:"hidden",display:"flex",alignItems:"center",justifyContent:"center"}}>
+                  {pl.cover?<img src={pl.cover} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:<span style={{color:"#444",fontSize:12}}>♫</span>}
                 </div>
-                {isOpen&&(tracks.length===0
-                  ? <div style={{padding:"10px 24px",color:"#555",fontSize:11}}>Aucun morceau.</div>
-                  : tracks.map(track=>(
-                    <div key={track.id} onClick={()=>setPlaying(music.indexOf(track))} style={{display:"flex",alignItems:"center",gap:12,padding:"9px 14px 9px 24px",borderBottom:"1px solid #111",background:playing===music.indexOf(track)?`${accent}14`:"#1a1a1a",cursor:"pointer"}}>
-                      <span style={{color:playing===music.indexOf(track)?accent:"#444",fontSize:12,width:16,textAlign:"center",flexShrink:0}}>♫</span>
-                      <div style={{flex:1,minWidth:0}}>
-                        <div style={{color:"rgba(255,255,255,0.85)",fontSize:12,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{track.title}</div>
-                        <div style={{color:"#555",fontSize:10,marginTop:1}}>{track.artist}</div>
-                      </div>
-                    </div>
-                  )))}
+                <div style={{flex:1,minWidth:0}}>
+                  <div style={{color:accent,fontSize:12,fontWeight:700,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{pl.name||"Playlist"}</div>
+                  <div style={{color:"#555",fontSize:10,marginTop:1}}>{tracks.length} track{tracks.length!==1?"s":""}</div>
+                </div>
+                <svg width="8" height="14" viewBox="0 0 8 14" fill="none" style={{flexShrink:0}}><path d="M1 1l6 6-6 6" stroke="#555" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/></svg>
               </div>
             );
           });
@@ -22589,6 +22689,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
         <div className="adm-topbar-right" style={{display:"flex",alignItems:"center",gap:6,paddingLeft:isMobile?0:12,borderLeft:isMobile?"none":"1px solid #f0f0f0",flexShrink:0,order:isMobile?1:0,marginLeft:isMobile?"auto":0}}>
 
           {isMobile ? (
+            <>
             <div style={{position:"relative"}}>
               <button onClick={()=>setBurgerOpen(o=>!o)}
                 style={{background:burgerOpen?"#f3f4f6":"transparent",border:"1px solid #e5e7eb",color:"#374151",padding:"6px 10px",borderRadius:7,fontSize:15,cursor:"pointer",lineHeight:1}}>
@@ -22620,14 +22721,16 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                     🕐 Restaurer
                   </button>
 
-                  <button onClick={()=>{ setBurgerOpen(false); onExit(); }}
-                    style={{background:"transparent",border:"1px solid #e5e7eb",color:"#374151",padding:"8px 12px",borderRadius:7,fontSize:12,cursor:"pointer",fontWeight:500,textAlign:"left"}}>
-                    ← Retour
-                  </button>
-
                 </div>
               </>}
             </div>
+
+            {/* Retour — sorti du burger, toujours visible juste à côté */}
+            <button onClick={onExit}
+              style={{background:"transparent",border:"1px solid #e5e7eb",color:"#374151",padding:"6px 12px",borderRadius:7,fontSize:12,cursor:"pointer",fontWeight:500}}>
+              ← Retour
+            </button>
+            </>
           ) : <>
 
           {/* Date lore */}
