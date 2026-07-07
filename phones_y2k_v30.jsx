@@ -711,9 +711,11 @@ const MusicScreen = ({data,admin,update,accent,isIos=false,goHome=()=>{}}) => {
   const [musicTab, setMusicTab] = useState("songs");
   const [openArtist, setOpenArtist] = useState(null);
   const [openAlbum, setOpenAlbum] = useState(null);
+  const [openPlaylist, setOpenPlaylist] = useState(null);
   const len = data.music.length;
 
   const music = data.music || [];
+  const playlists = data.playlists || [];
   // AVANT : deux champs distincts cohabitaient sans qu'aucun des deux ne fonctionne vraiment.
   // - data.musicCover : lu ici pour le fallback "rien en cours de lecture", mais AUCUNE UI admin
   //   n'écrivait jamais dedans (toujours null) → fallback mort.
@@ -814,7 +816,41 @@ const MusicScreen = ({data,admin,update,accent,isIos=false,goHome=()=>{}}) => {
                 </React.Fragment>
               ))}
             </>}
-            {musicTab==='playlists'&&<div style={{padding:32,textAlign:'center',color:'#8e8e93',fontSize:13}}>No Playlists</div>}
+            {musicTab==='playlists'&&<>
+              {playlists.length===0
+                ? <div style={{padding:32,textAlign:'center',color:'#8e8e93',fontSize:13}}>No Playlists</div>
+                : playlists.map(pl=>{
+                  const tracks = (pl.trackIds||[]).map(id=>music.find(t=>t.id===id)).filter(Boolean);
+                  const isOpen = openPlaylist===pl.id;
+                  return (
+                    <React.Fragment key={pl.id}>
+                      <div onClick={()=>setOpenPlaylist(isOpen?null:pl.id)} style={{padding:'10px 14px',borderBottom:'0.5px solid #e5e5ea',cursor:'pointer',background:isOpen?'#f0f0f3':'#fff',display:'flex',alignItems:'center',gap:10}}>
+                        <div style={{width:36,height:36,borderRadius:2,background:'#ddd',overflow:'hidden',flexShrink:0,display:'flex',alignItems:'center',justifyContent:'center'}}>
+                          {pl.cover?<img src={pl.cover} style={{width:'100%',height:'100%',objectFit:'cover'}}/>:<span style={{color:'#aaa',fontSize:14}}>♫</span>}
+                        </div>
+                        <div style={{flex:1,minWidth:0}}>
+                          <div style={{fontWeight:'700',fontSize:15,color:'#1a1a1a',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{pl.name||'Playlist'}</div>
+                          <div style={{fontSize:12,color:'#8e8e93',marginTop:1}}>{tracks.length} song{tracks.length!==1?'s':''}</div>
+                        </div>
+                        <svg width="8" height="14" viewBox="0 0 8 14" fill="none" style={{transform:isOpen?'rotate(90deg)':'none',flexShrink:0}}><path d="M1 1l6 6-6 6" stroke="#c8c7cc" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                      </div>
+                      {isOpen && (tracks.length===0
+                        ? <div style={{padding:'14px 26px',color:'#8e8e93',fontSize:12}}>Aucun morceau dans cette playlist.</div>
+                        : tracks.map(track=>(
+                          <div key={track.id} onClick={()=>setPlaying(music.indexOf(track))} style={{padding:'9px 14px 9px 26px',borderBottom:'0.5px solid #e5e5ea',cursor:'pointer',background:current===track?'#ddeeff':'#fafafa',display:'flex',alignItems:'center',gap:10}}>
+                            <div style={{width:28,height:28,borderRadius:2,background:'#ddd',overflow:'hidden',flexShrink:0,display:'flex',alignItems:'center',justifyContent:'center'}}>
+                              {track.cover?<img src={track.cover} style={{width:'100%',height:'100%',objectFit:'cover'}}/>:<span style={{color:'#aaa',fontSize:11}}>♫</span>}
+                            </div>
+                            <div style={{flex:1,minWidth:0}}>
+                              <div style={{fontWeight:'600',fontSize:13,color:current===track?'#007aff':'#1a1a1a',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{track.title}</div>
+                              <div style={{fontSize:11,color:'#8e8e93',marginTop:1,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{track.artist}</div>
+                            </div>
+                          </div>
+                        )))}
+                    </React.Fragment>
+                  );
+                })}
+            </>}
             {musicTab==='artists'&&<>
               {artistKeys.map(key=>(
                 <React.Fragment key={key}>
@@ -936,7 +972,7 @@ const MusicScreen = ({data,admin,update,accent,isIos=false,goHome=()=>{}}) => {
     <div style={{flex:1,background:"#1a1a1a",display:"flex",flexDirection:"column",minHeight:0,fontFamily:FF_IOS}}>
 
       <div style={{display:"flex",background:"#111",borderBottom:"1px solid #0a0a0a",flexShrink:0}}>
-        {[["songs","Songs"],["artists","Artists"],["albums","Albums"]].map(([t,l])=>(
+        {[["playlists","Playlists"],["songs","Songs"],["artists","Artists"],["albums","Albums"]].map(([t,l])=>(
           <button key={t} onClick={()=>setMusicTab(t)} style={{
             flex:1, padding:"10px 0", border:"none", cursor:"pointer", fontSize:11, fontWeight:700,
             letterSpacing:0.5, fontFamily:FF_IOS, background:"transparent",
@@ -950,6 +986,39 @@ const MusicScreen = ({data,admin,update,accent,isIos=false,goHome=()=>{}}) => {
       <div style={{flex:1,overflowY:"auto",minHeight:0}}>
 
         
+        {musicTab==="playlists"&&(()=>{
+          if(playlists.length===0) return <div style={{padding:32,textAlign:"center",color:"#444",fontSize:13}}>No playlists.</div>;
+          return playlists.map(pl=>{
+            const tracks = (pl.trackIds||[]).map(id=>music.find(t=>t.id===id)).filter(Boolean);
+            const isOpen = openPlaylist===pl.id;
+            return (
+              <div key={pl.id}>
+                <div onClick={()=>setOpenPlaylist(isOpen?null:pl.id)} style={{display:"flex",alignItems:"center",gap:10,background:isOpen?"#1a1a1a":"#111",padding:"8px 14px",borderBottom:"1px solid #0a0a0a",cursor:"pointer"}}>
+                  <div style={{width:30,height:30,borderRadius:2,background:"#272727",flexShrink:0,overflow:"hidden",display:"flex",alignItems:"center",justifyContent:"center"}}>
+                    {pl.cover?<img src={pl.cover} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:<span style={{color:"#444",fontSize:12}}>♫</span>}
+                  </div>
+                  <div style={{flex:1,minWidth:0}}>
+                    <div style={{color:accent,fontSize:12,fontWeight:700,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{pl.name||"Playlist"}</div>
+                    <div style={{color:"#555",fontSize:10,marginTop:1}}>{tracks.length} track{tracks.length!==1?"s":""}</div>
+                  </div>
+                  <svg width="8" height="14" viewBox="0 0 8 14" fill="none" style={{transform:isOpen?'rotate(90deg)':'none',flexShrink:0}}><path d="M1 1l6 6-6 6" stroke="#555" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                </div>
+                {isOpen&&(tracks.length===0
+                  ? <div style={{padding:"10px 24px",color:"#555",fontSize:11}}>Aucun morceau.</div>
+                  : tracks.map(track=>(
+                    <div key={track.id} onClick={()=>setPlaying(music.indexOf(track))} style={{display:"flex",alignItems:"center",gap:12,padding:"9px 14px 9px 24px",borderBottom:"1px solid #111",background:playing===music.indexOf(track)?`${accent}14`:"#1a1a1a",cursor:"pointer"}}>
+                      <span style={{color:playing===music.indexOf(track)?accent:"#444",fontSize:12,width:16,textAlign:"center",flexShrink:0}}>♫</span>
+                      <div style={{flex:1,minWidth:0}}>
+                        <div style={{color:"rgba(255,255,255,0.85)",fontSize:12,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{track.title}</div>
+                        <div style={{color:"#555",fontSize:10,marginTop:1}}>{track.artist}</div>
+                      </div>
+                    </div>
+                  )))}
+              </div>
+            );
+          });
+        })()}
+
         {musicTab==="songs"&&<>
           {[...music].sort((a,b)=>a.title.localeCompare(b.title,'fr',{sensitivity:'base'})).map((track,si)=>{
             const i=music.indexOf(track);
@@ -8832,6 +8901,22 @@ const forcePlaylists = (d) => {
   const out = {...d};
   Object.entries(FORCED_PLAYLISTS).forEach(([k,v]) => {
     if(out[k]) out[k] = {...out[k], ...v};
+  });
+  return out;
+};
+
+// Seed "playlist n°1" : regroupe tous les morceaux déjà présents dans data[k].music au moment du
+// seed, dans une playlist nommée "playlist n°1" (nom + cover personnalisables ensuite dans l'admin).
+// Idempotent comme withNotifs/withGroupThread : ne touche à rien si `playlists` existe déjà et
+// n'est jamais rappelée sur write (voir bug FORCED_PLAYLISTS v45) — seed une seule fois.
+const withDefaultPlaylists = (d) => {
+  const out = {...d};
+  ['glinda','eoghan','drew','elias'].forEach(k=>{
+    const c = out[k];
+    if(!c) return;
+    if(c.playlists && c.playlists.length>0) return;
+    const trackIds = (c.music||[]).map(t=>t.id).filter(id=>id!==undefined && id!==null);
+    out[k] = {...c, playlists: [{id:"playlist1", name:"playlist n°1", cover:null, trackIds}]};
   });
   return out;
 };
@@ -18059,12 +18144,12 @@ const withNotifs = (d) => {
 
 const loadData = () => {
   // Données fraîches à chaque chargement (pas de stockage persistant en artifact).
-  const d = withNotifs(withGroupThread(forcePlaylists(mkData())));
+  const d = withDefaultPlaylists(withNotifs(withGroupThread(forcePlaylists(mkData()))));
   return withSocialSeeds(d);
 };
 
 // Version des seeds — incrémenter à chaque correction des données initiales pour forcer une re-migration.
-const SEED_VERSION = 7;
+const SEED_VERSION = 8;
 
 
 // Injectés dans loadData() si les clés partagées sont absentes ou vides.
@@ -18697,6 +18782,7 @@ const MsgMoveBtn = ({dir, onClick, disabled}) => (
 
 const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDate, onLoreDateChange}) => {
   const [tab, setTab]         = useState("glinda");
+  const [openPlaylistAdmin, setOpenPlaylistAdmin] = useState(null);
   // Toujours à jour, contrairement à `data`/`d` qui sont figés dans la closure du render en cours.
   // Indispensable pour les callbacks asynchrones (upload d'image) : par le temps que l'upload
   // termine, `data` a pu changer (autre champ modifié, sync Firebase...) — lire dataRef.current
@@ -20315,6 +20401,96 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
           onUpdate(tab, {...freshChar, music: [{id:Date.now(),title:"",artist:"",duration:"3:00"},...freshMusic]});
         }}
           style={{background:"rgba(99,102,241,0.08)",border:"1px dashed rgba(99,102,241,0.4)",color:"#6366f1",borderRadius:8,padding:"10px 18px",cursor:"pointer",fontSize:12,fontWeight:600}}>+ Add manually</button>
+
+        {/* ── Playlists ────────────────────────────────────────────────────────
+            Même principe anti-closure-périmée que le reste de la musique : updPlaylists relit
+            toujours dataRef.current[tab].playlists juste avant d'écrire, et n'écrit que la clé
+            "playlists" (jamais tout l'objet du perso). */}
+        <div style={{marginTop:12,paddingTop:12,borderTop:"1px solid rgba(0,0,0,0.08)",display:"flex",flexDirection:"column",gap:10}}>
+          <div style={{fontSize:13,fontWeight:700,color:"#374151"}}>Playlists</div>
+          {(()=>{
+            const playlists = d.playlists || [];
+            const music = d.music || [];
+            const updPlaylists = (mutate) => {
+              const freshChar = dataRef.current[tab] || {};
+              const freshPlaylists = freshChar.playlists || [];
+              const next = mutate(freshPlaylists);
+              onUpdate(tab, {...freshChar, playlists: next});
+            };
+            return <>
+              {playlists.length===0 && <div style={{fontSize:11,color:"#9ca3af"}}>Aucune playlist pour l'instant.</div>}
+              {playlists.map((pl,pi)=>{
+                const isOpen = openPlaylistAdmin===pl.id;
+                const trackIds = pl.trackIds||[];
+                return (
+                  <div key={pl.id} className="adm-card" style={{background:"rgba(255,255,255,0.85)",borderRadius:10,border:"1px solid rgba(0,0,0,0.07)",padding:10,display:"flex",flexDirection:"column",gap:8}}>
+                    <div style={{display:"flex",gap:8,alignItems:"center",flexWrap:"wrap"}}>
+                      <label style={{width:40,height:40,borderRadius:6,background:"rgba(99,102,241,0.08)",border:"1px dashed rgba(99,102,241,0.3)",overflow:"hidden",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer"}}>
+                        {pl.cover?<img src={pl.cover} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:<span style={{fontSize:16}}>🖼</span>}
+                        <input type="file" accept="image/*" style={{display:"none"}} onChange={e=>{
+                          const f=e.target.files?.[0]; if(!f) return;
+                          const r=new UploadReader();
+                          r.onload=ev=>updPlaylists(fresh=>{
+                            const idx=fresh.findIndex(p=>p.id===pl.id);
+                            if(idx<0) return fresh;
+                            const next=[...fresh]; next[idx]={...next[idx],cover:ev.target.result}; return next;
+                          });
+                          r.readAsDataURL(f); e.target.value="";
+                        }}/>
+                      </label>
+                      <input value={pl.name||""} onChange={e=>{
+                        const val=e.target.value;
+                        updPlaylists(fresh=>{
+                          const idx=fresh.findIndex(p=>p.id===pl.id);
+                          if(idx<0) return fresh;
+                          const next=[...fresh]; next[idx]={...next[idx],name:val}; return next;
+                        });
+                      }} placeholder="Nom de la playlist" className="adm-input" style={{flex:1,background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#1a1a2e",padding:"7px 10px",fontSize:12,borderRadius:7,minWidth:120}}/>
+                      <span style={{fontSize:11,color:"#9ca3af",flexShrink:0}}>{trackIds.length} morceau{trackIds.length!==1?"x":""}</span>
+                      <button onClick={()=>setOpenPlaylistAdmin(isOpen?null:pl.id)} className="adm-btn-primary" style={{background:"rgba(99,102,241,0.1)",border:"1px solid rgba(99,102,241,0.3)",color:"#6366f1",padding:"6px 12px",borderRadius:7,fontWeight:600,fontSize:11,cursor:"pointer"}}>{isOpen?"Fermer":"Gérer les morceaux"}</button>
+                      <button onClick={()=>{
+                        if(pl.cover) updPlaylists(fresh=>{
+                          const idx=fresh.findIndex(p=>p.id===pl.id);
+                          if(idx<0) return fresh;
+                          const next=[...fresh]; next[idx]={...next[idx],cover:null}; return next;
+                        });
+                      }} style={{fontSize:10,color:"#9ca3af",background:"none",border:"none",cursor:pl.cover?"pointer":"default",padding:0,visibility:pl.cover?"visible":"hidden"}}>Suppr. cover</button>
+                      <button onClick={()=>{
+                        updPlaylists(fresh=>fresh.filter(p=>p.id!==pl.id));
+                        if(isOpen) setOpenPlaylistAdmin(null);
+                      }} className="adm-del-btn" style={{background:"none",border:"none",color:"#d1d5db",cursor:"pointer",fontSize:16,padding:"2px 6px",borderRadius:5}}>×</button>
+                    </div>
+                    {isOpen && (
+                      <div style={{display:"flex",flexDirection:"column",gap:4,maxHeight:220,overflowY:"auto",background:"rgba(0,0,0,0.02)",borderRadius:8,padding:8}}>
+                        {music.length===0 && <div style={{fontSize:11,color:"#9ca3af"}}>Aucun morceau dans la bibliothèque de ce perso.</div>}
+                        {music.map(track=>{
+                          const checked = trackIds.includes(track.id);
+                          return (
+                            <label key={track.id} style={{display:"flex",alignItems:"center",gap:8,fontSize:12,color:"#374151",cursor:"pointer",padding:"3px 4px"}}>
+                              <input type="checkbox" checked={checked} onChange={()=>{
+                                updPlaylists(fresh=>{
+                                  const idx=fresh.findIndex(p=>p.id===pl.id);
+                                  if(idx<0) return fresh;
+                                  const curIds = fresh[idx].trackIds||[];
+                                  const nextIds = curIds.includes(track.id) ? curIds.filter(id=>id!==track.id) : [...curIds, track.id];
+                                  const next=[...fresh]; next[idx]={...next[idx],trackIds:nextIds}; return next;
+                                });
+                              }}/>
+                              <span style={{flex:1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{track.title||"(sans titre)"} — <span style={{color:"#9ca3af"}}>{track.artist}</span></span>
+                            </label>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+              <button onClick={()=>{
+                updPlaylists(fresh=>[...fresh, {id:"pl_"+Date.now(), name:"Nouvelle playlist", cover:null, trackIds:[]}]);
+              }} style={{background:"rgba(99,102,241,0.08)",border:"1px dashed rgba(99,102,241,0.4)",color:"#6366f1",borderRadius:8,padding:"8px 16px",cursor:"pointer",fontSize:12,fontWeight:600,alignSelf:"flex-start"}}>+ Nouvelle playlist</button>
+            </>;
+          })()}
+        </div>
       </div>
     );
 
@@ -22748,6 +22924,15 @@ export default function App() {
               const existingApps = remote[k]?.apps || [];
               if(!existingApps.includes("files")) {
                 patches[`${k}/apps`] = [...existingApps, "files"];
+              }
+              // Seed "playlist n°1" (nouvelle fonctionnalité v8) : regroupe tous les morceaux déjà
+              // présents dans music au moment de la migration. Nom/cover personnalisables ensuite
+              // dans l'admin (onglet Musique → Playlists). Ne s'applique qu'une fois : si le perso a
+              // déjà des playlists (créées depuis dans l'admin), on ne touche à rien.
+              const existingPlaylists = remote[k]?.playlists || [];
+              if(existingPlaylists.length===0) {
+                const trackIds = (remote[k]?.music||[]).map(t=>t.id).filter(id=>id!==undefined && id!==null);
+                patches[`${k}/playlists`] = [{id:"playlist1", name:"playlist n°1", cover:null, trackIds}];
               }
               // Initialiser instagram si absent (nouvelle fonctionnalité v5)
               if(!remote[k]?.instagram) {
