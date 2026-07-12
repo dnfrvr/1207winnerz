@@ -23115,7 +23115,6 @@ export default function App() {
       // Lire la liste des snapshots existants pour en supprimer les plus anciens
       const snapRef = ref(firebaseDb, "_snapshots");
       const snap = await new Promise(resolve => {
-        const { onValue: ov } = require === undefined ? window.firebaseOnValue || {} : {};
         // Simple one-time read via onValue with immediate unsubscribe
         const unsub = onValue(snapRef, s => { resolve(s.val()); unsub(); });
       });
