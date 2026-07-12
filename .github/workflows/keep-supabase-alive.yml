@@ -1,0 +1,16 @@
+name: Keep Supabase Alive
+
+on:
+  schedule:
+    - cron: '0 8 */3 * *'
+  workflow_dispatch:
+
+jobs:
+  ping-supabase:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Supabase project
+        run: |
+          curl -s -o /dev/null -w "%{http_code}" \
+            "https://vlgyocovomidmeuglzuv.supabase.co/rest/v1/" \
+            -H "apikey: ${{ secrets.eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZsZ3lvY292b21pZG1ldWdsenV2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIzOTU1NDEsImV4cCI6MjA5Nzk3MTU0MX0.C73QomSswGMuM8pEwICNk0T_KrwqyAInVy35xJLRkk8 }}"
