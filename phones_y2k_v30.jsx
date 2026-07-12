@@ -182,6 +182,29 @@ const deepDiffPatch = (oldObj, newObj, path = []) => {
   return patch;
 };
 
+// Écrit `value` à un chemin arbitrairement profond dans un objet/tableau imbriqué, en respectant
+// la structure déjà présente (index numérique + tableau existant → mise à jour de tableau ;
+// sinon → objet). Nécessaire pour ré-appliquer proprement des patches Firebase multi-niveaux
+// (ex: "glinda/gallery/12/dateISO") — une simple déstructuration à 1-2 niveaux tronquerait le
+// chemin et écraserait des structures entières (ex: tout le tableau "gallery") avec une valeur
+// censée n'être qu'un champ isolé d'un de ses éléments.
+const setDeepPath = (root, pathParts, value) => {
+  const set = (obj, parts) => {
+    if (parts.length === 0) return value;
+    const [head, ...rest] = parts;
+    const isIndex = /^\d+$/.test(head);
+    if (isIndex && Array.isArray(obj)) {
+      const arr = [...obj];
+      const idx = Number(head);
+      arr[idx] = set(arr[idx], rest);
+      return arr;
+    }
+    const base = (obj && typeof obj === "object" && !Array.isArray(obj)) ? obj : {};
+    return { ...base, [head]: set(base[head], rest) };
+  };
+  return set(root, pathParts);
+};
+
 // Dev overrides context — consumed by isolated memo'd components
 const DevCtx = createContext({});
 
@@ -23445,13 +23468,7 @@ export default function App() {
           // nous-même (ex: un tweet qui disparaît localement avant même d'avoir été synchronisé).
           let merged = remote;
           for (const [path, val] of Object.entries(pendingFirebaseUpdate.current)) {
-            const parts = path.split('/');
-            if (parts.length === 1) {
-              merged = {...merged, [parts[0]]: val};
-            } else {
-              const [parent, child] = parts;
-              merged = {...merged, [parent]: {...(merged[parent]||{}), [child]: val}};
-            }
+            merged = setDeepPath(merged, path.split('/'), val);
           }
           return merged;
         });
