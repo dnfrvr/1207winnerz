@@ -80,6 +80,108 @@ class UploadReader {
   }
 }
 
+// ─── MIGRATION BASE64 → SUPABASE STORAGE ─────────────────────────────────────
+// Convertit une data URI base64 ("data:image/png;base64,...") en Blob binaire,
+// pour pouvoir l'uploader vers Supabase Storage exactement comme un vrai fichier.
+const dataUriToBlob = (dataUri) => {
+  const [header, base64] = dataUri.split(",");
+  const mimeMatch = header.match(/data:(.*?);base64/);
+  const mime = mimeMatch ? mimeMatch[1] : "image/png";
+  const binary = atob(base64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+  return new Blob([bytes], { type: mime });
+};
+
+// Upload un Blob (image déjà décodée) vers Supabase Storage. Retourne l'URL publique,
+// ou null si l'upload échoue (Supabase non configuré, bucket manquant, policy refusée...).
+const uploadBlobToSupabase = async (blob) => {
+  if (!supabaseClient) return null;
+  try {
+    const ext = (blob.type.split("/")[1] || "png").replace(/[^a-z0-9]/gi, "") || "png";
+    const path = `${Date.now()}_${Math.random().toString(36).slice(2)}_migrated.${ext}`;
+    const { data, error } = await supabaseClient.storage
+      .from("uploads")
+      .upload(path, blob, { cacheControl: "3600", upsert: false });
+    if (error) throw error;
+    const { data: urlData } = supabaseClient.storage.from("uploads").getPublicUrl(data.path);
+    return urlData.publicUrl;
+  } catch (err) {
+    console.error("[migrate] Échec d'upload vers Supabase :", err);
+    return null;
+  }
+};
+
+// Parcourt récursivement tout l'arbre de données (persos + sharedThreads) et renvoie la liste
+// de toutes les chaînes base64 trouvées ("data:image/...") avec leur chemin Firebase exact
+// (ex: "glinda/gallery/3/src"). Sert à migrer en masse les images restées en base64 — que ce
+// soit d'anciens uploads tombés en fallback avant que Supabase soit configuré, ou tout autre cas.
+const findBase64Images = (obj, path = []) => {
+  const found = [];
+  if (obj == null) return found;
+  if (typeof obj === "string") {
+    if (obj.startsWith("data:image/")) found.push({ path: path.join("/"), value: obj });
+    return found;
+  }
+  if (Array.isArray(obj)) {
+    obj.forEach((v, i) => found.push(...findBase64Images(v, [...path, i])));
+    return found;
+  }
+  if (typeof obj === "object") {
+    Object.keys(obj).forEach(k => found.push(...findBase64Images(obj[k], [...path, k])));
+  }
+  return found;
+};
+
+// Compare deux objets champ par champ (niveau racine uniquement) et renvoie un patch ne
+// contenant que les clés dont la valeur a réellement changé. Utilisé pour éviter de renvoyer
+// à Firebase des champs volumineux (photos, galerie...) qui n'ont pas bougé — sans ça, éditer
+// n'importe quel petit champ d'un perso (ex: un badge) réenvoyait TOUT l'objet, y compris
+// chaque image encore en base64, ce qui pouvait dépasser la limite d'écriture Firebase
+// ("Write too large") et faire échouer silencieusement la sauvegarde.
+const shallowDiffPatch = (oldObj = {}, newObj = {}) => {
+  const patch = {};
+  const keys = new Set([...Object.keys(oldObj || {}), ...Object.keys(newObj || {})]);
+  keys.forEach(k => {
+    const a = oldObj?.[k], b = newObj?.[k];
+    if (a === b) return;
+    let changed;
+    try { changed = JSON.stringify(a) !== JSON.stringify(b); }
+    catch (e) { changed = true; }
+    if (changed) patch[k] = (b === undefined ? null : b);
+  });
+  return patch;
+};
+
+// Compare deux objets récursivement et renvoie un patch de chemins Firebase ("a/b/c": val) ne
+// contenant que les valeurs qui ont réellement changé, en descendant dans les objets/tableaux
+// jusqu'à trouver le champ précis modifié. Beaucoup plus fin que shallowDiffPatch : par exemple, si
+// seule une photo de la galerie change, seul "gallery/3/src" est renvoyé — pas tout le tableau
+// gallery. C'est ce qui permet à l'outil de migration de ne renvoyer que les URLs d'images
+// remplacées, sans jamais réécrire le reste (potentiellement volumineux) de l'objet.
+const deepDiffPatch = (oldObj, newObj, path = []) => {
+  const patch = {};
+  const isPlainObj = v => v !== null && typeof v === "object" && !Array.isArray(v);
+  if (Array.isArray(newObj) && Array.isArray(oldObj)) {
+    const len = Math.max(oldObj.length, newObj.length);
+    for (let i = 0; i < len; i++) {
+      Object.assign(patch, deepDiffPatch(oldObj[i], newObj[i], [...path, i]));
+    }
+    return patch;
+  }
+  if (isPlainObj(newObj) && isPlainObj(oldObj)) {
+    const keys = new Set([...Object.keys(oldObj), ...Object.keys(newObj)]);
+    keys.forEach(k => Object.assign(patch, deepDiffPatch(oldObj[k], newObj[k], [...path, k])));
+    return patch;
+  }
+  // Feuille (string/number/bool/null/undefined, ou changement de type de structure) : comparer directement.
+  let changed;
+  try { changed = JSON.stringify(oldObj) !== JSON.stringify(newObj); }
+  catch (e) { changed = true; }
+  if (changed && path.length > 0) patch[path.join("/")] = (newObj === undefined ? null : newObj);
+  return patch;
+};
+
 // Dev overrides context — consumed by isolated memo'd components
 const DevCtx = createContext({});
 
@@ -18991,6 +19093,38 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
       setRestoreOpen(false); setRestoreStatus(null);
     } catch(e) { setRestoreStatus("error"); }
   };
+
+  // ── Migration des images base64 restantes vers Supabase Storage ─────────────
+  // Certaines images (anciens uploads tombés en fallback avant que Supabase soit configuré/actif)
+  // sont encore stockées en base64 dans Firebase — lourdes, et responsables des erreurs
+  // "Write too large". Cet outil les retrouve toutes, les upload vers Supabase, et ne renvoie
+  // à Firebase que les URLs obtenues (courtes), via un patch multi-chemins ciblé — sans jamais
+  // réécrire le reste des données.
+  const [migrateOpen, setMigrateOpen]     = useState(false);
+  const [migrateStatus, setMigrateStatus] = useState(null); // null | {running,total,done,failed} | {done:true,...}
+  const runMigration = async () => {
+    if (!supabaseClient) { setMigrateStatus({done:true, total:0, migrated:0, failed:0, error:"Supabase n'est pas configuré."}); return; }
+    if (!firebaseDb) { setMigrateStatus({done:true, total:0, migrated:0, failed:0, error:"Firebase n'est pas connecté."}); return; }
+    const found = findBase64Images(dataRef.current);
+    if (found.length === 0) { setMigrateStatus({done:true, total:0, migrated:0, failed:0}); return; }
+    setMigrateStatus({running:true, total:found.length, done:0, failed:0});
+    const fbPatch = {};
+    let migrated = 0, failed = 0;
+    for (const item of found) {
+      try {
+        const blob = dataUriToBlob(item.value);
+        const url = await uploadBlobToSupabase(blob);
+        if (url) { fbPatch[item.path] = url; migrated++; }
+        else failed++;
+      } catch(e) { failed++; }
+      setMigrateStatus(s => ({...(s||{}), running:true, total:found.length, done:migrated+failed, failed}));
+    }
+    if (Object.keys(fbPatch).length > 0) {
+      try { await update(ref(firebaseDb), fbPatch); }
+      catch(e) { setMigrateStatus({done:true, total:found.length, migrated, failed, error:"Écriture Firebase échouée : "+e.message}); return; }
+    }
+    setMigrateStatus({done:true, total:found.length, migrated, failed});
+  };
   const [importParsed, setImportParsed] = useState(null);
   const [importError, setImportError]   = useState(null);
   const [importFileName, setImportFileName] = useState("");
@@ -22722,6 +22856,11 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                     🕐 Restaurer
                   </button>
 
+                  <button onClick={()=>{ setMigrateStatus(null); setMigrateOpen(true); setBurgerOpen(false); }}
+                    style={{background:"transparent",border:"1px solid #e5e7eb",color:"#374151",padding:"8px 12px",borderRadius:7,fontSize:12,cursor:"pointer",fontWeight:500,textAlign:"left"}}>
+                    🧹 Migrer images
+                  </button>
+
                 </div>
               </>}
             </div>
@@ -22757,6 +22896,12 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
           <button onClick={openRestorePanel}
             style={{background:"transparent",border:"1px solid #e5e7eb",color:"#374151",padding:"6px 12px",borderRadius:7,fontSize:12,cursor:"pointer",fontWeight:500}}>
             🕐 Restaurer
+          </button>
+
+          {/* Migrer les images base64 restantes vers Supabase */}
+          <button onClick={()=>{ setMigrateStatus(null); setMigrateOpen(true); }}
+            style={{background:"transparent",border:"1px solid #e5e7eb",color:"#374151",padding:"6px 12px",borderRadius:7,fontSize:12,cursor:"pointer",fontWeight:500}}>
+            🧹 Migrer images
           </button>
 
           {/* Back */}
@@ -22942,6 +23087,65 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                   </button>
                 </div>
               ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── MODAL MIGRATION IMAGES BASE64 → SUPABASE ────────────────────────── */}
+      {migrateOpen && (
+        <div onClick={()=>{ if(!migrateStatus?.running) setMigrateOpen(false); }} style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.5)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:1001,padding:16}}>
+          <div onClick={e=>e.stopPropagation()} style={{background:"#fff",borderRadius:14,width:"min(480px,100%)",display:"flex",flexDirection:"column",overflow:"hidden",boxShadow:"0 20px 60px rgba(0,0,0,0.3)"}}>
+            <div style={{padding:"16px 20px",borderBottom:"1px solid #e5e7eb",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+              <div>
+                <div style={{fontWeight:700,fontSize:14,color:"#1a1a2e"}}>🧹 Migrer les images vers Supabase</div>
+                <div style={{fontSize:11,color:"#9ca3af",marginTop:2}}>Retrouve toutes les images encore stockées en base64 (anciens uploads) et les envoie vers Supabase Storage pour alléger Firebase.</div>
+              </div>
+              {!migrateStatus?.running && <button onClick={()=>setMigrateOpen(false)} style={{background:"none",border:"none",fontSize:18,color:"#9ca3af",cursor:"pointer"}}>×</button>}
+            </div>
+            <div style={{padding:"16px 20px",display:"flex",flexDirection:"column",gap:14}}>
+              {!migrateStatus && (
+                <div style={{fontSize:12,color:"#6b7280",lineHeight:1.6}}>
+                  Cette opération peut prendre un moment selon le nombre d'images à migrer. Ne ferme pas cette fenêtre pendant la migration.
+                </div>
+              )}
+              {migrateStatus?.running && (
+                <div style={{display:"flex",flexDirection:"column",gap:8}}>
+                  <div style={{fontSize:13,fontWeight:600,color:"#374151"}}>
+                    {migrateStatus.done} / {migrateStatus.total} images traitées…
+                  </div>
+                  <div style={{height:8,background:"rgba(0,0,0,0.06)",borderRadius:5,overflow:"hidden"}}>
+                    <div style={{height:"100%",width:`${migrateStatus.total ? Math.round(migrateStatus.done/migrateStatus.total*100) : 0}%`,background:"linear-gradient(90deg,#6366f1,#8b5cf6)",transition:"width 0.2s"}}/>
+                  </div>
+                  {migrateStatus.failed > 0 && <div style={{fontSize:11,color:"#ef4444"}}>{migrateStatus.failed} échec(s) jusqu'ici — resteront en base64.</div>}
+                </div>
+              )}
+              {migrateStatus?.done && (
+                <div style={{display:"flex",flexDirection:"column",gap:8}}>
+                  {migrateStatus.error ? (
+                    <div style={{background:"rgba(239,68,68,0.07)",border:"1px solid rgba(239,68,68,0.2)",color:"#ef4444",borderRadius:8,padding:"10px 14px",fontSize:12}}>{migrateStatus.error}</div>
+                  ) : migrateStatus.total===0 ? (
+                    <div style={{background:"rgba(16,185,129,0.08)",border:"1px solid rgba(16,185,129,0.25)",color:"#059669",borderRadius:8,padding:"10px 14px",fontSize:12,fontWeight:600}}>
+                      ✓ Aucune image en base64 trouvée — tout est déjà propre !
+                    </div>
+                  ) : (
+                    <div style={{background:"rgba(16,185,129,0.08)",border:"1px solid rgba(16,185,129,0.25)",color:"#059669",borderRadius:8,padding:"10px 14px",fontSize:12,fontWeight:600}}>
+                      ✓ {migrateStatus.migrated} image(s) migrée(s) vers Supabase{migrateStatus.failed>0?`, ${migrateStatus.failed} échec(s) (restées en base64)`:""}.
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+            <div style={{padding:"12px 20px",borderTop:"1px solid #e5e7eb",display:"flex",justifyContent:"flex-end",gap:8}}>
+              {!migrateStatus?.running && (
+                <button onClick={()=>setMigrateOpen(false)} style={{background:"transparent",border:"1px solid #e5e7eb",color:"#374151",padding:"8px 14px",borderRadius:7,fontSize:12,cursor:"pointer"}}>Fermer</button>
+              )}
+              {!migrateStatus?.running && (
+                <button onClick={runMigration}
+                  style={{background:"linear-gradient(135deg,#6366f1,#8b5cf6)",border:"none",color:"#fff",padding:"8px 18px",borderRadius:7,fontWeight:700,fontSize:12,cursor:"pointer"}}>
+                  {migrateStatus?.done ? "Relancer" : "Lancer la migration"}
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -23321,15 +23525,27 @@ export default function App() {
       if(isSharedKey) {
         if(key==='groupMeta') {
           const mergedMeta = {...(prev.groupMeta||{}), ...d};
-          queueFirebaseUpdate({ groupMeta: mergedMeta });
+          const diff = deepDiffPatch(prev.groupMeta || {}, mergedMeta);
+          if(Object.keys(diff).length) {
+            const fbPatch = {}; Object.keys(diff).forEach(p => { fbPatch[`groupMeta/${p}`] = diff[p]; });
+            queueFirebaseUpdate(fbPatch);
+          }
           return {...prev, groupMeta: mergedMeta};
         }
         const next = {...prev, sharedThreads:{...(prev.sharedThreads||{}), [key]:d}};
-        queueFirebaseUpdate({ [`sharedThreads/${key}`]: d });
+        const diff = deepDiffPatch(prev.sharedThreads?.[key] || {}, d);
+        if(Object.keys(diff).length) {
+          const fbPatch = {}; Object.keys(diff).forEach(p => { fbPatch[`sharedThreads/${key}/${p}`] = diff[p]; });
+          queueFirebaseUpdate(fbPatch);
+        }
         return next;
       }
       if(key==='_sharedAndroidIcons') {
-        queueFirebaseUpdate({ _sharedAndroidIcons: d });
+        const diff = deepDiffPatch(prev._sharedAndroidIcons || {}, d);
+        if(Object.keys(diff).length) {
+          const fbPatch = {}; Object.keys(diff).forEach(p => { fbPatch[`_sharedAndroidIcons/${p}`] = diff[p]; });
+          queueFirebaseUpdate(fbPatch);
+        }
         return {...prev, _sharedAndroidIcons: d};
       }
       // RETIRÉ : "Force playlists to stay hardcoded" réécrasait `music`/`playlistName` avec la
@@ -23341,7 +23557,15 @@ export default function App() {
       // ce qui suffit à fournir la playlist de lore de base sans plus jamais l'imposer ensuite.
       const merged = d;
       let next = {...prev, [key]:merged};
-      if(skipSync) { queueFirebaseUpdate({ [key]: merged }); return next; }
+      // Ne renvoyer à Firebase que les champs qui ont réellement changé (jusqu'au niveau feuille,
+      // y compris dans les tableaux comme la galerie) — au lieu de tout l'objet du perso à chaque
+      // edit. Sans ça, éditer n'importe quel petit champ réenvoyait aussi chaque photo/pochette
+      // déjà stockée en base64, ce qui pouvait dépasser la limite d'écriture Firebase et faire
+      // échouer silencieusement la sauvegarde.
+      const diff = deepDiffPatch(prev[key] || {}, merged);
+      const fbPatch = {};
+      Object.keys(diff).forEach(p => { fbPatch[`${key}/${p}`] = diff[p]; });
+      if(skipSync) { if(Object.keys(fbPatch).length) queueFirebaseUpdate(fbPatch); return next; }
       // Sync icônes entre tous les persos du même OS — état React local uniquement.
       // On n'envoie PAS les persos voisins à Firebase : écraser leur objet entier avec
       // une version issue de prev[] écraserait leurs données (instagram, messages…).
@@ -23350,7 +23574,7 @@ export default function App() {
       ALL_CHAR_KEYS.filter(k => k !== key && prev[k]?.os === thisOs).forEach(other => {
         next[other] = {...next[other], appIcons:{...(d.appIcons||{})}, appNames:{...(d.appNames||{})}};
       });
-      queueFirebaseUpdate({ [key]: merged });
+      if(Object.keys(fbPatch).length) queueFirebaseUpdate(fbPatch);
       return next;
     });
 
@@ -23358,11 +23582,15 @@ export default function App() {
 
   const updateSharedAndroid = (icons) => {
     setSharedAndroidIcons(icons);
+    const diff = deepDiffPatch(dataRef.current._sharedAndroidIcons || {}, icons);
     setData(prev => {
       const next = {...prev, _sharedAndroidIcons: icons};
       return next;
     });
-    queueFirebaseUpdate({ _sharedAndroidIcons: icons });
+    if(Object.keys(diff).length) {
+      const fbPatch = {}; Object.keys(diff).forEach(p => { fbPatch[`_sharedAndroidIcons/${p}`] = diff[p]; });
+      queueFirebaseUpdate(fbPatch);
+    }
   };
 
   const charData = selected && data[selected.key];
