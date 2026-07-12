@@ -23087,6 +23087,8 @@ const SyncBadge = ({status}) => {
 
 export default function App() {
   const [data, setData]         = useState(()=>loadData());
+  const dataRef = useRef(data);
+  useEffect(()=>{ dataRef.current = data; }, [data]);
   const [selected, setSelected] = useState(null);
   const [adminMode, setAdminMode] = useState(false);
   const [loreDate, setLoreDate]   = useState(getLoreDate());
