@@ -18970,8 +18970,9 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
     setRestoreOpen(true); setRestoreStatus("loading"); setSnapshots([]);
     if (!firebaseDb) { setRestoreStatus("error"); return; }
     try {
-      const unsub = onValue(ref(firebaseDb, "_snapshots"), s => {
-        unsub();
+      let unsub;
+      unsub = onValue(ref(firebaseDb, "_snapshots"), s => {
+        if (unsub) unsub();
         const val = s.val() || {};
         const list = Object.entries(val)
           .map(([ts, snap]) => ({ts, label: snap.label, data: snap.data}))
@@ -23115,8 +23116,12 @@ export default function App() {
       // Lire la liste des snapshots existants pour en supprimer les plus anciens
       const snapRef = ref(firebaseDb, "_snapshots");
       const snap = await new Promise(resolve => {
-        // Simple one-time read via onValue with immediate unsubscribe
-        const unsub = onValue(snapRef, s => { resolve(s.val()); unsub(); });
+        // Simple one-time read via onValue with immediate unsubscribe.
+        // 'let' (not const) declared before the call: onValue() can invoke its
+        // callback synchronously if a cached value is already available, which
+        // would otherwise try to call unsub() before the assignment completes.
+        let unsub;
+        unsub = onValue(snapRef, s => { resolve(s.val()); if (unsub) unsub(); });
       });
       const existing = snap ? Object.keys(snap).sort() : [];
       const toDelete = existing.length >= MAX_SNAPSHOTS ? existing.slice(0, existing.length - MAX_SNAPSHOTS + 1) : [];
