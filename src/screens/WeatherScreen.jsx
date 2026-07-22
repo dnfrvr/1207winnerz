@@ -1,4 +1,5 @@
 import React, { useState, useRef } from "react";
+import { Field } from "../shared/admin-fields.jsx";
 
 const WEATHER_DEFAULTS = {
   cities:[
