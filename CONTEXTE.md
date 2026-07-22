@@ -1,4 +1,4 @@
-# CONTEXTE — FindAnna Phone Simulator (1207winnerz)
+# CONTEXTE — IT: Welcome to UMA — Phone Simulator (1207winnerz)
 
 > Document de contexte technique du projet. Pour l'histoire/l'univers, voir `LORE.md`.
 
@@ -9,7 +9,7 @@ Un **simulateur de smartphones** (iOS + Android d'époque, ~2012) qui met en sc�
 ## 2. Nature du projet
 
 - **Type** : application web React mono-page (SPA), sans backend propre.
-- **But** : reconstituer 4 téléphones crédibles d'octobre 2012 comme pièces à conviction / support de jeu de rôle. Le nom « FindAnna » renvoie à l'intrigue (voir `LORE.md`).
+- **But** : reconstituer 4 téléphones crédibles d'octobre 2012 comme pièces à conviction / support de jeu de rôle. Le nom « IT: Welcome to UMA » renvoie à *Ça (IT)* de Stephen King et au cadre universitaire (UMA) — voir `LORE.md`.
 - **Public** : un petit groupe de joueurs/MJ qui partagent le même état synchronisé, plus un mode admin pour éditer tout le contenu.
 - **Langue** : interface et contenu en **français** ; époque volontairement rétro (« y2k », iOS 6 / Android 2.x façon skeuomorphe).
 

@@ -1,11 +1,11 @@
-# LORE — FindAnna
+# LORE — IT: Welcome to UMA
 
 > Synthèse de l'univers narratif encodé dans les données seed du simulateur.
 > Pour la partie technique, voir `CONTEXTE.md`.
 
 ## Le pitch
 
-**FindAnna** est un hommage à *Ça (IT)* de Stephen King, transposé chez de jeunes étudiant·es queer à l'automne **2012**, et raconté **entièrement à travers leurs quatre téléphones** : messages, Instagram, Twitter, Tumblr, Facebook, Notes, Grindr, Reddit, Snapchat, YouTube… L'horreur cosmique s'infiltre par les écrans. Sous les memes et les emojis d'ados de 2012 se cache la recherche de la vérité sur la disparition d'**Anna Green**, 8 ans.
+**IT: Welcome to UMA** est un hommage à *Ça (IT)* de Stephen King, transposé chez de jeunes étudiant·es queer à l'automne **2012**, et raconté **entièrement à travers leurs quatre téléphones** : messages, Instagram, Twitter, Tumblr, Facebook, Notes, Grindr, Reddit, Snapchat, YouTube… L'horreur cosmique s'infiltre par les écrans. Sous les memes et les emojis d'ados de 2012 se cache la recherche de la vérité sur la disparition d'**Anna Green**, 8 ans.
 
 Le groupe de discussion central s'appelle **« xX WiiNNERS Xx »** — d'où le nom du dépôt (`1207winnerz`).
 

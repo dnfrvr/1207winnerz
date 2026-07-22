@@ -1,4 +1,4 @@
-// FindAnna Phone Simulator — build 20250520
+// IT: Welcome to UMA — Phone Simulator — build 20250520
 import React, { useState, useRef, useEffect, memo, useContext } from "react";
 import { ref, onValue, update, set } from "firebase/database";
 import { firebaseDb } from "./src/lib/firebase.js";
@@ -7814,7 +7814,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
     const d = new Date();
     const dateStr = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
     a.href = url;
-    a.download = `findanna${charLabel}${contentLabel}_${dateStr}.json`;
+    a.download = `it-welcome-to-uma${charLabel}${contentLabel}_${dateStr}.json`;
     a.click();
     URL.revokeObjectURL(url);
     setExportOpen(false);
@@ -11545,7 +11545,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
         {/* Logo */}
         <div style={{display:"flex",alignItems:"center",gap:10,paddingRight:20,borderRight:"1px solid #f0f0f0",marginRight:4,flexShrink:0}}>
           <div style={{width:28,height:28,borderRadius:8,background:"linear-gradient(135deg,#6366f1,#8b5cf6)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:14}}>⚙</div>
-          {!isMobile && <div style={{fontWeight:700,fontSize:14,color:"#1a1a2e",letterSpacing:-0.3}}>FindAnna <span style={{color:"#9ca3af",fontWeight:400,fontSize:11}}>admin</span></div>}
+          {!isMobile && <div style={{fontWeight:700,fontSize:14,color:"#1a1a2e",letterSpacing:-0.3}}>IT: Welcome to UMA <span style={{color:"#9ca3af",fontWeight:400,fontSize:11}}>admin</span></div>}
         </div>
 
         {/* Character tabs */}
