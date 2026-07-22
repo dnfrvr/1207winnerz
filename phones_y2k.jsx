@@ -2086,41 +2086,6 @@ const TumblrScreen = ({data,admin,update,onUpdateShared=()=>{},accent,onBack=nul
 
 
 // Spotify (Eoghan)
-const SpotifyScreen = ({data, isIos}) => {
-  const [tab, setTab] = useState("home");
-  const GRN="#1DB954",BG="#121212",now=data.music?.[0];
-  const pls=[{name:"Indie Fall 2012",n:24,hue:160},{name:"Workout Mix 🔥",n:18,hue:20},{name:"Late Night Vibes",n:12,hue:260},{name:"Liked Songs",n:87,hue:290}];
-  const TABS=[
-    {id:"home",label:"Accueil",icon:(a)=><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M3 11L12 3l9 8M5 9.5V20a1 1 0 001 1h4v-5h4v5h4a1 1 0 001-1V9.5" stroke={a?GRN:"#777"} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>},
-    {id:"search",label:"Recherche",icon:(a)=><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="8" stroke={a?GRN:"#777"} strokeWidth="1.8"/><path d="M21 21l-3-3" stroke={a?GRN:"#777"} strokeWidth="1.8" strokeLinecap="round"/></svg>},
-    {id:"library",label:"Médiathèque",icon:(a)=><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="6" height="18" rx="1" stroke={a?GRN:"#777"} strokeWidth="1.8"/><rect x="12" y="3" width="3" height="18" rx="0.5" stroke={a?GRN:"#777"} strokeWidth="1.8"/><rect x="18" y="3" width="3" height="18" rx="0.5" stroke={a?GRN:"#777"} strokeWidth="1.8"/></svg>},
-  ];
-  return (
-    <div style={{flex:1,display:"flex",flexDirection:"column",background:BG,minHeight:0,color:"#fff"}}>
-      <div style={{flex:1,overflowY:"auto",minHeight:0}}>
-        {now&&<div style={{background:"#282828",padding:"10px 14px",display:"flex",alignItems:"center",gap:10,marginBottom:1}}>
-          <div style={{width:38,height:38,background:GRN,borderRadius:4,flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center"}}><svg width="18" height="18" viewBox="0 0 22 22" fill="none"><path d="M9 17V5l11-2v12" stroke="#fff" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/><circle cx="6" cy="17" r="3" stroke="#fff" strokeWidth="1.6"/><circle cx="17" cy="15" r="3" stroke="#fff" strokeWidth="1.6"/></svg></div>
-          <div style={{flex:1,minWidth:0}}><div style={{fontSize:12,fontWeight:600,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{now.title}</div><div style={{fontSize:11,color:"#aaa"}}>{now.artist}</div></div>
-          <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="2" y="2" width="6" height="16" rx="1" fill={GRN}/><rect x="12" y="2" width="6" height="16" rx="1" fill={GRN}/></svg>
-        </div>}
-        {tab==="home"&&<>
-          <div style={{padding:"12px 14px 8px",fontSize:13,fontWeight:700}}>Récemment joués</div>
-          <div style={{display:"flex",gap:10,padding:"0 14px 12px",overflowX:"auto"}}>
-            {pls.map((p,i)=><div key={i} style={{flexShrink:0,width:96}}><div style={{width:96,height:96,background:`hsl(${p.hue},55%,35%)`,borderRadius:4,marginBottom:5}}/><div style={{fontSize:11,fontWeight:500,lineHeight:1.2}}>{p.name}</div><div style={{fontSize:10,color:"#aaa"}}>{p.n} titres</div></div>)}
-          </div>
-          <div style={{padding:"0 14px 8px",fontSize:13,fontWeight:700}}>Titres récents</div>
-          {(data.music||[]).slice(0,5).map((t,i)=><div key={i} style={{padding:"8px 14px",display:"flex",alignItems:"center",gap:10,borderBottom:"1px solid #1a1a1a"}}><div style={{width:36,height:36,background:`hsl(${i*50+120},40%,30%)`,borderRadius:3,flexShrink:0}}/><div style={{flex:1,minWidth:0}}><div style={{fontSize:12,fontWeight:500,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{t.title}</div><div style={{fontSize:10,color:"#aaa"}}>{t.artist}</div></div><span style={{color:"#aaa",fontSize:11}}>{t.duration}</span></div>)}
-        </>}
-        {tab==="library"&&pls.map((p,i)=><div key={i} style={{padding:"10px 14px",display:"flex",alignItems:"center",gap:12,borderBottom:"1px solid #1a1a1a"}}><div style={{width:44,height:44,background:`hsl(${p.hue},55%,35%)`,borderRadius:4,flexShrink:0}}/><div><div style={{fontSize:13,fontWeight:500}}>{p.name}</div><div style={{fontSize:11,color:"#aaa"}}>Playlist · {p.n} titres</div></div></div>)}
-        {tab==="search"&&<div style={{padding:24,textAlign:"center",color:"#aaa",fontSize:13}}>Parcourir les genres</div>}
-      </div>
-      <div style={{background:"#181818",borderTop:"1px solid #282828",display:"flex",flexShrink:0}}>
-        {TABS.map(t=>(<button key={t.id} onClick={()=>setTab(t.id)} style={{flex:1,border:"none",background:"transparent",display:"flex",flexDirection:"column",alignItems:"center",padding:"7px 0",gap:2,cursor:"pointer"}}>{t.icon(tab===t.id)}<span style={{fontSize:9,color:tab===t.id?GRN:"#777",fontWeight:tab===t.id?600:400}}>{t.label}</span></button>))}
-      </div>
-    </div>
-  );
-};
-
 const WIKI_FEEDS = {
   glinda: [
     ["Économie comportementale","Branche de l'économie étudiant les effets psychologiques et cognitifs sur les décisions économiques.","1 oct 2012"],
@@ -4074,7 +4039,6 @@ const IOSPhone = ({data,admin,onUpdate,onUpdateShared=()=>{},loreDate:loreDatePr
     nikeplus:   ["#c0392b","#a93226","#922b21"],
     bugsnap:    ["#4aab4a","#3d9140","#2e7a2e"],
     wordpad:    ["#5b91ce","#4076b8","#35649a"],
-    spotify:    ["#1db954","#17a349","#108c3b"],
     soundcloud: ["#f26f21","#d95c10","#bc4e08"],
     espn:       ["#c0392b","#a93226","#922b21"],
     shazam:     ["#0088ff","#006fd4","#0057aa"],
@@ -5053,7 +5017,7 @@ const IOSPhone = ({data,admin,onUpdate,onUpdateShared=()=>{},loreDate:loreDatePr
       <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden",position:"relative",...homeBg,fontFamily:FF_IOS}}>
         <IOSStatusBar mode="home"/>
         <DraggableHomescreen data={data} update={update} appIcon={appIcon} badge={badge} goApp={id=>{
-          const IOS_APPS=['calendar','facebook','gmail','groupme','insta','messages','music','nikeplus','notes','phone','photos','gallery','pinterest','safari','settings','snapchat','soundcloud','spotify','starbucks','tumblr','twitter','weather','wikipedia','grindr','reddit','vpn','youtube','contacts','files'];
+          const IOS_APPS=['calendar','facebook','gmail','groupme','insta','messages','music','nikeplus','notes','phone','photos','gallery','pinterest','safari','settings','snapchat','soundcloud','starbucks','tumblr','twitter','weather','wikipedia','grindr','reddit','vpn','youtube','contacts','files'];
           if(IOS_APPS.includes(id)){setThread(null);if(id==="contacts")setPhonePanel("contacts");setApp(id==="gallery"?"photos":id==="contacts"?"phone":id);if(id==="safari"||id==="browser"){setBrowserTab("search");}}
         }} os="ios" accent={accent} admin={admin} charKey={charKey} noWallpaper/>
       </div>
@@ -5411,7 +5375,6 @@ const IOSPhone = ({data,admin,onUpdate,onUpdateShared=()=>{},loreDate:loreDatePr
   if(app==="groupme")   return <Shell><IOSStatusBar/><NavBar title="GroupMe" back={goHome}/><GroupMeScreen data={data} isIos={true} accent={accent}/></Shell>;
   if(app==="starbucks") return <Shell><IOSStatusBar/><NavBar title="Starbucks" back={goHome}/><StarbucksScreen isIos={true} charKey={charKey}/></Shell>;
   if(app==="soundcloud")return <Shell><IOSStatusBar/><NavBar title="SoundCloud" back={goHome}/><SoundCloudScreen data={data} isIos={true} accent={accent} admin={admin} update={(k,v)=>onUpdate(k,v)}/></Shell>;
-  if(app==="spotify")   return <Shell><IOSStatusBar/><NavBar title="Spotify" back={goHome}/><SpotifyScreen data={data} isIos={true} accent={accent}/></Shell>;
   if(app==="espn")      return <Shell><IOSStatusBar/><NavBar title="ESPN" back={goHome}/><div style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",background:"#f2f2f7",gap:12}}><span style={{fontSize:48}}>🏈</span><span style={{fontSize:15,fontWeight:600,color:"#1a1a1a"}}>ESPN</span><span style={{fontSize:12,color:"#8e8e93",textAlign:"center",padding:"0 32px"}}>This app is temporarily unavailable.</span></div></Shell>;
   if(app==="contacts")  return <Shell><IOSStatusBar/><NavBar title="Contacts" back={goHome}/><ContactsScreen data={data} isIos={true} accent={accent}/></Shell>;
   if(app==="clock")     return <Shell><IOSStatusBar/><NavBar title="Clock" back={goHome}/><ClockScreen isIos={true} accent={accent}/></Shell>;
@@ -5524,7 +5487,6 @@ const AndroidPhone = ({data,admin,onUpdate,sharedAndroidIcons={},onUpdateShared=
     snapchat:   ["#212121","#111"],
     insta:      ["#833ab4","#5f2580"],
     soundcloud: ["#E55B13","#b84710"],
-    spotify:    ["#1a7a3e","#145e2f"],
     maps:       ["#1565C0","#0d47a1"],
     settings:   ["#455a64","#37474f"],
     phone:      ["#2E7D32","#1b5e20"],
@@ -7148,7 +7110,6 @@ const APP_SECTIONS = {
   inaturalist:{icon:"🔬", label:"iNaturalist"},
   soundcloud: {icon:"🎧", label:"SoundCloud"},
   nikeplus:   {icon:"👟", label:"Nike+"},
-  spotify:    {icon:"🎶", label:"Spotify"},
   shazam:     {icon:"🎵", label:"Shazam"},
   groupme:    {icon:"💬", label:"GroupMe"},
   gmail:      {icon:"✉️", label:"Mails"},
@@ -7727,22 +7688,6 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
               style={{background:"rgba(192,57,43,0.08)",border:"1px dashed rgba(192,57,43,0.35)",color:"#c0392b",borderRadius:8,padding:"10px 18px",cursor:"pointer",fontSize:12,fontWeight:600}}>+ Sortie</button>
           </>);
         })()}
-      </div>
-    );
-
-    case "spotify": return (
-      <div style={{display:"flex",flexDirection:"column",gap:12}}>
-        <div style={{fontSize:11,color:"#9ca3af",marginBottom:4}}>Playlist affichées dans Spotify.</div>
-        {(d.spotify||[]).map((pl,i)=>(
-          <div key={pl.id??i} className="adm-card" style={{display:"flex",gap:8,alignItems:"center",background:"rgba(255,255,255,0.85)",padding:"8px 10px",borderRadius:10,border:"1px solid rgba(0,0,0,0.07)",flexWrap:"wrap"}}>
-            <Field label="Nom" value={pl.name||""} onChange={v=>{const s=[...d.spotify];s[i]={...s[i],name:v};upd("spotify",s);}}/>
-            <Field label="Nb titres" value={String(pl.n||0)} onChange={v=>{const s=[...d.spotify];s[i]={...s[i],n:parseInt(v)||0};upd("spotify",s);}} width="80px"/>
-            <Field label="Hue couleur" value={String(pl.hue||0)} onChange={v=>{const s=[...d.spotify];s[i]={...s[i],hue:parseInt(v)||0};upd("spotify",s);}} width="80px"/>
-            <button onClick={()=>upd("spotify",(d.spotify||[]).filter((_,j)=>j!==i))} style={{background:"none",border:"none",color:"#d1d5db",cursor:"pointer",fontSize:16,padding:"0 4px"}}>×</button>
-          </div>
-        ))}
-        <button onClick={()=>upd("spotify",[...(d.spotify||[]),{id:Date.now(),name:"",n:0,hue:120}])}
-          style={{background:"rgba(29,185,84,0.08)",border:"1px dashed rgba(29,185,84,0.35)",color:"#1DB954",borderRadius:8,padding:"10px 18px",cursor:"pointer",fontSize:12,fontWeight:600}}>+ Playlist</button>
       </div>
     );
 

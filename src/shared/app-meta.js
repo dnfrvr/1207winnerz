@@ -27,7 +27,6 @@ export const APP_META = {
   groupme:    {label:"GroupMe",    iosIcon:"💬"},
   starbucks:  {label:"Starbucks",  iosIcon:"☕"},
   soundcloud: {label:"SoundCloud", iosIcon:"🎧"},
-  spotify:    {label:"Spotify",    iosIcon:"🎶"},
   espn:       {label:"ESPN",       iosIcon:"🏈"},
   shazam:     {label:"Shazam",     iosIcon:"🎵"},
   wikipedia:  {label:"Wikipedia",  iosIcon:"📖",  droidLabel:"Wikipedia"},
