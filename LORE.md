@@ -11,7 +11,7 @@ Le groupe de discussion central s'appelle **« xX WiiNNERS Xx »** — d'où le 
 
 ## L'univers
 
-- **Époque** : automne **2012**. Le **6 octobre 2012** (`LORE_DATE_DEFAULT = '2012-10-06'`) est la date à laquelle les téléphones ont été **présentés aux joueur·ses lors de la première séance de JDR** — d'où la date de lore par défaut. Ce n'est **pas** une fin d'intrigue : la date **avance ensuite de séance en séance** via le sélecteur de dates de l'admin, ce qui met à jour tout l'affichage temporel. Le récit encodé dans les données seed court du **15 septembre au 6 octobre 2012** et culmine le jour du grand match de football (« GAME DAY »).
+- **Époque** : automne **2012**. Le **6 octobre 2012** (`LORE_DATE_DEFAULT = '2012-10-06'`) est la date de lore par défaut car c'est le moment où les téléphones ont été **présentés aux joueur·ses en séance de JDR** — après déjà **~8 séances de campagne**. Ce n'est donc **ni le début ni la fin** de l'histoire : la date **avance de séance en séance** via le sélecteur de dates de l'admin, ce qui met à jour tout l'affichage temporel. Le récit encodé dans les données seed court du **15 septembre au 6 octobre 2012** et culmine le jour du grand match de football (« GAME DAY »).
 - **Lieu de vie** : **UMA — University of Maine at Augusta** (emails `@uma.edu`). Les quatre sont en première année. Mascotte : l'orignal (« GO MOOSE 🫎 ») ; l'équipe affronte les **Vermont Beavers**.
 - **Lieu du mystère** : **Derry, Maine** — la ville maudite de Stephen King, où vivent la famille d'Elias et les deux mères de Drew. *« Derry isn't on most maps. That's never stopped it from being real to the people who grew up there. »*
 - **Esthétique Y2K / 2012** : iOS 6 et Android skeuomorphes, apps d'époque (Vine, Polyvore, Pou, Temple Run, Candy Crush, Kik, ask.fm, Nike+), culture pop 2012 (Rihanna « We Found Love », One Direction, My Chemical Romance, Twilight). Le casting secondaire glisse des clins d'œil One Direction (Liam, Niall, Zayn).
@@ -59,7 +59,7 @@ Derry est hantée par une **entité (« Ça »)** qui se manifeste en **clown**,
 - **30 sep.** : Anna est retrouvée, *« sortie d'égouts… à l'hôpital, état catatonique »*. Elias : *« elle me regarde pas »*.
 - **2 oct.** : *« Elias a eu un incident cette nuit »* — épisode de crise/auto-agression suggéré ; le groupe fait bloc et dort chez lui. C'est le pivot émotionnel.
 - **3 oct.** : Anna transférée en hôpital psychiatrique, aucun recours (*« non. j'ai demandé. »*).
-- Le **6 oct.** (« GAME DAY »), les quatre sont réunis dans les tribunes : *« on arrive. tous les quatre 🤍🤍 »*. C'est le point où **s'arrêtent les données seed** et où les téléphones ont été présentés en séance — le **point de départ du jeu**, pas la fin de l'histoire : la suite se joue en faisant avancer la date de lore.
+- Le **6 oct.** (« GAME DAY »), les quatre sont réunis dans les tribunes : *« on arrive. tous les quatre 🤍🤍 »*. C'est le point où **s'arrêtent les données seed** et où les téléphones ont été présentés en séance (après ~8 séances de jeu) — pas la fin de la campagne : la suite se joue en faisant avancer la date de lore.
 
 Références King disséminées : Mike Hanlon, la tortue **Maturin**, la pharmacie Keene, les symboles des égouts.
 

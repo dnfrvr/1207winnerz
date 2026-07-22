@@ -2,8 +2,9 @@ import React, { useContext } from "react";
 import { LORE_MONTHS } from "../data/seeds.js";
 
 // ─── Date lore ───────────────────────────────────────────────────────────────
-// Date fictive de l'ARG — modifiable dans les réglages admin
-// Format stocké : "YYYY-MM-DD" mais on l'interprète comme lundi 1er octobre 2012
+// Date fictive de l'ARG — modifiable dans les réglages admin.
+// Format stocké : "YYYY-MM-DD". Défaut = 2012-10-06 (date à laquelle les téléphones
+// ont été présentés en séance de JDR) ; elle avance ensuite via le sélecteur de l'admin.
 
 // Date lore par défaut. Modifiable dans l'admin (en session uniquement —
 // les artifacts Claude n'ont pas de stockage persistant).
