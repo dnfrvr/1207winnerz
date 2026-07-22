@@ -89,7 +89,7 @@ Le fichier contient encore : la logique de sync/composition, ~60 composants « �
 
 - Deux coquilles OS fidèles (iOS 6 skeuomorphe / Android 2.x « holo »), slide-to-unlock, springboard réorganisable (drag & drop), dock, notifications de lock screen.
 - ~50 applications simulées avec contenu éditable.
-- **Date de lore** globale (`loreDate`, défaut `2012-10-06`) : synchronisée et propagée à tous — pilote l'affichage temporel (météo, calendrier, tri des messages via `parseLoreTime`).
+- **Date de lore** globale (`loreDate`, défaut `2012-10-06` = date de présentation des téléphones en séance ; **avancée manuellement de séance en séance** via le sélecteur de l'admin) : synchronisée et propagée à tous — pilote l'affichage temporel (météo, calendrier, tri des messages via `parseLoreTime`).
 - **Mode admin** activé par l'URL `?admin=1` (aucune authentification) : `AdminBackoffice` permet d'éditer chaque perso, importer/exporter du JSON, restaurer un snapshot, importer une playlist Spotify.
 - Import de playlist Spotify via la Netlify Function (le client secret reste côté serveur).
 
