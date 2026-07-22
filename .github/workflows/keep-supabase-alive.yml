@@ -10,7 +10,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Ping Supabase project
+        env:
+          # À définir dans GitHub → Settings → Secrets and variables → Actions :
+          #   SUPABASE_URL       = https://<projet>.supabase.co
+          #   SUPABASE_ANON_KEY  = la clé anon (publique) du projet Supabase
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
         run: |
-          curl -s -o /dev/null -w "%{http_code}" \
-            "https://vlgyocovomidmeuglzuv.supabase.co/rest/v1/" \
-            -H "apikey: ${{ secrets.eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZsZ3lvY292b21pZG1ldWdsenV2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIzOTU1NDEsImV4cCI6MjA5Nzk3MTU0MX0.C73QomSswGMuM8pEwICNk0T_KrwqyAInVy35xJLRkk8 }}"
+          curl -s -o /dev/null -w "HTTP %{http_code}\n" \
+            "${SUPABASE_URL}/rest/v1/" \
+            -H "apikey: ${SUPABASE_ANON_KEY}"
