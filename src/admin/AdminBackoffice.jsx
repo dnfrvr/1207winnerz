@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useRef } from "react";
+import { ref, onValue, set, update } from "firebase/database";
 import { FF_IOS } from "../shared/constants.js";
 import { APP_META } from "../shared/app-meta.js";
-import { loreSortKey, parseLoreTime } from "../shared/lore-date.js";
+import { loreSortKey, parseLoreTime, LORE_DATE_DEFAULT } from "../shared/lore-date.js";
 import { UploadReader, dataUriToBlob, findBase64Images, uploadBlobToSupabase, supabaseClient } from "../lib/storage.js";
 import { firebaseDb } from "../lib/firebase.js";
 import { CHAR_NAMES } from "../data/characters.js";
-import { LORE_MONTHS } from "../data/seeds.js";
+import { LORE_MONTHS, CHARACTERS, TWITTER_HOME_BASE } from "../data/seeds.js";
 import { IgCommentEditor } from "../screens/InstaScreen.jsx";
 import { WeatherCityCard, WEATHER_DEFAULTS } from "../screens/WeatherScreen.jsx";
 import { WIKI_FEEDS } from "../screens/WikipediaScreen.jsx";
