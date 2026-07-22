@@ -2181,27 +2181,6 @@ const WikipediaScreen = ({isIos, accent, charKey, data}) => {
   </AppSkeleton>
   );
 }
-const PandoraScreen = ({data, isIos, accent}) => (
-  <AppSkeleton icon="🎵" name="Pandora" color="#005483" isIos={isIos}>
-    <div style={{background:"linear-gradient(135deg,#005483,#0077BB)",borderRadius:0,padding:"14px",display:"flex",flexDirection:"column",alignItems:"center",gap:8}}>
-      <div style={{width:64,height:64,background:"rgba(255,255,255,0.15)",borderRadius:0,display:"flex",alignItems:"center",justifyContent:"center",fontSize:28}}>🎵</div>
-      <div style={{color:"#fff",fontWeight:600,fontSize:13}}>{data.music?.[0]?.title||"Twilight Soundtrack"}</div>
-      <div style={{color:"rgba(255,255,255,0.7)",fontSize:11}}>{data.music?.[0]?.artist||"Carter Burwell"}</div>
-      <div style={{display:"flex",gap:20,marginTop:4}}>
-        {["⏮","⏸","⏭"].map((ic,i)=>(
-          <button key={i} style={{background:"none",border:"none",color:"#fff",fontSize:20,cursor:"pointer"}}>{ic}</button>
-        ))}
-      </div>
-    </div>
-    {["Twilight Soundtrack Radio","Indie Folk Radio","Study Music Radio"].map((s,i)=>(
-      <div key={i} style={{background:isIos?"linear-gradient(180deg,#ffffff,#f5f4ef)":"#1e1e1e",borderRadius:isIos?0:6,padding:"10px 12px",borderBottom:isIos?"1px solid #b2b2a8":"1px solid #2a2a2a",border:"none",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-        <span style={{color:isIos?"#000":"#fff",fontSize:12}}>{s}</span>
-        <span style={{color:"#005483",fontSize:18}}>▶</span>
-      </div>
-    ))}
-  </AppSkeleton>
-);
-
 // Kindle (Drew)
 
 
@@ -2436,26 +2415,6 @@ const INaturalistScreen = ({data, isIos, accent}) => {
     </div>
   );
 };
-const SoundHoundScreen = ({isIos, accent}) => (
-  <AppSkeleton icon="🎵" name="SoundHound" color="#E52249" isIos={isIos}>
-    <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:14,padding:"8px 0"}}>
-      <div style={{width:90,height:90,borderRadius:"50%",background:"radial-gradient(circle,#E52249,#8B0000)",boxShadow:"0 0 25px rgba(229,34,73,0.5)",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer"}}>
-        <span style={{color:"#fff",lineHeight:1}}><svg width="18" height="18" viewBox="0 0 22 22" fill="none"><path d="M9 17V5l11-2v12" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/><circle cx="6" cy="17" r="3" stroke="currentColor" strokeWidth="1.6"/><circle cx="17" cy="15" r="3" stroke="currentColor" strokeWidth="1.6"/></svg></span>
-      </div>
-      <div style={{color:isIos?"#000":"#fff",fontSize:13,opacity:0.7}}>Touche ou fredonne</div>
-    </div>
-    <div style={{background:isIos?"linear-gradient(180deg,#ffffff,#f5f4ef)":"#1e1e1e",padding:"10px 12px",borderBottom:isIos?"1px solid #b2b2a8":"1px solid #2a2a2a"}}>
-      <div style={{color:"#888",fontSize:10,marginBottom:6}}>History</div>
-      {[{t:"Welcome to the Black Parade",a:"MCR"},{t:"Dance Dance",a:"Fall Out Boy"},{t:"Famous Last Words",a:"MCR"}].map((s,i)=>(
-        <div key={i} style={{padding:"5px 0",borderTop:i>0?`1px solid ${isIos?"#eee":"#222"}`:"none",display:"flex",justifyContent:"space-between"}}>
-          <div style={{color:isIos?"#000":"#fff",fontSize:11}}>{s.t}</div>
-          <div style={{color:"#888",fontSize:10}}>{s.a}</div>
-        </div>
-      ))}
-    </div>
-  </AppSkeleton>
-);
-
 // Reddit (Elias)
 // YouTube — feeds par défaut par perso, éditables depuis l'admin (clé: data.youtubeVideos[charKey])
 const YOUTUBE_FEEDS_DEFAULT = {
@@ -4118,13 +4077,10 @@ const IOSPhone = ({data,admin,onUpdate,onUpdateShared=()=>{},loreDate:loreDatePr
     spotify:    ["#1db954","#17a349","#108c3b"],
     soundcloud: ["#f26f21","#d95c10","#bc4e08"],
     espn:       ["#c0392b","#a93226","#922b21"],
-    mfp:        ["#418ad4","#3070b8","#1f5a9e"],
     shazam:     ["#0088ff","#006fd4","#0057aa"],
     wikipedia:  ["#5b91ce","#4076b8","#35649a"],
-    pandora:    ["#224099","#1b3380","#132666"],
     kindle:     ["#1a1a1a","#111","#000"],
     inaturalist:["#74ac00","#5e8c00","#487000"],
-    soundhound: ["#c0392b","#a93226","#922b21"],
     reddit:     ["#ff4500","#dd3c00","#bb3200"],
     twitter:    ["#1da1f2","#0d8dd4","#0077b6"],
     vpn:        ["#5b91ce","#4076b8","#35649a"],
@@ -5097,7 +5053,7 @@ const IOSPhone = ({data,admin,onUpdate,onUpdateShared=()=>{},loreDate:loreDatePr
       <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden",position:"relative",...homeBg,fontFamily:FF_IOS}}>
         <IOSStatusBar mode="home"/>
         <DraggableHomescreen data={data} update={update} appIcon={appIcon} badge={badge} goApp={id=>{
-          const IOS_APPS=['calculator','calendar','facebook','gmail','groupme','insta','messages','mfp','music','nikeplus','notes','phone','photos','gallery','pinterest','safari','settings','snapchat','soundcloud','spotify','starbucks','tumblr','twitter','weather','wikipedia','grindr','reddit','vpn','youtube','contacts','files'];
+          const IOS_APPS=['calendar','facebook','gmail','groupme','insta','messages','music','nikeplus','notes','phone','photos','gallery','pinterest','safari','settings','snapchat','soundcloud','spotify','starbucks','tumblr','twitter','weather','wikipedia','grindr','reddit','vpn','youtube','contacts','files'];
           if(IOS_APPS.includes(id)){setThread(null);if(id==="contacts")setPhonePanel("contacts");setApp(id==="gallery"?"photos":id==="contacts"?"phone":id);if(id==="safari"||id==="browser"){setBrowserTab("search");}}
         }} os="ios" accent={accent} admin={admin} charKey={charKey} noWallpaper/>
       </div>
@@ -5447,7 +5403,6 @@ const IOSPhone = ({data,admin,onUpdate,onUpdateShared=()=>{},loreDate:loreDatePr
   if(app==="vpn")        return <Shell><IOSStatusBar/><NavBar title="VPN" back={goHome}/><VPNScreen isIos={true} accent={accent}/></Shell>;
   if(app==="wikipedia")  return <Shell><IOSStatusBar/><NavBar title="Wikipedia" back={goHome}/><WikipediaScreen isIos={true} accent={accent} charKey={charKey} data={data}/></Shell>;
   if(app==="calendar")  return <Shell><IOSStatusBar/><NavBar title="Calendar" back={goHome}/><CalendarScreen data={data} isIos={true} accent={accent} admin={admin} update={update}/></Shell>;
-  if(app==="calculator")return <Shell><IOSStatusBar/><NavBar title="Calcul." back={goHome}/><CalculatorScreen isIos={true} accent={accent}/></Shell>;
   if(app==="settings")  return <Shell><IOSStatusBar/><NavBar title="Settings" back={goHome}/><SettingsScreen data={data} isIos={true} accent={accent}/></Shell>;
   if(app==="weather")   return <Shell><IOSStatusBar/><NavBar title="Weather" back={goHome}/><WeatherScreen isIos={true} accent={accent} data={data} update={update} admin={admin}/></Shell>;
   if(app==="facebook")  return <Shell><IOSStatusBar/><NavBar title="Facebook" back={goHome}/><FacebookScreen data={data} isIos={true} accent={accent}/></Shell>;
@@ -5458,7 +5413,6 @@ const IOSPhone = ({data,admin,onUpdate,onUpdateShared=()=>{},loreDate:loreDatePr
   if(app==="soundcloud")return <Shell><IOSStatusBar/><NavBar title="SoundCloud" back={goHome}/><SoundCloudScreen data={data} isIos={true} accent={accent} admin={admin} update={(k,v)=>onUpdate(k,v)}/></Shell>;
   if(app==="spotify")   return <Shell><IOSStatusBar/><NavBar title="Spotify" back={goHome}/><SpotifyScreen data={data} isIos={true} accent={accent}/></Shell>;
   if(app==="espn")      return <Shell><IOSStatusBar/><NavBar title="ESPN" back={goHome}/><div style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",background:"#f2f2f7",gap:12}}><span style={{fontSize:48}}>🏈</span><span style={{fontSize:15,fontWeight:600,color:"#1a1a1a"}}>ESPN</span><span style={{fontSize:12,color:"#8e8e93",textAlign:"center",padding:"0 32px"}}>This app is temporarily unavailable.</span></div></Shell>;
-  if(app==="mfp")       return <Shell><IOSStatusBar/><NavBar title="MyFitness" back={goHome}/><MFPScreen isIos={true} accent={accent}/></Shell>;
   if(app==="contacts")  return <Shell><IOSStatusBar/><NavBar title="Contacts" back={goHome}/><ContactsScreen data={data} isIos={true} accent={accent}/></Shell>;
   if(app==="clock")     return <Shell><IOSStatusBar/><NavBar title="Clock" back={goHome}/><ClockScreen isIos={true} accent={accent}/></Shell>;
   if(app==="maps")      return <Shell><IOSStatusBar/><NavBar title="Maps" back={goHome}/><MapsScreen isIos={true} accent={accent}/></Shell>;
@@ -5584,7 +5538,6 @@ const AndroidPhone = ({data,admin,onUpdate,sharedAndroidIcons={},onUpdateShared=
     wikipedia:  ["#000000","#222"],
     kindle:     ["#232f3e","#131921"],
     inaturalist:["#74ac00","#578500"],
-    pandora:    ["#005580","#003d5c"],
     scannerradio:["#212121","#111"],
     grindr:     ["#f7931e","#d4770d"],
   };
@@ -5774,7 +5727,7 @@ const AndroidPhone = ({data,admin,onUpdate,sharedAndroidIcons={},onUpdateShared=
     <Chassis>
       <AndroidStatusBar notifApps={notifApps} accent={accent}/>
       <DraggableHomescreen data={data} update={update} appIcon={appIcon} badge={badge} goApp={id=>{
-        const AND_APPS=['browser','calculator','calendar','facebook','files','gallery','gmail','inaturalist','insta','kindle','messages','music','notes','pandora','phone','reddit','settings','soundhound','twitter','vpn','weather','wikipedia','youtube'];
+        const AND_APPS=['browser','calendar','facebook','files','gallery','gmail','inaturalist','insta','kindle','messages','music','notes','phone','reddit','settings','twitter','vpn','weather','wikipedia','youtube'];
         if(AND_APPS.includes(id)){setThread(null);setApp(id);if(id==="gallery"){setGalleryView("albums");setPhotoDetail(null);}}
       }} os="android" accent={accent} admin={admin} charKey={charKey}/>
       <SoftKeys onBack={()=>setScreen("lock")}/>
@@ -6039,16 +5992,13 @@ const AndroidPhone = ({data,admin,onUpdate,sharedAndroidIcons={},onUpdateShared=
   if(app==="notes") return <AppShell><AndroidStatusBar notifApps={notifApps} accent={accent}/><NotesScreen data={data} admin={admin} update={update} accent={accent} isIos={false} noteOpen={noteOpen} setNoteOpen={setNoteOpen} goHome={goHome}/></AppShell>;
   if(app==="youtube")   return <AppShell><AndroidStatusBar notifApps={notifApps} accent={accent}/><YouTubeScreen isIos={false} charKey={charKey} data={data} onBack={goHome}/></AppShell>;
   if(app==="calendar")  return <AppShell><AndroidStatusBar notifApps={notifApps} accent={accent}/><ActionBar title="Calendar" back={goHome}/><CalendarScreen data={data} isIos={false} accent={accent} admin={admin} update={update}/></AppShell>;
-  if(app==="calculator")return <AppShell><AndroidStatusBar notifApps={notifApps} accent={accent}/><ActionBar title="Calcul." back={goHome}/><CalculatorScreen isIos={false} accent={accent}/></AppShell>;
   if(app==="settings")  return <AppShell><AndroidStatusBar notifApps={notifApps} accent={accent}/><ActionBar title="Settings" back={goHome}/><SettingsScreen data={data} isIos={false} accent={accent}/></AppShell>;
   if(app==="weather")   return <AppShell><AndroidStatusBar notifApps={notifApps} accent={accent}/><ActionBar title="Weather" back={goHome}/><WeatherScreen isIos={false} accent={accent} data={data} update={update} admin={admin}/></AppShell>;
   if(app==="facebook")  return <AppShell><AndroidStatusBar notifApps={notifApps} accent={accent}/><ActionBar title="Facebook" back={goHome}/><FacebookScreen data={data} isIos={false} accent={accent}/></AppShell>;
   if(app==="gmail")     return <AppShell><AndroidStatusBar notifApps={notifApps} accent={accent}/><GmailScreen data={data} isIos={false} accent={accent} onBack={goHome}/></AppShell>;
   if(app==="wikipedia") return <AppShell><AndroidStatusBar notifApps={notifApps} accent={accent}/><ActionBar title="Wikipedia" back={goHome}/><WikipediaScreen isIos={false} accent={accent} charKey={charKey} data={data}/></AppShell>;
-  if(app==="pandora")   return <AppShell><AndroidStatusBar notifApps={notifApps} accent={accent}/><ActionBar title="Pandora" back={goHome}/><PandoraScreen data={data} isIos={false} accent={accent}/></AppShell>;
   if(app==="kindle")    return <AppShell><AndroidStatusBar notifApps={notifApps} accent={accent}/><ActionBar title="Kindle" back={goHome}/><KindleScreen isIos={false} accent={accent} data={data}/></AppShell>;
   if(app==="inaturalist")return <AppShell><AndroidStatusBar notifApps={notifApps} accent={accent}/><ActionBar title="iNaturalist" back={goHome}/><INaturalistScreen data={data} isIos={false} accent={accent}/></AppShell>;
-  if(app==="soundhound")return <AppShell><AndroidStatusBar notifApps={notifApps} accent={accent}/><ActionBar title="SoundHound" back={goHome}/><SoundHoundScreen isIos={false} accent={accent}/></AppShell>;
   if(app==="reddit")    return <AppShell><AndroidStatusBar notifApps={notifApps} accent={accent}/><ActionBar title="Reddit" back={goHome}/><RedditScreen data={data} isIos={false} accent={accent}/></AppShell>;  if(app==="twitter")   return <AppShell><AndroidStatusBar notifApps={notifApps} accent={accent}/><TwitterScreen data={data} isIos={false} accent={accent} onBack={goHome} sharedTweets={data.sharedThreads?._sharedTweets||[]} twitterUsers={{...(data.sharedThreads?._sharedTwitterUsers||{}),...(data.twitterUsers||{})}} homeBaseTweets={data.homeBaseTweets||[]} onUpdateShared={onUpdateSharedThread}/></AppShell>;
   if(app==="vpn")       return <AppShell><AndroidStatusBar notifApps={notifApps} accent={accent}/><ActionBar title="VPN" back={goHome}/><VPNScreen isIos={false} accent={accent}/></AppShell>;
   if(app==="contacts")  return <AppShell><AndroidStatusBar notifApps={notifApps} accent={accent}/><ActionBar title="Contacts" back={goHome}/><ContactsScreen data={data} isIos={false} accent={accent}/></AppShell>;
@@ -12388,45 +12338,6 @@ const ClockScreen = ({isIos, accent}) => {
 
 // Calculator
 
-const CalculatorScreen = ({isIos, accent}) => {
-  const [disp, setDisp] = useState("0");
-  const keys = [["C","±","%","÷"],["7","8","9","×"],["4","5","6","−"],["1","2","3","+"],["0",".","="]];
-  const isOp = k => ["÷","×","−","+","=","C","±","%"].includes(k);
-  return (
-    <div style={{flex:1,background:"#fff",display:"flex",flexDirection:"column",minHeight:0}}>
-      <div style={{flex:1,display:"flex",alignItems:"flex-end",justifyContent:"flex-end",padding:"0 16px 8px",minHeight:0}}>
-        <span style={{color:"#fff",fontSize:40,fontWeight:"200"}}>{disp}</span>
-      </div>
-      <div style={{padding:"0 10px 10px",display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:8}}>
-        {keys.flat().map((k,i)=>{
-          const bg = k==="C"||k==="±"||k==="%"?"#a5a5a5":isOp(k)?accent:"#333";
-          const fg = k==="C"||k==="±"||k==="%"?"#000":"#fff";
-          return (
-            <button key={i} onClick={()=>{if(k==="C")setDisp("0");else if(k==="=")setDisp(disp);else setDisp(d=>d==="0"?k:d+k);}}
-              style={{
-                gridColumn:k==="0"?"span 2":undefined,
-                aspectRatio:k==="0"?"2/1":"1/1",
-                border:"none",
-                borderRadius:"50%",
-                background:bg,
-                color:fg,
-                fontSize:18,
-                fontWeight:"400",
-                cursor:"pointer",
-                display:"flex",
-                alignItems:"center",
-                justifyContent:k==="0"?"flex-start":"center",
-                paddingLeft:k==="0"?"28px":0,
-              }}>
-              {k}
-            </button>
-          );
-        })}
-      </div>
-    </div>
-  );
-};
-
 // Gmail / Mail
 
 // Facebook — fil d'amis unique et partagé entre les 4 persos (synchronisé via data.sharedThreads._sharedFacebookPosts, comme Twitter).
@@ -13370,25 +13281,6 @@ const MapsScreen = ({isIos, accent}) => (
 );
 
 // Calendar / Agenda
-
-const MFPScreen = ({isIos, accent}) => (
-  <AppSkeleton icon="💪" name="MyFitness" color="#4CAF50" isIos={isIos}>
-    <div style={{background:isIos?"#fff":"#1e1e1e",borderRadius:0,padding:"12px",border:`1px solid ${isIos?"#eee":"#2a2a2a"}`}}>
-      <div style={{color:isIos?"#000":"#fff",fontWeight:600,fontSize:13,marginBottom:8}}>Today</div>
-      {[["Calories",3200,"kcal",3200],["Protéines",180,"g",200],["Glucides",290,"g",300],["Lipides",85,"g",90]].map(([l,v,u,max],i)=>(
-        <div key={i} style={{marginBottom:8}}>
-          <div style={{display:"flex",justifyContent:"space-between",marginBottom:2}}>
-            <span style={{color:"#888",fontSize:10}}>{l}</span>
-            <span style={{color:isIos?"#000":"#fff",fontSize:10,fontWeight:600}}>{v}/{max} {u}</span>
-          </div>
-          <div style={{height:4,background:isIos?"#eee":"#333",borderRadius:2}}>
-            <div style={{height:"100%",width:`${Math.min(v/max*100,100)}%`,background:accent,borderRadius:2}}/>
-          </div>
-        </div>
-      ))}
-    </div>
-  </AppSkeleton>
-);
 
 // Shazam (Eoghan)
 
