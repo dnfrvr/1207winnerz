@@ -59,4 +59,4 @@ const GroupMeScreen = ({data, isIos}) => {
   );
 };
 
-export { GroupMeScreen };
+export { GroupMeScreen, GROUPME_DEFAULTS };

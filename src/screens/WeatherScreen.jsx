@@ -211,4 +211,4 @@ const WeatherCityCard = ({city, ci, COND_ICONS, DAY_OPTS, ensureCustom, updForec
   );
 };
 
-export { WeatherScreen, WeatherCityCard };
+export { WeatherScreen, WeatherCityCard, WEATHER_DEFAULTS };

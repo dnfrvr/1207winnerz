@@ -89,4 +89,4 @@ const PinterestScreen = ({isIos, data}) => {
   );
 };
 
-export { PinterestScreen };
+export { PinterestScreen, PIN_DEFAULTS };

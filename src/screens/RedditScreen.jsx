@@ -318,22 +318,4 @@ const RedditScreen = ({data, isIos, accent}) => {
     </div>
   );
 };
-
-const FILE_TYPE_META = {
-  pdf:  {icon:"📄", color:"#e74c3c", label:"PDF"},
-  mp3:  {icon:"🎵", color:"#9b59b6", label:"MP3"},
-  mp4:  {icon:"🎬", color:"#2980b9", label:"MP4"},
-  mov:  {icon:"🎬", color:"#2980b9", label:"MOV"},
-  jpg:  {icon:"🖼️", color:"#27ae60", label:"JPG"},
-  png:  {icon:"🖼️", color:"#27ae60", label:"PNG"},
-  doc:  {icon:"📝", color:"#2c5fbe", label:"DOC"},
-  docx: {icon:"📝", color:"#2c5fbe", label:"DOCX"},
-  xls:  {icon:"📊", color:"#1a7c3e", label:"XLS"},
-  xlsx: {icon:"📊", color:"#1a7c3e", label:"XLSX"},
-  ppt:  {icon:"📋", color:"#d35400", label:"PPT"},
-  zip:  {icon:"🗜️", color:"#7f8c8d", label:"ZIP"},
-  txt:  {icon:"📃", color:"#95a5a6", label:"TXT"},
-  other:{icon:"📎", color:"#7f8c8d", label:"FILE"},
-};
-
 export { RedditScreen, REDDIT_ALL_POSTS };

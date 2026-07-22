@@ -15,11 +15,11 @@ import { getCharKey, getSharedAvatars, makeSharedFollows } from "./src/shared/so
 import { AppSkeleton, IOS6Toggle } from "./src/shared/ui-kit.jsx";
 import { NikeplusScreen } from "./src/screens/NikeplusScreen.jsx";
 import { ContactsScreen } from "./src/screens/ContactsScreen.jsx";
-import { PinterestScreen } from "./src/screens/PinterestScreen.jsx";
-import { GroupMeScreen } from "./src/screens/GroupMeScreen.jsx";
+import { PinterestScreen, PIN_DEFAULTS } from "./src/screens/PinterestScreen.jsx";
+import { GroupMeScreen, GROUPME_DEFAULTS } from "./src/screens/GroupMeScreen.jsx";
 import { StarbucksScreen } from "./src/screens/StarbucksScreen.jsx";
 import { SettingsScreen } from "./src/screens/SettingsScreen.jsx";
-import { WeatherScreen, WeatherCityCard } from "./src/screens/WeatherScreen.jsx";
+import { WeatherScreen, WeatherCityCard, WEATHER_DEFAULTS } from "./src/screens/WeatherScreen.jsx";
 import { SoundCloudScreen } from "./src/screens/SoundCloudScreen.jsx";
 import { WikipediaScreen, WIKI_FEEDS } from "./src/screens/WikipediaScreen.jsx";
 import { KindleScreen, KINDLE_DEFAULT_BOOKS } from "./src/screens/KindleScreen.jsx";
@@ -1101,6 +1101,23 @@ const NotesScreen = ({data,admin,update,accent,isIos,noteOpen,setNoteOpen,goHome
 
 // Spotify (Eoghan)
 // YouTube — feeds par défaut par perso, éditables depuis l'admin (clé: data.youtubeVideos[charKey])
+const FILE_TYPE_META = {
+  pdf:  {icon:"📄", color:"#e74c3c", label:"PDF"},
+  mp3:  {icon:"🎵", color:"#9b59b6", label:"MP3"},
+  mp4:  {icon:"🎬", color:"#2980b9", label:"MP4"},
+  mov:  {icon:"🎬", color:"#2980b9", label:"MOV"},
+  jpg:  {icon:"🖼️", color:"#27ae60", label:"JPG"},
+  png:  {icon:"🖼️", color:"#27ae60", label:"PNG"},
+  doc:  {icon:"📝", color:"#2c5fbe", label:"DOC"},
+  docx: {icon:"📝", color:"#2c5fbe", label:"DOCX"},
+  xls:  {icon:"📊", color:"#1a7c3e", label:"XLS"},
+  xlsx: {icon:"📊", color:"#1a7c3e", label:"XLSX"},
+  ppt:  {icon:"📋", color:"#d35400", label:"PPT"},
+  zip:  {icon:"🗜️", color:"#7f8c8d", label:"ZIP"},
+  txt:  {icon:"📃", color:"#95a5a6", label:"TXT"},
+  other:{icon:"📎", color:"#7f8c8d", label:"FILE"},
+};
+
 const fileTypeMeta = (ext) => FILE_TYPE_META[(ext||"other").toLowerCase()] || FILE_TYPE_META.other;
 const fileExt = (name) => (name||"").split(".").pop().toLowerCase();
 
