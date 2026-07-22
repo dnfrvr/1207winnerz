@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { getCharKey } from "../shared/social-feed.js";
 
 const CALENDAR_SEED = {
   glinda:{
@@ -52,7 +53,7 @@ const CALENDAR_SEED = {
 };
 
 const CalendarScreen = ({data, isIos, accent}) => {
-  const charKey = data.username?.includes("glinda")?"glinda":data.username?.includes("eoghan")?"eoghan":data.username?.includes("drew")?"drew":"elias";
+  const charKey = getCharKey(data);
   const DAYS = ["M","T","W","T","F","S","S"];
   const SEED = CALENDAR_SEED;
   const calendarArr = data?.calendar || [];

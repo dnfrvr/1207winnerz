@@ -11,6 +11,7 @@ import { APP_META } from "./src/shared/app-meta.js";
 import { LORE_DATE_DEFAULT, getLoreDate, parseLoreTime, formatMsgTime, loreSortKey, sortGalleryPhotos, GALLERY_MONTHS_FR, groupGalleryByMonth, groupGalleryByYear, sortCallsByDate, FULL_MONTHS_EN, loreDayKey, loreDateLabel, loreRelativeLabel, loreDateOnly, LoreDateCtx, useLoreRelative } from "./src/shared/lore-date.js";
 import { AndroidNotifIcon, BatteryIcon, BatteryIconVertical, SignalIcon, WifiIcon } from "./src/shared/icons.jsx";
 import { SlideToUnlock, useClock, IOSStatusBar, AndroidStatusBar, IOSLockContent, IOSLockClock, AndroidLockClock } from "./src/shared/phone-chrome.jsx";
+import { getCharKey, getSharedAvatars, makeSharedFollows } from "./src/shared/social-feed.js";
 import { AppSkeleton, IOS6Toggle } from "./src/shared/ui-kit.jsx";
 import { NikeplusScreen } from "./src/screens/NikeplusScreen.jsx";
 import { ContactsScreen } from "./src/screens/ContactsScreen.jsx";
@@ -618,7 +619,7 @@ const SNAPCHAT_DEFAULTS = {
 };
 
 const SnapchatScreen = ({data,admin,update}) => {
-  const charKey = data.username?.includes("glinda")?"glinda":data.username?.includes("eoghan")?"eoghan":data.username?.includes("drew")?"drew":"elias";
+  const charKey = getCharKey(data);
   const loreDateStr = useContext(LoreDateCtx);
   
   const snaps = (data.snaps && data.snaps.length > 0) ? data.snaps : (SNAPCHAT_DEFAULTS[charKey] || []);
@@ -1280,7 +1281,7 @@ const IOSPhoneApp = ({data,admin,update,panel,setPanel}) => {
   const [balloons,setBalloons] = useState([]);
   const loreDateStr = useContext(LoreDateCtx);
   const calls = sortCallsByDate(data.calls||[]);
-  const charKey = data.username?.includes("glinda")?"glinda":data.username?.includes("eoghan")?"eoghan":data.username?.includes("drew")?"drew":"elias";
+  const charKey = getCharKey(data);
   const callColor = t => (t==="missed"||t==="outgoing_missed")?"#ff3b30":t==="incoming"?"#4cd964":"#8e8e93";
   const callArrow = t => t==="incoming"
     ? <svg width="12" height="12" viewBox="0 0 14 14" fill="none"><path d="M3 3l8 8M11 11V5M11 11H5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
@@ -1783,7 +1784,7 @@ const TumblrScreen = ({data,admin,update,onUpdateShared=()=>{},accent,onBack=nul
   const [activeTab, setActiveTab] = React.useState(0);
   const [viewProfile, setViewProfile] = React.useState(null); // charKey d'un autre perso, ou null
   const posts = data.tumblr?.posts||[];
-  const charKey = data.username?.includes("glinda")?"glinda":data.username?.includes("eoghan")?"eoghan":data.username?.includes("drew")?"drew":"elias";
+  const charKey = getCharKey(data);
   // Posts "réels" partagés entre persos (comme les tweets) : postés par un perso, visibles par tous,
   // et seul l'auteur peut les modifier/supprimer — contrairement aux anciens posts/feedPosts qui ne
   // vivaient que dans la copie locale de chaque perso.
@@ -1792,17 +1793,10 @@ const TumblrScreen = ({data,admin,update,onUpdateShared=()=>{},accent,onBack=nul
   const othersShared = sharedTumblrPosts.filter(p=>p.author!==charKey);
   const updateSharedPosts = (newList) => onUpdateShared("_sharedTumblrPosts", newList);
   const CHAR_NAMES_TB = {glinda:"Glinda R.",eoghan:"Eoghan M.",drew:"Drew B.",elias:"Elias G."};
-  const sharedAvatarsTb = data.sharedThreads?._sharedAvatars || {};
+  const sharedAvatarsTb = getSharedAvatars(data);
 
   // Relations "follow" réelles entre les 4 persos, partagées comme pour Twitter.
-  const tumblrFollows = data.sharedThreads?._tumblrFollows || {};
-  const iFollowTb = (key) => (tumblrFollows[charKey]||[]).includes(key);
-  const followsMeTb = (key) => (tumblrFollows[key]||[]).includes(charKey);
-  const toggleFollowTb = (key) => {
-    const mine = tumblrFollows[charKey]||[];
-    const next = mine.includes(key) ? mine.filter(k=>k!==key) : [...mine, key];
-    onUpdateShared("_tumblrFollows", {...tumblrFollows, [charKey]:next});
-  };
+  const {follows: tumblrFollows, iFollow: iFollowTb, followsMe: followsMeTb, toggleFollow: toggleFollowTb} = makeSharedFollows(data, onUpdateShared, "_tumblrFollows");
   const TB    = "#35465c";
   const GRAY  = "#9b9b9b";
   const SEP   = "#e0deda";
@@ -1841,7 +1835,7 @@ const TumblrScreen = ({data,admin,update,onUpdateShared=()=>{},accent,onBack=nul
               // SharedPostsEditor) sur charKeyOfUsername (déduit du handle, absent des posts admin).
               // Avant ce fix, !charKeyOfUsername → isCurrentChar=true → data.avatar (proprio du
               // téléphone) s'affichait sur TOUS les posts sans username reconnu.
-              const sharedAvatars = data.sharedThreads?._sharedAvatars || {};
+              const sharedAvatars = getSharedAvatars(data);
               const authorKey = post.author || charKeyOfUsername;
               const isCurrentChar = authorKey === charKey;
               const resolvedAvatar = post.avatar
@@ -2301,7 +2295,7 @@ const TwitterScreen = ({data, isIos, accent, onBack=null, sharedTweets=[], twitt
   const [viewProfile, setViewProfile] = useState(null);
   const scrollRef = useRef(null);
   const loreDateStr = useContext(LoreDateCtx);
-  const charKey = data.username?.includes("glinda")?"glinda":data.username?.includes("eoghan")?"eoghan":data.username?.includes("drew")?"drew":"elias";
+  const charKey = getCharKey(data);
 
   // Auto-sync the 4 chars' twitter display info from their profile data
   const CHAR_TWITTER_KEYS = {
@@ -2310,7 +2304,7 @@ const TwitterScreen = ({data, isIos, accent, onBack=null, sharedTweets=[], twitt
     drew:   {key:"drewworms", h:"@dreww_orms", name:"Drew B."},
     elias:  {key:"noteliasgreen", h:"@noteliasgreen", name:"Elias G."},
   };
-  const sharedAvatarsTw = data.sharedThreads?._sharedAvatars || {};
+  const sharedAvatarsTw = getSharedAvatars(data);
   const effectiveTwUsers = {...twitterUsers};
   // Each char: use data.avatar (current char) or sharedAvatars (others), then twitterUsers override
   Object.entries(CHAR_TWITTER_KEYS).forEach(([char, info]) => {
@@ -2328,14 +2322,7 @@ const TwitterScreen = ({data, isIos, accent, onBack=null, sharedTweets=[], twitt
   const handleToCharKey = Object.fromEntries(Object.entries(handles).map(([k,h])=>[h,k]));
 
   // Relations "follow" réelles entre les 4 persos (qui suit qui), partagées comme le reste.
-  const twitterFollows = data.sharedThreads?._twitterFollows || {};
-  const iFollow = (key) => (twitterFollows[charKey]||[]).includes(key);
-  const followsMe = (key) => (twitterFollows[key]||[]).includes(charKey);
-  const toggleFollow = (key) => {
-    const mine = twitterFollows[charKey]||[];
-    const next = mine.includes(key) ? mine.filter(k=>k!==key) : [...mine, key];
-    onUpdateShared("_twitterFollows", {...twitterFollows, [charKey]:next});
-  };
+  const {follows: twitterFollows, iFollow, followsMe, toggleFollow} = makeSharedFollows(data, onUpdateShared, "_twitterFollows");
 
   // ── Shared tweets injected into feeds ──
   // Tri du plus récent au plus ancien, basé sur la vraie date/heure du tweet (lore) plutôt que sur
@@ -2986,7 +2973,7 @@ const IOSPhone = ({data,admin,onUpdate,onUpdateShared=()=>{},loreDate:loreDatePr
   };
 
   const accent = data.accentColor||"#337ab7";
-  const charKey  = data.username?.includes("glinda")?"glinda":data.username?.includes("eoghan")?"eoghan":data.username?.includes("drew")?"drew":"elias";
+  const charKey  = getCharKey(data);
   const loreDate = loreDateProp || getLoreDate();
   const fmtTime  = (t) => formatMsgTime(t, loreDate);
 
@@ -3003,7 +2990,7 @@ const IOSPhone = ({data,admin,onUpdate,onUpdateShared=()=>{},loreDate:loreDatePr
     const um=msgs.filter(c=>c.unread).length; if(um) b.messages=um;
     const mc=calls.filter(c=>c.type==="missed").length; if(mc) b.phone=mc;
     const un=SNAP_BADGE_COUNTS[data.username]??snaps.filter(s=>!s.opened).length; if(un) b.snapchat=un;
-    const ck=data.username?.includes("glinda")?"glinda":data.username?.includes("eoghan")?"eoghan":data.username?.includes("drew")?"drew":"elias";
+    const ck=getCharKey(data);
     const nt=shared.filter(t=>t.author!==ck).length; if(nt) b.twitter=nt;
     const gmc=GMAIL_BADGE_COUNTS[data.username]; if(gmc) b.gmail=gmc;
     ["insta","reddit","soundcloud","facebook","groupme"].forEach(a=>{const c=notifs.filter(n=>n.app===a).length;if(c)b[a]=c;});
@@ -4469,7 +4456,7 @@ const AndroidPhone = ({data,admin,onUpdate,sharedAndroidIcons={},onUpdateShared=
   const notifApps = (data.notifications && data.notifications.length)
     ? [...new Set(data.notifications.map(n=>n.app))]
     : ((data.messages||[]).some(m=>m.unread) ? ["messages"] : []);
-  const charKey  = data.username?.includes("glinda")?"glinda":data.username?.includes("eoghan")?"eoghan":data.username?.includes("drew")?"drew":"elias";
+  const charKey  = getCharKey(data);
   const loreDate = loreDateProp || getLoreDate();
   const fmtTime  = (t) => formatMsgTime(t, loreDate);
 
@@ -4488,7 +4475,7 @@ const AndroidPhone = ({data,admin,onUpdate,sharedAndroidIcons={},onUpdateShared=
     const um=msgs.filter(c=>c.unread).length; if(um) b.messages=um;
     const mc=calls.filter(c=>c.type==="missed").length; if(mc) b.phone=mc;
     const un=SNAP_BADGE_COUNTS[data.username]??snaps.filter(s=>!s.opened).length; if(un) b.snapchat=un;
-    const ck=data.username?.includes("glinda")?"glinda":data.username?.includes("eoghan")?"eoghan":data.username?.includes("drew")?"drew":"elias";
+    const ck=getCharKey(data);
     const nt=shared.filter(t=>t.author!==ck).length; if(nt) b.twitter=nt;
     const gmc=GMAIL_BADGE_COUNTS[data.username]; if(gmc) b.gmail=gmc;
     ["insta","reddit","soundcloud","facebook","groupme"].forEach(a=>{const c=notifs.filter(n=>n.app===a).length;if(c)b[a]=c;});
@@ -11163,7 +11150,7 @@ const PhoneCardClock = memo(({isIos, bgStyle={}}) => {
 
 
 const FacebookScreen = ({data, isIos, accent}) => {
-  const charKey = data.username?.includes("glinda")?"glinda":data.username?.includes("eoghan")?"eoghan":data.username?.includes("drew")?"drew":"elias";
+  const charKey = getCharKey(data);
   const FB_BLUE = "#3B5998";
   const FB_DARK = "#2d4373";
   const FB_BG   = "#e8eaf0";
@@ -11193,7 +11180,7 @@ const FacebookScreen = ({data, isIos, accent}) => {
   };
   const posts = [...friendsFeed, ...pagePosts].sort((a,b)=>toAbsMinutes(b.time)-toAbsMinutes(a.time));
 
-  const sharedAvatars = data.sharedThreads?._sharedAvatars || {};
+  const sharedAvatars = getSharedAvatars(data);
   const NAME_TO_KEY = {
     "Glinda Ravingfool":"glinda", "Eoghan Masuda":"eoghan",
     "Drew Buckley":"drew", "Elias Green":"elias",
@@ -11692,10 +11679,10 @@ const InstaScreen = ({data, isIos, accent, onBack}) => {
   const following = ig.following ?? data.following ?? 0;
   // Photo de profil spécifique Instagram, sinon avatar global
   const avatar    = ig.avatar   || data.avatar || null;
-  const charKey   = data.username?.includes("glinda")?"glinda":data.username?.includes("eoghan")?"eoghan":data.username?.includes("drew")?"drew":"elias";
+  const charKey   = getCharKey(data);
   // Nom affiché spécifique Instagram, sinon nom générique
   const name      = ig.displayName || {glinda:"Glinda Ravingfool",eoghan:"Eoghan Masuda",drew:"Drew Bates",elias:"Elias Green"}[charKey] || handleLo;
-  const sharedAvatars = data.sharedThreads?._sharedAvatars || {};
+  const sharedAvatars = getSharedAvatars(data);
   const coTaggedPosts = data._coTaggedInstaPosts || [];
   // Tri : épinglé toujours en premier, puis inversement chronologique pour le reste.
   // gridPosts mélange mes propres posts ET les posts "en commun" où un autre perso m'a tagué
