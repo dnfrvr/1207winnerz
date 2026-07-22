@@ -42,14 +42,17 @@ const LoreDateTimeInput = ({value, onChange, width="100%", showLabel=true}) => {
   );
 };
 
-const Field = ({label, value, onChange, textarea=false, width="100%"}) => (
-  <div style={{display:"flex",flexDirection:"column",gap:5,width}}>
+// `style` fusionne sur le conteneur (les appelants passent surtout `flex:1` pour
+// la mise en page en ligne) ; `placeholder` est transmis au champ. Les deux
+// étaient auparavant ignorés silencieusement sur des dizaines d'appels.
+const Field = ({label, value, onChange, textarea=false, width="100%", style={}, placeholder}) => (
+  <div style={{display:"flex",flexDirection:"column",gap:5,width,...style}}>
     <label style={{color:"#9ca3af",fontSize:10,letterSpacing:0.8,textTransform:"uppercase",fontWeight:600}}>{label}</label>
     {textarea
-      ?<textarea value={value||""} onChange={e=>onChange(e.target.value)} rows={4} className="adm-input"
+      ?<textarea value={value||""} onChange={e=>onChange(e.target.value)} rows={4} placeholder={placeholder} className="adm-input"
           style={{background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#1a1a2e",padding:"8px 12px",fontSize:12,borderRadius:8,resize:"vertical",fontFamily:"inherit",boxShadow:"0 1px 2px rgba(0,0,0,0.04)"}}/>
-      :<input value={value||""} onChange={e=>onChange(e.target.value)} className="adm-input"
-          style={{background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#1a1a2e",padding:"8px 12px",fontSize:12,borderRadius:8,width,boxShadow:"0 1px 2px rgba(0,0,0,0.04)"}}/>
+      :<input value={value||""} onChange={e=>onChange(e.target.value)} placeholder={placeholder} className="adm-input"
+          style={{background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#1a1a2e",padding:"8px 12px",fontSize:12,borderRadius:8,width:"100%",boxSizing:"border-box",boxShadow:"0 1px 2px rgba(0,0,0,0.04)"}}/>
     }
   </div>
 );

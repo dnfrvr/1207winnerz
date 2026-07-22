@@ -297,10 +297,16 @@ const GrindrScreen = ({data,admin,update}) => {
      </svg>},
   ];
 
+  // NB : on APPELLE ces fonctions (NearbyTab()) au lieu de les monter comme
+  // composants (<NearbyTab/>). Définies dans le corps de GrindrScreen, leur
+  // identité change à chaque rendu → montées via <…/>, React les démonterait/
+  // remonterait à chaque frappe (curseur qui repart à 0 = texte « à l'envers »).
+  // Appelées comme fonctions, leur JSX est réconcilié en place : le nœud DOM des
+  // <input> est conservé, le curseur reste en place. (Aucune n'utilise de hook.)
   const activeContent = () => {
-    if(tab==="dm") return activeDm!==null ? <DmConvView/> : <DmListTab/>;
-    if(tab==="me") return <MeTab/>;
-    return <NearbyTab/>;
+    if(tab==="dm") return activeDm!==null ? DmConvView() : DmListTab();
+    if(tab==="me") return MeTab();
+    return NearbyTab();
   };
 
   return (
