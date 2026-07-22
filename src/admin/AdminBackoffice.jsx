@@ -20,53 +20,7 @@ import { PIN_DEFAULTS } from "../screens/PinterestScreen.jsx";
 import { FACEBOOK_FRIENDS_FEED_DEFAULT, FACEBOOK_PAGES_DEFAULT } from "../screens/FacebookScreen.jsx";
 import { EMAILS_BY_CHAR, MAIL_DRAFTS_BY_CHAR, MAIL_DELETED_BY_CHAR } from "../screens/GmailScreen.jsx";
 import { fileTypeMeta } from "../screens/FilesScreen.jsx";
-
-const LoreDateTimeInput = ({value, onChange, width="100%", showLabel=true}) => {
-  const parsed = parseLoreTime(value);
-  // Si aucune date n'est encore posée, on pré-remplit avec la date de lore par défaut (oct. 2012)
-  // plutôt que de laisser le champ vide : un <input type="date"> vide ouvre son calendrier sur la
-  // date du jour RÉELLE (ex: 2026), hors de la plage min/max (2012) — certains navigateurs gèrent
-  // mal ce cas et referment le calendrier avant qu'on ait pu choisir un jour.
-  const dateVal = parsed?.day ? `2012-${String(parsed.month).padStart(2,'0')}-${String(parsed.day).padStart(2,'0')}` : LORE_DATE_DEFAULT;
-  const timeVal = (parsed && parsed.hour!=null) ? `${String(parsed.hour).padStart(2,'0')}:${String(parsed.min).padStart(2,'0')}` : '';
-  const build = (d, t) => {
-    if(!d) return value||'';
-    const [, m, day] = d.split('-').map(Number);
-    let str = `${day} ${LORE_MONTHS[m]}`;
-    if(t) {
-      const [hh, mm] = t.split(':').map(Number);
-      const period = hh < 12 ? 'am' : 'pm';
-      const h12 = hh % 12 === 0 ? 12 : hh % 12;
-      str += `, ${h12}:${String(mm).padStart(2,'0')}${period}`;
-    }
-    return str;
-  };
-  return (
-    <div style={{display:"flex",flexDirection:"column",gap:5,width}}>
-      {showLabel && <label style={{color:"#9ca3af",fontSize:10,letterSpacing:0.8,textTransform:"uppercase",fontWeight:600}}>Date / heure</label>}
-      <div style={{display:"flex",gap:4,flexWrap:"wrap"}}>
-        <input type="date" value={dateVal}
-          onChange={e=>onChange(build(e.target.value, timeVal))}
-          className="adm-input" style={{flex:"1 1 120px",minWidth:0,background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#1a1a2e",padding:"7px 8px",fontSize:11,borderRadius:7}}/>
-        <input type="time" value={timeVal}
-          onChange={e=>onChange(build(dateVal, e.target.value))}
-          className="adm-input" style={{flex:"1 1 90px",minWidth:0,background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#1a1a2e",padding:"7px 8px",fontSize:11,borderRadius:7}}/>
-      </div>
-    </div>
-  );
-};
-
-const Field = ({label, value, onChange, textarea=false, width="100%"}) => (
-  <div style={{display:"flex",flexDirection:"column",gap:5,width}}>
-    <label style={{color:"#9ca3af",fontSize:10,letterSpacing:0.8,textTransform:"uppercase",fontWeight:600}}>{label}</label>
-    {textarea
-      ?<textarea value={value||""} onChange={e=>onChange(e.target.value)} rows={4} className="adm-input"
-          style={{background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#1a1a2e",padding:"8px 12px",fontSize:12,borderRadius:8,resize:"vertical",fontFamily:"inherit",boxShadow:"0 1px 2px rgba(0,0,0,0.04)"}}/>
-      :<input value={value||""} onChange={e=>onChange(e.target.value)} className="adm-input"
-          style={{background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#1a1a2e",padding:"8px 12px",fontSize:12,borderRadius:8,width,boxShadow:"0 1px 2px rgba(0,0,0,0.04)"}}/>
-    }
-  </div>
-);
+import { Field, LoreDateTimeInput } from "../shared/admin-fields.jsx";
 
 // Éditeur générique pour les "posts partagés" (mêmes principes que Twitter : un tableau partagé
 // entre les 4 persos, chacun ne voit/modifie que les posts dont il est l'auteur, ajout d'image et
@@ -498,7 +452,6 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
       const fixed = freshMusic.map((t,j)=>t.id?t:{...t,id:Date.now()+j});
       onUpdate(tab, {...freshChar, music: fixed});
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tab, data[tab]?.music]);
   // ── Import JSON (additif) ──────────────────────────────────────────────────
   const [importOpen, setImportOpen]     = useState(false);
@@ -1456,7 +1409,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
             })()}
             <button onClick={()=>{
               if(msg.sharedThreadId){
-                onUpdate(msg.sharedThreadId,[...(dataRef.current.sharedThreads?.[msg.sharedThreadId]||[]),{from:myL,text:"",time:"maintenant"}]);
+                onUpdate(msg.sharedThreadId,[...(dataRef.current.sharedThreads?.[msg.sharedThreadId]||[]),{from:msg.perspective||'a',text:"",time:"maintenant"}]);
               }else{upd("messages",d.messages.map(mm=>mm===msg?{...mm,thread:[...(mm.thread||[]),{from:"me",text:"",time:"maintenant"}]}:mm));}
             }} style={{background:"rgba(0,0,0,0.04)",border:"1px dashed rgba(0,0,0,0.15)",color:"#9ca3af",borderRadius:6,padding:"5px 12px",cursor:"pointer",fontSize:11,marginTop:4}}>+ message</button>
             <ThreadComposer isGroup={false} tab={tab} onApply={(parsed,mode)=>{

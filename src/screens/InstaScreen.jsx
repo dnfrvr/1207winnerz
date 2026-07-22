@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { parseLoreTime } from "../shared/lore-date.js";
 import { getCharKey, getSharedAvatars } from "../shared/social-feed.js";
+import { LoreDateTimeInput } from "../shared/admin-fields.jsx";
 
 // ── Composant d'affichage des commentaires Instagram (récursif) ──────────────
 const IG_CHAR_NAMES = {glinda:"Glinda",eoghan:"Eoghan",drew:"Drew",elias:"Elias"};
