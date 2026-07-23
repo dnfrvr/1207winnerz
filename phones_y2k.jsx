@@ -1873,7 +1873,7 @@ const IOSPhone = ({data,admin,onUpdate,onUpdateShared=()=>{},loreDate:loreDatePr
   if(app==="vpn")        return <Shell><IOSStatusBar/><NavBar title="VPN" back={goHome}/><VPNScreen isIos={true} data={data} accent={accent}/></Shell>;
   if(app==="wikipedia")  return <Shell><IOSStatusBar/><NavBar title="Wikipedia" back={goHome}/><WikipediaScreen isIos={true} accent={accent} charKey={charKey} data={data}/></Shell>;
   if(app==="calendar")  return <Shell><IOSStatusBar/><NavBar title="Calendar" back={goHome}/><CalendarScreen data={data} isIos={true} accent={accent} admin={admin} update={update}/></Shell>;
-  if(app==="settings")  return <Shell><IOSStatusBar/><NavBar title="Settings" back={goHome}/><SettingsScreen data={data} isIos={true} accent={accent}/></Shell>;
+  if(app==="settings")  return <Shell><IOSStatusBar/><SettingsScreen data={data} isIos={true} accent={accent} onBack={goHome}/></Shell>;
   if(app==="weather")   return <Shell><IOSStatusBar/><NavBar title="Weather" back={goHome}/><WeatherScreen isIos={true} accent={accent} data={data} update={update} admin={admin}/></Shell>;
   if(app==="facebook")  return <Shell><IOSStatusBar/><NavBar title="Facebook" back={goHome}/><FacebookScreen data={data} isIos={true} accent={accent}/></Shell>;
   if(app==="gmail")     return <Shell><IOSStatusBar/><GmailScreen data={data} isIos={true} accent={accent} onBack={goHome}/></Shell>;
@@ -2460,7 +2460,7 @@ const AndroidPhone = ({data,admin,onUpdate,sharedAndroidIcons={},onUpdateShared=
   if(app==="notes") return <AppShell><AndroidStatusBar notifApps={notifApps} accent={accent}/><NotesScreen data={data} admin={admin} update={update} accent={accent} isIos={false} noteOpen={noteOpen} setNoteOpen={setNoteOpen} goHome={goHome}/></AppShell>;
   if(app==="youtube")   return <AppShell><AndroidStatusBar notifApps={notifApps} accent={accent}/><YouTubeScreen isIos={false} charKey={charKey} data={data} onBack={goHome}/></AppShell>;
   if(app==="calendar")  return <AppShell><AndroidStatusBar notifApps={notifApps} accent={accent}/><ActionBar title="Calendar" back={goHome}/><CalendarScreen data={data} isIos={false} accent={accent} admin={admin} update={update}/></AppShell>;
-  if(app==="settings")  return <AppShell><AndroidStatusBar notifApps={notifApps} accent={accent}/><ActionBar title="Settings" back={goHome}/><SettingsScreen data={data} isIos={false} accent={accent}/></AppShell>;
+  if(app==="settings")  return <AppShell><AndroidStatusBar notifApps={notifApps} accent={accent}/><SettingsScreen data={data} isIos={false} accent={accent} onBack={goHome}/></AppShell>;
   if(app==="weather")   return <AppShell><AndroidStatusBar notifApps={notifApps} accent={accent}/><ActionBar title="Weather" back={goHome}/><WeatherScreen isIos={false} accent={accent} data={data} update={update} admin={admin}/></AppShell>;
   if(app==="facebook")  return <AppShell><AndroidStatusBar notifApps={notifApps} accent={accent}/><ActionBar title="Facebook" back={goHome}/><FacebookScreen data={data} isIos={false} accent={accent}/></AppShell>;
   if(app==="gmail")     return <AppShell><AndroidStatusBar notifApps={notifApps} accent={accent}/><GmailScreen data={data} isIos={false} accent={accent} onBack={goHome}/></AppShell>;

@@ -3538,10 +3538,51 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
  return (
       <div style={{display:"flex",flexDirection:"column",gap:14}}>
         <div style={{display:"flex",gap:10,flexWrap:"wrap"}}>
-          <Field label="Prénom affiché" value={d.settings?.displayName||d.name||""} onChange={v=>upd("settings",{...(d.settings||{}),displayName:v})}/>
-          <Field label="Réseau Wi-Fi" value={d.settings?.wifi||""} onChange={v=>upd("settings",{...(d.settings||{}),wifi:v})} width="150px"/>
-          <Field label="Opérateur" value={d.settings?.carrier||""} onChange={v=>upd("settings",{...(d.settings||{}),carrier:v})} width="120px"/>
+          <div style={{flex:"1 1 200px",minWidth:0}}><Field label="Prénom affiché" value={d.settings?.displayName||d.name||""} onChange={v=>upd("settings",{...(d.settings||{}),displayName:v})}/></div>
+          <div style={{flex:"1 1 140px",minWidth:0}}><Field label="Opérateur" value={d.settings?.carrier||""} onChange={v=>upd("settings",{...(d.settings||{}),carrier:v})}/></div>
         </div>
+
+        {/* ── Réseaux Wi-Fi connus ── (Réglages ▸ Wi-Fi sur le téléphone) */}
+        {(()=>{
+          const nets = d.wifiNetworks || [];
+          const updNets = (l)=>upd("wifiNetworks", l);
+          const patchNet = (i,p)=>updNets(nets.map((n,j)=>{ let nn=j===i?{...n,...p}:n; if(p.current && j!==i) nn={...nn,current:false}; return nn; }));
+          return (
+          <div style={{display:"flex",flexDirection:"column",gap:8}}>
+            <div style={{fontSize:12,fontWeight:700,color:"var(--ink)"}}>📶 Réseaux Wi-Fi connus</div>
+            <div style={{fontSize:11,color:"var(--ink-faint)",marginTop:-4}}>Visibles dans Réglages ▸ Wi-Fi. Les noms trahissent les lieux fréquentés (ex. « Derry Home Hospital »).</div>
+            {nets.map((n,i)=>(
+              <div key={n.id??i} style={{background:"var(--raise)",border:"1px solid var(--line)",borderRadius:10,padding:"10px 11px",display:"flex",gap:8,alignItems:"flex-end",flexWrap:"wrap"}}>
+                <div style={{flex:"1 1 170px",minWidth:0}}><Field label="Nom du réseau" value={n.name||""} onChange={v=>patchNet(i,{name:v})} placeholder="ex. Keene Pharmacy Guest"/></div>
+                <label style={{display:"flex",alignItems:"center",gap:5,fontSize:12,color:"var(--ink-soft)",cursor:"pointer",padding:"8px 2px"}}><input type="checkbox" checked={n.secured!==false} onChange={e=>patchNet(i,{secured:e.target.checked})} style={{width:16,height:16}}/>🔒 Sécurisé</label>
+                <label style={{display:"flex",alignItems:"center",gap:5,fontSize:12,color:"var(--ink-soft)",cursor:"pointer",padding:"8px 2px"}}><input type="checkbox" checked={!!n.current} onChange={e=>patchNet(i,{current:e.target.checked})} style={{width:16,height:16}}/>✓ Connecté</label>
+                <button onClick={()=>updNets(nets.filter((_,j)=>j!==i))} className="adm-del-btn" title="Supprimer" style={{background:"none",border:"none",color:"var(--ink-faint)",cursor:"pointer",fontSize:17,padding:"2px 4px",borderRadius:5,marginLeft:"auto"}}>×</button>
+              </div>
+            ))}
+            <button onClick={()=>updNets([...nets,{id:Date.now(),name:"",secured:true,current:false}])} style={{alignSelf:"flex-start",background:"var(--accent)",border:"none",color:"#fff",borderRadius:9,boxShadow:"var(--shadow)",padding:"9px 16px",cursor:"pointer",fontSize:12,fontWeight:700}}>+ Réseau Wi-Fi</button>
+          </div>
+          );
+        })()}
+
+        {/* ── Appareils Bluetooth appairés ── (Réglages ▸ Bluetooth) */}
+        {(()=>{
+          const devs = d.btDevices || [];
+          const updDevs = (l)=>upd("btDevices", l);
+          return (
+          <div style={{display:"flex",flexDirection:"column",gap:8}}>
+            <div style={{fontSize:12,fontWeight:700,color:"var(--ink)"}}>🔵 Appareils Bluetooth appairés</div>
+            <div style={{fontSize:11,color:"var(--ink-faint)",marginTop:-4}}>Visibles dans Réglages ▸ Bluetooth. Un appareil au nom d'un·e proche (ex. « iPod d'Anna »)…</div>
+            {devs.map((dev,i)=>(
+              <div key={dev.id??i} style={{background:"var(--raise)",border:"1px solid var(--line)",borderRadius:10,padding:"10px 11px",display:"flex",gap:8,alignItems:"flex-end",flexWrap:"wrap"}}>
+                <div style={{flex:"1 1 170px",minWidth:0}}><Field label="Nom de l'appareil" value={dev.name||""} onChange={v=>updDevs(devs.map((x,j)=>j===i?{...x,name:v}:x))} placeholder="ex. iPod d'Anna"/></div>
+                <label style={{display:"flex",alignItems:"center",gap:5,fontSize:12,color:"var(--ink-soft)",cursor:"pointer",padding:"8px 2px"}}><input type="checkbox" checked={!!dev.connected} onChange={e=>updDevs(devs.map((x,j)=>j===i?{...x,connected:e.target.checked}:x))} style={{width:16,height:16}}/>Connecté</label>
+                <button onClick={()=>updDevs(devs.filter((_,j)=>j!==i))} className="adm-del-btn" title="Supprimer" style={{background:"none",border:"none",color:"var(--ink-faint)",cursor:"pointer",fontSize:17,padding:"2px 4px",borderRadius:5,marginLeft:"auto"}}>×</button>
+              </div>
+            ))}
+            <button onClick={()=>updDevs([...devs,{id:Date.now(),name:"",connected:false}])} style={{alignSelf:"flex-start",background:"var(--accent)",border:"none",color:"#fff",borderRadius:9,boxShadow:"var(--shadow)",padding:"9px 16px",cursor:"pointer",fontSize:12,fontWeight:700}}>+ Appareil Bluetooth</button>
+          </div>
+          );
+        })()}
         {tab==="elias" && (()=>{
           const defaultItems = [
             {icon:"👽", title:"ZONE 51 : des témoins parlent", src:"TruthSeekers.net", time:"il y a 2:00am"},
