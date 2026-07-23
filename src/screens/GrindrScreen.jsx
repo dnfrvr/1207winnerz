@@ -1,33 +1,8 @@
 import React, { useState, useEffect, useRef } from "react";
 import { FF_IOS } from "../shared/constants.js";
 import { UploadReader } from "../lib/storage.js";
-
-const GrindrScreen = ({data,admin,update}) => {
-  const [tab, setTab]           = useState("nearby");
-  const [activeDm, setActiveDm] = useState(null);
-  const [localProfiles, setLocalProfiles] = useState(null);
-  const dmScrollRef = React.useRef(null);
-
-  React.useEffect(() => {
-    if(dmScrollRef.current && activeDm !== null) {
-      setTimeout(() => {
-        dmScrollRef.current.scrollTop = dmScrollRef.current.scrollHeight;
-      }, 0);
-    }
-  }, [activeDm]);
-
-  const profiles  = localProfiles ?? (data.grindr || []);
-  const myProfile = data.grindrProfile || {name:"",age:"",headline:"",about:"",photo:null};
-  const setMy     = (k,v) => update("grindrProfile",{...myProfile,[k]:v});
-
-  React.useEffect(() => { setLocalProfiles(null); }, [data.grindr]);
-  const commitProfiles = (g) => { setLocalProfiles(null); update("grindr", g); };
-
-  const OR  = "#f5a623";   // grindr orange
-  const BG  = "#0d0d0d";
-  const SEP = "#1e1e1e";
-
-  const grindrDms = data.grindrDms || [
+// Conversations Grindr par defaut (source unique, aussi importee par l'admin).
+const GRINDR_DMS_DEFAULT = [
     {id:1, name:"Jackson",  distance:"180 m",   photo:null, online:true,  thread:[
       {from:"them", text:"salut toi 👀",                            time:"10:12 AM"},
       {from:"me",   text:"salut, ça va ?",                          time:"10:14 AM"},
@@ -90,6 +65,34 @@ const GrindrScreen = ({data,admin,update}) => {
       {from:"me",   text:"pourquoi pas, t'es dans quel coin ?",     time:"3d"},
     ]},
   ];
+
+
+const GrindrScreen = ({data,admin,update}) => {
+  const [tab, setTab]           = useState("nearby");
+  const [activeDm, setActiveDm] = useState(null);
+  const [localProfiles, setLocalProfiles] = useState(null);
+  const dmScrollRef = React.useRef(null);
+
+  React.useEffect(() => {
+    if(dmScrollRef.current && activeDm !== null) {
+      setTimeout(() => {
+        dmScrollRef.current.scrollTop = dmScrollRef.current.scrollHeight;
+      }, 0);
+    }
+  }, [activeDm]);
+
+  const profiles  = localProfiles ?? (data.grindr || []);
+  const myProfile = data.grindrProfile || {name:"",age:"",headline:"",about:"",photo:null};
+  const setMy     = (k,v) => update("grindrProfile",{...myProfile,[k]:v});
+
+  React.useEffect(() => { setLocalProfiles(null); }, [data.grindr]);
+  const commitProfiles = (g) => { setLocalProfiles(null); update("grindr", g); };
+
+  const OR  = "#f5a623";   // grindr orange
+  const BG  = "#0d0d0d";
+  const SEP = "#1e1e1e";
+
+  const grindrDms = data.grindrDms || GRINDR_DMS_DEFAULT;
 
   /* ─── Tab contents ─────────────────────────────────────── */
 
@@ -334,4 +337,4 @@ const GrindrScreen = ({data,admin,update}) => {
   );
 };
 
-export { GrindrScreen };
+export { GrindrScreen, GRINDR_DMS_DEFAULT };

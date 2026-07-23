@@ -21,6 +21,7 @@ import { FACEBOOK_FRIENDS_FEED_DEFAULT, FACEBOOK_PAGES_DEFAULT } from "../screen
 import { EMAILS_BY_CHAR, MAIL_DRAFTS_BY_CHAR, MAIL_DELETED_BY_CHAR } from "../screens/GmailScreen.jsx";
 import { fileTypeMeta } from "../screens/FilesScreen.jsx";
 import { Field, LoreDateTimeInput, LoreTimeInput } from "../shared/admin-fields.jsx";
+import { GRINDR_DMS_DEFAULT } from "../screens/GrindrScreen.jsx";
 
 // Éditeur générique pour les "posts partagés" (mêmes principes que Twitter : un tableau partagé
 // entre les 4 persos, chacun ne voit/modifie que les posts dont il est l'auteur, ajout d'image et
@@ -2680,75 +2681,9 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
           const myP = d.grindrProfile || {name:"",age:"",headline:"",about:"",photo:null};
           const grid = d.grindr || [];
           
-          // Eoghan's default DMs from GrindrScreen hardcoded data
-          const GRINDR_DMS_DEFAULTS = {
-            eoghan: [
-              {id:1, name:"Jackson",  distance:"180 m",   photo:null, online:true,  thread:[
-                {from:"them", text:"salut toi 👀",                            time:"10:12 AM"},
-                {from:"me",   text:"salut, ça va ?",                          time:"10:14 AM"},
-                {from:"them", text:"bien merci 😊 t'es en cours là ?",        time:"10:15 AM"},
-                {from:"me",   text:"non j'ai un creux, toi ?",                time:"10:16 AM"},
-                {from:"them", text:"pareil, on pourrait se croiser ?",         time:"10:17 AM"},
-              ]},
-              {id:2, name:"Jungkook", distance:"340 m",   photo:null, online:true,  thread:[
-                {from:"them", text:"heyy",                                    time:"Hier"},
-                {from:"me",   text:"hey, t'es d'où ?",                        time:"Hier"},
-                {from:"them", text:"séoul à la base mais j'étudie ici depuis 2 ans", time:"Hier"},
-                {from:"me",   text:"sympa ! tu fais quoi comme études ?",     time:"Hier"},
-                {from:"them", text:"musique. toi ?",                          time:"Hier"},
-                {from:"me",   text:"éco. on a l'air très différents lol",     time:"Hier"},
-                {from:"them", text:"c'est pas plus mal 😏",                   time:"Hier"},
-              ]},
-              {id:3, name:"James",    distance:"1.2 km",  photo:null, online:false, thread:[
-                {from:"them", text:"beau profil",                             time:"Hier"},
-                {from:"me",   text:"merci :)",                                time:"Hier"},
-                {from:"them", text:"tu cherches quoi sur ici ?",              time:"Hier"},
-                {from:"me",   text:"je sais pas encore vraiment",             time:"Hier"},
-                {from:"them", text:"honnête au moins 😄",                     time:"Hier"},
-              ]},
-              {id:4, name:"Mateo",    distance:"600 m",   photo:null, online:true,  thread:[
-                {from:"them", text:"coucou 🌻",                               time:"09:03 AM"},
-                {from:"me",   text:"coucou ! t'as un prénom sympa",           time:"09:05 AM"},
-                {from:"them", text:"espagnol de base haha. t'es étudiant ?",  time:"09:06 AM"},
-                {from:"me",   text:"oui à l'UMA. et toi ?",                   time:"09:07 AM"},
-                {from:"them", text:"idem ! on est peut-être voisins 😲",      time:"09:08 AM"},
-              ]},
-              {id:5, name:"Johnny",   distance:"2.1 km",  photo:null, online:false, thread:[
-                {from:"them", text:"yo",                                      time:"2d"},
-                {from:"me",   text:"yo, ça va ?",                             time:"2d"},
-                {from:"them", text:"ouais tranquille. t'aimes la musique ?",  time:"2d"},
-                {from:"me",   text:"un peu oui, pourquoi ?",                  time:"2d"},
-                {from:"them", text:"je fais des sets le week-end si tu veux passer", time:"2d"},
-              ]},
-              {id:6, name:"Gary",     distance:"850 m",   photo:null, online:true,  thread:[
-                {from:"them", text:"salut 😌",                                time:"11:30 AM"},
-                {from:"me",   text:"salut !",                                 time:"11:32 AM"},
-                {from:"them", text:"j'aime ton profil, t'es étudiant ?",     time:"11:33 AM"},
-                {from:"me",   text:"oui, économie. toi ?",                   time:"11:33 AM"},
-                {from:"them", text:"je travaille dans une galerie d'art ici", time:"11:34 AM"},
-                {from:"me",   text:"oh c'est cool ! tu fais quoi exactement ?", time:"11:35 AM"},
-                {from:"them", text:"commissaire d'expo principalement 🎨",   time:"11:36 AM"},
-              ]},
-              {id:7, name:"Léo",      distance:"450 m",   photo:null, online:true,  thread:[
-                {from:"them", text:"hey 👋",                                  time:"08:50 AM"},
-                {from:"me",   text:"hey ! t'es levé tôt",                    time:"09:00 AM"},
-                {from:"them", text:"cours à 8h le lundi… la vraie torture",  time:"09:01 AM"},
-                {from:"me",   text:"courage haha, t'as quoi comme cours ?",  time:"09:02 AM"},
-                {from:"them", text:"architecture. 5 ans de souffrance 😭",   time:"09:03 AM"},
-              ]},
-              {id:8, name:"Rayan",    distance:"1.8 km",  photo:null, online:false, thread:[
-                {from:"them", text:"bonsoir",                                 time:"3d"},
-                {from:"me",   text:"bonsoir :)",                              time:"3d"},
-                {from:"them", text:"tu fais quoi ce soir ?",                  time:"3d"},
-                {from:"me",   text:"rien de spécial, toi ?",                  time:"3d"},
-                {from:"them", text:"idem. on pourrait se voir ?",             time:"3d"},
-                {from:"me",   text:"pourquoi pas, t'es dans quel coin ?",     time:"3d"},
-              ]},
-            ],
-          };
           
           const isCustom = (d.grindrDms && d.grindrDms.length > 0);
-          const dms = isCustom ? d.grindrDms : (GRINDR_DMS_DEFAULTS[tab] || GRINDR_DMS_DEFAULTS.eoghan || []);
+          const dms = isCustom ? d.grindrDms : GRINDR_DMS_DEFAULT;
           const updDms = (newList) => upd("grindrDms", newList);
           const [gTab, setGTab] = [grindrTab, setGrindrTab];
           return (<>
