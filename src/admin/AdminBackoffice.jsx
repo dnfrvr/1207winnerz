@@ -3551,16 +3551,26 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
           const nets = isCustom ? d.wifiNetworks : WIFI_DEFAULT;
           const updNets = (l)=>upd("wifiNetworks", l.map((n,k)=>({...n,id:n.id??Date.now()+k})));
           const patchNet = (i,p)=>updNets(nets.map((n,j)=>{ let nn=j===i?{...n,...p}:n; if(p.current && j!==i) nn={...nn,current:false}; return nn; }));
+          const moveNet = (from,to)=>{ if(from==null||from===to||to<0||to>=nets.length) return; const l=[...nets]; const [x]=l.splice(from,1); l.splice(to,0,x); updNets(l); };
+          const dragW = {current:null};
           return (
           <div style={{display:"flex",flexDirection:"column",gap:8}}>
             <div style={{fontSize:12,fontWeight:700,color:"var(--ink)"}}>📶 Réseaux Wi-Fi connus</div>
-            <div style={{fontSize:11,color:"var(--ink-faint)",marginTop:-4}}>Visibles dans Réglages ▸ Wi-Fi. Les noms trahissent les lieux fréquentés (ex. « Derry Home Hospital »).</div>
+            <div style={{fontSize:11,color:"var(--ink-faint)",marginTop:-4}}>Visibles dans Réglages ▸ Wi-Fi. Glisse la poignée ⠿ (ou les flèches) pour changer l'ordre. Les noms trahissent les lieux fréquentés.</div>
             {nets.map((n,i)=>(
-              <div key={n.id??i} style={{background:"var(--raise)",border:"1px solid var(--line)",borderRadius:10,padding:"10px 11px",display:"flex",gap:8,alignItems:"flex-end",flexWrap:"wrap"}}>
-                <div style={{flex:"1 1 170px",minWidth:0}}><Field label="Nom du réseau" value={n.name||""} onChange={v=>patchNet(i,{name:v})} placeholder="ex. Keene Pharmacy Guest"/></div>
+              <div key={n.id??i}
+                onDragOver={e=>{e.preventDefault(); e.currentTarget.style.borderColor="var(--accent)";}}
+                onDragLeave={e=>{e.currentTarget.style.borderColor="var(--line)";}}
+                onDrop={e=>{e.preventDefault(); e.currentTarget.style.borderColor="var(--line)"; moveNet(dragW.current,i); dragW.current=null;}}
+                style={{background:"var(--raise)",border:"1px solid var(--line)",borderRadius:10,padding:"10px 11px",display:"flex",gap:8,alignItems:"flex-end",flexWrap:"wrap",transition:"border-color .1s"}}>
+                <span draggable onDragStart={()=>{dragW.current=i;}} title="Glisser pour réordonner" style={{cursor:"grab",color:"var(--ink-faint)",fontSize:16,alignSelf:"center",flexShrink:0,userSelect:"none",padding:"0 2px"}}>⠿</span>
+                <div style={{flex:"1 1 150px",minWidth:0}}><Field label="Nom du réseau" value={n.name||""} onChange={v=>patchNet(i,{name:v})} placeholder="ex. Keene Pharmacy Guest"/></div>
                 <label style={{display:"flex",alignItems:"center",gap:5,fontSize:12,color:"var(--ink-soft)",cursor:"pointer",padding:"8px 2px"}}><input type="checkbox" checked={n.secured!==false} onChange={e=>patchNet(i,{secured:e.target.checked})} style={{width:16,height:16}}/>🔒 Sécurisé</label>
                 <label style={{display:"flex",alignItems:"center",gap:5,fontSize:12,color:"var(--ink-soft)",cursor:"pointer",padding:"8px 2px"}}><input type="checkbox" checked={!!n.current} onChange={e=>patchNet(i,{current:e.target.checked})} style={{width:16,height:16}}/>✓ Connecté</label>
-                <button onClick={()=>updNets(nets.filter((_,j)=>j!==i))} className="adm-del-btn" title="Supprimer" style={{background:"none",border:"none",color:"var(--ink-faint)",cursor:"pointer",fontSize:17,padding:"2px 4px",borderRadius:5,marginLeft:"auto"}}>×</button>
+                <div style={{display:"flex",alignItems:"center",gap:2,marginLeft:"auto"}}>
+                  <MoveButtons index={i} length={nets.length} onMoveUp={()=>moveNet(i,i-1)} onMoveDown={()=>moveNet(i,i+1)}/>
+                  <button onClick={()=>updNets(nets.filter((_,j)=>j!==i))} className="adm-del-btn" title="Supprimer" style={{background:"none",border:"none",color:"var(--ink-faint)",cursor:"pointer",fontSize:17,padding:"2px 4px",borderRadius:5}}>×</button>
+                </div>
               </div>
             ))}
             <button onClick={()=>updNets([...nets,{id:Date.now(),name:"",secured:true,current:false}])} style={{alignSelf:"flex-start",background:"var(--accent)",border:"none",color:"#fff",borderRadius:9,boxShadow:"var(--shadow)",padding:"9px 16px",cursor:"pointer",fontSize:12,fontWeight:700}}>+ Réseau Wi-Fi</button>
@@ -3572,15 +3582,25 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
         {(()=>{
           const devs = d.btDevices || [];
           const updDevs = (l)=>upd("btDevices", l);
+          const moveDev = (from,to)=>{ if(from==null||from===to||to<0||to>=devs.length) return; const l=[...devs]; const [x]=l.splice(from,1); l.splice(to,0,x); updDevs(l); };
+          const dragB = {current:null};
           return (
           <div style={{display:"flex",flexDirection:"column",gap:8}}>
             <div style={{fontSize:12,fontWeight:700,color:"var(--ink)"}}>🔵 Appareils Bluetooth appairés</div>
-            <div style={{fontSize:11,color:"var(--ink-faint)",marginTop:-4}}>Visibles dans Réglages ▸ Bluetooth. Un appareil au nom d'un·e proche (ex. « iPod d'Anna »)…</div>
+            <div style={{fontSize:11,color:"var(--ink-faint)",marginTop:-4}}>Visibles dans Réglages ▸ Bluetooth. Glisse la poignée ⠿ (ou les flèches) pour réordonner. Un appareil au nom d'un·e proche (ex. « iPod d'Anna »)…</div>
             {devs.map((dev,i)=>(
-              <div key={dev.id??i} style={{background:"var(--raise)",border:"1px solid var(--line)",borderRadius:10,padding:"10px 11px",display:"flex",gap:8,alignItems:"flex-end",flexWrap:"wrap"}}>
-                <div style={{flex:"1 1 170px",minWidth:0}}><Field label="Nom de l'appareil" value={dev.name||""} onChange={v=>updDevs(devs.map((x,j)=>j===i?{...x,name:v}:x))} placeholder="ex. iPod d'Anna"/></div>
+              <div key={dev.id??i}
+                onDragOver={e=>{e.preventDefault(); e.currentTarget.style.borderColor="var(--accent)";}}
+                onDragLeave={e=>{e.currentTarget.style.borderColor="var(--line)";}}
+                onDrop={e=>{e.preventDefault(); e.currentTarget.style.borderColor="var(--line)"; moveDev(dragB.current,i); dragB.current=null;}}
+                style={{background:"var(--raise)",border:"1px solid var(--line)",borderRadius:10,padding:"10px 11px",display:"flex",gap:8,alignItems:"flex-end",flexWrap:"wrap",transition:"border-color .1s"}}>
+                <span draggable onDragStart={()=>{dragB.current=i;}} title="Glisser pour réordonner" style={{cursor:"grab",color:"var(--ink-faint)",fontSize:16,alignSelf:"center",flexShrink:0,userSelect:"none",padding:"0 2px"}}>⠿</span>
+                <div style={{flex:"1 1 150px",minWidth:0}}><Field label="Nom de l'appareil" value={dev.name||""} onChange={v=>updDevs(devs.map((x,j)=>j===i?{...x,name:v}:x))} placeholder="ex. iPod d'Anna"/></div>
                 <label style={{display:"flex",alignItems:"center",gap:5,fontSize:12,color:"var(--ink-soft)",cursor:"pointer",padding:"8px 2px"}}><input type="checkbox" checked={!!dev.connected} onChange={e=>updDevs(devs.map((x,j)=>j===i?{...x,connected:e.target.checked}:x))} style={{width:16,height:16}}/>Connecté</label>
-                <button onClick={()=>updDevs(devs.filter((_,j)=>j!==i))} className="adm-del-btn" title="Supprimer" style={{background:"none",border:"none",color:"var(--ink-faint)",cursor:"pointer",fontSize:17,padding:"2px 4px",borderRadius:5,marginLeft:"auto"}}>×</button>
+                <div style={{display:"flex",alignItems:"center",gap:2,marginLeft:"auto"}}>
+                  <MoveButtons index={i} length={devs.length} onMoveUp={()=>moveDev(i,i-1)} onMoveDown={()=>moveDev(i,i+1)}/>
+                  <button onClick={()=>updDevs(devs.filter((_,j)=>j!==i))} className="adm-del-btn" title="Supprimer" style={{background:"none",border:"none",color:"var(--ink-faint)",cursor:"pointer",fontSize:17,padding:"2px 4px",borderRadius:5}}>×</button>
+                </div>
               </div>
             ))}
             <button onClick={()=>updDevs([...devs,{id:Date.now(),name:"",connected:false}])} style={{alignSelf:"flex-start",background:"var(--accent)",border:"none",color:"#fff",borderRadius:9,boxShadow:"var(--shadow)",padding:"9px 16px",cursor:"pointer",fontSize:12,fontWeight:700}}>+ Appareil Bluetooth</button>
