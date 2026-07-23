@@ -1,5 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useContext } from "react";
 import { getCharKey } from "../shared/social-feed.js";
+import { LoreDateCtx } from "../shared/lore-date.js";
 
 const CALENDAR_SEED = {
   glinda:{
@@ -61,11 +62,14 @@ const CalendarScreen = ({data, isIos, accent}) => {
   const SEED = CALENDAR_SEED;
   const calendarArr = data?.calendar || [];
 
-  // Le calendrier démarre sur octobre 2012 (date de lore) mais est navigable : la grille affiche
-  // le mois/année réellement sélectionnés (nombre de jours + alignement des jours de semaine calculés).
-  const [viewYear, setViewYear] = useState(2012);
-  const [viewMonth, setViewMonth] = useState(10); // 1-based
-  const [selectedDay, setSelectedDay] = useState(6);
+  // Le calendrier suit le temps du JDR : il s'ouvre sur le mois/jour de la date de lore courante
+  // (data.loreDate, avancée par le MJ), et reste navigable (‹ ›). La grille affiche le mois/année
+  // réellement sélectionnés (nombre de jours + alignement des jours de semaine calculés).
+  const loreDate = useContext(LoreDateCtx) || "2012-10-06";
+  const [loreY, loreM, loreD] = loreDate.split("-").map(Number);
+  const [viewYear, setViewYear] = useState(loreY || 2012);
+  const [viewMonth, setViewMonth] = useState(loreM || 10); // 1-based
+  const [selectedDay, setSelectedDay] = useState(loreD || 6);
 
   const daysInMonth = new Date(viewYear, viewMonth, 0).getDate();
   // Décalage du 1er du mois, semaine commençant le lundi (0 = lundi … 6 = dimanche)
@@ -129,11 +133,14 @@ const CalendarScreen = ({data, isIos, accent}) => {
         ))}
         {Array.from({length:daysInMonth},(_,i)=>i+1).map(d=>{
           const isMatchDay = d===6 && isLoreOct;
+          const isToday = d===loreD && viewMonth===loreM && viewYear===loreY;
           const hasEv = eventsForDay(d).length>0;
           const isSel = d===selDay;
           return (
             <div key={d} onClick={()=>setSelectedDay(d)} style={{background:isSel?ACC:BG,padding:"6px 0",textAlign:"center",cursor:"pointer",position:"relative"}}>
-              <div style={{color:isSel?"#fff":isMatchDay?RED:TEXT,fontSize:12,fontWeight:isMatchDay||isSel?700:400}}>{d}</div>
+              <div style={{margin:"0 auto",width:20,height:20,borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center",
+                border:isToday&&!isSel?`1.5px solid ${ACC}`:"1.5px solid transparent",
+                color:isSel?"#fff":isMatchDay?RED:TEXT,fontSize:12,fontWeight:isMatchDay||isSel||isToday?700:400}}>{d}</div>
               {hasEv&&<div style={{width:4,height:4,borderRadius:"50%",background:isSel?"#fff":ACC,margin:"2px auto 0"}}/>}
             </div>
           );
