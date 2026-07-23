@@ -2602,19 +2602,19 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                     }}/>
                   </label>
                   <div style={{flex:1,minWidth:0,display:"flex",flexDirection:"column",gap:6}}>
-                  <div style={{display:"flex",gap:6}}>
-                    <Field label="Handle" value={t.h||""} onChange={v=>upTw({h:v})} style={{flex:1}}/>
-                    <Field label="Nom"    value={t.name||""} onChange={v=>upTw({name:v})} style={{flex:1}}/>
-                    <LoreDateTimeInput value={t.time||""} onChange={v=>upTw({time:v})} width="180px" showLabel={true}/>
-                    <div style={{display:"flex",gap:6,alignItems:"flex-start"}}>
-                    <MoveButtons 
-                      index={i} 
-                      length={effectiveTweets.length}
-                      onMoveUp={() => { const l=[...effectiveTweets]; [l[i-1],l[i]]=[l[i],l[i-1]]; updEffective(l); }}
-                      onMoveDown={() => { const l=[...effectiveTweets]; [l[i+1],l[i]]=[l[i],l[i+1]]; updEffective(l); }}
-                    />
-                    <button onClick={()=>updEffective(effectiveTweets.filter((_,j)=>j!==i))} className="adm-del-btn" style={{background:"rgba(239,68,68,0.07)",border:"1px solid rgba(239,68,68,0.2)",color:"var(--danger)",borderRadius:6,padding:"5px 8px",cursor:"pointer",fontSize:11,marginTop:18}}>✕</button>
+                  <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+                    <div style={{flex:"1 1 120px",minWidth:0}}><Field label="Handle" value={t.h||""} onChange={v=>upTw({h:v})}/></div>
+                    <div style={{flex:"1 1 120px",minWidth:0}}><Field label="Nom" value={t.name||""} onChange={v=>upTw({name:v})}/></div>
                   </div>
+                  <div style={{display:"flex",gap:8,alignItems:"flex-end",flexWrap:"wrap"}}>
+                    <div style={{flex:"1 1 180px",minWidth:0}}><LoreDateTimeInput label="Date / heure" value={t.time||""} onChange={v=>upTw({time:v})} width="100%"/></div>
+                    <div style={{display:"flex",gap:6,alignItems:"center",marginLeft:"auto"}}>
+                      <MoveButtons index={i} length={effectiveTweets.length}
+                        onMoveUp={() => { const l=[...effectiveTweets]; [l[i-1],l[i]]=[l[i],l[i-1]]; updEffective(l); }}
+                        onMoveDown={() => { const l=[...effectiveTweets]; [l[i+1],l[i]]=[l[i],l[i+1]]; updEffective(l); }}
+                      />
+                      <button onClick={()=>updEffective(effectiveTweets.filter((_,j)=>j!==i))} className="adm-del-btn" title="Supprimer" style={{background:"none",border:"none",color:"var(--ink-faint)",cursor:"pointer",fontSize:17,padding:"2px 4px",borderRadius:5}}>×</button>
+                    </div>
                   </div>
                   <Field label="Texte" value={t.text||""} onChange={v=>upTw({text:v})} textarea/>
                   <div style={{display:"flex",gap:6,alignItems:"flex-end"}}>
@@ -3045,13 +3045,17 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                       }}/>
                     </label>
                     <div style={{flex:1,minWidth:0,display:"flex",flexDirection:"column",gap:6}}>
-                    <div style={{display:"flex",gap:6,flexWrap:"wrap",alignItems:"flex-end"}}>
-                      <Field label="Pseudo" value={post.username||""} onChange={v=>updAt(post.id,i,{username:v})} width="130px"/>
-                      <Field label="Titre (opt.)" value={post.title||""} onChange={v=>updAt(post.id,i,{title:v})} style={{flex:1}}/>
-                      <LoreDateTimeInput value={post.date||""} onChange={v=>updAt(post.id,i,{date:v})} width="190px" showLabel={true}/>
-                      <Field label="Notes" value={String(post.notes||0)} onChange={v=>updAt(post.id,i,{notes:parseInt(v)||0})} width="70px"/>
-                      {post.avatar && <button onClick={()=>updAt(post.id,i,{avatar:null})} style={{fontSize:10,color:"var(--danger)",background:"none",border:"none",cursor:"pointer",padding:0,alignSelf:"center"}}>× Suppr. photo</button>}
-                      <button onClick={()=>updFeed(effectiveFeedRaw.filter(p2=>post.id!=null ? p2.id!==post.id : p2!==post))} className="adm-del-btn" style={{background:"rgba(239,68,68,0.06)",border:"1px solid rgba(239,68,68,0.2)",color:"var(--danger)",borderRadius:6,padding:"5px 8px",cursor:"pointer",fontSize:11,marginTop:18}}>✕</button>
+                    <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+                      <div style={{flex:"1 1 130px",minWidth:0}}><Field label="Pseudo" value={post.username||""} onChange={v=>updAt(post.id,i,{username:v})}/></div>
+                      <div style={{flex:"2 1 160px",minWidth:0}}><Field label="Titre (opt.)" value={post.title||""} onChange={v=>updAt(post.id,i,{title:v})}/></div>
+                    </div>
+                    <div style={{display:"flex",gap:8,flexWrap:"wrap",alignItems:"flex-end"}}>
+                      <div style={{flex:"1 1 170px",minWidth:0}}><LoreDateTimeInput label="Date / heure" value={post.date||""} onChange={v=>updAt(post.id,i,{date:v})} width="100%"/></div>
+                      <div style={{flex:"0 1 100px"}}><Field label="Notes" value={String(post.notes||0)} onChange={v=>updAt(post.id,i,{notes:parseInt(v)||0})}/></div>
+                      <div style={{display:"flex",gap:8,alignItems:"center",marginLeft:"auto"}}>
+                        {post.avatar && <button onClick={()=>updAt(post.id,i,{avatar:null})} style={{fontSize:10,color:"var(--danger)",background:"none",border:"none",cursor:"pointer",padding:0}}>× photo</button>}
+                        <button onClick={()=>updFeed(effectiveFeedRaw.filter(p2=>post.id!=null ? p2.id!==post.id : p2!==post))} className="adm-del-btn" title="Supprimer" style={{background:"none",border:"none",color:"var(--ink-faint)",cursor:"pointer",fontSize:17,padding:"2px 4px",borderRadius:5}}>×</button>
+                      </div>
                     </div>
                     <Field label="Texte" value={post.body||""} onChange={v=>updAt(post.id,i,{body:v})} textarea/>
                     </div>
@@ -4068,15 +4072,15 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                       }}/>
                     </label>
                     <div style={{flex:1,minWidth:0,display:"flex",flexDirection:"column",gap:6}}>
-                    <div style={{display:"flex",gap:6,flexWrap:"wrap",alignItems:"flex-end"}}>
-                      <Field label="Page" value={p.name||""} onChange={v=>updPage({name:v})} style={{flex:1}} placeholder="ex: Stephen King…"/>
-                      <LoreDateTimeInput value={p.time||""} onChange={v=>updPage({time:v})} width="190px" showLabel={true}/>
-                      {p.avatar && <button onClick={()=>updPage({avatar:null})} style={{fontSize:10,color:"var(--danger)",background:"none",border:"none",cursor:"pointer",padding:0,alignSelf:"center"}}>× Suppr. photo</button>}
-                      <div style={{display:"flex",gap:4,alignItems:"flex-start"}}>
+                    <Field label="Page" value={p.name||""} onChange={v=>updPage({name:v})} placeholder="ex: Stephen King…"/>
+                    <div style={{display:"flex",gap:8,flexWrap:"wrap",alignItems:"flex-end"}}>
+                      <div style={{flex:"1 1 180px",minWidth:0}}><LoreDateTimeInput label="Date / heure" value={p.time||""} onChange={v=>updPage({time:v})} width="100%"/></div>
+                      <div style={{display:"flex",gap:8,alignItems:"center",marginLeft:"auto"}}>
+                        {p.avatar && <button onClick={()=>updPage({avatar:null})} style={{fontSize:10,color:"var(--danger)",background:"none",border:"none",cursor:"pointer",padding:0}}>× photo</button>}
                         <MoveButtons index={i} length={pages.length}
                           onMoveUp={()=>{const l=[...pages];[l[i-1],l[i]]=[l[i],l[i-1]];updPages(l);}}
                           onMoveDown={()=>{const l=[...pages];[l[i+1],l[i]]=[l[i],l[i+1]];updPages(l);}}/>
-                        <button onClick={()=>updPages(pages.filter((_,j)=>j!==i))} className="adm-del-btn" style={{background:"rgba(239,68,68,0.07)",border:"1px solid rgba(239,68,68,0.2)",color:"var(--danger)",borderRadius:6,padding:"5px 8px",cursor:"pointer",fontSize:11,marginTop:18}}>✕</button>
+                        <button onClick={()=>updPages(pages.filter((_,j)=>j!==i))} className="adm-del-btn" title="Supprimer" style={{background:"none",border:"none",color:"var(--ink-faint)",cursor:"pointer",fontSize:17,padding:"2px 4px",borderRadius:5}}>×</button>
                       </div>
                     </div>
                     <Field label="Texte du post" value={p.text||""} onChange={v=>updPage({text:v})} textarea/>
