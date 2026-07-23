@@ -2703,49 +2703,34 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
           return (<>
                         {effective.map((snap,i)=>(
               <div key={snap.id??i} className="adm-card" style={{background:"var(--raise)",borderRadius:10,border:"1px solid var(--line)",padding:"10px 12px",display:"flex",flexDirection:"column",gap:7}}>
-                <div style={{display:"flex",gap:6,alignItems:"center",flexWrap:"wrap"}}>
-                  {/* Direction : envoyé / reçu */}
-                  <div style={{display:"flex",flexDirection:"column",gap:2}}>
-                    <label style={{color:"var(--ink-faint)",fontSize:10,letterSpacing:0.6,fontWeight:600,textTransform:"uppercase"}}>Dir.</label>
-                    <select value={snap.sent?"sent":"recv"} onChange={e=>ensureCustom(i,{sent:e.target.value==="sent"})}
-                      style={{background:"var(--raise)",border:"1px solid var(--line)",color:"var(--ink)",padding:"5px 7px",fontSize:11,borderRadius:7,width:76}}>
-                      <option value="recv">📥 Reçu</option>
-                      <option value="sent">📤 Envoyé</option>
-                    </select>
-                  </div>
-                  {/* Type : photo / vidéo */}
-                  <div style={{display:"flex",flexDirection:"column",gap:2}}>
-                    <label style={{color:"var(--ink-faint)",fontSize:10,letterSpacing:0.6,fontWeight:600,textTransform:"uppercase"}}>Type</label>
-                    <select value={snap.type||"photo"} onChange={e=>ensureCustom(i,{type:e.target.value,preview:e.target.value==="video"?"🎥":"📸"})}
-                      style={{background:"var(--raise)",border:"1px solid var(--line)",color:"var(--ink)",padding:"5px 7px",fontSize:11,borderRadius:7,width:76}}>
-                      <option value="photo">📸 Photo</option>
-                      <option value="video">🎥 Vidéo</option>
-                    </select>
-                  </div>
-                  {/* Ouvert */}
-                  <div style={{display:"flex",flexDirection:"column",gap:2,marginTop:0}}>
-                    <label style={{color:"var(--ink-faint)",fontSize:10,letterSpacing:0.6,fontWeight:600,textTransform:"uppercase"}}>État</label>
-                    <select value={snap.opened?"opened":"new"} onChange={e=>ensureCustom(i,{opened:e.target.value==="opened"})}
-                      style={{background:"var(--raise)",border:"1px solid var(--line)",color:"var(--ink)",padding:"5px 7px",fontSize:11,borderRadius:7,width:80}}>
-                      <option value="new">🟥 Nouveau</option>
-                      <option value="opened">✓ Ouvert</option>
-                    </select>
-                  </div>
+                <div style={{display:"flex",gap:10,alignItems:"flex-end",flexWrap:"wrap"}}>
+                  {[
+                    {lbl:"Direction",opts:[["recv","📥 Reçu"],["sent","📤 Envoyé"]],cur:snap.sent?"sent":"recv",set:v=>ensureCustom(i,{sent:v==="sent"})},
+                    {lbl:"Type",opts:[["photo","📸 Photo"],["video","🎥 Vidéo"]],cur:snap.type||"photo",set:v=>ensureCustom(i,{type:v,preview:v==="video"?"🎥":"📸"})},
+                    {lbl:"État",opts:[["new","🟥 Nouveau"],["opened","✓ Ouvert"]],cur:snap.opened?"opened":"new",set:v=>ensureCustom(i,{opened:v==="opened"})},
+                  ].map(seg=>(
+                    <div key={seg.lbl} style={{display:"flex",flexDirection:"column",gap:5}}>
+                      <label style={{color:"var(--ink-faint)",fontSize:10,letterSpacing:0.8,fontWeight:600,textTransform:"uppercase"}}>{seg.lbl}</label>
+                      <div style={{display:"inline-flex",background:"var(--paper)",border:"1px solid var(--line)",borderRadius:8,padding:2}}>
+                        {seg.opts.map(([val,txt])=>(
+                          <button key={val} onClick={()=>seg.set(val)} style={{border:0,background:seg.cur===val?"var(--accent)":"transparent",color:seg.cur===val?"#fff":"var(--ink-soft)",padding:"5px 10px",borderRadius:6,cursor:"pointer",fontSize:11,fontWeight:600,whiteSpace:"nowrap"}}>{txt}</button>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
                   {isCustom && (
-                    <div style={{display:"flex",gap:4,alignItems:"flex-start"}}>
-                      <MoveButtons 
-                        index={i} 
-                        length={effective.length}
+                    <div style={{display:"flex",gap:4,alignItems:"center",marginLeft:"auto"}}>
+                      <MoveButtons index={i} length={effective.length}
                         onMoveUp={() => { const l=[...effective]; [l[i-1],l[i]]=[l[i],l[i-1]]; updList(l); }}
                         onMoveDown={() => { const l=[...effective]; [l[i+1],l[i]]=[l[i],l[i+1]]; updList(l); }}
                       />
-                      <button onClick={()=>updList(effective.filter((_,j)=>j!==i))} style={{background:"none",border:"none",color:"var(--ink-faint)",cursor:"pointer",fontSize:16,padding:"0 4px",marginTop:18}}>×</button>
+                      <button onClick={()=>updList(effective.filter((_,j)=>j!==i))} className="adm-del-btn" title="Supprimer" style={{background:"none",border:"none",color:"var(--ink-faint)",cursor:"pointer",fontSize:17,padding:"2px 4px",borderRadius:5}}>×</button>
                     </div>
                   )}
                 </div>
-                <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
-                  <Field label="Contact" value={snap.contact||""} onChange={v=>ensureCustom(i,{contact:v})} style={{flex:1}}/>
-                  <LoreDateTimeInput value={snap.time||""} onChange={v=>ensureCustom(i,{time:v})} width="180px"/>
+                <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+                  <div style={{flex:"1 1 160px",minWidth:0}}><Field label="Contact" value={snap.contact||""} onChange={v=>ensureCustom(i,{contact:v})}/></div>
+                  <div style={{flex:"1 1 180px"}}><LoreDateTimeInput label="Date / heure" value={snap.time||""} onChange={v=>ensureCustom(i,{time:v})} width="100%"/></div>
                 </div>
               </div>
             ))}
