@@ -32,7 +32,7 @@ import { VPN_DEFAULTS } from "../screens/VPNScreen.jsx";
 // Remplace les caractères › / ▾ dispersés partout dans l'admin par un vrai SVG
 // cohérent, avec une zone cliquable de 44px minimum (recommandation iOS HIG pour
 // le tactile), une couleur plus visible, et une animation de rotation fluide.
-const AdminChevron = ({open, size=16, color="#6b7280"}) => (
+const AdminChevron = ({open, size=16, color="var(--ink-soft)"}) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" style={{
     transform:open?"rotate(180deg)":"rotate(0deg)",
     transition:"transform 0.18s ease",
@@ -55,7 +55,7 @@ const ToggleHeader = ({onClick, open, children, style={}}) => (
 );
 
 const SharedPostsEditor = ({
-  posts, onChange, tab, accent="#6366f1",
+  posts, onChange, tab, accent="var(--accent)",
   fieldMap={text:"text", img:"img", time:"time"},
   showTitle=false, statFields=[], addExtra={}, addLabel="+ Post", textLabel="Texte", hint,
 }) => {
@@ -73,16 +73,16 @@ const SharedPostsEditor = ({
   };
   return (
     <div style={{display:"flex",flexDirection:"column",gap:10}}>
-      {hint && <div style={{fontSize:11,color:"#9ca3af"}}>{hint} Triés du plus récent au plus ancien — clique pour déplier.</div>}
+      {hint && <div style={{fontSize:11,color:"var(--ink-faint)"}}>{hint} Triés du plus récent au plus ancien — clique pour déplier.</div>}
       {mine.map(post=>{
         const isOpen = openIds.has(post.id);
         return (
-        <div key={post.id} className="adm-card" style={{background:"rgba(255,255,255,0.9)",borderRadius:10,border:"1px solid rgba(0,0,0,0.07)",overflow:"hidden"}}>
+        <div key={post.id} className="adm-card" style={{background:"var(--raise)",borderRadius:10,border:"1px solid var(--line)",overflow:"hidden"}}>
           <div onClick={()=>toggle(post.id)} style={{display:"flex",gap:10,alignItems:"center",padding:"10px 14px",cursor:"pointer",minHeight:44,WebkitTapHighlightColor:"transparent"}}>
             {post[F.img] && <div style={{width:32,height:32,borderRadius:5,overflow:"hidden",flexShrink:0}}><img src={post[F.img]} style={{width:"100%",height:"100%",objectFit:"cover"}}/></div>}
             <div style={{flex:1,minWidth:0}}>
-              <div style={{fontSize:12,color:"#374151",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{post[F.text]||<em style={{color:"#9ca3af"}}>(vide)</em>}</div>
-              <div style={{fontSize:10,color:"#9ca3af"}}>{post[F.time]||"—"}</div>
+              <div style={{fontSize:12,color:"var(--ink-soft)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{post[F.text]||<em style={{color:"var(--ink-faint)"}}>(vide)</em>}</div>
+              <div style={{fontSize:10,color:"var(--ink-faint)"}}>{post[F.time]||"—"}</div>
             </div>
             <AdminChevron open={isOpen}/>
           </div>
@@ -91,7 +91,7 @@ const SharedPostsEditor = ({
           <div style={{display:"flex",gap:6,flexWrap:"wrap",alignItems:"flex-end"}}>
             {showTitle && <Field label="Titre (opt.)" value={post.title||""} onChange={v=>updPost(post.id,{title:v})} width="160px"/>}
             <LoreDateTimeInput value={post[F.time]||""} onChange={v=>updPost(post.id,{[F.time]:v})} width="190px" showLabel={true}/>
-            <button onClick={()=>removePost(post.id)} className="adm-del-btn" style={{background:"rgba(239,68,68,0.07)",border:"1px solid rgba(239,68,68,0.2)",color:"#ef4444",borderRadius:6,padding:"5px 8px",cursor:"pointer",fontSize:11}}>✕</button>
+            <button onClick={()=>removePost(post.id)} className="adm-del-btn" style={{background:"rgba(239,68,68,0.07)",border:"1px solid rgba(239,68,68,0.2)",color:"var(--danger)",borderRadius:6,padding:"5px 8px",cursor:"pointer",fontSize:11}}>✕</button>
           </div>
           {post[F.img] && <div style={{position:"relative",alignSelf:"flex-start"}}>
             <img src={post[F.img]} style={{maxWidth:200,maxHeight:150,borderRadius:8,display:"block"}}/>
@@ -187,16 +187,16 @@ const ThreadComposer = ({isGroup, tab, onApply}) => {
         ✎ Composer / coller un échange
       </button>
       {open && (
-        <div style={{marginTop:8,display:"flex",flexDirection:"column",gap:8,background:"rgba(99,102,241,0.04)",border:"1px solid rgba(99,102,241,0.15)",borderRadius:8,padding:10}}>
+        <div style={{marginTop:8,display:"flex",flexDirection:"column",gap:8,background:"rgba(99,102,241,0.04)",border:"1px solid var(--accent-wash)",borderRadius:8,padding:10}}>
           <textarea value={txt} onChange={e=>setTxt(e.target.value)} rows={7} placeholder={placeholder}
-            className="adm-input" style={{background:"rgba(255,255,255,0.9)",border:"1px solid rgba(0,0,0,0.1)",color:"#1a1a2e",padding:"8px 12px",fontSize:12,borderRadius:8,resize:"vertical",fontFamily:"monospace"}}/>
+            className="adm-input" style={{background:"var(--raise)",border:"1px solid var(--line)",color:"var(--ink)",padding:"8px 12px",fontSize:12,borderRadius:8,resize:"vertical",fontFamily:"monospace"}}/>
           <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
             <button onClick={()=>apply("replace")}
               style={{background:"#4f46e5",border:"none",color:"#fff",borderRadius:6,padding:"6px 14px",cursor:"pointer",fontSize:11,fontWeight:600}}>↻ Remplacer le fil</button>
             <button onClick={()=>apply("append")}
-              style={{background:"#fff",border:"1px solid #4f46e5",color:"#4f46e5",borderRadius:6,padding:"6px 14px",cursor:"pointer",fontSize:11,fontWeight:600}}>+ Ajouter à la fin</button>
+              style={{background:"var(--card)",border:"1px solid #4f46e5",color:"#4f46e5",borderRadius:6,padding:"6px 14px",cursor:"pointer",fontSize:11,fontWeight:600}}>+ Ajouter à la fin</button>
           </div>
-          <div style={{fontSize:10,color:"#6b7280",lineHeight:1.8,background:"rgba(0,0,0,0.03)",borderRadius:6,padding:"8px 10px"}}>
+          <div style={{fontSize:10,color:"var(--ink-soft)",lineHeight:1.8,background:"var(--line-soft)",borderRadius:6,padding:"8px 10px"}}>
             <strong>Format :</strong> <code>expéditeur: texte | date+heure</code> — une ligne par message.<br/>
             <strong>Expéditeurs :</strong> {isGroup ? "glinda, eoghan, drew, elias, moi" : "moi, eux"}<br/>
             <strong>Formats de date+heure acceptés :</strong><br/>
@@ -215,16 +215,16 @@ const CHASSIS_SAMSUNG = "/assets/seed/f80942059727883a2caa615abcb4c5e1.svg";
 // Reusable move buttons component for list reordering
 const MoveButtons = ({index, length, onMoveUp, onMoveDown}) => (
   <div style={{display:"flex",gap:2}}>
-    <button onClick={onMoveUp} disabled={index===0} style={{background:"none",border:"none",color:index===0?"#d1d5db":"#6b7280",cursor:index===0?"default":"pointer",fontSize:12,padding:"2px 4px",opacity:index===0?0.5:1}}>⬆️</button>
-    <button onClick={onMoveDown} disabled={index===length-1} style={{background:"none",border:"none",color:index===length-1?"#d1d5db":"#6b7280",cursor:index===length-1?"default":"pointer",fontSize:12,padding:"2px 4px",opacity:index===length-1?0.5:1}}>⬇️</button>
+    <button onClick={onMoveUp} disabled={index===0} style={{background:"none",border:"none",color:index===0?"var(--ink-faint)":"var(--ink-soft)",cursor:index===0?"default":"pointer",fontSize:12,padding:"2px 4px",opacity:index===0?0.5:1}}>⬆️</button>
+    <button onClick={onMoveDown} disabled={index===length-1} style={{background:"none",border:"none",color:index===length-1?"var(--ink-faint)":"var(--ink-soft)",cursor:index===length-1?"default":"pointer",fontSize:12,padding:"2px 4px",opacity:index===length-1?0.5:1}}>⬇️</button>
   </div>
 );
 
 // Composant stable pour une ligne de track musicale — en dehors de AdminBackoffice pour éviter
 // la recréation des nœuds DOM (et donc la perte de l'event handler onChange) à chaque render.
 const MusicTrackRow = ({track, index, total, onCoverChange, onFieldChange, onMoveUp, onMoveDown, onDelete}) => (
-  <div className="adm-card" style={{display:"flex",gap:8,alignItems:"center",background:"rgba(255,255,255,0.85)",padding:10,borderRadius:10,border:"1px solid rgba(0,0,0,0.07)",flexWrap:"wrap"}}>
-    <label style={{width:40,height:40,borderRadius:6,background:"rgba(99,102,241,0.08)",border:"1px dashed rgba(99,102,241,0.3)",overflow:"hidden",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer"}}>
+  <div className="adm-card" style={{display:"flex",gap:8,alignItems:"center",background:"var(--raise)",padding:10,borderRadius:10,border:"1px solid var(--line)",flexWrap:"wrap"}}>
+    <label style={{width:40,height:40,borderRadius:6,background:"var(--accent-wash)",border:"1px dashed var(--accent-line)",overflow:"hidden",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer"}}>
       {track.cover
         ? <img src={track.cover} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
         : <span style={{fontSize:16}}>🎵</span>}
@@ -234,15 +234,15 @@ const MusicTrackRow = ({track, index, total, onCoverChange, onFieldChange, onMov
       }}/>
     </label>
     <input value={track.title||""} onChange={e=>onFieldChange("title",e.target.value)}
-      placeholder="Titre" className="adm-input" style={{flex:2,background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#1a1a2e",padding:"7px 10px",fontSize:12,borderRadius:7}}/>
+      placeholder="Titre" className="adm-input" style={{flex:2,background:"var(--raise)",border:"1px solid var(--line)",color:"var(--ink)",padding:"7px 10px",fontSize:12,borderRadius:7}}/>
     <input value={track.artist||""} onChange={e=>onFieldChange("artist",e.target.value)}
-      placeholder="Artiste" className="adm-input" style={{flex:2,background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#6b7280",padding:"7px 10px",fontSize:12,borderRadius:7}}/>
+      placeholder="Artiste" className="adm-input" style={{flex:2,background:"var(--raise)",border:"1px solid var(--line)",color:"var(--ink-soft)",padding:"7px 10px",fontSize:12,borderRadius:7}}/>
     <input value={track.album||""} onChange={e=>onFieldChange("album",e.target.value)}
-      placeholder="Album" className="adm-input" style={{flex:2,background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#6b7280",padding:"7px 10px",fontSize:12,borderRadius:7}}/>
+      placeholder="Album" className="adm-input" style={{flex:2,background:"var(--raise)",border:"1px solid var(--line)",color:"var(--ink-soft)",padding:"7px 10px",fontSize:12,borderRadius:7}}/>
     <input value={track.duration||""} onChange={e=>onFieldChange("duration",e.target.value)}
-      placeholder="3:00" className="adm-input" style={{width:60,background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#6b7280",padding:"7px 8px",fontSize:11,borderRadius:7}}/>
+      placeholder="3:00" className="adm-input" style={{width:60,background:"var(--raise)",border:"1px solid var(--line)",color:"var(--ink-soft)",padding:"7px 8px",fontSize:11,borderRadius:7}}/>
     <MoveButtons index={index} length={total} onMoveUp={onMoveUp} onMoveDown={onMoveDown}/>
-    <button onClick={onDelete} className="adm-del-btn" style={{background:"none",border:"none",color:"#d1d5db",cursor:"pointer",fontSize:16,padding:"2px 6px",borderRadius:5,transition:"all 0.15s"}}>×</button>
+    <button onClick={onDelete} className="adm-del-btn" style={{background:"none",border:"none",color:"var(--ink-faint)",cursor:"pointer",fontSize:16,padding:"2px 6px",borderRadius:5,transition:"all 0.15s"}}>×</button>
   </div>
 );
 
@@ -404,21 +404,21 @@ const InsertMsgBtn = ({onClick}) => (
   <div style={{display:"flex",alignItems:"center",gap:6,margin:"2px 0",opacity:0.6,transition:"opacity 0.15s"}}
     onMouseEnter={e=>e.currentTarget.style.opacity="1"}
     onMouseLeave={e=>e.currentTarget.style.opacity="0.6"}>
-    <div style={{flex:1,height:1,background:"rgba(99,102,241,0.2)"}}/>
+    <div style={{flex:1,height:1,background:"var(--accent-wash)"}}/>
     <button onClick={onClick} style={{
-      background:"rgba(99,102,241,0.1)",border:"1px dashed rgba(99,102,241,0.4)",color:"#6366f1",
+      background:"var(--accent-wash)",border:"1px dashed var(--accent-line)",color:"var(--accent)",
       borderRadius:20,width:26,height:26,cursor:"pointer",fontSize:15,display:"flex",
       alignItems:"center",justifyContent:"center",flexShrink:0,padding:0,lineHeight:1,
     }}>+</button>
-    <div style={{flex:1,height:1,background:"rgba(99,102,241,0.2)"}}/>
+    <div style={{flex:1,height:1,background:"var(--accent-wash)"}}/>
   </div>
 );
 // Boutons fléchés haut/bas pour déplacer un message dans la liste triée
 const MsgMoveBtn = ({dir, onClick, disabled}) => (
   <button onClick={onClick} disabled={disabled} style={{
-    background:"none",border:"1px solid rgba(0,0,0,0.12)",borderRadius:4,
+    background:"none",border:"1px solid var(--line)",borderRadius:4,
     width:20,height:20,cursor:disabled?"default":"pointer",
-    color:disabled?"#d1d5db":"#6366f1",fontSize:9,
+    color:disabled?"var(--ink-faint)":"var(--accent)",fontSize:9,
     display:"flex",alignItems:"center",justifyContent:"center",padding:0,flexShrink:0,
   }}>
     <svg width="8" height="8" viewBox="0 0 10 10" fill="currentColor">
@@ -701,6 +701,18 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
   const [burgerOpen, setBurgerOpen] = useState(false);
   const [isNarrow, setIsNarrow] = useState(() => document.documentElement.clientWidth < 500);
   const adminRootRef = React.useRef(null);
+  // Thème admin : par défaut celui de l'appareil (prefers-color-scheme), togglable + persisté.
+  // "" = suivre l'appareil ; "light"/"dark" = choix explicite. L'attribut est retiré au démontage
+  // pour rester confiné à l'admin.
+  const [theme, setTheme] = useState(() => { try { return localStorage.getItem("umaAdminTheme") || ""; } catch(e){ return ""; } });
+  useEffect(() => {
+    const el = document.documentElement;
+    if(theme) el.setAttribute("data-theme", theme); else el.removeAttribute("data-theme");
+    return () => { el.removeAttribute("data-theme"); };
+  }, [theme]);
+  const sysDark = () => !!(window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches);
+  const isDarkTheme = theme ? theme === "dark" : sysDark();
+  const toggleTheme = () => { const next = isDarkTheme ? "light" : "dark"; setTheme(next); try { localStorage.setItem("umaAdminTheme", next); } catch(e){} };
   useEffect(() => {
     const check = () => {
       const w = document.documentElement.clientWidth;
@@ -736,7 +748,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
   // ── Date lore ─────────────────────────────────────────────────────────────
 
   const sectionBtn = (s, label) => (
-    <button onClick={()=>setSection(s)} style={{padding:"6px 14px",border:"none",background:section===s?"#ffc107":"#1e1e1e",color:section===s?"#000":"#888",cursor:"pointer",fontSize:11,fontWeight:section===s?700:400,borderRadius:0,whiteSpace:"nowrap"}}>
+    <button onClick={()=>setSection(s)} style={{padding:"6px 14px",border:"none",background:section===s?"#ffc107":"#1e1e1e",color:section===s?"#000":"var(--ink-faint)",cursor:"pointer",fontSize:11,fontWeight:section===s?700:400,borderRadius:0,whiteSpace:"nowrap"}}>
       {label}
     </button>
   );
@@ -760,13 +772,13 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
           const GM="#00AFF0";
           return (<>
                         {effective.map((g,i)=>(
-              <div key={g.id??i} className="adm-card" style={{background:"rgba(255,255,255,0.9)",borderRadius:10,padding:"10px 12px",border:"1px solid rgba(0,0,0,0.07)",display:"flex",flexDirection:"column",gap:6}}>
+              <div key={g.id??i} className="adm-card" style={{background:"var(--raise)",borderRadius:10,padding:"10px 12px",border:"1px solid var(--line)",display:"flex",flexDirection:"column",gap:6}}>
                 <div style={{display:"flex",gap:6,flexWrap:"wrap",alignItems:"center"}}>
                   <Field label="Nom du groupe" value={g.name||""} onChange={v=>ensureCustom(i,{name:v})} style={{flex:1}}/>
                   <Field label="Membres" value={String(g.members||0)} onChange={v=>ensureCustom(i,{members:parseInt(v)||0})} width="70px"/>
                   <LoreTimeInput label="Heure" value={g.time||""} onChange={v=>ensureCustom(i,{time:v})} width="110px"/>
                   <Field label="Non-lus" value={String(g.n||0)} onChange={v=>ensureCustom(i,{n:parseInt(v)||0})} width="60px"/>
-                  <button onClick={()=>updList(effective.filter((_,j)=>j!==i).map((g,j)=>({...g,id:Date.now()+j})))} style={{background:"none",border:"none",color:"#d1d5db",cursor:"pointer",fontSize:16,padding:"0 4px",marginTop:18}}>×</button>
+                  <button onClick={()=>updList(effective.filter((_,j)=>j!==i).map((g,j)=>({...g,id:Date.now()+j})))} style={{background:"none",border:"none",color:"var(--ink-faint)",cursor:"pointer",fontSize:16,padding:"0 4px",marginTop:18}}>×</button>
                 </div>
                 <Field label="Dernier message" value={g.last||""} onChange={v=>ensureCustom(i,{last:v})}/>
               </div>
@@ -793,14 +805,14 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
               <Field label="Followers"   value={String(sc.followers||0)} onChange={v=>updSC("followers",parseInt(v)||0)} width="90px"/>
               <Field label="Following"   value={String(sc.following||0)} onChange={v=>updSC("following",parseInt(v)||0)} width="90px"/>
             </div>
-            <div style={{fontSize:11,fontWeight:600,color:"#374151",marginBottom:4}}>Tracks</div>
+            <div style={{fontSize:11,fontWeight:600,color:"var(--ink-soft)",marginBottom:4}}>Tracks</div>
             {tracks.map((tr,i)=>(
-              <div key={tr.id??i} className="adm-card" style={{background:"rgba(255,255,255,0.85)",borderRadius:10,padding:"10px 12px",border:"1px solid rgba(0,0,0,0.07)",display:"flex",flexDirection:"column",gap:6}}>
+              <div key={tr.id??i} className="adm-card" style={{background:"var(--raise)",borderRadius:10,padding:"10px 12px",border:"1px solid var(--line)",display:"flex",flexDirection:"column",gap:6}}>
                 <div style={{display:"flex",gap:6,alignItems:"center"}}>
                   <Field label="Titre" value={tr.title||""} onChange={v=>{const t=[...tracks];t[i]={...t[i],title:v};updSC("tracks",t);}} style={{flex:1}}/>
                   <Field label="Durée" value={tr.dur||""} onChange={v=>{const t=[...tracks];t[i]={...t[i],dur:v};updSC("tracks",t);}} width="64px"/>
                   <Field label="Tag" value={tr.tag||""} onChange={v=>{const t=[...tracks];t[i]={...t[i],tag:v};updSC("tracks",t);}} width="120px"/>
-                  <button onClick={()=>updSC("tracks",tracks.filter((_,j)=>j!==i))} style={{background:"none",border:"none",color:"#d1d5db",cursor:"pointer",fontSize:16,padding:"0 4px",marginTop:18}}>×</button>
+                  <button onClick={()=>updSC("tracks",tracks.filter((_,j)=>j!==i))} style={{background:"none",border:"none",color:"var(--ink-faint)",cursor:"pointer",fontSize:16,padding:"0 4px",marginTop:18}}>×</button>
                 </div>
                 <Field label="Description" value={tr.desc||""} onChange={v=>{const t=[...tracks];t[i]={...t[i],desc:v};updSC("tracks",t);}} textarea/>
                 <div style={{display:"flex",gap:6}}>
@@ -833,16 +845,16 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
               <Field label="Streak (jours)" value={String(nk.streak||0)} onChange={v=>upNK("streak",parseInt(v)||0)} width="90px"/>
               <Field label="Niveau" value={nk.level||""} onChange={v=>upNK("level",v)} width="80px"/>
             </div>
-            <div style={{fontSize:11,fontWeight:600,color:"#374151",marginBottom:4}}>Sorties</div>
+            <div style={{fontSize:11,fontWeight:600,color:"var(--ink-soft)",marginBottom:4}}>Sorties</div>
             {runs.map((run,i)=>(
-              <div key={run.id??i} className="adm-card" style={{background:"rgba(255,255,255,0.85)",borderRadius:10,padding:"10px 12px",border:"1px solid rgba(0,0,0,0.07)",display:"flex",flexDirection:"column",gap:6}}>
+              <div key={run.id??i} className="adm-card" style={{background:"var(--raise)",borderRadius:10,padding:"10px 12px",border:"1px solid var(--line)",display:"flex",flexDirection:"column",gap:6}}>
                 <div style={{display:"flex",gap:6,flexWrap:"wrap",alignItems:"center"}}>
                   <Field label="Distance" value={run.distance||""} onChange={v=>{const r=[...runs];r[i]={...r[i],distance:v};upNK("runs",r);}} width="90px"/>
                   <LoreDateTimeInput label="Date" showTime={false} value={run.date||""} onChange={v=>{const r=[...runs];r[i]={...r[i],date:v};upNK("runs",r);}} width="150px"/>
                   <Field label="Durée" value={run.time||""} onChange={v=>{const r=[...runs];r[i]={...r[i],time:v};upNK("runs",r);}} width="80px"/>
                   <Field label="Allure" value={run.pace||""} onChange={v=>{const r=[...runs];r[i]={...r[i],pace:v};upNK("runs",r);}} width="90px"/>
                   <Field label="Cal" value={String(run.cal||0)} onChange={v=>{const r=[...runs];r[i]={...r[i],cal:parseInt(v)||0};upNK("runs",r);}} width="60px"/>
-                  <button onClick={()=>upNK("runs",runs.filter((_,j)=>j!==i))} style={{background:"none",border:"none",color:"#d1d5db",cursor:"pointer",fontSize:16,padding:"0 4px",marginTop:18}}>×</button>
+                  <button onClick={()=>upNK("runs",runs.filter((_,j)=>j!==i))} style={{background:"none",border:"none",color:"var(--ink-faint)",cursor:"pointer",fontSize:16,padding:"0 4px",marginTop:18}}>×</button>
                 </div>
                 <Field label="Note" value={run.note||""} onChange={v=>{const r=[...runs];r[i]={...r[i],note:v};upNK("runs",r);}} textarea/>
               </div>
@@ -861,76 +873,76 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
 
         <div style={{display:"flex",gap:14,flexWrap:"wrap",alignItems:"flex-end"}}>
           <div style={{display:"flex",flexDirection:"column",gap:4}}>
-            <label style={{color:"#9ca3af",fontSize:10,letterSpacing:0.8,fontWeight:600,textTransform:"uppercase"}}>Couleur accent</label>
-            <input type="color" value={d.accentColor||"#888"} onChange={e=>upd("accentColor",e.target.value)}
-              style={{width:44,height:34,padding:0,border:"1px solid rgba(0,0,0,0.1)",borderRadius:6,background:"none",cursor:"pointer"}}/>
+            <label style={{color:"var(--ink-faint)",fontSize:10,letterSpacing:0.8,fontWeight:600,textTransform:"uppercase"}}>Couleur accent</label>
+            <input type="color" value={d.accentColor||"var(--ink-faint)"} onChange={e=>upd("accentColor",e.target.value)}
+              style={{width:44,height:34,padding:0,border:"1px solid var(--line)",borderRadius:6,background:"none",cursor:"pointer"}}/>
           </div>
           <div style={{display:"flex",flexDirection:"column",gap:4}}>
-            <label style={{color:"#9ca3af",fontSize:10,letterSpacing:0.8,fontWeight:600,textTransform:"uppercase"}}>Châssis</label>
+            <label style={{color:"var(--ink-faint)",fontSize:10,letterSpacing:0.8,fontWeight:600,textTransform:"uppercase"}}>Châssis</label>
             <select value={d.phoneColor||"black"} onChange={e=>upd("phoneColor",e.target.value)}
-              className="adm-input" style={{background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#1a1a2e",padding:"7px 10px",fontSize:12,borderRadius:8}}>
+              className="adm-input" style={{background:"var(--raise)",border:"1px solid var(--line)",color:"var(--ink)",padding:"7px 10px",fontSize:12,borderRadius:8}}>
               <option value="black">Black</option>
               <option value="white">White</option>
             </select>
           </div>
           <div style={{display:"flex",flexDirection:"column",gap:4}}>
-            <label style={{color:"#9ca3af",fontSize:10,letterSpacing:0.8,fontWeight:600,textTransform:"uppercase"}}>Wallpaper</label>
+            <label style={{color:"var(--ink-faint)",fontSize:10,letterSpacing:0.8,fontWeight:600,textTransform:"uppercase"}}>Wallpaper</label>
             <div style={{display:"flex",gap:8,alignItems:"center"}}>
               {d.wallpaper?.startsWith("#") || !d.wallpaper
                 ? <input type="color" value={d.wallpaper?.startsWith("#")?d.wallpaper:"#000000"}
                     onChange={e=>upd("wallpaper",e.target.value)}
-                    style={{width:44,height:34,padding:0,border:"1px solid rgba(0,0,0,0.1)",borderRadius:6,background:"none",cursor:"pointer"}}/>
-                : <div style={{width:44,height:34,borderRadius:6,overflow:"hidden",border:"1px solid rgba(0,0,0,0.1)"}}>
+                    style={{width:44,height:34,padding:0,border:"1px solid var(--line)",borderRadius:6,background:"none",cursor:"pointer"}}/>
+                : <div style={{width:44,height:34,borderRadius:6,overflow:"hidden",border:"1px solid var(--line)"}}>
                     <img src={d.wallpaper} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
                   </div>}
-              <label style={{background:"rgba(99,102,241,0.08)",border:"1px dashed rgba(99,102,241,0.35)",color:"#6366f1",borderRadius:8,padding:"6px 12px",cursor:"pointer",fontSize:11,fontWeight:600}}>
+              <label style={{background:"var(--accent-wash)",border:"1px dashed var(--accent-line)",color:"var(--accent)",borderRadius:8,padding:"6px 12px",cursor:"pointer",fontSize:11,fontWeight:600}}>
                 📁 Image<input type="file" accept="image/*" style={{display:"none"}} onChange={e=>{const f=e.target.files?.[0];if(!f)return;const r=new UploadReader();r.onload=ev=>upd("wallpaper",ev.target.result);r.readAsDataURL(f);}}/>
               </label>
-              {d.wallpaper&&!d.wallpaper.startsWith("#")&&<button onClick={()=>upd("wallpaper","#000000")} style={{background:"none",border:"none",color:"#ef4444",cursor:"pointer",fontSize:18,padding:"0 4px"}}>×</button>}
+              {d.wallpaper&&!d.wallpaper.startsWith("#")&&<button onClick={()=>upd("wallpaper","#000000")} style={{background:"none",border:"none",color:"var(--danger)",cursor:"pointer",fontSize:18,padding:"0 4px"}}>×</button>}
             </div>
           </div>
           <div style={{display:"flex",flexDirection:"column",gap:4}}>
-            <label style={{color:"#9ca3af",fontSize:10,letterSpacing:0.8,fontWeight:600,textTransform:"uppercase"}}>Avatar</label>
+            <label style={{color:"var(--ink-faint)",fontSize:10,letterSpacing:0.8,fontWeight:600,textTransform:"uppercase"}}>Avatar</label>
             <div style={{display:"flex",gap:8,alignItems:"center"}}>
-              {d.avatar&&<img src={d.avatar} style={{width:34,height:34,borderRadius:"50%",objectFit:"cover",border:"1px solid rgba(0,0,0,0.1)"}}/>}
-              <label style={{background:"rgba(99,102,241,0.08)",border:"1px dashed rgba(99,102,241,0.35)",color:"#6366f1",borderRadius:8,padding:"6px 12px",cursor:"pointer",fontSize:11,fontWeight:600}}>
+              {d.avatar&&<img src={d.avatar} style={{width:34,height:34,borderRadius:"50%",objectFit:"cover",border:"1px solid var(--line)"}}/>}
+              <label style={{background:"var(--accent-wash)",border:"1px dashed var(--accent-line)",color:"var(--accent)",borderRadius:8,padding:"6px 12px",cursor:"pointer",fontSize:11,fontWeight:600}}>
                 {d.avatar?"🔄":"📁"}<input type="file" accept="image/*" style={{display:"none"}} onChange={e=>{const f=e.target.files?.[0];if(!f)return;const r=new UploadReader();r.onload=ev=>upd("avatar",ev.target.result);r.readAsDataURL(f);}}/>
               </label>
-              {d.avatar&&<button onClick={()=>upd("avatar",null)} style={{background:"none",border:"none",color:"#ef4444",cursor:"pointer",fontSize:18,padding:"0 4px"}}>×</button>}
+              {d.avatar&&<button onClick={()=>upd("avatar",null)} style={{background:"none",border:"none",color:"var(--danger)",cursor:"pointer",fontSize:18,padding:"0 4px"}}>×</button>}
             </div>
           </div>
         </div>
 
-        <div style={{borderTop:"1px solid rgba(0,0,0,0.07)",paddingTop:16}}>
-          <div style={{fontSize:12,fontWeight:700,color:"#374151",marginBottom:12}}>📱 Châssis PNG personnalisé</div>
+        <div style={{borderTop:"1px solid var(--line)",paddingTop:16}}>
+          <div style={{fontSize:12,fontWeight:700,color:"var(--ink-soft)",marginBottom:12}}>📱 Châssis PNG personnalisé</div>
           <div style={{display:"flex",gap:12,alignItems:"flex-start",flexWrap:"wrap"}}>
-            <div style={{width:72,height:144,background:"#f3f4f6",border:"1px solid rgba(0,0,0,0.1)",borderRadius:8,overflow:"hidden",position:"relative",flexShrink:0}}>
+            <div style={{width:72,height:144,background:"var(--line-soft)",border:"1px solid var(--line)",borderRadius:8,overflow:"hidden",position:"relative",flexShrink:0}}>
               {d.chassisPng
                 ?<img src={d.chassisPng} style={{position:"absolute",inset:0,width:"100%",height:"100%",objectFit:"contain"}}/>
                 :<div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",color:"#ccc",fontSize:22}}>📱</div>}
             </div>
             <div style={{display:"flex",flexDirection:"column",gap:8}}>
-              <label style={{background:"rgba(99,102,241,0.08)",border:"1px dashed rgba(99,102,241,0.35)",color:"#6366f1",borderRadius:8,padding:"8px 14px",cursor:"pointer",fontSize:11,fontWeight:600}}>
+              <label style={{background:"var(--accent-wash)",border:"1px dashed var(--accent-line)",color:"var(--accent)",borderRadius:8,padding:"8px 14px",cursor:"pointer",fontSize:11,fontWeight:600}}>
                 {d.chassisPng?"🔄 Change":"📂 Import PNG"}
                 <input type="file" accept="image/png,image/webp" style={{display:"none"}} onChange={e=>{const f=e.target.files?.[0];if(!f)return;const r=new UploadReader();r.onload=ev=>upd("chassisPng",ev.target.result);r.readAsDataURL(f);e.target.value="";}}/>
               </label>
-              {d.chassisPng&&<button onClick={()=>upd("chassisPng",null)} style={{background:"rgba(239,68,68,0.07)",border:"1px solid rgba(239,68,68,0.2)",color:"#ef4444",borderRadius:8,padding:"6px 12px",cursor:"pointer",fontSize:11}}>✕ Supprimer</button>}
+              {d.chassisPng&&<button onClick={()=>upd("chassisPng",null)} style={{background:"rgba(239,68,68,0.07)",border:"1px solid rgba(239,68,68,0.2)",color:"var(--danger)",borderRadius:8,padding:"6px 12px",cursor:"pointer",fontSize:11}}>✕ Supprimer</button>}
             </div>
             {d.chassisPng&&<div style={{display:"flex",flexDirection:"column",gap:8,flex:1,minWidth:200}}>
-              <div style={{color:"#9ca3af",fontSize:11}}>Calibration — aligne l'écran avec la fenêtre du PNG</div>
+              <div style={{color:"var(--ink-faint)",fontSize:11}}>Calibration — aligne l'écran avec la fenêtre du PNG</div>
               {[["top","Haut",d.screenInset?.top??76],["bottom","Bas",d.screenInset?.bottom??82],["left","Gauche",d.screenInset?.left??10],["right","Droite",d.screenInset?.right??10]].map(([k,label,val])=>(
                 <div key={k} style={{display:"flex",alignItems:"center",gap:8}}>
-                  <span style={{color:"#6b7280",fontSize:11,width:50,flexShrink:0}}>{label}</span>
+                  <span style={{color:"var(--ink-soft)",fontSize:11,width:50,flexShrink:0}}>{label}</span>
                   <input type="range" min={0} max={250} value={val}
                     onChange={e=>upd("screenInset",{...(d.screenInset||{top:76,bottom:82,left:10,right:10}),[k]:parseInt(e.target.value)})}
                     style={{flex:1,accentColor:charColor}}/>
                   <input type="number" value={val}
                     onChange={e=>upd("screenInset",{...(d.screenInset||{top:76,bottom:82,left:10,right:10}),[k]:parseInt(e.target.value)||0})}
-                    className="adm-input" style={{width:46,background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#1a1a2e",padding:"4px 6px",fontSize:11,borderRadius:6,textAlign:"center"}}/>
+                    className="adm-input" style={{width:46,background:"var(--raise)",border:"1px solid var(--line)",color:"var(--ink)",padding:"4px 6px",fontSize:11,borderRadius:6,textAlign:"center"}}/>
                 </div>
               ))}
               <button onClick={()=>upd("screenInset",{top:76,bottom:82,left:10,right:10})}
-                style={{background:"rgba(0,0,0,0.04)",border:"1px solid rgba(0,0,0,0.1)",color:"#6b7280",borderRadius:6,padding:"5px 10px",cursor:"pointer",fontSize:11,alignSelf:"flex-start"}}>↺ Reset</button>
+                style={{background:"var(--line-soft)",border:"1px solid var(--line)",color:"var(--ink-soft)",borderRadius:6,padding:"5px 10px",cursor:"pointer",fontSize:11,alignSelf:"flex-start"}}>↺ Reset</button>
             </div>}
           </div>
         </div>
@@ -947,7 +959,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
       ];
       return (
         <div style={{display:"flex",flexDirection:"column",gap:16}}>
-          <div style={{fontSize:11,color:"#9ca3af",lineHeight:1.5}}>
+          <div style={{fontSize:11,color:"var(--ink-faint)",lineHeight:1.5}}>
             La photo uploadée ici s'applique comme photo de profil par défaut sur tous les réseaux sociaux qui n'en ont pas de spécifique (Instagram, Twitter, Facebook, Snapchat, Grindr…).
           </div>
           <div style={{display:"flex",flexWrap:"wrap",gap:16}}>
@@ -960,7 +972,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                 onUpdate("_sharedAvatars", {...(data.sharedThreads?._sharedAvatars||{}), [ck]: val});
               };
               return (
-                <div key={ck} style={{display:"flex",flexDirection:"column",alignItems:"center",gap:10,padding:"16px 20px",background:"rgba(255,255,255,0.85)",borderRadius:12,border:`2px solid ${cc}33`,minWidth:140,flex:"1 1 140px",maxWidth:220}}>
+                <div key={ck} style={{display:"flex",flexDirection:"column",alignItems:"center",gap:10,padding:"16px 20px",background:"var(--raise)",borderRadius:12,border:`2px solid ${cc}33`,minWidth:140,flex:"1 1 140px",maxWidth:220}}>
                   {/* Avatar preview */}
                   <div style={{width:72,height:72,borderRadius:"50%",overflow:"hidden",border:`3px solid ${cc}`,background:"#e5e5ea",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,position:"relative"}}>
                     {av
@@ -968,19 +980,19 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                       : <span style={{fontSize:28}}>{cl.split(" ")[1]}</span>
                     }
                   </div>
-                  <div style={{fontSize:12,fontWeight:700,color:"#374151"}}>{cl.split(" ")[0]}</div>
+                  <div style={{fontSize:12,fontWeight:700,color:"var(--ink-soft)"}}>{cl.split(" ")[0]}</div>
                   <div style={{display:"flex",flexDirection:"column",gap:6,width:"100%"}}>
                     <label style={{background:`${cc}11`,border:`1px dashed ${cc}88`,color:cc,borderRadius:8,padding:"7px 10px",cursor:"pointer",fontSize:11,fontWeight:600,textAlign:"center",display:"block"}}>
                       {av?"🔄 Changer":"📁 Uploader"}
                       <input type="file" accept="image/*" style={{display:"none"}} onChange={e=>{const f=e.target.files?.[0];if(!f)return;const r=new UploadReader();r.onload=ev=>updChar(ev.target.result);r.readAsDataURL(f);e.target.value="";}}/>
                     </label>
-                    {av&&<button onClick={()=>updChar(null)} style={{background:"rgba(239,68,68,0.07)",border:"1px solid rgba(239,68,68,0.2)",color:"#ef4444",borderRadius:8,padding:"5px 10px",cursor:"pointer",fontSize:11}}>✕ Supprimer</button>}
+                    {av&&<button onClick={()=>updChar(null)} style={{background:"rgba(239,68,68,0.07)",border:"1px solid rgba(239,68,68,0.2)",color:"var(--danger)",borderRadius:8,padding:"5px 10px",cursor:"pointer",fontSize:11}}>✕ Supprimer</button>}
                   </div>
                 </div>
               );
             })}
           </div>
-          <div style={{fontSize:10,color:"#d1d5db",lineHeight:1.4,marginTop:4}}>
+          <div style={{fontSize:10,color:"var(--ink-faint)",lineHeight:1.4,marginTop:4}}>
             💡 Si une app a déjà une photo propre (ex: SoundCloud, photo de profil Grindr…), elle garde la sienne. L'avatar global ne remplace que les espaces vides.
           </div>
         </div>
@@ -1017,20 +1029,20 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
       <div style={{display:"flex",flexDirection:"column",gap:16}}>
 
         {/* ── Tab switcher inbox / supprimés ── */}
-        <div className="adm-subtabs" style={{display:"flex",gap:0,background:"rgba(0,0,0,0.05)",borderRadius:10,padding:3,alignSelf:"stretch"}}>
+        <div className="adm-subtabs" style={{display:"flex",gap:0,background:"var(--line-soft)",borderRadius:10,padding:3,alignSelf:"stretch"}}>
           {[["inbox","📥 Boîte de réception",inboxMsgs.length],["deleted","🗑 Supprimés récemment",deletedMsgs.length]].map(([key,label,count])=>(
             <button key={key} onClick={()=>setMsgAdminTab(key)} style={{
               flex:1,padding:"10px 16px",border:"none",borderRadius:8,cursor:"pointer",fontSize:13,fontWeight:msgAdminTab===key?700:400,
-              background:msgAdminTab===key?"#fff":"transparent",
-              color:msgAdminTab===key?charColor:"#6b7280",
-              boxShadow:msgAdminTab===key?"0 1px 3px rgba(0,0,0,0.1)":"none",
+              background:msgAdminTab===key?"var(--card)":"transparent",
+              color:msgAdminTab===key?charColor:"var(--ink-soft)",
+              boxShadow:msgAdminTab===key?"0 1px 3px var(--line)":"none",
               transition:"all 0.15s",
               display:"flex",alignItems:"center",justifyContent:"center",gap:6,
             }}>
               {label}
               <span style={{
-                background:msgAdminTab===key?charColor+"22":"rgba(0,0,0,0.08)",
-                color:msgAdminTab===key?charColor:"#9ca3af",
+                background:msgAdminTab===key?charColor+"22":"var(--line)",
+                color:msgAdminTab===key?charColor:"var(--ink-faint)",
                 borderRadius:10,padding:"2px 8px",fontSize:11,fontWeight:700,
               }}>{count}</span>
             </button>
@@ -1043,7 +1055,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
           if(myGroups.length===0) return null;
           return (
             <div style={{background:"rgba(99,102,241,0.04)",border:"1px solid rgba(99,102,241,0.12)",borderRadius:10,padding:"12px 14px",display:"flex",flexDirection:"column",gap:8}}>
-              <div style={{fontSize:11,fontWeight:700,color:"#6366f1",letterSpacing:0.5}}>💬 Groupes</div>
+              <div style={{fontSize:11,fontWeight:700,color:"var(--accent)",letterSpacing:0.5}}>💬 Groupes</div>
               {myGroups.map(gMsg=>{
                 const gid = gMsg.sharedThreadId;
                 const meta = gid ? (data.groupMeta?.[gid]||{name:gMsg.contact,members:[]}) : {name:gMsg.contact, members:[]};
@@ -1052,10 +1064,10 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                 const gOpen = openConvs.has(gKey);
                 const threadLen = gid ? (data.sharedThreads?.[gid]||[]).length : (gMsg.thread||[]).length;
                 return (
-                  <div key={gid||gMsg.id} style={{background:"#fff",borderRadius:8,border:"1px solid rgba(0,0,0,0.07)",overflow:"hidden"}}>
+                  <div key={gid||gMsg.id} style={{background:"var(--card)",borderRadius:8,border:"1px solid var(--line)",overflow:"hidden"}}>
                     {/* ── Header toggle ── */}
                     <div onClick={()=>toggleConv(gKey)} style={{display:"flex",gap:10,alignItems:"center",padding:"12px 14px",cursor:"pointer",userSelect:"none",minHeight:48}}>
-                      <span style={{fontSize:18,transition:"transform 0.15s",display:"inline-block",transform:gOpen?"rotate(90deg)":"rotate(0deg)",color:"#9ca3af",flexShrink:0,lineHeight:1,width:20,textAlign:"center"}}>›</span>
+                      <span style={{fontSize:18,transition:"transform 0.15s",display:"inline-block",transform:gOpen?"rotate(90deg)":"rotate(0deg)",color:"var(--ink-faint)",flexShrink:0,lineHeight:1,width:20,textAlign:"center"}}>›</span>
                       <span style={{fontSize:13}}>👥</span>
                       {isSharedGroup ? (
                         <input value={meta.name||""} onChange={e=>{
@@ -1068,21 +1080,21 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                             onUpdate(k,{...kd,messages:updated});
                           });
                         }} className="adm-input" placeholder="Nom du groupe"
-                          style={{flex:1,background:"rgba(255,255,255,0.9)",border:"1px solid rgba(0,0,0,0.1)",color:"#1a1a2e",padding:"5px 9px",fontSize:12,borderRadius:7,fontWeight:600}}/>
+                          style={{flex:1,background:"var(--raise)",border:"1px solid var(--line)",color:"var(--ink)",padding:"5px 9px",fontSize:12,borderRadius:7,fontWeight:600}}/>
                       ) : (
                         <input value={gMsg.contact||""} onClick={e=>e.stopPropagation()}
                           onChange={e=>{
                             upd("messages", d.messages.map(m=>m===gMsg ? {...m, contact:e.target.value} : m));
                           }}
-                          className="adm-input" style={{flex:1,background:"transparent",border:"none",color:"#374151",padding:"2px 0",fontSize:12,fontWeight:600,outline:"none",minWidth:0}}
+                          className="adm-input" style={{flex:1,background:"transparent",border:"none",color:"var(--ink-soft)",padding:"2px 0",fontSize:12,fontWeight:600,outline:"none",minWidth:0}}
                           placeholder="Nom du groupe"/>
                       )}
-                      <span style={{fontSize:10,color:"#9ca3af",flexShrink:0,marginLeft:"auto"}}>{threadLen} msg</span>
+                      <span style={{fontSize:10,color:"var(--ink-faint)",flexShrink:0,marginLeft:"auto"}}>{threadLen} msg</span>
                     </div>
                     {gOpen && isSharedGroup && (
-                      <div style={{padding:"0 12px 12px",display:"flex",flexDirection:"column",gap:8,borderTop:"1px solid rgba(0,0,0,0.05)"}}>
+                      <div style={{padding:"0 12px 12px",display:"flex",flexDirection:"column",gap:8,borderTop:"1px solid var(--line-soft)"}}>
                       <div style={{display:"flex",flexDirection:"column",gap:4,paddingTop:10}}>
-                        <div style={{fontSize:10,color:"#9ca3af",fontWeight:600,letterSpacing:0.5,textTransform:"uppercase"}}>Membres</div>
+                        <div style={{fontSize:10,color:"var(--ink-faint)",fontWeight:600,letterSpacing:0.5,textTransform:"uppercase"}}>Membres</div>
                         <div style={{display:"flex",gap:4,flexWrap:"wrap",alignItems:"center"}}>
                           {Object.entries(CHAR_NAMES).map(([k,label])=>{
                             const isMember = (meta.members||[]).includes(k);
@@ -1103,9 +1115,9 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                                   onUpdate(k,{...kd,messages:(kd.messages||[]).filter(m=>m.sharedThreadId!==gid)});
                                 }
                               }} style={{
-                                padding:"4px 10px",borderRadius:20,border:"1px solid "+(CHAR_COLORS[k]||"#6366f1")+(isMember?"":"44"),
+                                padding:"4px 10px",borderRadius:20,border:"1px solid "+(CHAR_COLORS[k]||"var(--accent)")+(isMember?"":"44"),
                                 background:isMember?CHAR_COLORS[k]+"18":"transparent",
-                                color:isMember?CHAR_COLORS[k]:"#9ca3af",
+                                color:isMember?CHAR_COLORS[k]:"var(--ink-faint)",
                                 fontSize:11,fontWeight:isMember?700:400,cursor:"pointer",
                               }}>{label} {isMember?"✓":"+"}
                               </button>
@@ -1113,7 +1125,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                           })}
                           {/* Membres externes (non-persos principaux) */}
                           {(meta.members||[]).filter(m=>!CHAR_NAMES[m]).map(extMember=>(
-                            <span key={extMember} style={{padding:"4px 10px",borderRadius:20,background:"rgba(0,0,0,0.06)",color:"#555",fontSize:11,display:"flex",alignItems:"center",gap:4}}>
+                            <span key={extMember} style={{padding:"4px 10px",borderRadius:20,background:"var(--line)",color:"var(--ink-soft)",fontSize:11,display:"flex",alignItems:"center",gap:4}}>
                               {extMember}
                               <button onClick={()=>{
                                 const next=(meta.members||[]).filter(m=>m!==extMember);
@@ -1131,7 +1143,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                               onUpdate("groupMeta",newMeta);
                               e.target.value="";
                             }
-                          }} className="adm-input" style={{background:"rgba(255,255,255,0.8)",border:"1px dashed rgba(0,0,0,0.15)",color:"#555",padding:"4px 9px",fontSize:11,borderRadius:20,width:130}}/>
+                          }} className="adm-input" style={{background:"var(--raise)",border:"1px dashed rgba(0,0,0,0.15)",color:"var(--ink-soft)",padding:"4px 9px",fontSize:11,borderRadius:20,width:130}}/>
                         </div>
                       </div>
                       </div>
@@ -1146,7 +1158,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                       const sortedThread = [...thread].sort((a,b)=>loreSortKey(a.time)-loreSortKey(b.time));
                       const writeThread = (t) => onUpdate(gid, t.map((m,k)=>m.id!=null?m:{...m,id:Date.now()+k}));
                       const senderOptions = allMembers.map(m=>({
-                        key:m, label:CHAR_NAMES[m]||m, color:CHAR_COLORS[m]||"#6366f1"
+                        key:m, label:CHAR_NAMES[m]||m, color:CHAR_COLORS[m]||"var(--accent)"
                       }));
                       const defaultSender = allMembers[0]||"glinda";
                       const insertAt = (si) => {
@@ -1158,17 +1170,17 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                         writeThread(t);
                       };
                       return (
-                        <div style={{borderTop:"1px solid rgba(0,0,0,0.06)",paddingTop:8,marginTop:4,display:"flex",flexDirection:"column",gap:0}}>
-                          <div style={{fontSize:10,color:"#9ca3af",fontWeight:600,letterSpacing:0.5,textTransform:"uppercase",marginBottom:6}}>Messages ({sortedThread.length}) — triés par date</div>
+                        <div style={{borderTop:"1px solid var(--line)",paddingTop:8,marginTop:4,display:"flex",flexDirection:"column",gap:0}}>
+                          <div style={{fontSize:10,color:"var(--ink-faint)",fontWeight:600,letterSpacing:0.5,textTransform:"uppercase",marginBottom:6}}>Messages ({sortedThread.length}) — triés par date</div>
                           <InsertMsgBtn onClick={()=>insertAt(0)}/>
                           {sortedThread.map((m2,si)=>{
-                            const mc=CHAR_COLORS[m2.from]||"#6366f1";
+                            const mc=CHAR_COLORS[m2.from]||"var(--accent)";
                             const updMsg = (patch) => {
                               const t=[...sortedThread]; t[si]={...t[si],...patch}; writeThread(t);
                             };
                             return (
                             <React.Fragment key={m2.id ?? si}>
-                            <div style={{display:"flex",flexDirection:"column",gap:4,background:"rgba(0,0,0,0.02)",borderRadius:8,padding:"8px 10px",border:"1px solid rgba(0,0,0,0.05)"}}>
+                            <div style={{display:"flex",flexDirection:"column",gap:4,background:"var(--line-soft)",borderRadius:8,padding:"8px 10px",border:"1px solid var(--line-soft)"}}>
                               <div style={{display:"flex",gap:6,alignItems:"center"}}>
                                 <div style={{display:"flex",flexDirection:"column",gap:2,flexShrink:0}}>
                                   <MsgMoveBtn dir="up" disabled={si===0} onClick={()=>{const t=[...sortedThread];[t[si-1],t[si]]=[t[si],t[si-1]];t[si]={...t[si],time:shiftLoreTime(t[si].time,-1)};writeThread(t);}}/>
@@ -1180,17 +1192,17 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                                 </select>
                                 <div style={{flex:1}}><LoreDateTimeInput value={m2.time||""} onChange={v=>updMsg({time:v})} width="100%" showLabel={false}/></div>
                                 <button onClick={()=>{const t=[...sortedThread];t.splice(si,1);writeThread(t);}}
-                                  className="adm-del-btn" style={{background:"none",border:"none",color:"#d1d5db",cursor:"pointer",fontSize:16,padding:"0 4px",flexShrink:0}}>×</button>
+                                  className="adm-del-btn" style={{background:"none",border:"none",color:"var(--ink-faint)",cursor:"pointer",fontSize:16,padding:"0 4px",flexShrink:0}}>×</button>
                               </div>
                               <textarea value={m2.text||""} onChange={e=>updMsg({text:e.target.value})}
                                 rows={Math.max(1,Math.ceil((m2.text||"").length/40))}
-                                className="adm-input" style={{width:"100%",resize:"vertical",background:"rgba(255,255,255,0.9)",border:"1px solid rgba(0,0,0,0.08)",color:"#1a1a2e",padding:"6px 10px",fontSize:12,borderRadius:6,lineHeight:1.4,minHeight:36,boxSizing:"border-box"}}/>
+                                className="adm-input" style={{width:"100%",resize:"vertical",background:"var(--raise)",border:"1px solid var(--line)",color:"var(--ink)",padding:"6px 10px",fontSize:12,borderRadius:6,lineHeight:1.4,minHeight:36,boxSizing:"border-box"}}/>
                             </div>
                             <InsertMsgBtn onClick={()=>insertAt(si+1)}/>
                             </React.Fragment>
                           )})}
                           <button onClick={()=>writeThread([...sortedThread,{from:defaultSender,senderKey:defaultSender,senderName:CHAR_NAMES[defaultSender]||defaultSender,text:"",time:"maintenant"}])}
-                            style={{background:"rgba(0,0,0,0.03)",border:"1px dashed rgba(0,0,0,0.12)",color:"#9ca3af",borderRadius:6,padding:"4px 10px",cursor:"pointer",fontSize:10,alignSelf:"flex-start",marginTop:4}}>+ message</button>
+                            style={{background:"var(--line-soft)",border:"1px dashed var(--line)",color:"var(--ink-faint)",borderRadius:6,padding:"4px 10px",cursor:"pointer",fontSize:10,alignSelf:"flex-start",marginTop:4}}>+ message</button>
                         </div>
                       );
                     })()}
@@ -1205,16 +1217,16 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                         const t=[...sortedLocal]; t.splice(si,0,{from:"them",senderName:"",senderKey:"",text:"",time}); writeLocal(t);
                       };
                       return (
-                        <div style={{padding:"0 12px 12px",display:"flex",flexDirection:"column",gap:0,borderTop:"1px solid rgba(0,0,0,0.05)"}}>
-                          <div style={{fontSize:10,color:"#9ca3af",fontWeight:600,letterSpacing:0.5,textTransform:"uppercase",marginTop:10,marginBottom:6}}>Messages ({sortedLocal.length}) — triés par date</div>
+                        <div style={{padding:"0 12px 12px",display:"flex",flexDirection:"column",gap:0,borderTop:"1px solid var(--line-soft)"}}>
+                          <div style={{fontSize:10,color:"var(--ink-faint)",fontWeight:600,letterSpacing:0.5,textTransform:"uppercase",marginTop:10,marginBottom:6}}>Messages ({sortedLocal.length}) — triés par date</div>
                           <InsertMsgBtn onClick={()=>insertAt(0)}/>
                           {sortedLocal.map((m2,si)=>{
                             const isMe = m2.from==="me";
-                            const mc = isMe ? charColor : "#6b7280";
+                            const mc = isMe ? charColor : "var(--ink-soft)";
                             const updMsg = (patch) => { const t=[...sortedLocal]; t[si]={...t[si],...patch}; writeLocal(t); };
                             return (
                             <React.Fragment key={m2.id ?? si}>
-                            <div style={{display:"flex",flexDirection:"column",gap:4,background:"rgba(0,0,0,0.02)",borderRadius:8,padding:"8px 10px",border:"1px solid rgba(0,0,0,0.05)"}}>
+                            <div style={{display:"flex",flexDirection:"column",gap:4,background:"var(--line-soft)",borderRadius:8,padding:"8px 10px",border:"1px solid var(--line-soft)"}}>
                               <div style={{display:"flex",gap:6,alignItems:"center",flexWrap:"wrap"}}>
                                 <div style={{display:"flex",flexDirection:"column",gap:2,flexShrink:0}}>
                                   <MsgMoveBtn dir="up" disabled={si===0} onClick={()=>{const t=[...sortedLocal];[t[si-1],t[si]]=[t[si],t[si-1]];t[si]={...t[si],time:shiftLoreTime(t[si].time,-1)};writeLocal(t);}}/>
@@ -1227,21 +1239,21 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                                 </select>
                                 {!isMe && (
                                   <input value={m2.senderName||""} placeholder="Nom" onChange={e=>updMsg({senderName:e.target.value,senderKey:(e.target.value||"").toLowerCase()})}
-                                    className="adm-input" style={{width:80,background:"rgba(255,255,255,0.9)",border:"1px solid rgba(0,0,0,0.08)",color:"#1a1a2e",padding:"4px 6px",fontSize:10,borderRadius:6,flexShrink:0}}/>
+                                    className="adm-input" style={{width:80,background:"var(--raise)",border:"1px solid var(--line)",color:"var(--ink)",padding:"4px 6px",fontSize:10,borderRadius:6,flexShrink:0}}/>
                                 )}
                                 <div style={{flex:1,minWidth:120}}><LoreDateTimeInput value={m2.time||""} onChange={v=>updMsg({time:v})} width="100%" showLabel={false}/></div>
                                 <button onClick={()=>{const t=[...sortedLocal];t.splice(si,1);writeLocal(t);}}
-                                  className="adm-del-btn" style={{background:"none",border:"none",color:"#d1d5db",cursor:"pointer",fontSize:16,padding:"0 4px",flexShrink:0}}>×</button>
+                                  className="adm-del-btn" style={{background:"none",border:"none",color:"var(--ink-faint)",cursor:"pointer",fontSize:16,padding:"0 4px",flexShrink:0}}>×</button>
                               </div>
                               <textarea value={m2.text||""} onChange={e=>updMsg({text:e.target.value})}
                                 rows={Math.max(1,Math.ceil((m2.text||"").length/40))}
-                                className="adm-input" style={{width:"100%",resize:"vertical",background:"rgba(255,255,255,0.9)",border:"1px solid rgba(0,0,0,0.08)",color:"#1a1a2e",padding:"6px 10px",fontSize:12,borderRadius:6,lineHeight:1.4,minHeight:36,boxSizing:"border-box"}}/>
+                                className="adm-input" style={{width:"100%",resize:"vertical",background:"var(--raise)",border:"1px solid var(--line)",color:"var(--ink)",padding:"6px 10px",fontSize:12,borderRadius:6,lineHeight:1.4,minHeight:36,boxSizing:"border-box"}}/>
                             </div>
                             <InsertMsgBtn onClick={()=>insertAt(si+1)}/>
                             </React.Fragment>
                           )})}
                           <button onClick={()=>writeLocal([...sortedLocal,{from:"them",senderName:"",senderKey:"",text:"",time:"maintenant"}])}
-                            style={{background:"rgba(0,0,0,0.03)",border:"1px dashed rgba(0,0,0,0.12)",color:"#9ca3af",borderRadius:6,padding:"4px 10px",cursor:"pointer",fontSize:10,alignSelf:"flex-start",marginTop:4}}>+ message</button>
+                            style={{background:"var(--line-soft)",border:"1px dashed var(--line)",color:"var(--ink-faint)",borderRadius:6,padding:"4px 10px",cursor:"pointer",fontSize:10,alignSelf:"flex-start",marginTop:4}}>+ message</button>
                         </div>
                       );
                     })()}
@@ -1256,7 +1268,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                 const newMeta={...(dataRef.current.groupMeta||{}),[gid]:{name:"Nouveau groupe",members:defaultMembers}};
                 onUpdate("groupMeta",newMeta);
                 upd("messages",[{id:Date.now(),contact:"Nouveau groupe",sharedThreadId:gid,isGroup:true,unread:false,thread:[]},...(d.messages||[])]);
-              }} style={{background:"rgba(99,102,241,0.07)",border:"1px dashed rgba(99,102,241,0.35)",color:"#6366f1",borderRadius:8,padding:"8px 14px",cursor:"pointer",fontSize:11,fontWeight:600,alignSelf:"flex-start"}}>
+              }} style={{background:"rgba(99,102,241,0.07)",border:"1px dashed var(--accent-line)",color:"var(--accent)",borderRadius:8,padding:"8px 14px",cursor:"pointer",fontSize:11,fontWeight:600,alignSelf:"flex-start"}}>
                 + Créer un nouveau groupe
               </button>
             </div>
@@ -1278,7 +1290,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
             return last ? (last.text||"").slice(0,40)+((last.text||"").length>40?"...":"") : "";
           })();
           return (
-          <div key={cKey} className="adm-card" style={{background:"rgba(255,255,255,0.85)",borderRadius:12,border:"1px solid rgba(0,0,0,0.07)",boxShadow:"0 2px 8px rgba(0,0,0,0.04)",overflow:"hidden"}}>
+          <div key={cKey} className="adm-card" style={{background:"var(--raise)",borderRadius:12,border:"1px solid var(--line)",boxShadow:"0 2px 8px var(--line-soft)",overflow:"hidden"}}>
             {/* ── Header toggle ── */}
             <div style={{display:"flex",gap:8,alignItems:"center",padding:"10px 14px",cursor:"pointer",userSelect:"none",minHeight:44,WebkitTapHighlightColor:"transparent"}}
               onClick={()=>toggleConv(cKey)}>
@@ -1290,21 +1302,21 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                   const vi=visibleMsgs.indexOf(msg); if(vi<=0)return;
                   const all=[...d.messages];const a=all.indexOf(visibleMsgs[vi-1]);const b=all.indexOf(msg);
                   if(a<0||b<0)return;[all[a],all[b]]=[all[b],all[a]];upd("messages",all);
-                }} style={{background:"none",border:"1px solid rgba(0,0,0,0.1)",borderRadius:4,width:18,height:18,cursor:"pointer",color:"#6366f1",fontSize:10,display:"flex",alignItems:"center",justifyContent:"center",padding:0}}><svg width="8" height="8" viewBox="0 0 10 10" fill="currentColor"><path d="M5 1L9 9H1z"/></svg></button>
+                }} style={{background:"none",border:"1px solid var(--line)",borderRadius:4,width:18,height:18,cursor:"pointer",color:"var(--accent)",fontSize:10,display:"flex",alignItems:"center",justifyContent:"center",padding:0}}><svg width="8" height="8" viewBox="0 0 10 10" fill="currentColor"><path d="M5 1L9 9H1z"/></svg></button>
                 <button onClick={()=>{
                   const vi=visibleMsgs.indexOf(msg); if(vi<0||vi>=visibleMsgs.length-1)return;
                   const all=[...d.messages];const a=all.indexOf(msg);const b=all.indexOf(visibleMsgs[vi+1]);
                   if(a<0||b<0)return;[all[a],all[b]]=[all[b],all[a]];upd("messages",all);
-                }} style={{background:"none",border:"1px solid rgba(0,0,0,0.1)",borderRadius:4,width:18,height:18,cursor:"pointer",color:"#6366f1",fontSize:10,display:"flex",alignItems:"center",justifyContent:"center",padding:0}}><svg width="8" height="8" viewBox="0 0 10 10" fill="currentColor"><path d="M5 9L1 1H9z"/></svg></button>
+                }} style={{background:"none",border:"1px solid var(--line)",borderRadius:4,width:18,height:18,cursor:"pointer",color:"var(--accent)",fontSize:10,display:"flex",alignItems:"center",justifyContent:"center",padding:0}}><svg width="8" height="8" viewBox="0 0 10 10" fill="currentColor"><path d="M5 9L1 1H9z"/></svg></button>
               </div>
               {/* Contact name — editable inline, stop propagation so click doesn't toggle */}
               <input value={msg.contact} onClick={e=>e.stopPropagation()}
                 onChange={v=>{const m=[...d.messages];const ni=m.indexOf(msg);m[ni]={...m[ni],contact:v.target.value};upd("messages",m);}}
-                className="adm-input" style={{flex:1,background:"transparent",border:"none",color:"#1a1a2e",padding:"2px 0",fontSize:13,fontWeight:600,outline:"none",minWidth:0}}/>
+                className="adm-input" style={{flex:1,background:"transparent",border:"none",color:"var(--ink)",padding:"2px 0",fontSize:13,fontWeight:600,outline:"none",minWidth:0}}/>
               {!cOpen && preview && (
-                <span style={{fontSize:11,color:"#9ca3af",flex:2,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",minWidth:0}}>{preview}</span>
+                <span style={{fontSize:11,color:"var(--ink-faint)",flex:2,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",minWidth:0}}>{preview}</span>
               )}
-              <span style={{fontSize:10,color:"#9ca3af",flexShrink:0,whiteSpace:"nowrap"}}>{threadLen} msg</span>
+              <span style={{fontSize:10,color:"var(--ink-faint)",flexShrink:0,whiteSpace:"nowrap"}}>{threadLen} msg</span>
               <AdminChevron open={cOpen}/>
               {/* Move between inbox / deleted */}
               <button onClick={e=>{e.stopPropagation();toggleDeleted(msg);}}
@@ -1312,19 +1324,19 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                 style={{
                   background:msg.deleted?"rgba(16,185,129,0.1)":"rgba(239,68,68,0.08)",
                   border:`1px solid ${msg.deleted?"rgba(16,185,129,0.3)":"rgba(239,68,68,0.2)"}`,
-                  color:msg.deleted?"#059669":"#ef4444",
+                  color:msg.deleted?"var(--ok)":"var(--danger)",
                   borderRadius:6,padding:"3px 7px",cursor:"pointer",fontSize:11,flexShrink:0,lineHeight:1,
                 }}>{msg.deleted ? "↩ Inbox" : "🗑 Suppr."}</button>
               <button onClick={e=>{e.stopPropagation();upd("messages",d.messages.filter(m=>m!==msg));}}
-                className="adm-del-btn" style={{background:"none",border:"none",color:"#d1d5db",cursor:"pointer",fontSize:16,padding:"0 2px",flexShrink:0,lineHeight:1,transition:"all 0.15s"}}>✕</button>
+                className="adm-del-btn" style={{background:"none",border:"none",color:"var(--ink-faint)",cursor:"pointer",fontSize:16,padding:"0 2px",flexShrink:0,lineHeight:1,transition:"all 0.15s"}}>✕</button>
             </div>
             {/* ── Collapsible body ── */}
-            {cOpen && <div style={{padding:"0 14px 14px",borderTop:"1px solid rgba(0,0,0,0.05)"}}>
+            {cOpen && <div style={{padding:"0 14px 14px",borderTop:"1px solid var(--line-soft)"}}>
               {/* Duplicate to buttons */}
               <div style={{display:"flex",gap:4,flexWrap:"wrap",paddingTop:10,marginBottom:8}}>
                 {CHARS.map(c=>(
                   <button key={c.key} onClick={()=>duplicateTo(msg, c.key)}
-                    style={{background:"rgba(16,185,129,0.07)",border:"1px solid rgba(16,185,129,0.2)",color:"#059669",borderRadius:6,padding:"3px 8px",cursor:"pointer",fontSize:10,whiteSpace:"nowrap",fontWeight:600}}>
+                    style={{background:"rgba(16,185,129,0.07)",border:"1px solid rgba(16,185,129,0.2)",color:"var(--ok)",borderRadius:6,padding:"3px 8px",cursor:"pointer",fontSize:10,whiteSpace:"nowrap",fontWeight:600}}>
                     ↗ {c.label}
                   </button>
                 ))}
@@ -1363,17 +1375,17 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
               <InsertMsgBtn onClick={()=>insertAt(0)}/>
               {sortedDisplay.map((msg2,si)=>(
               <React.Fragment key={msg2.id ?? si}>
-              <div style={{display:"flex",flexDirection:"column",gap:4,background:"rgba(0,0,0,0.02)",borderRadius:8,padding:"8px 10px",border:"1px solid rgba(0,0,0,0.05)"}}>
+              <div style={{display:"flex",flexDirection:"column",gap:4,background:"var(--line-soft)",borderRadius:8,padding:"8px 10px",border:"1px solid var(--line-soft)"}}>
                 {/* Row 1: image, sender, time, move, delete */}
                 <div style={{display:"flex",gap:6,alignItems:"center",flexWrap:"wrap"}}>
                 <div style={{display:"flex",flexDirection:"column",gap:2,flexShrink:0}}>
                   <MsgMoveBtn dir="up" disabled={si===0} onClick={()=>{const t=[...sortedDisplay];[t[si-1],t[si]]=[t[si],t[si-1]];t[si]={...t[si],time:shiftLoreTime(t[si].time,-1)};writeThread(t);}}/>
                   <MsgMoveBtn dir="down" disabled={si===sortedDisplay.length-1} onClick={()=>{const t=[...sortedDisplay];[t[si+1],t[si]]=[t[si],t[si+1]];t[si]={...t[si],time:shiftLoreTime(t[si].time,+1)};writeThread(t);}}/>
                 </div>
-                <label style={{width:34,height:34,borderRadius:7,overflow:"hidden",flexShrink:0,background:"rgba(99,102,241,0.08)",border:"1px dashed rgba(99,102,241,0.3)",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",position:"relative"}}>
+                <label style={{width:34,height:34,borderRadius:7,overflow:"hidden",flexShrink:0,background:"var(--accent-wash)",border:"1px dashed var(--accent-line)",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",position:"relative"}}>
                   {msg2.img
                     ? <img src={msg2.img} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
-                    : <span style={{fontSize:14,color:"#6366f1"}}>📷</span>}
+                    : <span style={{fontSize:14,color:"var(--accent)"}}>📷</span>}
                   <input type="file" accept="image/*" style={{display:"none"}} onChange={e=>{
                     const f=e.target.files?.[0]; if(!f) return;
                     const r=new UploadReader(); r.onload=ev=>{
@@ -1383,19 +1395,19 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                   }}/>
                 </label>
                 {msg2.img && <button onClick={()=>{const t=[...sortedDisplay];t[si]={...t[si],img:null};writeThread(t);}}
-                  title="Retirer l'image" style={{background:"none",border:"none",color:"#ef4444",cursor:"pointer",fontSize:13,padding:"0 2px",flexShrink:0}}>✕</button>}
+                  title="Retirer l'image" style={{background:"none",border:"none",color:"var(--danger)",cursor:"pointer",fontSize:13,padding:"0 2px",flexShrink:0}}>✕</button>}
                 <select value={msg2.from} onChange={e=>{const t=[...sortedDisplay];t[si]={...t[si],from:e.target.value};writeThread(t);}}
-                  className="adm-input" style={{background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#374151",padding:"5px 6px",fontSize:11,borderRadius:7,flexShrink:0,minWidth:70}}>
+                  className="adm-input" style={{background:"var(--raise)",border:"1px solid var(--line)",color:"var(--ink-soft)",padding:"5px 6px",fontSize:11,borderRadius:7,flexShrink:0,minWidth:70}}>
                   <option value="me">moi</option><option value="them">eux</option>
                 </select>
                 <div style={{flex:1,minWidth:120}}><LoreDateTimeInput value={msg2.time} onChange={v=>{const t=[...sortedDisplay];t[si]={...t[si],time:v};writeThread(t);}} width="100%" showLabel={false}/></div>
                 <button onClick={()=>{const t=[...sortedDisplay];t.splice(si,1);writeThread(t);}}
-                  className="adm-del-btn" style={{background:"none",border:"none",color:"#d1d5db",cursor:"pointer",fontSize:16,padding:"2px 6px",flexShrink:0,borderRadius:5}}>×</button>
+                  className="adm-del-btn" style={{background:"none",border:"none",color:"var(--ink-faint)",cursor:"pointer",fontSize:16,padding:"2px 6px",flexShrink:0,borderRadius:5}}>×</button>
                 </div>
                 {/* Row 2: message text */}
                 <textarea value={msg2.text||""} onChange={e=>{const t=[...sortedDisplay];t[si]={...t[si],text:e.target.value};writeThread(t);}}
                   rows={Math.max(1,Math.ceil((msg2.text||"").length/40))}
-                  className="adm-input" style={{width:"100%",resize:"vertical",background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#1a1a2e",padding:"6px 10px",fontSize:12,borderRadius:7,lineHeight:1.4,minHeight:36,boxSizing:"border-box"}}/>
+                  className="adm-input" style={{width:"100%",resize:"vertical",background:"var(--raise)",border:"1px solid var(--line)",color:"var(--ink)",padding:"6px 10px",fontSize:12,borderRadius:7,lineHeight:1.4,minHeight:36,boxSizing:"border-box"}}/>
               </div>
               <InsertMsgBtn onClick={()=>insertAt(si+1)}/>
               </React.Fragment>
@@ -1406,7 +1418,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
               if(msg.sharedThreadId){
                 onUpdate(msg.sharedThreadId,[...(dataRef.current.sharedThreads?.[msg.sharedThreadId]||[]),{from:msg.perspective||'a',text:"",time:"maintenant"}]);
               }else{upd("messages",d.messages.map(mm=>mm===msg?{...mm,thread:[...(mm.thread||[]),{from:"me",text:"",time:"maintenant"}]}:mm));}
-            }} style={{background:"rgba(0,0,0,0.04)",border:"1px dashed rgba(0,0,0,0.15)",color:"#9ca3af",borderRadius:6,padding:"5px 12px",cursor:"pointer",fontSize:11,marginTop:4}}>+ message</button>
+            }} style={{background:"var(--line-soft)",border:"1px dashed rgba(0,0,0,0.15)",color:"var(--ink-faint)",borderRadius:6,padding:"5px 12px",cursor:"pointer",fontSize:11,marginTop:4}}>+ message</button>
             <ThreadComposer isGroup={false} tab={tab} onApply={(parsed,mode)=>{
               if(msg.sharedThreadId){
                 const cur=dataRef.current.sharedThreads?.[msg.sharedThreadId]||[];
@@ -1423,10 +1435,10 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
         })}
         {msgAdminTab==="inbox" && (
         <button onClick={()=>upd("messages",[{id:Date.now(),contact:"Nouveau contact",thread:[{from:"them",text:"",time:"maintenant"}]},...(d.messages||[])])}
-          style={{background:"rgba(99,102,241,0.08)",border:"1px dashed rgba(99,102,241,0.4)",color:"#6366f1",borderRadius:8,padding:"10px 18px",cursor:"pointer",fontSize:12,fontWeight:600}}>+ Nouvelle conversation</button>
+          style={{background:"var(--accent-wash)",border:"1px dashed var(--accent-line)",color:"var(--accent)",borderRadius:8,padding:"10px 18px",cursor:"pointer",fontSize:12,fontWeight:600}}>+ Nouvelle conversation</button>
         )}
         {msgAdminTab==="deleted" && deletedMsgs.length===0 && (
-          <div style={{textAlign:"center",color:"#9ca3af",fontSize:12,padding:"20px 0"}}>Aucune conversation supprimée.</div>
+          <div style={{textAlign:"center",color:"var(--ink-faint)",fontSize:12,padding:"20px 0"}}>Aucune conversation supprimée.</div>
         )}
       </div>
       );
@@ -1437,14 +1449,14 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
       return (
         <div style={{display:"flex",flexDirection:"column",gap:12}}>
           {/* Sub-tab bar */}
-          <div className="adm-subtabs" style={{display:"flex",gap:0,background:"rgba(0,0,0,0.05)",borderRadius:8,padding:2,alignSelf:"flex-start"}}>
+          <div className="adm-subtabs" style={{display:"flex",gap:0,background:"var(--line-soft)",borderRadius:8,padding:2,alignSelf:"flex-start"}}>
             {phoneSubTabs.map(([k,label])=>(
               <button key={k} onClick={()=>setPhoneSubTab(k)} style={{
                 padding:"6px 14px",border:"none",borderRadius:6,cursor:"pointer",fontSize:11,
                 fontWeight:phoneSubTab===k?700:400,
-                background:phoneSubTab===k?"#fff":"transparent",
-                color:phoneSubTab===k?charColor:"#6b7280",
-                boxShadow:phoneSubTab===k?"0 1px 3px rgba(0,0,0,0.1)":"none",
+                background:phoneSubTab===k?"var(--card)":"transparent",
+                color:phoneSubTab===k?charColor:"var(--ink-soft)",
+                boxShadow:phoneSubTab===k?"0 1px 3px var(--line)":"none",
                 transition:"all 0.15s",whiteSpace:"nowrap",
               }}>{label}</button>
             ))}
@@ -1454,22 +1466,22 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
           {phoneSubTab==="calls" && (
             <div style={{display:"flex",flexDirection:"column",gap:8}}>
               {(d.calls||[]).map((call,i)=>(
-                <div key={call.id} className="adm-card" style={{display:"flex",gap:8,alignItems:"center",background:"rgba(255,255,255,0.85)",padding:10,borderRadius:10,border:"1px solid rgba(0,0,0,0.07)",flexWrap:"wrap"}}>
+                <div key={call.id} className="adm-card" style={{display:"flex",gap:8,alignItems:"center",background:"var(--raise)",padding:10,borderRadius:10,border:"1px solid var(--line)",flexWrap:"wrap"}}>
                   <input value={call.contact} onChange={e=>{const c=[...d.calls];c[i]={...c[i],contact:e.target.value};upd("calls",c);}}
-                    placeholder="Contact" className="adm-input" style={{flex:1,background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#1a1a2e",padding:"7px 10px",fontSize:12,borderRadius:7}}/>
+                    placeholder="Contact" className="adm-input" style={{flex:1,background:"var(--raise)",border:"1px solid var(--line)",color:"var(--ink)",padding:"7px 10px",fontSize:12,borderRadius:7}}/>
                   <select value={call.type} onChange={e=>{const c=[...d.calls];c[i]={...c[i],type:e.target.value};upd("calls",c);}}
-                    className="adm-input" style={{background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#374151",padding:"7px 8px",fontSize:11,borderRadius:7}}>
+                    className="adm-input" style={{background:"var(--raise)",border:"1px solid var(--line)",color:"var(--ink-soft)",padding:"7px 8px",fontSize:11,borderRadius:7}}>
                     <option value="incoming">incoming</option><option value="outgoing">outgoing</option><option value="missed">missed (entrant)</option><option value="outgoing_missed">outgoing sans réponse</option>
                   </select>
                   <LoreDateTimeInput value={call.time} onChange={v=>{const c=[...d.calls];c[i]={...c[i],time:v};upd("calls",c);}} width="190px" showLabel={false}/>
                   <input value={call.duration||""} onChange={e=>{const c=[...d.calls];c[i]={...c[i],duration:e.target.value||null};upd("calls",c);}}
-                    placeholder="Duration" className="adm-input" style={{width:90,background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#6b7280",padding:"7px 8px",fontSize:11,borderRadius:7}}/>
+                    placeholder="Duration" className="adm-input" style={{width:90,background:"var(--raise)",border:"1px solid var(--line)",color:"var(--ink-soft)",padding:"7px 8px",fontSize:11,borderRadius:7}}/>
                   <button onClick={()=>upd("calls",d.calls.filter((_,j)=>j!==i))}
-                    className="adm-del-btn" style={{background:"none",border:"none",color:"#d1d5db",cursor:"pointer",fontSize:16,padding:"2px 6px",borderRadius:5,transition:"all 0.15s"}}>×</button>
+                    className="adm-del-btn" style={{background:"none",border:"none",color:"var(--ink-faint)",cursor:"pointer",fontSize:16,padding:"2px 6px",borderRadius:5,transition:"all 0.15s"}}>×</button>
                 </div>
               ))}
               <button onClick={()=>upd("calls",[{id:Date.now(),contact:"",type:"outgoing",time:"1 oct",duration:null},...(d.calls||[])])}
-                style={{background:"rgba(99,102,241,0.08)",border:"1px dashed rgba(99,102,241,0.4)",color:"#6366f1",borderRadius:8,padding:"10px 18px",cursor:"pointer",fontSize:12,fontWeight:600}}>+ Call</button>
+                style={{background:"var(--accent-wash)",border:"1px dashed var(--accent-line)",color:"var(--accent)",borderRadius:8,padding:"10px 18px",cursor:"pointer",fontSize:12,fontWeight:600}}>+ Call</button>
             </div>
           )}
 
@@ -1502,17 +1514,17 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
             };
             return (
               <div style={{display:"flex",flexDirection:"column",gap:8}}>
-                <div style={{fontSize:11,color:"#6b7280",lineHeight:1.5}}>
+                <div style={{fontSize:11,color:"var(--ink-soft)",lineHeight:1.5}}>
                   Renommer un contact ici met aussi à jour son nom dans les Appels et les Messages de ce perso.
                 </div>
                 <button onClick={seedContacts}
-                  style={{alignSelf:"flex-start",background:"rgba(16,185,129,0.08)",border:"1px dashed rgba(16,185,129,0.4)",color:"#059669",borderRadius:8,padding:"8px 14px",cursor:"pointer",fontSize:11,fontWeight:600}}>
+                  style={{alignSelf:"flex-start",background:"rgba(16,185,129,0.08)",border:"1px dashed rgba(16,185,129,0.4)",color:"var(--ok)",borderRadius:8,padding:"8px 14px",cursor:"pointer",fontSize:11,fontWeight:600}}>
                   ⇩ Importer les noms depuis Appels / Messages
                 </button>
                 {(d.contacts||[]).map((c)=>(
-                  <div key={c.id} className="adm-card" style={{display:"flex",gap:8,alignItems:"center",background:"rgba(255,255,255,0.85)",padding:10,borderRadius:10,border:"1px solid rgba(0,0,0,0.07)",flexWrap:"wrap"}}>
+                  <div key={c.id} className="adm-card" style={{display:"flex",gap:8,alignItems:"center",background:"var(--raise)",padding:10,borderRadius:10,border:"1px solid var(--line)",flexWrap:"wrap"}}>
                     <div onClick={()=>document.getElementById(`contact-photo-${tab}-${c.id}`).click()}
-                      style={{width:40,height:40,borderRadius:"50%",background:"rgba(99,102,241,0.08)",border:"1px dashed rgba(99,102,241,0.3)",overflow:"hidden",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer"}}>
+                      style={{width:40,height:40,borderRadius:"50%",background:"var(--accent-wash)",border:"1px dashed var(--accent-line)",overflow:"hidden",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer"}}>
                       {c.photo ? <img src={c.photo} style={{width:"100%",height:"100%",objectFit:"cover"}}/> : <span style={{fontSize:16}}>👤</span>}
                     </div>
                     <input id={`contact-photo-${tab}-${c.id}`} type="file" accept="image/*" style={{display:"none"}} onChange={e=>{
@@ -1520,15 +1532,15 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                       const r=new UploadReader(); r.onload=ev=>updContact(c.id,"photo",ev.target.result); r.readAsDataURL(f); e.target.value="";
                     }}/>
                     <input value={c.name} onChange={e=>updContact(c.id,"name",e.target.value)}
-                      placeholder="Nom" className="adm-input" style={{flex:"1 1 140px",minWidth:0,background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#1a1a2e",padding:"7px 10px",fontSize:12,borderRadius:7,fontWeight:600}}/>
+                      placeholder="Nom" className="adm-input" style={{flex:"1 1 140px",minWidth:0,background:"var(--raise)",border:"1px solid var(--line)",color:"var(--ink)",padding:"7px 10px",fontSize:12,borderRadius:7,fontWeight:600}}/>
                     <input value={c.phone||""} onChange={e=>updContact(c.id,"phone",e.target.value)}
-                      placeholder="Téléphone (optionnel)" className="adm-input" style={{flex:"1 1 120px",minWidth:0,background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#6b7280",padding:"7px 10px",fontSize:12,borderRadius:7}}/>
+                      placeholder="Téléphone (optionnel)" className="adm-input" style={{flex:"1 1 120px",minWidth:0,background:"var(--raise)",border:"1px solid var(--line)",color:"var(--ink-soft)",padding:"7px 10px",fontSize:12,borderRadius:7}}/>
                     <button onClick={()=>deleteContact(c.id)}
-                      className="adm-del-btn" style={{background:"none",border:"none",color:"#d1d5db",cursor:"pointer",fontSize:16,padding:"2px 6px",flexShrink:0,borderRadius:5,transition:"all 0.15s"}}>×</button>
+                      className="adm-del-btn" style={{background:"none",border:"none",color:"var(--ink-faint)",cursor:"pointer",fontSize:16,padding:"2px 6px",flexShrink:0,borderRadius:5,transition:"all 0.15s"}}>×</button>
                   </div>
                 ))}
                 <button onClick={addContact}
-                  style={{background:"rgba(99,102,241,0.08)",border:"1px dashed rgba(99,102,241,0.4)",color:"#6366f1",borderRadius:8,padding:"10px 18px",cursor:"pointer",fontSize:12,fontWeight:600,alignSelf:"flex-start"}}>+ Contact</button>
+                  style={{background:"var(--accent-wash)",border:"1px dashed var(--accent-line)",color:"var(--accent)",borderRadius:8,padding:"10px 18px",cursor:"pointer",fontSize:12,fontWeight:600,alignSelf:"flex-start"}}>+ Contact</button>
               </div>
             );
           })()}
@@ -1555,30 +1567,30 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
 
             return (
               <div style={{display:"flex",flexDirection:"column",gap:10}}>
-                <div style={{fontSize:11,color:"#6b7280",lineHeight:1.5,background:"rgba(255,193,7,0.07)",border:"1px solid rgba(255,193,7,0.2)",borderRadius:8,padding:"8px 12px"}}>
+                <div style={{fontSize:11,color:"var(--ink-soft)",lineHeight:1.5,background:"rgba(255,193,7,0.07)",border:"1px solid rgba(255,193,7,0.2)",borderRadius:8,padding:"8px 12px"}}>
                   Les favoris apparaissent dans l'onglet ⭐ du téléphone iOS. Cochez les contacts à afficher, et réordonnez-les par glisser ou avec les flèches.
                 </div>
 
                 {/* Favoris actifs — réordonnables */}
                 {currentFavs.length > 0 && (
                   <div style={{display:"flex",flexDirection:"column",gap:4}}>
-                    <div style={{fontSize:11,fontWeight:700,color:"#374151",letterSpacing:0.3,marginBottom:2}}>⭐ Favoris ({currentFavs.length})</div>
+                    <div style={{fontSize:11,fontWeight:700,color:"var(--ink-soft)",letterSpacing:0.3,marginBottom:2}}>⭐ Favoris ({currentFavs.length})</div>
                     {currentFavs.map((name, idx) => {
                       const photo = contactsWithPhoto[name] || null;
                       return (
-                        <div key={name} style={{display:"flex",alignItems:"center",gap:8,background:"rgba(255,255,255,0.9)",borderRadius:8,padding:"7px 10px",border:"1px solid rgba(255,193,7,0.25)",boxShadow:"0 1px 3px rgba(255,193,7,0.08)"}}>
+                        <div key={name} style={{display:"flex",alignItems:"center",gap:8,background:"var(--raise)",borderRadius:8,padding:"7px 10px",border:"1px solid rgba(255,193,7,0.25)",boxShadow:"0 1px 3px rgba(255,193,7,0.08)"}}>
                           <span style={{color:"#ffc107",lineHeight:1,flexShrink:0}}>
                             <svg width="16" height="15" viewBox="0 0 24 22" fill="currentColor"><path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6z"/></svg>
                           </span>
-                          <div style={{width:28,height:28,borderRadius:"50%",background:"rgba(99,102,241,0.1)",display:"flex",alignItems:"center",justifyContent:"center",color:"#6366f1",fontWeight:700,fontSize:12,flexShrink:0,overflow:"hidden"}}>
+                          <div style={{width:28,height:28,borderRadius:"50%",background:"var(--accent-wash)",display:"flex",alignItems:"center",justifyContent:"center",color:"var(--accent)",fontWeight:700,fontSize:12,flexShrink:0,overflow:"hidden"}}>
                             {photo ? <img src={photo} style={{width:"100%",height:"100%",objectFit:"cover"}}/> : (name||"?")[0]}
                           </div>
-                          <span style={{flex:1,fontSize:13,color:"#1a1a2e",fontWeight:600}}>{name}</span>
+                          <span style={{flex:1,fontSize:13,color:"var(--ink)",fontWeight:600}}>{name}</span>
                           <div style={{display:"flex",gap:2,flexShrink:0}}>
-                            <button onClick={()=>moveFav(idx,-1)} disabled={idx===0} style={{background:"none",border:"none",color:idx===0?"#d1d5db":"#9ca3af",cursor:idx===0?"default":"pointer",fontSize:14,padding:"2px 4px",lineHeight:1}}>▲</button>
-                            <button onClick={()=>moveFav(idx,1)} disabled={idx===currentFavs.length-1} style={{background:"none",border:"none",color:idx===currentFavs.length-1?"#d1d5db":"#9ca3af",cursor:idx===currentFavs.length-1?"default":"pointer",fontSize:14,padding:"2px 4px",lineHeight:1}}>▼</button>
+                            <button onClick={()=>moveFav(idx,-1)} disabled={idx===0} style={{background:"none",border:"none",color:idx===0?"var(--ink-faint)":"var(--ink-faint)",cursor:idx===0?"default":"pointer",fontSize:14,padding:"2px 4px",lineHeight:1}}>▲</button>
+                            <button onClick={()=>moveFav(idx,1)} disabled={idx===currentFavs.length-1} style={{background:"none",border:"none",color:idx===currentFavs.length-1?"var(--ink-faint)":"var(--ink-faint)",cursor:idx===currentFavs.length-1?"default":"pointer",fontSize:14,padding:"2px 4px",lineHeight:1}}>▼</button>
                           </div>
-                          <button onClick={()=>toggleFav(name)} style={{background:"rgba(239,68,68,0.07)",border:"1px solid rgba(239,68,68,0.2)",color:"#ef4444",borderRadius:5,padding:"4px 8px",cursor:"pointer",fontSize:10,fontWeight:600,flexShrink:0}}>Retirer</button>
+                          <button onClick={()=>toggleFav(name)} style={{background:"rgba(239,68,68,0.07)",border:"1px solid rgba(239,68,68,0.2)",color:"var(--danger)",borderRadius:5,padding:"4px 8px",cursor:"pointer",fontSize:10,fontWeight:600,flexShrink:0}}>Retirer</button>
                         </div>
                       );
                     })}
@@ -1588,16 +1600,16 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                 {/* Tous les contacts — toggle favori */}
                 {allContacts.length > 0 ? (
                   <div style={{display:"flex",flexDirection:"column",gap:4}}>
-                    <div style={{fontSize:11,fontWeight:700,color:"#374151",letterSpacing:0.3,marginBottom:2}}>Contacts disponibles</div>
+                    <div style={{fontSize:11,fontWeight:700,color:"var(--ink-soft)",letterSpacing:0.3,marginBottom:2}}>Contacts disponibles</div>
                     {allContacts.map(c => {
                       const active = isFav(c.name);
                       return (
-                        <div key={c.id} onClick={()=>toggleFav(c.name)} style={{display:"flex",alignItems:"center",gap:8,background:"rgba(255,255,255,0.85)",borderRadius:8,padding:"8px 10px",border:`1px solid ${active?"rgba(255,193,7,0.35)":"rgba(0,0,0,0.07)"}`,cursor:"pointer",transition:"border-color 0.15s,background 0.15s",userSelect:"none"}}>
-                          <div style={{width:28,height:28,borderRadius:"50%",background:"rgba(99,102,241,0.08)",display:"flex",alignItems:"center",justifyContent:"center",color:"#6366f1",fontWeight:700,fontSize:12,flexShrink:0,overflow:"hidden"}}>
+                        <div key={c.id} onClick={()=>toggleFav(c.name)} style={{display:"flex",alignItems:"center",gap:8,background:"var(--raise)",borderRadius:8,padding:"8px 10px",border:`1px solid ${active?"rgba(255,193,7,0.35)":"var(--line)"}`,cursor:"pointer",transition:"border-color 0.15s,background 0.15s",userSelect:"none"}}>
+                          <div style={{width:28,height:28,borderRadius:"50%",background:"var(--accent-wash)",display:"flex",alignItems:"center",justifyContent:"center",color:"var(--accent)",fontWeight:700,fontSize:12,flexShrink:0,overflow:"hidden"}}>
                             {c.photo ? <img src={c.photo} style={{width:"100%",height:"100%",objectFit:"cover"}}/> : (c.name||"?")[0]}
                           </div>
-                          <span style={{flex:1,fontSize:13,color:"#1a1a2e",fontWeight:active?700:400}}>{c.name}</span>
-                          <div style={{width:20,height:20,borderRadius:"50%",border:`2px solid ${active?"#ffc107":"#d1d5db"}`,background:active?"#ffc107":"transparent",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,transition:"all 0.15s"}}>
+                          <span style={{flex:1,fontSize:13,color:"var(--ink)",fontWeight:active?700:400}}>{c.name}</span>
+                          <div style={{width:20,height:20,borderRadius:"50%",border:`2px solid ${active?"#ffc107":"var(--ink-faint)"}`,background:active?"#ffc107":"transparent",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,transition:"all 0.15s"}}>
                             {active && <svg width="10" height="9" viewBox="0 0 24 22" fill="white"><path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6z"/></svg>}
                           </div>
                         </div>
@@ -1605,7 +1617,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                     })}
                   </div>
                 ) : (
-                  <div style={{fontSize:11,color:"#9ca3af",textAlign:"center",padding:"20px 0"}}>
+                  <div style={{fontSize:11,color:"var(--ink-faint)",textAlign:"center",padding:"20px 0"}}>
                     Ajoutez d'abord des contacts dans l'onglet 👥 Contacts.
                   </div>
                 )}
@@ -1629,31 +1641,31 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
             };
             return (
               <div style={{display:"flex",flexDirection:"column",gap:8}}>
-                <div style={{fontSize:11,color:"#6b7280",lineHeight:1.5}}>
+                <div style={{fontSize:11,color:"var(--ink-soft)",lineHeight:1.5}}>
                   Sans message vocal ajouté ici, l'onglet "Voicemail" du téléphone affiche par défaut les 3 derniers appels manqués (sans texte).
                 </div>
                 <button onClick={seedVm}
-                  style={{alignSelf:"flex-start",background:"rgba(16,185,129,0.08)",border:"1px dashed rgba(16,185,129,0.4)",color:"#059669",borderRadius:8,padding:"8px 14px",cursor:"pointer",fontSize:11,fontWeight:600}}>
+                  style={{alignSelf:"flex-start",background:"rgba(16,185,129,0.08)",border:"1px dashed rgba(16,185,129,0.4)",color:"var(--ok)",borderRadius:8,padding:"8px 14px",cursor:"pointer",fontSize:11,fontWeight:600}}>
                   ⇩ Importer les appels manqués
                 </button>
                 {(d.voicemails||[]).map((vm)=>(
-                  <div key={vm.id} className="adm-card" style={{display:"flex",flexDirection:"column",gap:6,background:"rgba(255,255,255,0.85)",padding:10,borderRadius:10,border:"1px solid rgba(0,0,0,0.07)"}}>
+                  <div key={vm.id} className="adm-card" style={{display:"flex",flexDirection:"column",gap:6,background:"var(--raise)",padding:10,borderRadius:10,border:"1px solid var(--line)"}}>
                     <div style={{display:"flex",gap:8,flexWrap:"wrap",alignItems:"center"}}>
                       <input value={vm.contact} onChange={e=>updVm(vm.id,"contact",e.target.value)}
-                        placeholder="Contact" className="adm-input" style={{flex:"1 1 120px",minWidth:0,background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#1a1a2e",padding:"7px 10px",fontSize:12,borderRadius:7,fontWeight:600}}/>
+                        placeholder="Contact" className="adm-input" style={{flex:"1 1 120px",minWidth:0,background:"var(--raise)",border:"1px solid var(--line)",color:"var(--ink)",padding:"7px 10px",fontSize:12,borderRadius:7,fontWeight:600}}/>
                       <LoreDateTimeInput value={vm.time} onChange={v=>updVm(vm.id,"time",v)} width="190px" showLabel={false}/>
                       <input value={vm.duration||""} onChange={e=>updVm(vm.id,"duration",e.target.value)}
-                        placeholder="Durée" className="adm-input" style={{width:70,flexShrink:0,background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#6b7280",padding:"7px 8px",fontSize:11,borderRadius:7}}/>
+                        placeholder="Durée" className="adm-input" style={{width:70,flexShrink:0,background:"var(--raise)",border:"1px solid var(--line)",color:"var(--ink-soft)",padding:"7px 8px",fontSize:11,borderRadius:7}}/>
                       <button onClick={()=>deleteVm(vm.id)}
-                        className="adm-del-btn" style={{background:"none",border:"none",color:"#d1d5db",cursor:"pointer",fontSize:16,padding:"2px 6px",flexShrink:0,borderRadius:5}}>×</button>
+                        className="adm-del-btn" style={{background:"none",border:"none",color:"var(--ink-faint)",cursor:"pointer",fontSize:16,padding:"2px 6px",flexShrink:0,borderRadius:5}}>×</button>
                     </div>
                     <textarea value={vm.transcript||""} onChange={e=>updVm(vm.id,"transcript",e.target.value)}
                       placeholder="Texte du message vocal (ce que la personne dit)…" className="adm-input"
-                      style={{width:"100%",minHeight:50,background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#1a1a2e",padding:"7px 10px",fontSize:12,borderRadius:7,resize:"vertical",boxSizing:"border-box"}}/>
+                      style={{width:"100%",minHeight:50,background:"var(--raise)",border:"1px solid var(--line)",color:"var(--ink)",padding:"7px 10px",fontSize:12,borderRadius:7,resize:"vertical",boxSizing:"border-box"}}/>
                   </div>
                 ))}
                 <button onClick={addVm}
-                  style={{background:"rgba(99,102,241,0.08)",border:"1px dashed rgba(99,102,241,0.4)",color:"#6366f1",borderRadius:8,padding:"10px 18px",cursor:"pointer",fontSize:12,fontWeight:600,alignSelf:"flex-start"}}>+ Message vocal</button>
+                  style={{background:"var(--accent-wash)",border:"1px dashed var(--accent-line)",color:"var(--accent)",borderRadius:8,padding:"10px 18px",cursor:"pointer",fontSize:12,fontWeight:600,alignSelf:"flex-start"}}>+ Message vocal</button>
               </div>
             );
           })()}
@@ -1664,20 +1676,20 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
  return (
       <div style={{display:"flex",flexDirection:"column",gap:12}}>
         {(d.notes||[]).map((note,i)=>(
-          <div key={note.id} className="adm-card" style={{background:"rgba(255,255,255,0.85)",borderRadius:12,padding:14,border:"1px solid rgba(0,0,0,0.07)",boxShadow:"0 2px 8px rgba(0,0,0,0.04)"}}>
+          <div key={note.id} className="adm-card" style={{background:"var(--raise)",borderRadius:12,padding:14,border:"1px solid var(--line)",boxShadow:"0 2px 8px var(--line-soft)"}}>
             <div style={{display:"flex",gap:8,marginBottom:8}}>
               <Field label="Titre" value={note.title} onChange={v=>{const n=[...d.notes];n[i]={...n[i],title:v};upd("notes",n);}} width="60%"/>
               <LoreDateTimeInput label="Date" showTime={false} width="30%"
                 value={note.date||""}
                 onChange={v=>{const n=[...d.notes];n[i]={...n[i],date:v};upd("notes",n);}}/>
               <button onClick={()=>upd("notes",d.notes.filter((_,j)=>j!==i))}
-                className="adm-del-btn" style={{background:"rgba(239,68,68,0.06)",border:"1px solid rgba(239,68,68,0.2)",color:"#ef4444",borderRadius:6,padding:"5px 10px",cursor:"pointer",fontSize:11,marginTop:18,flexShrink:0,transition:"all 0.15s"}}>✕</button>
+                className="adm-del-btn" style={{background:"rgba(239,68,68,0.06)",border:"1px solid rgba(239,68,68,0.2)",color:"var(--danger)",borderRadius:6,padding:"5px 10px",cursor:"pointer",fontSize:11,marginTop:18,flexShrink:0,transition:"all 0.15s"}}>✕</button>
             </div>
             <Field label="Contenu" value={note.body} onChange={v=>{const n=[...d.notes];n[i]={...n[i],body:v};upd("notes",n);}} textarea/>
           </div>
         ))}
         <button onClick={()=>upd("notes",[{id:Date.now(),title:"",body:"",date:"1 oct"},...(d.notes||[])])}
-          style={{background:"rgba(99,102,241,0.08)",border:"1px dashed rgba(99,102,241,0.4)",color:"#6366f1",borderRadius:8,padding:"10px 18px",cursor:"pointer",fontSize:12,fontWeight:600}}>+ Note</button>
+          style={{background:"var(--accent-wash)",border:"1px dashed var(--accent-line)",color:"var(--accent)",borderRadius:8,padding:"10px 18px",cursor:"pointer",fontSize:12,fontWeight:600}}>+ Note</button>
       </div>
     );
 
@@ -1734,13 +1746,13 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
       // renderSection, un composant remonté à chaque frappe ferait perdre le focus
       // (le sélecteur de date se refermait). Appelée en place, le nœud DOM survit.
       const renderPhotoCard = (photo) => (
-        <div key={photo.id} style={{background:"rgba(255,255,255,0.9)",borderRadius:10,overflow:"hidden",border:"1px solid rgba(0,0,0,0.07)"}}>
+        <div key={photo.id} style={{background:"var(--raise)",borderRadius:10,overflow:"hidden",border:"1px solid var(--line)"}}>
           <div style={{aspectRatio:"1",background:photo.color||"#1a1a1a",position:"relative",overflow:"hidden"}}>
             {photo.src
               ? <img src={photo.src} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
               : <div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",color:"rgba(255,255,255,0.12)",fontSize:24}}>📷</div>}
             <label style={{position:"absolute",bottom:4,right:4,cursor:"pointer"}}>
-              <span style={{background:"rgba(0,0,0,0.55)",borderRadius:4,padding:"2px 6px",color:"rgba(255,255,255,0.9)",fontSize:9}}>📁</span>
+              <span style={{background:"rgba(0,0,0,0.55)",borderRadius:4,padding:"2px 6px",color:"var(--raise)",fontSize:9}}>📁</span>
               <input type="file" accept="image/*" style={{display:"none"}} onChange={e=>{
                 const f=e.target.files?.[0]; if(!f) return;
                 const r=new UploadReader(); r.onload=ev=>updPhoto(photo.id,{src:ev.target.result}); r.readAsDataURL(f); e.target.value="";
@@ -1754,12 +1766,12 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                 const [y,m,dd] = iso.split('-').map(Number);
                 updPhoto(photo.id,{dateISO:iso, date:`${dd} ${LORE_MONTHS[m]} ${y}`});
               }}
-              className="adm-input" style={{width:"100%",background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.08)",color:"#6b7280",padding:"4px 7px",fontSize:10,borderRadius:6}}/>
+              className="adm-input" style={{width:"100%",background:"var(--raise)",border:"1px solid var(--line)",color:"var(--ink-soft)",padding:"4px 7px",fontSize:10,borderRadius:6}}/>
             <div style={{display:"flex",gap:4}}>
               {activeTab==="deleted"
-                ? <button onClick={()=>updPhoto(photo.id,{deleted:false})} style={{flex:1,background:"rgba(16,185,129,0.07)",border:"1px solid rgba(16,185,129,0.2)",color:"#059669",borderRadius:6,padding:"3px 0",cursor:"pointer",fontSize:10}}>↩</button>
-                : <button onClick={()=>updPhoto(photo.id,{deleted:true,album:null})} style={{flex:1,background:"rgba(239,68,68,0.06)",border:"1px solid rgba(239,68,68,0.15)",color:"#ef4444",borderRadius:6,padding:"3px 0",cursor:"pointer",fontSize:10}}>🗑</button>}
-              <button onClick={()=>removePhoto(photo.id)} style={{flex:1,background:"rgba(0,0,0,0.04)",border:"1px solid rgba(0,0,0,0.1)",color:"#9ca3af",borderRadius:6,padding:"3px 0",cursor:"pointer",fontSize:10}}>✕</button>
+                ? <button onClick={()=>updPhoto(photo.id,{deleted:false})} style={{flex:1,background:"rgba(16,185,129,0.07)",border:"1px solid rgba(16,185,129,0.2)",color:"var(--ok)",borderRadius:6,padding:"3px 0",cursor:"pointer",fontSize:10}}>↩</button>
+                : <button onClick={()=>updPhoto(photo.id,{deleted:true,album:null})} style={{flex:1,background:"rgba(239,68,68,0.06)",border:"1px solid rgba(239,68,68,0.15)",color:"var(--danger)",borderRadius:6,padding:"3px 0",cursor:"pointer",fontSize:10}}>🗑</button>}
+              <button onClick={()=>removePhoto(photo.id)} style={{flex:1,background:"var(--line-soft)",border:"1px solid var(--line)",color:"var(--ink-faint)",borderRadius:6,padding:"3px 0",cursor:"pointer",fontSize:10}}>✕</button>
             </div>
           </div>
         </div>
@@ -1774,9 +1786,9 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
               <button key={t.key} onClick={()=>setGalTab(t.key)} style={{
                 padding:"5px 11px",border:"none",borderRadius:6,cursor:"pointer",fontSize:11,whiteSpace:"nowrap",flexShrink:0,
                 fontWeight:activeTab===t.key?700:400,
-                background:activeTab===t.key?"#fff":"rgba(0,0,0,0.05)",
-                color:activeTab===t.key?"#6366f1":"#6b7280",
-                boxShadow:activeTab===t.key?"0 1px 3px rgba(0,0,0,0.1)":"none",
+                background:activeTab===t.key?"var(--card)":"var(--line-soft)",
+                color:activeTab===t.key?"var(--accent)":"var(--ink-soft)",
+                boxShadow:activeTab===t.key?"0 1px 3px var(--line)":"none",
               }}>
                 {t.label} <span style={{fontSize:9,opacity:0.7}}>({t.count})</span>
               </button>
@@ -1786,7 +1798,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
               const id = Date.now();
               updAlbums([...albums, {id, name:"Nouvel album", cover:null}]);
               setGalTab(String(id));
-            }} style={{padding:"5px 11px",border:"1px dashed rgba(99,102,241,0.35)",borderRadius:6,cursor:"pointer",fontSize:11,color:"#6366f1",background:"rgba(99,102,241,0.05)",flexShrink:0,whiteSpace:"nowrap"}}>
+            }} style={{padding:"5px 11px",border:"1px dashed var(--accent-line)",borderRadius:6,cursor:"pointer",fontSize:11,color:"var(--accent)",background:"var(--accent-wash)",flexShrink:0,whiteSpace:"nowrap"}}>
               + Album
             </button>
           </div>
@@ -1797,20 +1809,20 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
             if(albumIdx<0) return null;
             const album = albums[albumIdx];
             return (
-              <div style={{display:"flex",gap:8,alignItems:"center",background:"rgba(99,102,241,0.05)",border:"1px solid rgba(99,102,241,0.12)",borderRadius:8,padding:"8px 12px"}}>
-                <label style={{width:36,height:36,borderRadius:6,overflow:"hidden",flexShrink:0,background:"#e5e7eb",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",fontSize:16}}>
+              <div style={{display:"flex",gap:8,alignItems:"center",background:"var(--accent-wash)",border:"1px solid rgba(99,102,241,0.12)",borderRadius:8,padding:"8px 12px"}}>
+                <label style={{width:36,height:36,borderRadius:6,overflow:"hidden",flexShrink:0,background:"var(--line)",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",fontSize:16}}>
                   {album.cover?<img src={album.cover} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:"📁"}
                   <input type="file" accept="image/*" style={{display:"none"}} onChange={e=>{const f=e.target.files?.[0];if(!f)return;const r=new UploadReader();r.onload=ev=>updAlbums(albums.map((a,j)=>j===albumIdx?{...a,cover:ev.target.result}:a));r.readAsDataURL(f);e.target.value="";}}/>
                 </label>
                 <input value={album.name||""} onChange={e=>updAlbums(albums.map((a,j)=>j===albumIdx?{...a,name:e.target.value}:a))}
                   placeholder="Nom de l'album" className="adm-input"
-                  style={{flex:1,background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#1a1a2e",padding:"6px 10px",fontSize:12,borderRadius:7}}/>
+                  style={{flex:1,background:"var(--raise)",border:"1px solid var(--line)",color:"var(--ink)",padding:"6px 10px",fontSize:12,borderRadius:7}}/>
                 <button onClick={()=>{
                   updAlbums(albums.filter((_,j)=>j!==albumIdx));
                   // retirer l'album des photos
                   updGallery(allPhotos.map(p=>p.album===activeTab?{...p,album:null}:p));
                   setGalTab("roll");
-                }} style={{background:"rgba(239,68,68,0.07)",border:"1px solid rgba(239,68,68,0.2)",color:"#ef4444",borderRadius:6,padding:"5px 10px",cursor:"pointer",fontSize:11,whiteSpace:"nowrap"}}>✕ Supprimer</button>
+                }} style={{background:"rgba(239,68,68,0.07)",border:"1px solid rgba(239,68,68,0.2)",color:"var(--danger)",borderRadius:6,padding:"5px 10px",cursor:"pointer",fontSize:11,whiteSpace:"nowrap"}}>✕ Supprimer</button>
               </div>
             );
           })()}
@@ -1819,9 +1831,9 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
           <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(130px,1fr))",gap:10}}>
             {currentPhotos.map(photo=>renderPhotoCard(photo))}
             <label style={{
-              aspectRatio:"1",background:"rgba(99,102,241,0.05)",border:"2px dashed rgba(99,102,241,0.25)",
+              aspectRatio:"1",background:"var(--accent-wash)",border:"2px dashed rgba(99,102,241,0.25)",
               borderRadius:10,display:"flex",alignItems:"center",justifyContent:"center",
-              cursor:"pointer",color:"#6366f1",fontSize:28,fontWeight:300,minHeight:80
+              cursor:"pointer",color:"var(--accent)",fontSize:28,fontWeight:300,minHeight:80
             }}>
               +
               <input type="file" accept="image/*" multiple style={{display:"none"}} onChange={e=>{
@@ -1836,10 +1848,10 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
   const renderIcons = () => {
  return (
       <div style={{display:"flex",flexDirection:"column",gap:12}}>
-        {d.os==="android"&&<div style={{background:"rgba(16,185,129,0.08)",border:"1px solid rgba(16,185,129,0.2)",borderRadius:8,padding:"10px 14px",fontSize:11,color:"#059669",fontWeight:500}}>
+        {d.os==="android"&&<div style={{background:"rgba(16,185,129,0.08)",border:"1px solid rgba(16,185,129,0.2)",borderRadius:8,padding:"10px 14px",fontSize:11,color:"var(--ok)",fontWeight:500}}>
           📱 These icons apply to Drew's Android phone
         </div>}
-        {d.os==="ios"&&<div style={{background:"rgba(99,102,241,0.08)",border:"1px solid rgba(99,102,241,0.2)",borderRadius:8,padding:"10px 14px",fontSize:11,color:"#6366f1",fontWeight:500}}>
+        {d.os==="ios"&&<div style={{background:"var(--accent-wash)",border:"1px solid var(--accent-wash)",borderRadius:8,padding:"10px 14px",fontSize:11,color:"var(--accent)",fontWeight:500}}>
           🍎 These icons apply to all iOS phones (Glinda, Eoghan & Elias)
         </div>}
 
@@ -1849,7 +1861,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
           const dragIdx = { current: null };
           return (
           <div key={listKey} style={{display:"flex",flexDirection:"column",gap:6}}>
-            <div style={{fontSize:12,fontWeight:700,color:"#374151",letterSpacing:0.3}}>{listLabel} <span style={{fontSize:10,color:"#9ca3af",fontWeight:400}}>— glisser-déposer pour réordonner</span></div>
+            <div style={{fontSize:12,fontWeight:700,color:"var(--ink-soft)",letterSpacing:0.3}}>{listLabel} <span style={{fontSize:10,color:"var(--ink-faint)",fontWeight:400}}>— glisser-déposer pour réordonner</span></div>
             {list.map((appId,i)=>{
               const meta    = APP_META[appId]||{label:appId,iosIcon:"📱"};
               const isAndroid = d.os==="android";
@@ -1876,12 +1888,12 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                 <div key={appId+i}
                   draggable
                   onDragStart={()=>{ dragIdx.current=i; }}
-                  onDragOver={e=>{ e.preventDefault(); e.currentTarget.style.background="rgba(99,102,241,0.08)"; e.currentTarget.style.borderColor="rgba(99,102,241,0.35)"; }}
-                  onDragLeave={e=>{ e.currentTarget.style.background="rgba(255,255,255,0.85)"; e.currentTarget.style.borderColor="rgba(0,0,0,0.07)"; }}
+                  onDragOver={e=>{ e.preventDefault(); e.currentTarget.style.background="var(--accent-wash)"; e.currentTarget.style.borderColor="var(--accent-line)"; }}
+                  onDragLeave={e=>{ e.currentTarget.style.background="var(--raise)"; e.currentTarget.style.borderColor="var(--line)"; }}
                   onDrop={e=>{
                     e.preventDefault();
-                    e.currentTarget.style.background="rgba(255,255,255,0.85)";
-                    e.currentTarget.style.borderColor="rgba(0,0,0,0.07)";
+                    e.currentTarget.style.background="var(--raise)";
+                    e.currentTarget.style.borderColor="var(--line)";
                     const from=dragIdx.current;
                     if(from==null||from===i) return;
                     const l=[...list];
@@ -1890,20 +1902,20 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                     upd(listKey,l);
                     dragIdx.current=null;
                   }}
-                  style={{display:"flex",alignItems:"center",gap:8,background:"rgba(255,255,255,0.85)",borderRadius:8,padding:"7px 10px",border:"1px solid rgba(0,0,0,0.07)",cursor:"grab",transition:"background 0.1s,border-color 0.1s,box-shadow 0.1s"}}>
+                  style={{display:"flex",alignItems:"center",gap:8,background:"var(--raise)",borderRadius:8,padding:"7px 10px",border:"1px solid var(--line)",cursor:"grab",transition:"background 0.1s,border-color 0.1s,box-shadow 0.1s"}}>
                   {/* Handle drag */}
-                  <span style={{color:"#d1d5db",fontSize:14,flexShrink:0,cursor:"grab",userSelect:"none"}}>⠿</span>
+                  <span style={{color:"var(--ink-faint)",fontSize:14,flexShrink:0,cursor:"grab",userSelect:"none"}}>⠿</span>
                   {/* Icône */}
-                  <label style={{width:36,height:36,background:"#f3f4f6",borderRadius:7,overflow:"hidden",display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,flexShrink:0,cursor:"pointer",border:"1px solid rgba(0,0,0,0.06)"}}>
+                  <label style={{width:36,height:36,background:"var(--line-soft)",borderRadius:7,overflow:"hidden",display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,flexShrink:0,cursor:"pointer",border:"1px solid var(--line)"}}>
                     {cur?<img src={cur} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:meta.iosIcon||"📱"}
                     <input type="file" accept="image/*" style={{display:"none"}} onChange={e=>readFile(e.target.files?.[0])}/>
                   </label>
                   {/* Nom */}
                   <input value={appName} onChange={e=>upd("appNames",{...(d.appNames||{}),[appId]:e.target.value})}
-                    className="adm-input" style={{flex:1,background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#374151",fontSize:12,padding:"5px 8px",borderRadius:6}}/>
-                  <span style={{fontSize:11,color:"#9ca3af",flexShrink:0,minWidth:40}}>{appId}</span>
-                  {cur&&<button onClick={()=>{if(d.os==="android"){const si={...(data._sharedAndroidIcons||{})};delete si[appId];onUpdateShared(si);}else{const ic={...(d.appIcons||{})};delete ic[appId];upd("appIcons",ic);}}} style={{background:"none",border:"none",color:"#9ca3af",cursor:"pointer",fontSize:10,flexShrink:0}}>✕ ico</button>}
-                  <button onClick={remove} className="adm-del-btn" style={{background:"rgba(239,68,68,0.07)",border:"1px solid rgba(239,68,68,0.2)",color:"#ef4444",borderRadius:5,padding:"4px 8px",cursor:"pointer",fontSize:10,fontWeight:600,flexShrink:0}}>🗑</button>
+                    className="adm-input" style={{flex:1,background:"var(--raise)",border:"1px solid var(--line)",color:"var(--ink-soft)",fontSize:12,padding:"5px 8px",borderRadius:6}}/>
+                  <span style={{fontSize:11,color:"var(--ink-faint)",flexShrink:0,minWidth:40}}>{appId}</span>
+                  {cur&&<button onClick={()=>{if(d.os==="android"){const si={...(data._sharedAndroidIcons||{})};delete si[appId];onUpdateShared(si);}else{const ic={...(d.appIcons||{})};delete ic[appId];upd("appIcons",ic);}}} style={{background:"none",border:"none",color:"var(--ink-faint)",cursor:"pointer",fontSize:10,flexShrink:0}}>✕ ico</button>}
+                  <button onClick={remove} className="adm-del-btn" style={{background:"rgba(239,68,68,0.07)",border:"1px solid rgba(239,68,68,0.2)",color:"var(--danger)",borderRadius:5,padding:"4px 8px",cursor:"pointer",fontSize:10,fontWeight:600,flexShrink:0}}>🗑</button>
                 </div>
               );
             })}
@@ -1917,25 +1929,25 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
           const current = new Set([...(d.apps||[]),...(d.dock||[])]);
           const available = allAppIds.filter(id=>!current.has(id));
           return (
-            <div style={{display:"flex",flexDirection:"column",gap:8,paddingTop:8,borderTop:"1px solid rgba(0,0,0,0.06)",marginTop:4}}>
-              <span style={{color:"#9ca3af",fontSize:11,fontWeight:600}}>Ajouter une app</span>
+            <div style={{display:"flex",flexDirection:"column",gap:8,paddingTop:8,borderTop:"1px solid var(--line)",marginTop:4}}>
+              <span style={{color:"var(--ink-faint)",fontSize:11,fontWeight:600}}>Ajouter une app</span>
               <div style={{display:"flex",gap:8,flexWrap:"wrap",alignItems:"center"}}>
                 <select className="adm-input" onChange={e=>{
                   if(!e.target.value) return;
                   upd("apps",[...(d.apps||[]),e.target.value]);
                   e.target.value="";
-                }} style={{background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#374151",fontSize:11,borderRadius:7,padding:"5px 10px"}}>
+                }} style={{background:"var(--raise)",border:"1px solid var(--line)",color:"var(--ink-soft)",fontSize:11,borderRadius:7,padding:"5px 10px"}}>
                   <option value="">— app existante —</option>
                   {available.map(id=><option key={id} value={id}>{APP_META[id]?.label||id}</option>)}
                 </select>
-                <span style={{color:"#9ca3af",fontSize:11}}>ou</span>
+                <span style={{color:"var(--ink-faint)",fontSize:11}}>ou</span>
                 <input className="adm-input" placeholder="Nom de l'app custom…" value={customAppName} onChange={e=>setCustomAppName(e.target.value)}
                   onKeyDown={e=>{if(e.key==="Enter"&&customAppName.trim()){const newId="custom_"+Date.now();upd("apps",[...(d.apps||[]),newId]);upd("appNames",{...(d.appNames||{}),[newId]:customAppName.trim()});setCustomAppName("");}}}
-                  style={{background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#374151",fontSize:11,borderRadius:7,padding:"5px 10px",width:160}}/>
+                  style={{background:"var(--raise)",border:"1px solid var(--line)",color:"var(--ink-soft)",fontSize:11,borderRadius:7,padding:"5px 10px",width:160}}/>
                 <button className="adm-btn-primary" onClick={()=>{if(!customAppName.trim())return;const newId="custom_"+Date.now();upd("apps",[...(d.apps||[]),newId]);upd("appNames",{...(d.appNames||{}),[newId]:customAppName.trim()});setCustomAppName("");}}
-                  style={{background:"linear-gradient(135deg,#6366f1,#8b5cf6)",border:"none",color:"#fff",padding:"6px 14px",borderRadius:7,fontWeight:600,fontSize:11,cursor:"pointer"}}>+ Créer</button>
+                  style={{background:"linear-gradient(135deg,var(--accent),var(--accent))",border:"none",color:"#fff",padding:"6px 14px",borderRadius:7,fontWeight:600,fontSize:11,cursor:"pointer"}}>+ Créer</button>
               </div>
-              <div style={{color:"#9ca3af",fontSize:10}}>Les apps custom s'affichent avec l'icône que tu importes, sans écran derrière.</div>
+              <div style={{color:"var(--ink-faint)",fontSize:10}}>Les apps custom s'affichent avec l'icône que tu importes, sans écran derrière.</div>
             </div>
           );
         })()}
@@ -1947,9 +1959,9 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
  return (
       <div style={{display:"flex",flexDirection:"column",gap:10}}>
 
-        <div style={{display:"flex",gap:12,alignItems:"center",background:"rgba(255,255,255,0.85)",padding:12,borderRadius:10,border:"1px solid rgba(0,0,0,0.07)"}}>
+        <div style={{display:"flex",gap:12,alignItems:"center",background:"var(--raise)",padding:12,borderRadius:10,border:"1px solid var(--line)"}}>
           <label
-            style={{width:64,height:64,borderRadius:8,background:"rgba(99,102,241,0.08)",border:"2px dashed rgba(99,102,241,0.35)",overflow:"hidden",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer"}}>
+            style={{width:64,height:64,borderRadius:8,background:"var(--accent-wash)",border:"2px dashed var(--accent-line)",overflow:"hidden",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer"}}>
             {d.playlistCover
               ? <img src={d.playlistCover} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
               : <span style={{fontSize:24}}>🖼</span>}
@@ -1959,9 +1971,9 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
             }}/>
           </label>
           <div style={{flex:1}}>
-            <div style={{fontSize:12,fontWeight:600,color:"#374151"}}>Cover de la playlist</div>
-            <div style={{fontSize:11,color:"#9ca3af"}}>S'affiche dans le lecteur quand rien ne joue</div>
-            {d.playlistCover && <button onClick={()=>upd("playlistCover",null)} style={{fontSize:10,color:"#ef4444",background:"none",border:"none",cursor:"pointer",padding:0,marginTop:2}}>Supprimer</button>}
+            <div style={{fontSize:12,fontWeight:600,color:"var(--ink-soft)"}}>Cover de la playlist</div>
+            <div style={{fontSize:11,color:"var(--ink-faint)"}}>S'affiche dans le lecteur quand rien ne joue</div>
+            {d.playlistCover && <button onClick={()=>upd("playlistCover",null)} style={{fontSize:10,color:"var(--danger)",background:"none",border:"none",cursor:"pointer",padding:0,marginTop:2}}>Supprimer</button>}
           </div>
         </div>
 
@@ -1971,7 +1983,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
             "playlists" (jamais tout l'objet du perso). Placée avant la liste des chansons pour
             qu'on gère les playlists avant de scroller tous les morceaux. */}
         <div style={{display:"flex",flexDirection:"column",gap:10}}>
-          <div style={{fontSize:13,fontWeight:700,color:"#374151"}}>Playlists</div>
+          <div style={{fontSize:13,fontWeight:700,color:"var(--ink-soft)"}}>Playlists</div>
           {(()=>{
             const playlists = d.playlists || [];
             const music = d.music || [];
@@ -1982,15 +1994,15 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
               onUpdate(tab, {...freshChar, playlists: next});
             };
             return <>
-              {playlists.length===0 && <div style={{fontSize:11,color:"#9ca3af"}}>Aucune playlist pour l'instant.</div>}
+              {playlists.length===0 && <div style={{fontSize:11,color:"var(--ink-faint)"}}>Aucune playlist pour l'instant.</div>}
               {playlists.map((pl,pi)=>{
                 const isOpen = openPlaylistAdmin===pl.id;
                 const trackIds = pl.trackIds||[];
                 const allSelected = music.length>0 && music.every(t=>trackIds.includes(t.id));
                 return (
-                  <div key={pl.id} className="adm-card" style={{background:"rgba(255,255,255,0.85)",borderRadius:10,border:"1px solid rgba(0,0,0,0.07)",padding:10,display:"flex",flexDirection:"column",gap:8}}>
+                  <div key={pl.id} className="adm-card" style={{background:"var(--raise)",borderRadius:10,border:"1px solid var(--line)",padding:10,display:"flex",flexDirection:"column",gap:8}}>
                     <div style={{display:"flex",gap:8,alignItems:"center",flexWrap:"wrap"}}>
-                      <label style={{width:40,height:40,borderRadius:6,background:"rgba(99,102,241,0.08)",border:"1px dashed rgba(99,102,241,0.3)",overflow:"hidden",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer"}}>
+                      <label style={{width:40,height:40,borderRadius:6,background:"var(--accent-wash)",border:"1px dashed var(--accent-line)",overflow:"hidden",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer"}}>
                         {pl.cover?<img src={pl.cover} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:<span style={{fontSize:16}}>🖼</span>}
                         <input type="file" accept="image/*" style={{display:"none"}} onChange={e=>{
                           const f=e.target.files?.[0]; if(!f) return;
@@ -2010,20 +2022,20 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                           if(idx<0) return fresh;
                           const next=[...fresh]; next[idx]={...next[idx],name:val}; return next;
                         });
-                      }} placeholder="Nom de la playlist" className="adm-input" style={{flex:1,background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#1a1a2e",padding:"7px 10px",fontSize:12,borderRadius:7,minWidth:120}}/>
-                      <span style={{fontSize:11,color:"#9ca3af",flexShrink:0}}>{trackIds.length} morceau{trackIds.length!==1?"x":""}</span>
-                      <button onClick={()=>setOpenPlaylistAdmin(isOpen?null:pl.id)} className="adm-btn-primary" style={{background:"rgba(99,102,241,0.1)",border:"1px solid rgba(99,102,241,0.3)",color:"#6366f1",padding:"6px 12px",borderRadius:7,fontWeight:600,fontSize:11,cursor:"pointer"}}>{isOpen?"Fermer":"Gérer les morceaux"}</button>
+                      }} placeholder="Nom de la playlist" className="adm-input" style={{flex:1,background:"var(--raise)",border:"1px solid var(--line)",color:"var(--ink)",padding:"7px 10px",fontSize:12,borderRadius:7,minWidth:120}}/>
+                      <span style={{fontSize:11,color:"var(--ink-faint)",flexShrink:0}}>{trackIds.length} morceau{trackIds.length!==1?"x":""}</span>
+                      <button onClick={()=>setOpenPlaylistAdmin(isOpen?null:pl.id)} className="adm-btn-primary" style={{background:"var(--accent-wash)",border:"1px solid var(--accent-line)",color:"var(--accent)",padding:"6px 12px",borderRadius:7,fontWeight:600,fontSize:11,cursor:"pointer"}}>{isOpen?"Fermer":"Gérer les morceaux"}</button>
                       <button onClick={()=>{
                         if(pl.cover) updPlaylists(fresh=>{
                           const idx=fresh.findIndex(p=>p.id===pl.id);
                           if(idx<0) return fresh;
                           const next=[...fresh]; next[idx]={...next[idx],cover:null}; return next;
                         });
-                      }} style={{fontSize:10,color:"#9ca3af",background:"none",border:"none",cursor:pl.cover?"pointer":"default",padding:0,visibility:pl.cover?"visible":"hidden"}}>Suppr. cover</button>
+                      }} style={{fontSize:10,color:"var(--ink-faint)",background:"none",border:"none",cursor:pl.cover?"pointer":"default",padding:0,visibility:pl.cover?"visible":"hidden"}}>Suppr. cover</button>
                       <button onClick={()=>{
                         updPlaylists(fresh=>fresh.filter(p=>p.id!==pl.id));
                         if(isOpen) setOpenPlaylistAdmin(null);
-                      }} className="adm-del-btn" style={{background:"none",border:"none",color:"#d1d5db",cursor:"pointer",fontSize:16,padding:"2px 6px",borderRadius:5}}>×</button>
+                      }} className="adm-del-btn" style={{background:"none",border:"none",color:"var(--ink-faint)",cursor:"pointer",fontSize:16,padding:"2px 6px",borderRadius:5}}>×</button>
                     </div>
                     {isOpen && (
                       <div style={{display:"flex",flexDirection:"column",gap:8}}>
@@ -2039,7 +2051,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                             value={spotifyLinkByPl[pl.id]||""}
                             onChange={e=>setSpotifyLinkByPl(prev=>({...prev,[pl.id]:e.target.value}))}
                             placeholder="Lien de playlist Spotify (open.spotify.com/playlist/…)"
-                            style={{flex:1,minWidth:180,background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#1a1a2e",padding:"6px 10px",fontSize:11,borderRadius:6}}/>
+                            style={{flex:1,minWidth:180,background:"var(--raise)",border:"1px solid var(--line)",color:"var(--ink)",padding:"6px 10px",fontSize:11,borderRadius:6}}/>
                           <button
                             disabled={spotifyStatusByPl[pl.id]==="loading" || !(spotifyLinkByPl[pl.id]||"").trim()}
                             onClick={async ()=>{
@@ -2095,14 +2107,14 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                               const allIds = music.map(t=>t.id);
                               const next=[...fresh]; next[idx]={...next[idx],trackIds:allIds}; return next;
                             });
-                          }} disabled={allSelected} style={{background:allSelected?"rgba(0,0,0,0.03)":"rgba(34,197,94,0.1)",border:"1px solid rgba(34,197,94,0.3)",color:allSelected?"#9ca3af":"#16a34a",padding:"5px 10px",borderRadius:7,fontWeight:600,fontSize:11,cursor:allSelected?"default":"pointer"}}>+ Tout ajouter</button>
+                          }} disabled={allSelected} style={{background:allSelected?"var(--line-soft)":"rgba(34,197,94,0.1)",border:"1px solid rgba(34,197,94,0.3)",color:allSelected?"var(--ink-faint)":"#16a34a",padding:"5px 10px",borderRadius:7,fontWeight:600,fontSize:11,cursor:allSelected?"default":"pointer"}}>+ Tout ajouter</button>
                           <button onClick={()=>{
                             updPlaylists(fresh=>{
                               const idx=fresh.findIndex(p=>p.id===pl.id);
                               if(idx<0) return fresh;
                               const next=[...fresh]; next[idx]={...next[idx],trackIds:[]}; return next;
                             });
-                          }} disabled={trackIds.length===0} style={{background:"transparent",border:"1px solid #e5e7eb",color:trackIds.length===0?"#d1d5db":"#6b7280",padding:"5px 10px",borderRadius:7,fontWeight:600,fontSize:11,cursor:trackIds.length===0?"default":"pointer"}}>Tout retirer</button>
+                          }} disabled={trackIds.length===0} style={{background:"transparent",border:"1px solid var(--line)",color:trackIds.length===0?"var(--ink-faint)":"var(--ink-soft)",padding:"5px 10px",borderRadius:7,fontWeight:600,fontSize:11,cursor:trackIds.length===0?"default":"pointer"}}>Tout retirer</button>
                           <button onClick={()=>{
                             const freshChar = dataRef.current[tab] || {};
                             const freshMusic = freshChar.music || [];
@@ -2111,10 +2123,10 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                             const nextMusic = [newTrack, ...freshMusic];
                             const nextPlaylists = freshPlaylists.map(p=>p.id===pl.id?{...p, trackIds:[...(p.trackIds||[]), newTrack.id]}:p);
                             onUpdate(tab, {...freshChar, music: nextMusic, playlists: nextPlaylists});
-                          }} style={{background:"rgba(99,102,241,0.1)",border:"1px dashed rgba(99,102,241,0.4)",color:"#6366f1",padding:"5px 10px",borderRadius:7,fontWeight:600,fontSize:11,cursor:"pointer"}}>🎵 + Nouvelle chanson</button>
+                          }} style={{background:"var(--accent-wash)",border:"1px dashed var(--accent-line)",color:"var(--accent)",padding:"5px 10px",borderRadius:7,fontWeight:600,fontSize:11,cursor:"pointer"}}>🎵 + Nouvelle chanson</button>
                         </div>
-                        <div style={{display:"flex",flexDirection:"column",gap:5,maxHeight:320,overflowY:"auto",background:"rgba(0,0,0,0.02)",borderRadius:8,padding:8}}>
-                          {music.length===0 && <div style={{fontSize:11,color:"#9ca3af"}}>Aucun morceau dans la bibliothèque de ce perso.</div>}
+                        <div style={{display:"flex",flexDirection:"column",gap:5,maxHeight:320,overflowY:"auto",background:"var(--line-soft)",borderRadius:8,padding:8}}>
+                          {music.length===0 && <div style={{fontSize:11,color:"var(--ink-faint)"}}>Aucun morceau dans la bibliothèque de ce perso.</div>}
                           {music.map(track=>{
                             const checked = trackIds.includes(track.id);
                             const toggleTrack = () => updPlaylists(fresh=>{
@@ -2135,9 +2147,9 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                               onUpdate(tab, {...freshChar, music: nextMusic});
                             };
                             return (
-                              <div key={track.id} onClick={toggleTrack} style={{display:"flex",alignItems:"center",gap:8,padding:"6px 8px",borderRadius:7,cursor:"pointer",background:checked?"rgba(99,102,241,0.1)":"rgba(255,255,255,0.7)",border:checked?"1px solid rgba(99,102,241,0.35)":"1px solid rgba(0,0,0,0.06)"}}>
+                              <div key={track.id} onClick={toggleTrack} style={{display:"flex",alignItems:"center",gap:8,padding:"6px 8px",borderRadius:7,cursor:"pointer",background:checked?"var(--accent-wash)":"rgba(255,255,255,0.7)",border:checked?"1px solid var(--accent-line)":"1px solid var(--line)"}}>
                                 <input type="checkbox" checked={checked} onChange={toggleTrack} onClick={e=>e.stopPropagation()} style={{flexShrink:0}}/>
-                                <label onClick={e=>e.stopPropagation()} style={{width:34,height:34,borderRadius:5,background:"rgba(99,102,241,0.08)",border:"1px dashed rgba(99,102,241,0.3)",overflow:"hidden",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer"}}>
+                                <label onClick={e=>e.stopPropagation()} style={{width:34,height:34,borderRadius:5,background:"var(--accent-wash)",border:"1px dashed var(--accent-line)",overflow:"hidden",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer"}}>
                                   {track.cover?<img src={track.cover} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:<span style={{fontSize:14}}>🎵</span>}
                                   <input type="file" accept="image/*" style={{display:"none"}} onChange={e=>{
                                     const f=e.target.files?.[0]; if(!f) return;
@@ -2156,9 +2168,9 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                                 </label>
                                 <div onClick={e=>e.stopPropagation()} style={{flex:1,minWidth:0,display:"flex",gap:6}}>
                                   <input value={track.title||""} onChange={e=>updTrackField("title",e.target.value)}
-                                    placeholder="Titre" style={{flex:1,minWidth:0,background:"transparent",border:"none",borderBottom:"1px solid rgba(0,0,0,0.12)",color:"#1a1a2e",fontSize:12,fontWeight:600,padding:"2px 2px"}}/>
+                                    placeholder="Titre" style={{flex:1,minWidth:0,background:"transparent",border:"none",borderBottom:"1px solid var(--line)",color:"var(--ink)",fontSize:12,fontWeight:600,padding:"2px 2px"}}/>
                                   <input value={track.artist||""} onChange={e=>updTrackField("artist",e.target.value)}
-                                    placeholder="Artiste" style={{flex:1,minWidth:0,background:"transparent",border:"none",borderBottom:"1px solid rgba(0,0,0,0.12)",color:"#6b7280",fontSize:11,padding:"2px 2px"}}/>
+                                    placeholder="Artiste" style={{flex:1,minWidth:0,background:"transparent",border:"none",borderBottom:"1px solid var(--line)",color:"var(--ink-soft)",fontSize:11,padding:"2px 2px"}}/>
                                 </div>
                               </div>
                             );
@@ -2171,13 +2183,13 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
               })}
               <button onClick={()=>{
                 updPlaylists(fresh=>[...fresh, {id:"pl_"+Date.now(), name:"Nouvelle playlist", cover:null, trackIds:[]}]);
-              }} style={{background:"rgba(99,102,241,0.08)",border:"1px dashed rgba(99,102,241,0.4)",color:"#6366f1",borderRadius:8,padding:"8px 16px",cursor:"pointer",fontSize:12,fontWeight:600,alignSelf:"flex-start"}}>+ Nouvelle playlist</button>
+              }} style={{background:"var(--accent-wash)",border:"1px dashed var(--accent-line)",color:"var(--accent)",borderRadius:8,padding:"8px 16px",cursor:"pointer",fontSize:12,fontWeight:600,alignSelf:"flex-start"}}>+ Nouvelle playlist</button>
             </>;
           })()}
         </div>
 
-        <div style={{marginTop:2,paddingTop:12,borderTop:"1px solid rgba(0,0,0,0.08)",display:"flex",flexDirection:"column",gap:10}}>
-          <div style={{fontSize:13,fontWeight:700,color:"#374151"}}>Chansons</div>
+        <div style={{marginTop:2,paddingTop:12,borderTop:"1px solid var(--line)",display:"flex",flexDirection:"column",gap:10}}>
+          <div style={{fontSize:13,fontWeight:700,color:"var(--ink-soft)"}}>Chansons</div>
           {/* ── Logique musique réécrite de zéro ──────────────────────────────────
               AVANT : seul onCoverChange lisait/écrivait via dataRef.current (état le plus frais).
               Tous les autres champs (titre/artiste/album/durée, réordonnancement, suppression,
@@ -2261,7 +2273,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
             const freshMusic = freshChar.music || [];
             onUpdate(tab, {...freshChar, music: [{id:Date.now(),title:"",artist:"",duration:"3:00"},...freshMusic]});
           }}
-            style={{background:"rgba(99,102,241,0.08)",border:"1px dashed rgba(99,102,241,0.4)",color:"#6366f1",borderRadius:8,padding:"10px 18px",cursor:"pointer",fontSize:12,fontWeight:600}}>+ Add manually</button>
+            style={{background:"var(--accent-wash)",border:"1px dashed var(--accent-line)",color:"var(--accent)",borderRadius:8,padding:"10px 18px",cursor:"pointer",fontSize:12,fontWeight:600}}>+ Add manually</button>
         </div>
       </div>
     );
@@ -2348,14 +2360,14 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
       return (
         <div style={{display:"flex",flexDirection:"column",gap:12}}>
           {/* Tab bar */}
-          <div className="adm-subtabs" style={{display:"flex",gap:0,background:"rgba(0,0,0,0.05)",borderRadius:8,padding:2,alignSelf:"flex-start"}}>
+          <div className="adm-subtabs" style={{display:"flex",gap:0,background:"var(--line-soft)",borderRadius:8,padding:2,alignSelf:"flex-start"}}>
             {[["users","👥 Mon profil"],["shared","🐦 Mes tweets (partagés)"],["tweets","🗒 Timeline (déco)"]].map(([k,label])=>(
               <button key={k} onClick={()=>setTwTab(k)} style={{
                 padding:"6px 14px",border:"none",borderRadius:6,cursor:"pointer",fontSize:11,
                 fontWeight:twTab===k?700:400,
-                background:twTab===k?"#fff":"transparent",
-                color:twTab===k?"#1da1f2":"#6b7280",
-                boxShadow:twTab===k?"0 1px 3px rgba(0,0,0,0.1)":"none",
+                background:twTab===k?"var(--card)":"transparent",
+                color:twTab===k?"#1da1f2":"var(--ink-soft)",
+                boxShadow:twTab===k?"0 1px 3px var(--line)":"none",
                 transition:"all 0.15s",
               }}>{label}</button>
             ))}
@@ -2364,19 +2376,19 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
           {twTab==="users" && <>
             {(()=>{
               const renderUserCard = (u, ov, onRemove) => (
-                <div key={u.key} className="adm-card" style={{background:"rgba(255,255,255,0.85)",borderRadius:10,padding:"10px 12px",border:"1px solid rgba(0,0,0,0.07)",display:"flex",flexDirection:"column",gap:6}}>
+                <div key={u.key} className="adm-card" style={{background:"var(--raise)",borderRadius:10,padding:"10px 12px",border:"1px solid var(--line)",display:"flex",flexDirection:"column",gap:6}}>
                   <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-                    <div style={{fontSize:10,fontWeight:700,color:"#9ca3af",letterSpacing:0.5}}>
+                    <div style={{fontSize:10,fontWeight:700,color:"var(--ink-faint)",letterSpacing:0.5}}>
                       {u.char ? (char?.key===u.char ? "★ CE PERSO" : u.char.toUpperCase()) : u.key.toUpperCase()}
                     </div>
-                    {onRemove && <button onClick={onRemove} style={{background:"rgba(239,68,68,0.07)",border:"1px solid rgba(239,68,68,0.2)",color:"#ef4444",borderRadius:6,padding:"3px 7px",cursor:"pointer",fontSize:10}}>✕ Retirer</button>}
+                    {onRemove && <button onClick={onRemove} style={{background:"rgba(239,68,68,0.07)",border:"1px solid rgba(239,68,68,0.2)",color:"var(--danger)",borderRadius:6,padding:"3px 7px",cursor:"pointer",fontSize:10}}>✕ Retirer</button>}
                   </div>
                   <div style={{display:"flex",gap:6}}>
                     <Field label="Nom"    value={ov.name??u.name} onChange={v=>updTwUser(u.key,"name",v)} style={{flex:1}}/>
                     <Field label="Handle" value={ov.h??u.h}       onChange={v=>updTwUser(u.key,"h",v)}    style={{flex:1}}/>
                   </div>
                   <div style={{display:"flex",gap:10,alignItems:"center"}}>
-                    <label style={{width:40,height:40,borderRadius:6,overflow:"hidden",cursor:"pointer",flexShrink:0,background:"#f3f4f6",border:"1px solid rgba(0,0,0,0.08)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:16}}>
+                    <label style={{width:40,height:40,borderRadius:6,overflow:"hidden",cursor:"pointer",flexShrink:0,background:"var(--line-soft)",border:"1px solid var(--line)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:16}}>
                       {ov.av?<img src={ov.av} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:"🐦"}
                       <input type="file" accept="image/*" style={{display:"none"}} onChange={e=>{
                         const f=e.target.files?.[0]; if(!f) return;
@@ -2384,15 +2396,15 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                       }}/>
                     </label>
                     <div style={{flex:1}}>
-                      <div style={{fontSize:11,fontWeight:600,color:"#374151"}}>Photo de profil</div>
-                      <div style={{fontSize:10,color:"#9ca3af"}}>Cliquer pour importer une image</div>
+                      <div style={{fontSize:11,fontWeight:600,color:"var(--ink-soft)"}}>Photo de profil</div>
+                      <div style={{fontSize:10,color:"var(--ink-faint)"}}>Cliquer pour importer une image</div>
                     </div>
-                    {ov.av && <button onClick={()=>updTwUser(u.key,"av",null)} style={{fontSize:10,color:"#ef4444",background:"none",border:"none",cursor:"pointer",padding:0}}>Supprimer</button>}
+                    {ov.av && <button onClick={()=>updTwUser(u.key,"av",null)} style={{fontSize:10,color:"var(--danger)",background:"none",border:"none",cursor:"pointer",padding:0}}>Supprimer</button>}
                   </div>
                   {u.char && (
                     <div style={{display:"flex",flexDirection:"column",gap:6}}>
                       <div style={{display:"flex",gap:10,alignItems:"center"}}>
-                        <label style={{width:64,height:36,borderRadius:6,overflow:"hidden",cursor:"pointer",flexShrink:0,background:ov.bannerImg?"transparent":(ov.bannerColor||"#1DA1F2"),border:"1px solid rgba(0,0,0,0.08)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,color:"#fff"}}>
+                        <label style={{width:64,height:36,borderRadius:6,overflow:"hidden",cursor:"pointer",flexShrink:0,background:ov.bannerImg?"transparent":(ov.bannerColor||"#1DA1F2"),border:"1px solid var(--line)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,color:"#fff"}}>
                           {ov.bannerImg?<img src={ov.bannerImg} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:"📷"}
                           <input type="file" accept="image/*" style={{display:"none"}} onChange={e=>{
                             const f=e.target.files?.[0]; if(!f) return;
@@ -2400,14 +2412,14 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                           }}/>
                         </label>
                         <div style={{flex:1}}>
-                          <div style={{fontSize:11,fontWeight:600,color:"#374151"}}>Image du header</div>
-                          <div style={{fontSize:10,color:"#9ca3af"}}>Remplace la couleur si présente</div>
+                          <div style={{fontSize:11,fontWeight:600,color:"var(--ink-soft)"}}>Image du header</div>
+                          <div style={{fontSize:10,color:"var(--ink-faint)"}}>Remplace la couleur si présente</div>
                         </div>
-                        {ov.bannerImg && <button onClick={()=>updTwUser(u.key,"bannerImg",null)} style={{fontSize:10,color:"#ef4444",background:"none",border:"none",cursor:"pointer",padding:0}}>Supprimer</button>}
+                        {ov.bannerImg && <button onClick={()=>updTwUser(u.key,"bannerImg",null)} style={{fontSize:10,color:"var(--danger)",background:"none",border:"none",cursor:"pointer",padding:0}}>Supprimer</button>}
                       </div>
                       <div style={{display:"flex",gap:8,alignItems:"center"}}>
                         <Field label="Couleur du header (si pas d'image)" value={ov.bannerColor||""} onChange={v=>updTwUser(u.key,"bannerColor",v)} placeholder="#1DA1F2" style={{flex:1}}/>
-                        <div style={{width:28,height:28,borderRadius:6,background:ov.bannerColor||"#1DA1F2",border:"1px solid #e5e7eb",flexShrink:0,marginTop:18}}/>
+                        <div style={{width:28,height:28,borderRadius:6,background:ov.bannerColor||"#1DA1F2",border:"1px solid var(--line)",flexShrink:0,marginTop:18}}/>
                       </div>
                     </div>
                   )}
@@ -2419,15 +2431,15 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                   const myCharInfo = COMMON_KNOWN_BASE.find(u=>u.char===tab) || {};
                   const ov = twUsers[myCharInfo.key] || {};
                   return (
-                    <div className="adm-card" style={{background:"rgba(255,255,255,0.85)",borderRadius:10,padding:"14px 16px",border:"1px solid rgba(0,0,0,0.07)",display:"flex",flexDirection:"column",gap:10}}>
-                      <div style={{fontSize:10,fontWeight:700,color:"#9ca3af",letterSpacing:0.5,marginBottom:2}}>★ CE PERSO — synchronisé pour les 4</div>
+                    <div className="adm-card" style={{background:"var(--raise)",borderRadius:10,padding:"14px 16px",border:"1px solid var(--line)",display:"flex",flexDirection:"column",gap:10}}>
+                      <div style={{fontSize:10,fontWeight:700,color:"var(--ink-faint)",letterSpacing:0.5,marginBottom:2}}>★ CE PERSO — synchronisé pour les 4</div>
                       <div style={{display:"flex",gap:6}}>
                         <Field label="Nom affiché" value={ov.name??myCharInfo.name??""} onChange={v=>updTwUser(myCharInfo.key,"name",v)} style={{flex:1}}/>
                         <Field label="Handle" value={ov.h??myCharInfo.h??""} onChange={v=>updTwUser(myCharInfo.key,"h",v)} style={{flex:1}}/>
                       </div>
                       {/* Photo de profil */}
                       <div style={{display:"flex",gap:10,alignItems:"center"}}>
-                        <label style={{width:48,height:48,borderRadius:6,overflow:"hidden",cursor:"pointer",flexShrink:0,background:"#f3f4f6",border:"1px solid rgba(0,0,0,0.08)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:20}}>
+                        <label style={{width:48,height:48,borderRadius:6,overflow:"hidden",cursor:"pointer",flexShrink:0,background:"var(--line-soft)",border:"1px solid var(--line)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:20}}>
                           {ov.av?<img src={ov.av} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:"🐦"}
                           <input type="file" accept="image/*" style={{display:"none"}} onChange={e=>{
                             const f=e.target.files?.[0]; if(!f) return;
@@ -2435,14 +2447,14 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                           }}/>
                         </label>
                         <div style={{flex:1}}>
-                          <div style={{fontSize:11,fontWeight:600,color:"#374151"}}>Photo de profil</div>
-                          <div style={{fontSize:10,color:"#9ca3af"}}>Visible sur tous les profils et TL</div>
+                          <div style={{fontSize:11,fontWeight:600,color:"var(--ink-soft)"}}>Photo de profil</div>
+                          <div style={{fontSize:10,color:"var(--ink-faint)"}}>Visible sur tous les profils et TL</div>
                         </div>
-                        {ov.av && <button onClick={()=>updTwUser(myCharInfo.key,"av",null)} style={{fontSize:10,color:"#ef4444",background:"none",border:"none",cursor:"pointer",padding:0}}>Supprimer</button>}
+                        {ov.av && <button onClick={()=>updTwUser(myCharInfo.key,"av",null)} style={{fontSize:10,color:"var(--danger)",background:"none",border:"none",cursor:"pointer",padding:0}}>Supprimer</button>}
                       </div>
                       {/* Banner */}
                       <div style={{display:"flex",gap:10,alignItems:"center"}}>
-                        <label style={{width:80,height:40,borderRadius:6,overflow:"hidden",cursor:"pointer",flexShrink:0,background:ov.bannerImg?"transparent":(ov.bannerColor||"#1DA1F2"),border:"1px solid rgba(0,0,0,0.08)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,color:"#fff"}}>
+                        <label style={{width:80,height:40,borderRadius:6,overflow:"hidden",cursor:"pointer",flexShrink:0,background:ov.bannerImg?"transparent":(ov.bannerColor||"#1DA1F2"),border:"1px solid var(--line)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,color:"#fff"}}>
                           {ov.bannerImg?<img src={ov.bannerImg} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:"📷 Header"}
                           <input type="file" accept="image/*" style={{display:"none"}} onChange={e=>{
                             const f=e.target.files?.[0]; if(!f) return;
@@ -2450,14 +2462,14 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                           }}/>
                         </label>
                         <div style={{flex:1}}>
-                          <div style={{fontSize:11,fontWeight:600,color:"#374151"}}>Image du header</div>
-                          <div style={{fontSize:10,color:"#9ca3af"}}>Remplace la couleur si présente</div>
+                          <div style={{fontSize:11,fontWeight:600,color:"var(--ink-soft)"}}>Image du header</div>
+                          <div style={{fontSize:10,color:"var(--ink-faint)"}}>Remplace la couleur si présente</div>
                         </div>
-                        {ov.bannerImg && <button onClick={()=>updTwUser(myCharInfo.key,"bannerImg",null)} style={{fontSize:10,color:"#ef4444",background:"none",border:"none",cursor:"pointer",padding:0}}>Supprimer</button>}
+                        {ov.bannerImg && <button onClick={()=>updTwUser(myCharInfo.key,"bannerImg",null)} style={{fontSize:10,color:"var(--danger)",background:"none",border:"none",cursor:"pointer",padding:0}}>Supprimer</button>}
                       </div>
                       <div style={{display:"flex",gap:8,alignItems:"center"}}>
                         <Field label="Couleur du header (si pas d'image)" value={ov.bannerColor||""} onChange={v=>updTwUser(myCharInfo.key,"bannerColor",v)} placeholder="#1DA1F2" style={{flex:1}}/>
-                        <div style={{width:28,height:28,borderRadius:6,background:ov.bannerColor||"#1DA1F2",border:"1px solid #e5e7eb",flexShrink:0,marginTop:18}}/>
+                        <div style={{width:28,height:28,borderRadius:6,background:ov.bannerColor||"#1DA1F2",border:"1px solid var(--line)",flexShrink:0,marginTop:18}}/>
                       </div>
                     </div>
                   );
@@ -2496,7 +2508,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
             const updEffective = (newList) => upd("homeBaseTweets", newList);
             return (
             <div style={{display:"flex",flexDirection:"column",gap:10}}>
-              <div style={{background:"rgba(29,161,242,0.06)",border:"1px solid rgba(29,161,242,0.15)",borderRadius:8,padding:"8px 12px",fontSize:11,color:"#374151"}}>
+              <div style={{background:"rgba(29,161,242,0.06)",border:"1px solid rgba(29,161,242,0.15)",borderRadius:8,padding:"8px 12px",fontSize:11,color:"var(--ink-soft)"}}>
                 <span style={{fontWeight:700,color:"#1da1f2"}}>Timeline de {CHAR_NAMES[tab]||tab}</span> — Tweets décoratifs de comptes fictifs qui remplissent la TL de ce perso. <strong>Propres à ce perso</strong>, non partagés. Pour qu'un tweet soit visible par tous, utilise l'onglet "Mes tweets (partagés)".
               </div>
 
@@ -2506,23 +2518,23 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                 const isOpen = twTweetsOpen.has(tid);
                 const toggle = toggleInSet(setTwTweetsOpen);
                 return (
-                <div key={tid} className="adm-card" style={{background:"rgba(255,255,255,0.9)",borderRadius:10,border:"1px solid rgba(0,0,0,0.07)",overflow:"hidden"}}>
+                <div key={tid} className="adm-card" style={{background:"var(--raise)",borderRadius:10,border:"1px solid var(--line)",overflow:"hidden"}}>
                   <div onClick={()=>toggle(tid)} style={{display:"flex",gap:10,alignItems:"center",padding:"8px 12px",cursor:"pointer"}}>
-                    <div style={{width:30,height:30,borderRadius:6,overflow:"hidden",background:"#f3f4f6",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,fontSize:14}}>
+                    <div style={{width:30,height:30,borderRadius:6,overflow:"hidden",background:"var(--line-soft)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,fontSize:14}}>
                       {(typeof t.av==="string" && (t.av.startsWith("data:")||t.av.startsWith("http")||t.av.startsWith("/")))
                         ? <img src={t.av} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
                         : "🐦"}
                     </div>
                     <div style={{flex:1,minWidth:0}}>
-                      <div style={{fontSize:12,color:"#374151",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{t.h?`@${t.h}`:<em style={{color:"#9ca3af"}}>(sans handle)</em>} {t.text?`— ${t.text}`:""}</div>
-                      <div style={{fontSize:10,color:"#9ca3af"}}>{t.time||"—"}</div>
+                      <div style={{fontSize:12,color:"var(--ink-soft)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{t.h?`@${t.h}`:<em style={{color:"var(--ink-faint)"}}>(sans handle)</em>} {t.text?`— ${t.text}`:""}</div>
+                      <div style={{fontSize:10,color:"var(--ink-faint)"}}>{t.time||"—"}</div>
                     </div>
                     <AdminChevron open={isOpen}/>
                   </div>
                   {isOpen && (
                   <div style={{display:"flex",gap:10,alignItems:"flex-start",padding:"0 12px 12px"}}>
                   {/* Avatar du compte */}
-                  <label style={{width:44,height:44,borderRadius:6,overflow:"hidden",background:"#f3f4f6",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",flexShrink:0,border:"1px solid rgba(0,0,0,0.08)",fontSize:16}}>
+                  <label style={{width:44,height:44,borderRadius:6,overflow:"hidden",background:"var(--line-soft)",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",flexShrink:0,border:"1px solid var(--line)",fontSize:16}}>
                     {(typeof t.av==="string" && (t.av.startsWith("data:")||t.av.startsWith("http")||t.av.startsWith("/")))
                       ? <img src={t.av} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
                       : "🐦"}
@@ -2543,7 +2555,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                       onMoveUp={() => { const l=[...effectiveTweets]; [l[i-1],l[i]]=[l[i],l[i-1]]; updEffective(l); }}
                       onMoveDown={() => { const l=[...effectiveTweets]; [l[i+1],l[i]]=[l[i],l[i+1]]; updEffective(l); }}
                     />
-                    <button onClick={()=>updEffective(effectiveTweets.filter((_,j)=>j!==i))} className="adm-del-btn" style={{background:"rgba(239,68,68,0.07)",border:"1px solid rgba(239,68,68,0.2)",color:"#ef4444",borderRadius:6,padding:"5px 8px",cursor:"pointer",fontSize:11,marginTop:18}}>✕</button>
+                    <button onClick={()=>updEffective(effectiveTweets.filter((_,j)=>j!==i))} className="adm-del-btn" style={{background:"rgba(239,68,68,0.07)",border:"1px solid rgba(239,68,68,0.2)",color:"var(--danger)",borderRadius:6,padding:"5px 8px",cursor:"pointer",fontSize:11,marginTop:18}}>✕</button>
                   </div>
                   </div>
                   <Field label="Texte" value={t.text||""} onChange={v=>upTw({text:v})} textarea/>
@@ -2580,9 +2592,9 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
           const RED="#e60023";
           return (<>
                         {effective.map((p,i)=>(
-              <div key={p.id??i} style={{background:"rgba(255,255,255,0.9)",borderRadius:10,padding:"10px 12px",border:"1px solid rgba(0,0,0,0.07)",display:"flex",gap:10,alignItems:"flex-start"}}>
+              <div key={p.id??i} style={{background:"var(--raise)",borderRadius:10,padding:"10px 12px",border:"1px solid var(--line)",display:"flex",gap:10,alignItems:"flex-start"}}>
                 {/* Image / Emoji */}
-                <label style={{width:64,height:p.tall?96:64,borderRadius:8,overflow:"hidden",cursor:"pointer",flexShrink:0,background:"#f3f4f6",border:"1px solid rgba(0,0,0,0.08)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:26}}>
+                <label style={{width:64,height:p.tall?96:64,borderRadius:8,overflow:"hidden",cursor:"pointer",flexShrink:0,background:"var(--line-soft)",border:"1px solid var(--line)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:26}}>
                   {p.img?<img src={p.img} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:(p.emoji||"📌")}
                   <input type="file" accept="image/*" style={{display:"none"}} onChange={e=>{
                     const f=e.target.files?.[0]; if(!f) return;
@@ -2596,13 +2608,13 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                     <Field label="Pinner" value={p.pinner||""} onChange={v=>ensureCustom(i,{pinner:v})} style={{flex:1}}/>
                     <Field label="Repins" value={String(p.repins??0)} onChange={v=>ensureCustom(i,{repins:parseInt(v)||0})} style={{width:70}}/>
                     <Field label="Emoji" value={p.emoji||""} onChange={v=>ensureCustom(i,{emoji:v})} style={{width:52}}/>
-                    <label style={{display:"flex",alignItems:"center",gap:3,fontSize:10,color:"#555",cursor:"pointer",whiteSpace:"nowrap"}}>
+                    <label style={{display:"flex",alignItems:"center",gap:3,fontSize:10,color:"var(--ink-soft)",cursor:"pointer",whiteSpace:"nowrap"}}>
                       <input type="checkbox" checked={!!p.tall} onChange={e=>ensureCustom(i,{tall:e.target.checked})}/>Grand
                     </label>
                   </div>
-                  {p.img && <button onClick={()=>ensureCustom(i,{img:null})} style={{background:"none",border:"none",color:"#9ca3af",cursor:"pointer",fontSize:10,textAlign:"left",padding:0}}>× Supprimer l'image</button>}
+                  {p.img && <button onClick={()=>ensureCustom(i,{img:null})} style={{background:"none",border:"none",color:"var(--ink-faint)",cursor:"pointer",fontSize:10,textAlign:"left",padding:0}}>× Supprimer l'image</button>}
                 </div>
-                <button onClick={()=>updList(effective.filter((_,j)=>j!==i).map((p,j)=>({...p,id:Date.now()+j})))} style={{background:"none",border:"none",color:"#d1d5db",cursor:"pointer",fontSize:16,padding:"0 2px",flexShrink:0}}>×</button>
+                <button onClick={()=>updList(effective.filter((_,j)=>j!==i).map((p,j)=>({...p,id:Date.now()+j})))} style={{background:"none",border:"none",color:"var(--ink-faint)",cursor:"pointer",fontSize:16,padding:"0 2px",flexShrink:0}}>×</button>
               </div>
             ))}
             <button onClick={()=>updList([...effective.map((p,j)=>isCustom?p:{...p,id:Date.now()+j}),{id:Date.now(),desc:"",emoji:"📌",tall:false,img:null,board:"",pinner:"",repins:0}])}
@@ -2630,31 +2642,31 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
           const SC = "#e8c400";
           return (<>
                         {effective.map((snap,i)=>(
-              <div key={snap.id??i} className="adm-card" style={{background:"rgba(255,255,255,0.9)",borderRadius:10,border:"1px solid rgba(0,0,0,0.07)",padding:"10px 12px",display:"flex",flexDirection:"column",gap:7}}>
+              <div key={snap.id??i} className="adm-card" style={{background:"var(--raise)",borderRadius:10,border:"1px solid var(--line)",padding:"10px 12px",display:"flex",flexDirection:"column",gap:7}}>
                 <div style={{display:"flex",gap:6,alignItems:"center",flexWrap:"wrap"}}>
                   {/* Direction : envoyé / reçu */}
                   <div style={{display:"flex",flexDirection:"column",gap:2}}>
-                    <label style={{color:"#9ca3af",fontSize:10,letterSpacing:0.6,fontWeight:600,textTransform:"uppercase"}}>Dir.</label>
+                    <label style={{color:"var(--ink-faint)",fontSize:10,letterSpacing:0.6,fontWeight:600,textTransform:"uppercase"}}>Dir.</label>
                     <select value={snap.sent?"sent":"recv"} onChange={e=>ensureCustom(i,{sent:e.target.value==="sent"})}
-                      style={{background:"rgba(255,255,255,0.9)",border:"1px solid rgba(0,0,0,0.1)",color:"#1a1a2e",padding:"5px 7px",fontSize:11,borderRadius:7,width:76}}>
+                      style={{background:"var(--raise)",border:"1px solid var(--line)",color:"var(--ink)",padding:"5px 7px",fontSize:11,borderRadius:7,width:76}}>
                       <option value="recv">📥 Reçu</option>
                       <option value="sent">📤 Envoyé</option>
                     </select>
                   </div>
                   {/* Type : photo / vidéo */}
                   <div style={{display:"flex",flexDirection:"column",gap:2}}>
-                    <label style={{color:"#9ca3af",fontSize:10,letterSpacing:0.6,fontWeight:600,textTransform:"uppercase"}}>Type</label>
+                    <label style={{color:"var(--ink-faint)",fontSize:10,letterSpacing:0.6,fontWeight:600,textTransform:"uppercase"}}>Type</label>
                     <select value={snap.type||"photo"} onChange={e=>ensureCustom(i,{type:e.target.value,preview:e.target.value==="video"?"🎥":"📸"})}
-                      style={{background:"rgba(255,255,255,0.9)",border:"1px solid rgba(0,0,0,0.1)",color:"#1a1a2e",padding:"5px 7px",fontSize:11,borderRadius:7,width:76}}>
+                      style={{background:"var(--raise)",border:"1px solid var(--line)",color:"var(--ink)",padding:"5px 7px",fontSize:11,borderRadius:7,width:76}}>
                       <option value="photo">📸 Photo</option>
                       <option value="video">🎥 Vidéo</option>
                     </select>
                   </div>
                   {/* Ouvert */}
                   <div style={{display:"flex",flexDirection:"column",gap:2,marginTop:0}}>
-                    <label style={{color:"#9ca3af",fontSize:10,letterSpacing:0.6,fontWeight:600,textTransform:"uppercase"}}>État</label>
+                    <label style={{color:"var(--ink-faint)",fontSize:10,letterSpacing:0.6,fontWeight:600,textTransform:"uppercase"}}>État</label>
                     <select value={snap.opened?"opened":"new"} onChange={e=>ensureCustom(i,{opened:e.target.value==="opened"})}
-                      style={{background:"rgba(255,255,255,0.9)",border:"1px solid rgba(0,0,0,0.1)",color:"#1a1a2e",padding:"5px 7px",fontSize:11,borderRadius:7,width:80}}>
+                      style={{background:"var(--raise)",border:"1px solid var(--line)",color:"var(--ink)",padding:"5px 7px",fontSize:11,borderRadius:7,width:80}}>
                       <option value="new">🟥 Nouveau</option>
                       <option value="opened">✓ Ouvert</option>
                     </select>
@@ -2667,7 +2679,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                         onMoveUp={() => { const l=[...effective]; [l[i-1],l[i]]=[l[i],l[i-1]]; updList(l); }}
                         onMoveDown={() => { const l=[...effective]; [l[i+1],l[i]]=[l[i],l[i+1]]; updList(l); }}
                       />
-                      <button onClick={()=>updList(effective.filter((_,j)=>j!==i))} style={{background:"none",border:"none",color:"#d1d5db",cursor:"pointer",fontSize:16,padding:"0 4px",marginTop:18}}>×</button>
+                      <button onClick={()=>updList(effective.filter((_,j)=>j!==i))} style={{background:"none",border:"none",color:"var(--ink-faint)",cursor:"pointer",fontSize:16,padding:"0 4px",marginTop:18}}>×</button>
                     </div>
                   )}
                 </div>
@@ -2700,9 +2712,9 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
           const [gTab, setGTab] = [grindrTab, setGrindrTab];
           return (<>
             {/* Tabs */}
-            <div className="adm-subtabs" style={{display:"flex",gap:0,background:"rgba(0,0,0,0.05)",borderRadius:8,padding:2,alignSelf:"flex-start"}}>
+            <div className="adm-subtabs" style={{display:"flex",gap:0,background:"var(--line-soft)",borderRadius:8,padding:2,alignSelf:"flex-start"}}>
               {[["grid","🟡 Grille"],["dms","💬 DMs"],["profile","👤 Profil"]].map(([k,lbl])=>(
-                <button key={k} onClick={()=>setGTab(k)} style={{padding:"5px 12px",border:"none",borderRadius:6,cursor:"pointer",fontSize:11,fontWeight:gTab===k?700:400,background:gTab===k?"#fff":"transparent",color:gTab===k?OR:"#6b7280",boxShadow:gTab===k?"0 1px 3px rgba(0,0,0,0.1)":"none"}}>
+                <button key={k} onClick={()=>setGTab(k)} style={{padding:"5px 12px",border:"none",borderRadius:6,cursor:"pointer",fontSize:11,fontWeight:gTab===k?700:400,background:gTab===k?"var(--card)":"transparent",color:gTab===k?OR:"var(--ink-soft)",boxShadow:gTab===k?"0 1px 3px var(--line)":"none"}}>
                   {lbl}
                 </button>
               ))}
@@ -2711,9 +2723,9 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
             {/* Grille */}
             {gTab==="grid" && <>
               {grid.map((g,i)=>(
-                <div key={g.id??i} className="adm-card" style={{background:"rgba(255,255,255,0.85)",borderRadius:10,padding:"10px 12px",border:"1px solid rgba(0,0,0,0.07)",display:"flex",gap:10,alignItems:"flex-start",flexWrap:"wrap"}}>
+                <div key={g.id??i} className="adm-card" style={{background:"var(--raise)",borderRadius:10,padding:"10px 12px",border:"1px solid var(--line)",display:"flex",gap:10,alignItems:"flex-start",flexWrap:"wrap"}}>
                   <label style={{width:52,height:52,borderRadius:6,overflow:"hidden",cursor:"pointer",flexShrink:0,background:"#1a1a1a",border:`1px solid ${OR}44`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,position:"relative"}}>
-                    {g.photo?<img src={g.photo} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:<span style={{color:"#555"}}>📷</span>}
+                    {g.photo?<img src={g.photo} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:<span style={{color:"var(--ink-soft)"}}>📷</span>}
                     <input type="file" accept="image/*" style={{display:"none"}} onChange={e=>{const f=e.target.files?.[0];if(!f)return;const r=new UploadReader();r.onload=ev=>{const a=[...grid];a[i]={...a[i],photo:ev.target.result};upd("grindr",a);};r.readAsDataURL(f);e.target.value="";}}/>
                   </label>
                   <div style={{flex:1,display:"flex",flexDirection:"column",gap:5}}>
@@ -2723,7 +2735,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                       <Field label="Âge" value={g.age||""} onChange={v=>{const a=[...grid];a[i]={...a[i],age:v};upd("grindr",a);}} width="54px"/>
                     </div>
                     <div style={{display:"flex",gap:6,alignItems:"center"}}>
-                      <label style={{display:"flex",alignItems:"center",gap:3,fontSize:11,color:"#555",cursor:"pointer"}}>
+                      <label style={{display:"flex",alignItems:"center",gap:3,fontSize:11,color:"var(--ink-soft)",cursor:"pointer"}}>
                         <input type="checkbox" checked={!!g.online} onChange={e=>{const a=[...grid];a[i]={...a[i],online:e.target.checked};upd("grindr",a);}}/> En ligne
                       </label>
                     </div>
@@ -2735,7 +2747,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                       onMoveUp={() => { const l=[...grid]; [l[i-1],l[i]]=[l[i],l[i-1]]; upd("grindr",l); }}
                       onMoveDown={() => { const l=[...grid]; [l[i+1],l[i]]=[l[i],l[i+1]]; upd("grindr",l); }}
                     />
-                    <button onClick={()=>upd("grindr",grid.filter((_,j)=>j!==i))} style={{background:"none",border:"none",color:"#d1d5db",cursor:"pointer",fontSize:16,padding:"0 4px"}}>×</button>
+                    <button onClick={()=>upd("grindr",grid.filter((_,j)=>j!==i))} style={{background:"none",border:"none",color:"var(--ink-faint)",cursor:"pointer",fontSize:16,padding:"0 4px"}}>×</button>
                   </div>
                 </div>
               ))}
@@ -2750,27 +2762,27 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                 const dmKey = `grindr-dm-${tab}-${conv.id}`;
                 const isOpen = grindrOpenDms.has(dmKey);
                 return (
-                <div key={conv.id??ci} className="adm-card" style={{background:"rgba(255,255,255,0.85)",borderRadius:12,border:"1px solid rgba(0,0,0,0.07)",overflow:"hidden"}}>
+                <div key={conv.id??ci} className="adm-card" style={{background:"var(--raise)",borderRadius:12,border:"1px solid var(--line)",overflow:"hidden"}}>
                   {/* Toggle header */}
                   <div onClick={()=>toggleGrindrDm(dmKey)} style={{display:"flex",gap:8,padding:14,cursor:"pointer",minHeight:44,WebkitTapHighlightColor:"transparent",userSelect:"none",alignItems:"center"}}>
                     <AdminChevron open={isOpen}/>
                     <label style={{width:36,height:36,borderRadius:4,overflow:"hidden",cursor:"pointer",flexShrink:0,background:"#1a1a1a",border:`1px solid ${OR}44`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,pointerEvents:"none"}}>
-                      {conv.photo?<img src={conv.photo} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:<span style={{color:"#555"}}>📷</span>}
+                      {conv.photo?<img src={conv.photo} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:<span style={{color:"var(--ink-soft)"}}>📷</span>}
                     </label>
-                    <span style={{fontSize:12,fontWeight:600,color:"#374151",flex:1}}>{conv.name||"(sans nom)"} <span style={{color:"#9ca3af",fontSize:10,fontWeight:400}}>{conv.distance}</span></span>
-                    <span style={{fontSize:10,color:"#9ca3af",flexShrink:0}}>{(conv.thread||[]).length} msg</span>
+                    <span style={{fontSize:12,fontWeight:600,color:"var(--ink-soft)",flex:1}}>{conv.name||"(sans nom)"} <span style={{color:"var(--ink-faint)",fontSize:10,fontWeight:400}}>{conv.distance}</span></span>
+                    <span style={{fontSize:10,color:"var(--ink-faint)",flexShrink:0}}>{(conv.thread||[]).length} msg</span>
                   </div>
                   {/* Collapsible content */}
                   {isOpen && (
-                    <div style={{padding:"0 14px 14px",borderTop:"1px solid rgba(0,0,0,0.05)",display:"flex",flexDirection:"column",gap:8}}>
+                    <div style={{padding:"0 14px 14px",borderTop:"1px solid var(--line-soft)",display:"flex",flexDirection:"column",gap:8}}>
                       <div style={{display:"flex",gap:6,marginTop:10,flexWrap:"wrap",alignItems:"center"}}>
-                        <label style={{cursor:"pointer",display:"flex",gap:2,fontSize:11,color:"#555"}}>
+                        <label style={{cursor:"pointer",display:"flex",gap:2,fontSize:11,color:"var(--ink-soft)"}}>
                           <input type="file" accept="image/*" style={{display:"none"}} onChange={e=>{const f=e.target.files?.[0];if(!f)return;const r=new UploadReader();r.onload=ev=>{const nd=[...dms];nd[ci]={...nd[ci],photo:ev.target.result};updDms(nd);};r.readAsDataURL(f);e.target.value="";}}/>
                           📷 Photo
                         </label>
                         <Field label="Nom" value={conv.name||""} onChange={v=>{const nd=[...dms];nd[ci]={...nd[ci],name:v};updDms(nd);}} style={{flex:1,minWidth:120}}/>
                         <Field label="Distance" value={conv.distance||""} onChange={v=>{const nd=[...dms];nd[ci]={...nd[ci],distance:v};updDms(nd);}} width="90px"/>
-                        <label style={{display:"flex",alignItems:"center",gap:3,fontSize:11,color:"#555",cursor:"pointer",whiteSpace:"nowrap"}}>
+                        <label style={{display:"flex",alignItems:"center",gap:3,fontSize:11,color:"var(--ink-soft)",cursor:"pointer",whiteSpace:"nowrap"}}>
                           <input type="checkbox" checked={!!conv.online} onChange={e=>{const nd=[...dms];nd[ci]={...nd[ci],online:e.target.checked};updDms(nd);}}/> En ligne
                         </label>
                         <div style={{display:"flex",gap:4}}>
@@ -2780,20 +2792,20 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                             onMoveUp={() => { const l=[...dms]; [l[ci-1],l[ci]]=[l[ci],l[ci-1]]; updDms(l); }}
                             onMoveDown={() => { const l=[...dms]; [l[ci+1],l[ci]]=[l[ci],l[ci+1]]; updDms(l); }}
                           />
-                          <button onClick={e=>{e.stopPropagation();updDms(dms.filter((_,j)=>j!==ci));}} style={{background:"none",border:"none",color:"#d1d5db",cursor:"pointer",fontSize:16,padding:"0 4px"}}>×</button>
+                          <button onClick={e=>{e.stopPropagation();updDms(dms.filter((_,j)=>j!==ci));}} style={{background:"none",border:"none",color:"var(--ink-faint)",cursor:"pointer",fontSize:16,padding:"0 4px"}}>×</button>
                         </div>
                       </div>
                       {(conv.thread||[]).map((msg,mi)=>(
                     <div key={mi} style={{display:"flex",gap:5,marginBottom:4,alignItems:"center"}}>
                       <select value={msg.from} onChange={e=>{const nd=[...dms];nd[ci]={...nd[ci],thread:nd[ci].thread.map((m,j)=>j===mi?{...m,from:e.target.value}:m)};updDms(nd);}}
-                        style={{background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#1a1a2e",padding:"4px 6px",fontSize:10,borderRadius:6,width:64,flexShrink:0}}>
+                        style={{background:"var(--raise)",border:"1px solid var(--line)",color:"var(--ink)",padding:"4px 6px",fontSize:10,borderRadius:6,width:64,flexShrink:0}}>
                         <option value="me">moi</option>
                         <option value="them">eux</option>
                       </select>
                       <input value={msg.text||""} onChange={e=>{const nd=[...dms];nd[ci]={...nd[ci],thread:nd[ci].thread.map((m,j)=>j===mi?{...m,text:e.target.value}:m)};updDms(nd);}}
-                        className="adm-input" style={{flex:1,background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#1a1a2e",padding:"4px 8px",fontSize:11,borderRadius:6}}/>
+                        className="adm-input" style={{flex:1,background:"var(--raise)",border:"1px solid var(--line)",color:"var(--ink)",padding:"4px 8px",fontSize:11,borderRadius:6}}/>
                       <LoreTimeInput showLabel={false} width="96px" value={msg.time||""} onChange={v=>{const nd=[...dms];nd[ci]={...nd[ci],thread:nd[ci].thread.map((m,j)=>j===mi?{...m,time:v}:m)};updDms(nd);}}/>
-                      <button onClick={()=>{const nd=[...dms];nd[ci]={...nd[ci],thread:nd[ci].thread.filter((_,j)=>j!==mi)};updDms(nd);}} style={{background:"none",border:"none",color:"#d1d5db",cursor:"pointer",fontSize:14,padding:"0 2px"}}>×</button>
+                      <button onClick={()=>{const nd=[...dms];nd[ci]={...nd[ci],thread:nd[ci].thread.filter((_,j)=>j!==mi)};updDms(nd);}} style={{background:"none",border:"none",color:"var(--ink-faint)",cursor:"pointer",fontSize:14,padding:"0 2px"}}>×</button>
                     </div>
                       ))}
                       <button onClick={()=>{const nd=[...dms];nd[ci]={...nd[ci],thread:[...(nd[ci].thread||[]),{from:"them",text:"",time:""}]};updDms(nd);}}
@@ -2817,18 +2829,18 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
               return (
               <div style={{display:"flex",flexDirection:"column",gap:10}}>
                 {/* Grille 5 photos — comme dans l'app */}
-                <div style={{fontSize:11,color:"#9ca3af",marginBottom:2}}>Photos du profil (1 principale + 4 secondaires)</div>
+                <div style={{fontSize:11,color:"var(--ink-faint)",marginBottom:2}}>Photos du profil (1 principale + 4 secondaires)</div>
                 <div style={{display:"flex",gap:6}}>
                   {/* Photo principale */}
                   <label style={{flex:2,aspectRatio:"1",borderRadius:8,overflow:"hidden",cursor:"pointer",background:"#1a1a1a",border:`2px solid ${OR}55`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:32,minHeight:100}}>
-                    {photos[0]?<img src={photos[0]} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:<span style={{color:"#555",opacity:0.5}}>📷</span>}
+                    {photos[0]?<img src={photos[0]} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:<span style={{color:"var(--ink-soft)",opacity:0.5}}>📷</span>}
                     <input type="file" accept="image/*" style={{display:"none"}} onChange={e=>{const f=e.target.files?.[0];if(!f)return;const r=new UploadReader();r.onload=ev=>setPhoto(0,ev.target.result);r.readAsDataURL(f);e.target.value="";}}/>
                   </label>
                   {/* 4 photos secondaires */}
                   <div style={{flex:1,display:"grid",gridTemplateColumns:"1fr 1fr",gridTemplateRows:"1fr 1fr",gap:4}}>
                     {[1,2,3,4].map(idx=>(
                       <label key={idx} style={{borderRadius:6,overflow:"hidden",cursor:"pointer",background:"#1a1a1a",border:`1px solid ${OR}33`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,aspectRatio:"1"}}>
-                        {photos[idx]?<img src={photos[idx]} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:<span style={{color:"#555",opacity:0.4}}>📷</span>}
+                        {photos[idx]?<img src={photos[idx]} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:<span style={{color:"var(--ink-soft)",opacity:0.4}}>📷</span>}
                         <input type="file" accept="image/*" style={{display:"none"}} onChange={e=>{const f=e.target.files?.[0];if(!f)return;const r=new UploadReader();r.onload=ev=>setPhoto(idx,ev.target.result);r.readAsDataURL(f);e.target.value="";}}/>
                       </label>
                     ))}
@@ -2845,7 +2857,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                 <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
                   {photos.map((ph,idx)=>ph?(
                     <button key={idx} onClick={()=>setPhoto(idx,null)}
-                      style={{background:"rgba(239,68,68,0.07)",border:"1px solid rgba(239,68,68,0.2)",color:"#ef4444",borderRadius:5,padding:"3px 8px",cursor:"pointer",fontSize:10}}>
+                      style={{background:"rgba(239,68,68,0.07)",border:"1px solid rgba(239,68,68,0.2)",color:"var(--danger)",borderRadius:5,padding:"3px 8px",cursor:"pointer",fontSize:10}}>
                       ✕ Photo {idx===0?"principale":idx}
                     </button>
                   ):null)}
@@ -2879,14 +2891,14 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
       return (
         <div style={{display:"flex",flexDirection:"column",gap:12}}>
           {/* Tab bar */}
-          <div className="adm-subtabs" style={{display:"flex",gap:0,background:"rgba(0,0,0,0.05)",borderRadius:8,padding:2,alignSelf:"flex-start"}}>
+          <div className="adm-subtabs" style={{display:"flex",gap:0,background:"var(--line-soft)",borderRadius:8,padding:2,alignSelf:"flex-start"}}>
             {SubTabs.map(([k,label])=>(
               <button key={k} onClick={()=>setTbTab(k)} style={{
                 padding:"6px 14px",border:"none",borderRadius:6,cursor:"pointer",fontSize:11,
                 fontWeight:tbTab===k?700:400,
-                background:tbTab===k?"#fff":"transparent",
-                color:tbTab===k?TB_COLOR:"#6b7280",
-                boxShadow:tbTab===k?"0 1px 3px rgba(0,0,0,0.1)":"none",
+                background:tbTab===k?"var(--card)":"transparent",
+                color:tbTab===k?TB_COLOR:"var(--ink-soft)",
+                boxShadow:tbTab===k?"0 1px 3px var(--line)":"none",
                 transition:"all 0.15s",whiteSpace:"nowrap",
               }}>{label}</button>
             ))}
@@ -2894,25 +2906,25 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
 
           {/* ── MON PROFIL ── */}
           {tbTab==="users" && (
-            <div className="adm-card" style={{background:"rgba(255,255,255,0.85)",borderRadius:10,padding:"14px 16px",border:"1px solid rgba(0,0,0,0.07)",display:"flex",flexDirection:"column",gap:10}}>
-              <div style={{fontSize:10,fontWeight:700,color:"#9ca3af",letterSpacing:0.5,marginBottom:2}}>★ CE PERSO — synchronisé pour les 4</div>
+            <div className="adm-card" style={{background:"var(--raise)",borderRadius:10,padding:"14px 16px",border:"1px solid var(--line)",display:"flex",flexDirection:"column",gap:10}}>
+              <div style={{fontSize:10,fontWeight:700,color:"var(--ink-faint)",letterSpacing:0.5,marginBottom:2}}>★ CE PERSO — synchronisé pour les 4</div>
               {/* Avatar + Bannière */}
               <div style={{display:"flex",gap:12,alignItems:"center",flexWrap:"wrap"}}>
                 <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:4}}>
-                  <label style={{width:56,height:56,borderRadius:8,overflow:"hidden",background:tbProfile.avatarBg||"#8e7cc3",display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontWeight:700,fontSize:20,cursor:"pointer",border:"1px solid rgba(0,0,0,0.1)"}}>
+                  <label style={{width:56,height:56,borderRadius:8,overflow:"hidden",background:tbProfile.avatarBg||"#8e7cc3",display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontWeight:700,fontSize:20,cursor:"pointer",border:"1px solid var(--line)"}}>
                     {d.avatar?<img src={d.avatar} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:(d.username||"?")[0].toUpperCase()}
                     <input type="file" accept="image/*" style={{display:"none"}} onChange={e=>{const f=e.target.files?.[0];if(!f)return;const r=new UploadReader();r.onload=ev=>{upd("avatar",ev.target.result);onUpdate("_sharedAvatars",{...(data.sharedThreads?._sharedAvatars||{}),[tab]:ev.target.result});};r.readAsDataURL(f);e.target.value="";}}/>
                   </label>
-                  <span style={{fontSize:9,color:"#888"}}>Photo de profil</span>
+                  <span style={{fontSize:9,color:"var(--ink-faint)"}}>Photo de profil</span>
                 </div>
                 <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:4,flex:"1 1 140px",minWidth:0}}>
-                  <label style={{width:"100%",height:48,borderRadius:8,overflow:"hidden",background:tbProfile.coverColor||"#2c3e50",display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontSize:11,cursor:"pointer",border:"1px solid rgba(0,0,0,0.1)"}}>
+                  <label style={{width:"100%",height:48,borderRadius:8,overflow:"hidden",background:tbProfile.coverColor||"#2c3e50",display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontSize:11,cursor:"pointer",border:"1px solid var(--line)"}}>
                     {tbProfile.cover?<img src={tbProfile.cover} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:"📷 Bannière"}
                     <input type="file" accept="image/*" style={{display:"none"}} onChange={e=>{const f=e.target.files?.[0];if(!f)return;const r=new UploadReader();r.onload=ev=>updTbProfile({cover:ev.target.result});r.readAsDataURL(f);e.target.value="";}}/>
                   </label>
-                  <span style={{fontSize:9,color:"#888"}}>Bannière du header</span>
+                  <span style={{fontSize:9,color:"var(--ink-faint)"}}>Bannière du header</span>
                 </div>
-                {d.avatar && <button onClick={()=>{upd("avatar",null);onUpdate("_sharedAvatars",{...(data.sharedThreads?._sharedAvatars||{}),[tab]:null});}} style={{fontSize:10,color:"#ef4444",background:"none",border:"none",cursor:"pointer",padding:0,alignSelf:"flex-start",marginTop:18}}>Suppr. avatar</button>}
+                {d.avatar && <button onClick={()=>{upd("avatar",null);onUpdate("_sharedAvatars",{...(data.sharedThreads?._sharedAvatars||{}),[tab]:null});}} style={{fontSize:10,color:"var(--danger)",background:"none",border:"none",cursor:"pointer",padding:0,alignSelf:"flex-start",marginTop:18}}>Suppr. avatar</button>}
               </div>
               {/* Champs */}
               <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
@@ -2921,7 +2933,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                 <Field label="Following" value={String(tbProfile.following||"")} onChange={v=>updTbProfile({following:parseInt(v)||0})} width="80px"/>
               </div>
               <Field label="Bio" value={tbProfile.bio||""} onChange={v=>updTbProfile({bio:v})} textarea/>
-              {tbProfile.cover && <button onClick={()=>updTbProfile({cover:null})} style={{fontSize:10,color:"#ef4444",background:"none",border:"none",cursor:"pointer",padding:0,alignSelf:"flex-start"}}>× Supprimer la bannière</button>}
+              {tbProfile.cover && <button onClick={()=>updTbProfile({cover:null})} style={{fontSize:10,color:"var(--danger)",background:"none",border:"none",cursor:"pointer",padding:0,alignSelf:"flex-start"}}>× Supprimer la bannière</button>}
             </div>
           )}
 
@@ -2945,27 +2957,27 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
             const updAt = (id,i,patch) => updFeed(effectiveFeedRaw.map((p2,j)=> (id!=null?p2.id===id:j===i) ? {...p2,...patch} : p2));
             return (
               <div style={{display:"flex",flexDirection:"column",gap:8}}>
-                <div style={{fontSize:11,color:"#6b7280",lineHeight:1.5}}>Tweets décoratifs de comptes fictifs visibles dans la timeline de <strong>{CHAR_NAMES[tab]||tab}</strong> uniquement — non partagés entre persos. Triés du plus récent au plus ancien — clique pour déplier.</div>
+                <div style={{fontSize:11,color:"var(--ink-soft)",lineHeight:1.5}}>Tweets décoratifs de comptes fictifs visibles dans la timeline de <strong>{CHAR_NAMES[tab]||tab}</strong> uniquement — non partagés entre persos. Triés du plus récent au plus ancien — clique pour déplier.</div>
                 {effectiveFeed.map((post,i)=>{
                   const tid = post.id??i;
                   const isOpen = tbFeedOpen.has(tid);
                   const toggle = toggleInSet(setTbFeedOpen);
                   return (
-                  <div key={tid} className="adm-card" style={{background:"rgba(255,255,255,0.85)",borderRadius:10,border:"1px solid rgba(0,0,0,0.07)",overflow:"hidden"}}>
+                  <div key={tid} className="adm-card" style={{background:"var(--raise)",borderRadius:10,border:"1px solid var(--line)",overflow:"hidden"}}>
                     <div onClick={()=>toggle(tid)} style={{display:"flex",gap:10,alignItems:"center",padding:"8px 12px",cursor:"pointer"}}>
                       <div style={{width:30,height:30,borderRadius:6,overflow:"hidden",background:post.avatar?"transparent":(post.avatarBg||"#8e7cc3"),display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,fontSize:13,color:"#fff",fontWeight:700}}>
                         {post.avatar?<img src={post.avatar} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:(post.username||"?")[0]?.toUpperCase()}
                       </div>
                       <div style={{flex:1,minWidth:0}}>
-                        <div style={{fontSize:12,color:"#374151",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{post.username?`@${post.username}`:<em style={{color:"#9ca3af"}}>(sans pseudo)</em>} {post.body?`— ${post.body}`:""}</div>
-                        <div style={{fontSize:10,color:"#9ca3af"}}>{post.date||"—"}</div>
+                        <div style={{fontSize:12,color:"var(--ink-soft)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{post.username?`@${post.username}`:<em style={{color:"var(--ink-faint)"}}>(sans pseudo)</em>} {post.body?`— ${post.body}`:""}</div>
+                        <div style={{fontSize:10,color:"var(--ink-faint)"}}>{post.date||"—"}</div>
                       </div>
                       <AdminChevron open={isOpen}/>
                     </div>
                     {isOpen && (
                     <div style={{display:"flex",gap:10,alignItems:"flex-start",padding:"0 12px 12px"}}>
                     {/* Avatar du compte */}
-                    <label style={{width:44,height:44,borderRadius:6,overflow:"hidden",background:post.avatar?"transparent":(post.avatarBg||"#8e7cc3"),display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",flexShrink:0,border:"1px solid rgba(0,0,0,0.08)",fontSize:16,color:"#fff",fontWeight:700}}>
+                    <label style={{width:44,height:44,borderRadius:6,overflow:"hidden",background:post.avatar?"transparent":(post.avatarBg||"#8e7cc3"),display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",flexShrink:0,border:"1px solid var(--line)",fontSize:16,color:"#fff",fontWeight:700}}>
                       {post.avatar?<img src={post.avatar} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:(post.username||"?")[0]?.toUpperCase()}
                       <input type="file" accept="image/*" style={{display:"none"}} onChange={e=>{
                         const f=e.target.files?.[0]; if(!f) return;
@@ -2978,8 +2990,8 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                       <Field label="Titre (opt.)" value={post.title||""} onChange={v=>updAt(post.id,i,{title:v})} style={{flex:1}}/>
                       <LoreDateTimeInput value={post.date||""} onChange={v=>updAt(post.id,i,{date:v})} width="190px" showLabel={true}/>
                       <Field label="Notes" value={String(post.notes||0)} onChange={v=>updAt(post.id,i,{notes:parseInt(v)||0})} width="70px"/>
-                      {post.avatar && <button onClick={()=>updAt(post.id,i,{avatar:null})} style={{fontSize:10,color:"#ef4444",background:"none",border:"none",cursor:"pointer",padding:0,alignSelf:"center"}}>× Suppr. photo</button>}
-                      <button onClick={()=>updFeed(effectiveFeedRaw.filter(p2=>post.id!=null ? p2.id!==post.id : p2!==post))} className="adm-del-btn" style={{background:"rgba(239,68,68,0.06)",border:"1px solid rgba(239,68,68,0.2)",color:"#ef4444",borderRadius:6,padding:"5px 8px",cursor:"pointer",fontSize:11,marginTop:18}}>✕</button>
+                      {post.avatar && <button onClick={()=>updAt(post.id,i,{avatar:null})} style={{fontSize:10,color:"var(--danger)",background:"none",border:"none",cursor:"pointer",padding:0,alignSelf:"center"}}>× Suppr. photo</button>}
+                      <button onClick={()=>updFeed(effectiveFeedRaw.filter(p2=>post.id!=null ? p2.id!==post.id : p2!==post))} className="adm-del-btn" style={{background:"rgba(239,68,68,0.06)",border:"1px solid rgba(239,68,68,0.2)",color:"var(--danger)",borderRadius:6,padding:"5px 8px",cursor:"pointer",fontSize:11,marginTop:18}}>✕</button>
                     </div>
                     <Field label="Texte" value={post.body||""} onChange={v=>updAt(post.id,i,{body:v})} textarea/>
                     </div>
@@ -3029,14 +3041,14 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
       return (
         <div style={{display:"flex",flexDirection:"column",gap:12}}>
           {/* Tab bar */}
-          <div style={{display:"flex",gap:0,background:"rgba(0,0,0,0.05)",borderRadius:8,padding:2,alignSelf:"flex-start"}}>
+          <div style={{display:"flex",gap:0,background:"var(--line-soft)",borderRadius:8,padding:2,alignSelf:"flex-start"}}>
             {SubTabs.map(([k,label])=>(
               <button key={k} onClick={()=>setIgTab(k)} style={{
                 padding:"6px 14px",border:"none",borderRadius:6,cursor:"pointer",fontSize:11,
                 fontWeight:igTab===k?700:400,
-                background:igTab===k?"#fff":"transparent",
-                color:igTab===k?IG_COLOR:"#6b7280",
-                boxShadow:igTab===k?"0 1px 3px rgba(0,0,0,0.1)":"none",
+                background:igTab===k?"var(--card)":"transparent",
+                color:igTab===k?IG_COLOR:"var(--ink-soft)",
+                boxShadow:igTab===k?"0 1px 3px var(--line)":"none",
                 whiteSpace:"nowrap",
               }}>{label}</button>
             ))}
@@ -3044,12 +3056,12 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
 
           {/* ── PROFIL ── */}
           {igTab==="profile" && (
-            <div style={{background:"rgba(255,255,255,0.85)",borderRadius:10,padding:"14px 16px",border:"1px solid rgba(0,0,0,0.07)",display:"flex",flexDirection:"column",gap:10}}>
-              <div style={{fontSize:10,fontWeight:700,color:"#9ca3af",letterSpacing:0.5}}>★ CE PERSO</div>
+            <div style={{background:"var(--raise)",borderRadius:10,padding:"14px 16px",border:"1px solid var(--line)",display:"flex",flexDirection:"column",gap:10}}>
+              <div style={{fontSize:10,fontWeight:700,color:"var(--ink-faint)",letterSpacing:0.5}}>★ CE PERSO</div>
               {/* Photo de profil Instagram spécifique */}
               <div style={{display:"flex",gap:12,alignItems:"center"}}>
                 <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:4}}>
-                  <label style={{width:60,height:60,borderRadius:6,overflow:"hidden",background:"#e0e0e0",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",border:"1px solid rgba(0,0,0,0.1)",flexShrink:0}}>
+                  <label style={{width:60,height:60,borderRadius:6,overflow:"hidden",background:"#e0e0e0",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",border:"1px solid var(--line)",flexShrink:0}}>
                     {igProfile.avatar
                       ? <img src={igProfile.avatar} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
                       : (d.avatar ? <img src={d.avatar} style={{width:"100%",height:"100%",objectFit:"cover"}}/> : <span style={{fontSize:22,color:"#aaa"}}>👤</span>)
@@ -3061,11 +3073,11 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                       r.readAsDataURL(f);e.target.value="";
                     }}/>
                   </label>
-                  <span style={{fontSize:9,color:"#888",textAlign:"center"}}>Photo Insta</span>
+                  <span style={{fontSize:9,color:"var(--ink-faint)",textAlign:"center"}}>Photo Insta</span>
                 </div>
                 <div style={{flex:1,display:"flex",flexDirection:"column",gap:6}}>
                   <Field label="Nom affiché" value={igProfile.displayName||""} onChange={v=>updIg({displayName:v})} style={{width:"100%"}}/>
-                  {igProfile.avatar && <button onClick={()=>updIg({avatar:null})} style={{fontSize:10,color:"#ef4444",background:"none",border:"none",cursor:"pointer",padding:0,alignSelf:"flex-start"}}>× Suppr. photo Insta</button>}
+                  {igProfile.avatar && <button onClick={()=>updIg({avatar:null})} style={{fontSize:10,color:"var(--danger)",background:"none",border:"none",cursor:"pointer",padding:0,alignSelf:"flex-start"}}>× Suppr. photo Insta</button>}
                 </div>
               </div>
               <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
@@ -3081,7 +3093,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
           {/* ── POSTS ── */}
           {igTab==="posts" && (
             <div style={{display:"flex",flexDirection:"column",gap:8}}>
-              <div style={{fontSize:11,color:"#6b7280",lineHeight:1.5}}>Photos visibles dans la grille Instagram du perso. Chaque post peut avoir une légende, des likes et des commentaires, plusieurs photos, un tag (post en commun avec un autre perso), et être épinglé en tête de grille. Triés du plus récent au plus ancien (épinglé toujours en premier) — clique sur un post pour le déplier.</div>
+              <div style={{fontSize:11,color:"var(--ink-soft)",lineHeight:1.5}}>Photos visibles dans la grille Instagram du perso. Chaque post peut avoir une légende, des likes et des commentaires, plusieurs photos, un tag (post en commun avec un autre perso), et être épinglé en tête de grille. Triés du plus récent au plus ancien (épinglé toujours en premier) — clique sur un post pour le déplier.</div>
               {sortIgDesc(igPosts).map((post,i)=>{
                 const isOpen = igPostsOpen.has(post.id??i);
                 const toggle = toggleInSet(setIgPostsOpen);
@@ -3102,16 +3114,16 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                 const setPhotos = (list) => updPost({photos:list, src:list[0]||null});
                 const otherChars = ["glinda","eoghan","drew","elias"].filter(ck=>ck!==tab);
                 return (
-                  <div key={post.id||i} style={{background:"rgba(255,255,255,0.85)",borderRadius:10,border:"1px solid rgba(0,0,0,0.07)",overflow:"hidden"}}>
+                  <div key={post.id||i} style={{background:"var(--raise)",borderRadius:10,border:"1px solid var(--line)",overflow:"hidden"}}>
                     {/* En-tête repliable */}
                     <div onClick={()=>toggle(post.id??i)} style={{display:"flex",gap:10,alignItems:"center",padding:"8px 12px",cursor:"pointer"}}>
-                      <div style={{width:36,height:36,borderRadius:6,overflow:"hidden",background:"#efefef",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,position:"relative"}}>
+                      <div style={{width:36,height:36,borderRadius:6,overflow:"hidden",background:"var(--line-soft)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,position:"relative"}}>
                         {photos[0]?<img src={photos[0]} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:<span style={{fontSize:16}}>📷</span>}
                         {post.pinned && <span style={{position:"absolute",top:-2,right:-2,fontSize:10}}>📌</span>}
                       </div>
                       <div style={{flex:1,minWidth:0}}>
-                        <div style={{fontSize:12,color:"#374151",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{post.caption||<em style={{color:"#9ca3af"}}>(sans légende)</em>}</div>
-                        <div style={{fontSize:10,color:"#9ca3af"}}>{post.date||"—"}{post.archived?" · archivé":""}{post.taggedWith?` · avec ${CHAR_NAMES[post.taggedWith]||post.taggedWith}`:""}{photos.length>1?` · ${photos.length} photos`:""}</div>
+                        <div style={{fontSize:12,color:"var(--ink-soft)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{post.caption||<em style={{color:"var(--ink-faint)"}}>(sans légende)</em>}</div>
+                        <div style={{fontSize:10,color:"var(--ink-faint)"}}>{post.date||"—"}{post.archived?" · archivé":""}{post.taggedWith?` · avec ${CHAR_NAMES[post.taggedWith]||post.taggedWith}`:""}{photos.length>1?` · ${photos.length} photos`:""}</div>
                       </div>
                       <AdminChevron open={isOpen}/>
                     </div>
@@ -3121,14 +3133,14 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                     <div style={{display:"flex",gap:6,flexWrap:"wrap",alignItems:"flex-start"}}>
                       {photos.map((src,pi)=>(
                         <div key={pi} style={{position:"relative",width:70,height:70,flexShrink:0}}>
-                          <img src={src} style={{width:"100%",height:"100%",objectFit:"cover",borderRadius:6,border:"1px solid rgba(0,0,0,0.08)"}}/>
-                          <button onClick={()=>setPhotos(photos.filter((_,j)=>j!==pi))} style={{position:"absolute",top:-5,right:-5,background:"#ef4444",border:"2px solid #fff",color:"#fff",borderRadius:"50%",width:18,height:18,fontSize:10,cursor:"pointer",lineHeight:1,padding:0}}>✕</button>
+                          <img src={src} style={{width:"100%",height:"100%",objectFit:"cover",borderRadius:6,border:"1px solid var(--line)"}}/>
+                          <button onClick={()=>setPhotos(photos.filter((_,j)=>j!==pi))} style={{position:"absolute",top:-5,right:-5,background:"var(--danger)",border:"2px solid #fff",color:"#fff",borderRadius:"50%",width:18,height:18,fontSize:10,cursor:"pointer",lineHeight:1,padding:0}}>✕</button>
                           {pi>0 && <button onClick={()=>{const l=[...photos];[l[pi-1],l[pi]]=[l[pi],l[pi-1]];setPhotos(l);}} title="Avancer" style={{position:"absolute",bottom:2,left:2,background:"rgba(0,0,0,0.55)",border:"none",color:"#fff",borderRadius:4,width:16,height:16,fontSize:9,cursor:"pointer",lineHeight:1,padding:0}}>‹</button>}
                           {pi===0 && <span style={{position:"absolute",bottom:2,left:2,background:"rgba(0,0,0,0.55)",color:"#fff",fontSize:8,borderRadius:3,padding:"1px 4px"}}>1ère</span>}
                         </div>
                       ))}
-                      <label style={{width:70,height:70,borderRadius:6,overflow:"hidden",background:"#efefef",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",flexShrink:0,border:"1px dashed rgba(0,0,0,0.2)"}}>
-                        <span style={{fontSize:20,color:"#9ca3af"}}>+</span>
+                      <label style={{width:70,height:70,borderRadius:6,overflow:"hidden",background:"var(--line-soft)",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",flexShrink:0,border:"1px dashed rgba(0,0,0,0.2)"}}>
+                        <span style={{fontSize:20,color:"var(--ink-faint)"}}>+</span>
                         <input type="file" accept="image/*" style={{display:"none"}} onChange={e=>{
                           const f=e.target.files?.[0];if(!f)return;
                           const r=new UploadReader();
@@ -3144,23 +3156,23 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                           <Field label="Likes" value={String(post.likes??"")} onChange={v=>updPost({likes:parseInt(v)||0})} width="70px"/>
                           <Field label="📍 Lieu" value={post.location||""} onChange={v=>updPost({location:v||null})} style={{flex:1,minWidth:100}}/>
                           <div style={{display:"flex",flexDirection:"column",gap:2}}>
-                            <label style={{color:"#9ca3af",fontSize:9,letterSpacing:0.5,fontWeight:600,textTransform:"uppercase"}}>Avec (tag)</label>
-                            <select value={post.taggedWith||""} onChange={e=>updPost({taggedWith:e.target.value||null})} className="adm-input" style={{background:"rgba(255,255,255,0.9)",border:"1px solid rgba(0,0,0,0.1)",color:"#1a1a2e",padding:"6px 8px",fontSize:12,borderRadius:7}}>
+                            <label style={{color:"var(--ink-faint)",fontSize:9,letterSpacing:0.5,fontWeight:600,textTransform:"uppercase"}}>Avec (tag)</label>
+                            <select value={post.taggedWith||""} onChange={e=>updPost({taggedWith:e.target.value||null})} className="adm-input" style={{background:"var(--raise)",border:"1px solid var(--line)",color:"var(--ink)",padding:"6px 8px",fontSize:12,borderRadius:7}}>
                               <option value="">— Aucun —</option>
                               {otherChars.map(ck=><option key={ck} value={ck}>{CHAR_NAMES[ck]||ck}</option>)}
                             </select>
                           </div>
                           <div style={{display:"flex",alignItems:"flex-end",gap:10}}>
-                            <label style={{display:"flex",alignItems:"center",gap:4,fontSize:11,color:"#6b7280",cursor:"pointer",paddingBottom:4}}>
+                            <label style={{display:"flex",alignItems:"center",gap:4,fontSize:11,color:"var(--ink-soft)",cursor:"pointer",paddingBottom:4}}>
                               <input type="checkbox" checked={!!post.pinned} onChange={e=>setPinned(e.target.checked)} style={{cursor:"pointer"}}/>
                               📌 Épinglé
                             </label>
-                            <label style={{display:"flex",alignItems:"center",gap:4,fontSize:11,color:"#6b7280",cursor:"pointer",paddingBottom:4}}>
+                            <label style={{display:"flex",alignItems:"center",gap:4,fontSize:11,color:"var(--ink-soft)",cursor:"pointer",paddingBottom:4}}>
                               <input type="checkbox" checked={!!post.archived} onChange={e=>updPost({archived:e.target.checked})} style={{cursor:"pointer"}}/>
                               Archivé
                             </label>
                           </div>
-                          <button onClick={()=>updPosts(igPosts.filter(p2=>p2.id!==post.id))} style={{background:"rgba(239,68,68,0.06)",border:"1px solid rgba(239,68,68,0.2)",color:"#ef4444",borderRadius:6,padding:"5px 8px",cursor:"pointer",fontSize:11,alignSelf:"flex-end"}}>✕</button>
+                          <button onClick={()=>updPosts(igPosts.filter(p2=>p2.id!==post.id))} style={{background:"rgba(239,68,68,0.06)",border:"1px solid rgba(239,68,68,0.2)",color:"var(--danger)",borderRadius:6,padding:"5px 8px",cursor:"pointer",fontSize:11,alignSelf:"flex-end"}}>✕</button>
                         </div>
                         <Field label="Légende" value={post.caption||""} onChange={v=>updPost({caption:v})} textarea/>
                       </div>
@@ -3183,7 +3195,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
             const myPosts = sortIgDesc(sharedIgPosts.filter(p=>p.author===tab));
             return (
               <div style={{display:"flex",flexDirection:"column",gap:8}}>
-                <div style={{fontSize:11,color:"#6b7280",lineHeight:1.5,background:"rgba(61,107,143,0.07)",border:"1px solid rgba(61,107,143,0.2)",borderRadius:8,padding:"8px 12px"}}>
+                <div style={{fontSize:11,color:"var(--ink-soft)",lineHeight:1.5,background:"rgba(61,107,143,0.07)",border:"1px solid rgba(61,107,143,0.2)",borderRadius:8,padding:"8px 12px"}}>
                   Posts visibles dans le <strong>fil d'accueil</strong> de tous les persos. Seul toi peux modifier ou supprimer tes propres posts. Triés du plus récent au plus ancien — clique pour déplier.
                 </div>
                 {myPosts.map((post,i)=>{
@@ -3191,20 +3203,20 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                   const toggle = toggleInSet(setIgFeedOpen);
                   const updPost = (patch) => { const list=sharedIgPosts.map(p2=>p2.id===post.id?{...p2,...patch}:p2); updSharedIg(list); };
                   return (
-                    <div key={post.id||i} style={{background:"rgba(255,255,255,0.85)",borderRadius:10,border:"1px solid rgba(0,0,0,0.07)",overflow:"hidden"}}>
+                    <div key={post.id||i} style={{background:"var(--raise)",borderRadius:10,border:"1px solid var(--line)",overflow:"hidden"}}>
                       <div onClick={()=>toggle(post.id??i)} style={{display:"flex",gap:10,alignItems:"center",padding:"8px 12px",cursor:"pointer"}}>
-                        <div style={{width:36,height:36,borderRadius:6,overflow:"hidden",background:"#efefef",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                        <div style={{width:36,height:36,borderRadius:6,overflow:"hidden",background:"var(--line-soft)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
                           {post.src?<img src={post.src} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:<span style={{fontSize:16}}>📷</span>}
                         </div>
                         <div style={{flex:1,minWidth:0}}>
-                          <div style={{fontSize:12,color:"#374151",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{post.caption||<em style={{color:"#9ca3af"}}>(sans légende)</em>}</div>
-                          <div style={{fontSize:10,color:"#9ca3af"}}>{post.date||"—"}</div>
+                          <div style={{fontSize:12,color:"var(--ink-soft)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{post.caption||<em style={{color:"var(--ink-faint)"}}>(sans légende)</em>}</div>
+                          <div style={{fontSize:10,color:"var(--ink-faint)"}}>{post.date||"—"}</div>
                         </div>
                         <AdminChevron open={isOpen}/>
                       </div>
                       {isOpen && (
                       <div style={{display:"flex",gap:10,alignItems:"flex-start",padding:"0 12px 12px"}}>
-                        <label style={{width:64,height:64,borderRadius:6,overflow:"hidden",background:"#efefef",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",flexShrink:0,border:"1px solid rgba(0,0,0,0.08)"}}>
+                        <label style={{width:64,height:64,borderRadius:6,overflow:"hidden",background:"var(--line-soft)",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",flexShrink:0,border:"1px solid var(--line)"}}>
                           {post.src?<img src={post.src} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:<span style={{fontSize:22}}>📷</span>}
                           <input type="file" accept="image/*" style={{display:"none"}} onChange={e=>{
                             const f=e.target.files?.[0];if(!f)return;
@@ -3222,7 +3234,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                             <LoreDateTimeInput value={post.date||""} onChange={v=>updPost({date:v})} width="160px" showLabel={true}/>
                             <Field label="Likes" value={String(post.likes??"")} onChange={v=>updPost({likes:parseInt(v)||0})} width="70px"/>
                             <Field label="📍 Lieu" value={post.location||""} onChange={v=>updPost({location:v||null})} style={{flex:1,minWidth:100}}/>
-                            <button onClick={()=>updSharedIg(sharedIgPosts.filter(p2=>p2.id!==post.id))} style={{background:"rgba(239,68,68,0.06)",border:"1px solid rgba(239,68,68,0.2)",color:"#ef4444",borderRadius:6,padding:"5px 8px",cursor:"pointer",fontSize:11,alignSelf:"flex-end"}}>✕</button>
+                            <button onClick={()=>updSharedIg(sharedIgPosts.filter(p2=>p2.id!==post.id))} style={{background:"rgba(239,68,68,0.06)",border:"1px solid rgba(239,68,68,0.2)",color:"var(--danger)",borderRadius:6,padding:"5px 8px",cursor:"pointer",fontSize:11,alignSelf:"flex-end"}}>✕</button>
                           </div>
                           <Field label="Légende" value={post.caption||""} onChange={v=>updPost({caption:v})} textarea/>
                         </div>
@@ -3232,7 +3244,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                   );
                 })}
                 {sharedIgPosts.filter(p=>p.author!==tab).length>0&&(
-                  <div style={{fontSize:11,color:"#9ca3af",padding:"4px 0"}}>
+                  <div style={{fontSize:11,color:"var(--ink-faint)",padding:"4px 0"}}>
                     {sharedIgPosts.filter(p=>p.author!==tab).length} post(s) d'autres persos dans le fil (non modifiables ici).
                   </div>
                 )}
@@ -3245,27 +3257,27 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
           {/* ── COMPTES DÉCO ── */}
           {igTab==="deco" && (
             <div style={{display:"flex",flexDirection:"column",gap:8}}>
-              <div style={{fontSize:11,color:"#6b7280",lineHeight:1.5}}>Posts de comptes fictifs visibles dans le fil de <strong>{CHAR_NAMES[tab]||tab}</strong> uniquement — non partagés entre persos. Même principe que la "Timeline déco" sur Twitter ou le "Fil" sur Tumblr. Triés du plus récent au plus ancien — clique pour déplier.</div>
+              <div style={{fontSize:11,color:"var(--ink-soft)",lineHeight:1.5}}>Posts de comptes fictifs visibles dans le fil de <strong>{CHAR_NAMES[tab]||tab}</strong> uniquement — non partagés entre persos. Même principe que la "Timeline déco" sur Twitter ou le "Fil" sur Tumblr. Triés du plus récent au plus ancien — clique pour déplier.</div>
               {sortIgDesc(decoIg).map((post,i)=>{
                 const isOpen = igDecoOpen.has(post.id??i);
                 const toggle = toggleInSet(setIgDecoOpen);
                 const updDeco = (patch) => updDecoIg(decoIg.map(p2=>p2.id===post.id?{...p2,...patch}:p2));
                 return (
-                  <div key={post.id??i} className="adm-card" style={{background:"rgba(255,255,255,0.85)",borderRadius:10,border:"1px solid rgba(0,0,0,0.07)",overflow:"hidden"}}>
+                  <div key={post.id??i} className="adm-card" style={{background:"var(--raise)",borderRadius:10,border:"1px solid var(--line)",overflow:"hidden"}}>
                     <div onClick={()=>toggle(post.id??i)} style={{display:"flex",gap:10,alignItems:"center",padding:"8px 12px",cursor:"pointer"}}>
-                      <div style={{width:30,height:30,borderRadius:"50%",overflow:"hidden",background:"#efefef",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,fontSize:13,fontWeight:700,color:"#9ca3af"}}>
+                      <div style={{width:30,height:30,borderRadius:"50%",overflow:"hidden",background:"var(--line-soft)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,fontSize:13,fontWeight:700,color:"var(--ink-faint)"}}>
                         {post.avatar?<img src={post.avatar} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:(post.handle||"?")[0]?.toUpperCase()}
                       </div>
                       <div style={{flex:1,minWidth:0}}>
-                        <div style={{fontSize:12,color:"#374151",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{post.handle?`@${post.handle}`:<em style={{color:"#9ca3af"}}>(sans handle)</em>} {post.caption?`— ${post.caption}`:""}</div>
-                        <div style={{fontSize:10,color:"#9ca3af"}}>{post.date||"—"}</div>
+                        <div style={{fontSize:12,color:"var(--ink-soft)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{post.handle?`@${post.handle}`:<em style={{color:"var(--ink-faint)"}}>(sans handle)</em>} {post.caption?`— ${post.caption}`:""}</div>
+                        <div style={{fontSize:10,color:"var(--ink-faint)"}}>{post.date||"—"}</div>
                       </div>
                       <AdminChevron open={isOpen}/>
                     </div>
                     {isOpen && (
                     <div style={{display:"flex",gap:10,alignItems:"flex-start",padding:"0 12px 12px"}}>
                     {/* Avatar du compte */}
-                    <label style={{width:48,height:48,borderRadius:"50%",overflow:"hidden",background:"#efefef",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",flexShrink:0,border:"1px solid rgba(0,0,0,0.08)",fontSize:18,fontWeight:700,color:"#9ca3af"}}>
+                    <label style={{width:48,height:48,borderRadius:"50%",overflow:"hidden",background:"var(--line-soft)",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",flexShrink:0,border:"1px solid var(--line)",fontSize:18,fontWeight:700,color:"var(--ink-faint)"}}>
                       {post.avatar?<img src={post.avatar} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:(post.handle||"?")[0]?.toUpperCase()}
                       <input type="file" accept="image/*" style={{display:"none"}} onChange={e=>{
                         const f=e.target.files?.[0]; if(!f) return;
@@ -3273,7 +3285,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                       }}/>
                     </label>
                     {/* Photo du post */}
-                    <label style={{width:64,height:64,borderRadius:6,overflow:"hidden",background:"#efefef",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",flexShrink:0,border:"1px solid rgba(0,0,0,0.08)"}}>
+                    <label style={{width:64,height:64,borderRadius:6,overflow:"hidden",background:"var(--line-soft)",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",flexShrink:0,border:"1px solid var(--line)"}}>
                       {post.src?<img src={post.src} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:<span style={{fontSize:22}}>📷</span>}
                       <input type="file" accept="image/*" style={{display:"none"}} onChange={e=>{
                         const f=e.target.files?.[0]; if(!f) return;
@@ -3285,8 +3297,8 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                         <Field label="Handle" value={post.handle||""} onChange={v=>updDeco({handle:v})} style={{flex:1,minWidth:100}} placeholder="ex: stephenking"/>
                         <LoreDateTimeInput value={post.date||""} onChange={v=>updDeco({date:v})} width="160px" showLabel={true}/>
                         <Field label="Likes" value={String(post.likes??"")} onChange={v=>updDeco({likes:parseInt(v)||0})} width="70px"/>
-                        {post.avatar && <button onClick={()=>updDeco({avatar:null})} style={{fontSize:10,color:"#ef4444",background:"none",border:"none",cursor:"pointer",padding:0,alignSelf:"center"}}>× Suppr. photo</button>}
-                        <button onClick={()=>updDecoIg(decoIg.filter(p2=>p2.id!==post.id))} style={{background:"rgba(239,68,68,0.06)",border:"1px solid rgba(239,68,68,0.2)",color:"#ef4444",borderRadius:6,padding:"5px 8px",cursor:"pointer",fontSize:11,alignSelf:"flex-start"}}>✕</button>
+                        {post.avatar && <button onClick={()=>updDeco({avatar:null})} style={{fontSize:10,color:"var(--danger)",background:"none",border:"none",cursor:"pointer",padding:0,alignSelf:"center"}}>× Suppr. photo</button>}
+                        <button onClick={()=>updDecoIg(decoIg.filter(p2=>p2.id!==post.id))} style={{background:"rgba(239,68,68,0.06)",border:"1px solid rgba(239,68,68,0.2)",color:"var(--danger)",borderRadius:6,padding:"5px 8px",cursor:"pointer",fontSize:11,alignSelf:"flex-start"}}>✕</button>
                       </div>
                       <Field label="Légende" value={post.caption||""} onChange={v=>updDeco({caption:v})} textarea/>
                     </div>
@@ -3311,13 +3323,13 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
           const updList = (newList) => upd("reddit", newList);
           return (<>
                         {effective.map((post,i)=>(
-              <div key={post.id??i} className="adm-card" style={{display:"flex",gap:8,alignItems:"center",background:"rgba(255,255,255,0.85)",padding:"8px 10px",borderRadius:10,border:"1px solid rgba(0,0,0,0.07)",flexWrap:"wrap",opacity:isCustom?1:0.75}}>
+              <div key={post.id??i} className="adm-card" style={{display:"flex",gap:8,alignItems:"center",background:"var(--raise)",padding:"8px 10px",borderRadius:10,border:"1px solid var(--line)",flexWrap:"wrap",opacity:isCustom?1:0.75}}>
                 <Field label="Sub" value={post.sub||""} onChange={v=>{const r=[...effective].map((p,j)=>({...p,id:p.id||Date.now()+j}));r[i]={...r[i],sub:v};updList(r);}} width="120px"/>
                 <Field label="Titre" value={post.title||""} onChange={v=>{const r=[...effective].map((p,j)=>({...p,id:p.id||Date.now()+j}));r[i]={...r[i],title:v};updList(r);}}/>
                 <Field label="Pts" value={String(post.pts||"")} onChange={v=>{const r=[...effective].map((p,j)=>({...p,id:p.id||Date.now()+j}));r[i]={...r[i],pts:v};updList(r);}} width="70px"/>
                 <Field label="Comm." value={String(post.comm||0)} onChange={v=>{const r=[...effective].map((p,j)=>({...p,id:p.id||Date.now()+j}));r[i]={...r[i],comm:parseInt(v)||0};updList(r);}} width="60px"/>
                 <Field label="Âge" value={post.age||""} onChange={v=>{const r=[...effective].map((p,j)=>({...p,id:p.id||Date.now()+j}));r[i]={...r[i],age:v};updList(r);}} width="60px"/>
-                <button onClick={()=>updList(effective.filter((_,j)=>j!==i))} className="adm-del-btn" style={{background:"none",border:"none",color:"#d1d5db",cursor:"pointer",fontSize:16,padding:"0 4px",borderRadius:5}}>×</button>
+                <button onClick={()=>updList(effective.filter((_,j)=>j!==i))} className="adm-del-btn" style={{background:"none",border:"none",color:"var(--ink-faint)",cursor:"pointer",fontSize:16,padding:"0 4px",borderRadius:5}}>×</button>
               </div>
             ))}
             <button onClick={()=>updList([...effective.map((p,j)=>({...p,id:p.id||Date.now()+j})),{id:Date.now(),sub:"r/",title:"",pts:"0",comm:0,age:"1h",saved:false}])} style={{background:"rgba(255,69,0,0.08)",border:"1px dashed rgba(255,69,0,0.35)",color:"#ff4500",borderRadius:8,padding:"10px 18px",cursor:"pointer",fontSize:12,fontWeight:600}}>+ Post</button>
@@ -3365,18 +3377,18 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                   <button onClick={()=>toggleDay(k)} style={{width:"100%",display:"flex",alignItems:"center",gap:8,minHeight:44,WebkitTapHighlightColor:"transparent",background:"rgba(224,68,68,0.07)",border:"1px solid rgba(224,68,68,0.18)",borderRadius:8,padding:"7px 12px",cursor:"pointer",textAlign:"left"}}>
                     <AdminChevron open={isOpen} size={14}/>
                     <span style={{fontSize:12,fontWeight:700,color:"#c0392b",flex:1}}>{label}</span>
-                    <span style={{fontSize:10,color:"#9ca3af"}}>{indices.length} événement{indices.length>1?"s":""}</span>
+                    <span style={{fontSize:10,color:"var(--ink-faint)"}}>{indices.length} événement{indices.length>1?"s":""}</span>
                   </button>
 
                   {isOpen && indices.map(i=>{
                     const ev = effective[i];
                     return (
-                    <div key={ev.id??i} className="adm-card" style={{background:"rgba(255,255,255,0.9)",borderRadius:"0 0 10px 10px",padding:"10px 12px",border:"1px solid rgba(0,0,0,0.07)",borderTop:"none",display:"flex",flexDirection:"column",gap:7,marginTop:0}}>
+                    <div key={ev.id??i} className="adm-card" style={{background:"var(--raise)",borderRadius:"0 0 10px 10px",padding:"10px 12px",border:"1px solid var(--line)",borderTop:"none",display:"flex",flexDirection:"column",gap:7,marginTop:0}}>
                       <Field label="Titre" value={ev.title||""} onChange={v=>ensureCustom(i,{title:v})}/>
                       <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
                         {/* Date picker — même input type=date que partout ailleurs, s'ouvre sur oct 2012 */}
                         <div style={{display:"flex",flexDirection:"column",gap:2}}>
-                          <label style={{color:"#9ca3af",fontSize:10,letterSpacing:0.6,fontWeight:600,textTransform:"uppercase"}}>Date</label>
+                          <label style={{color:"var(--ink-faint)",fontSize:10,letterSpacing:0.6,fontWeight:600,textTransform:"uppercase"}}>Date</label>
                           <input type="date"
                             value={`${ev.year||2012}-${String(ev.month||10).padStart(2,"0")}-${String(ev.day||1).padStart(2,"0")}`}
                             onChange={e=>{
@@ -3385,15 +3397,15 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                               ensureCustom(i,{year:y,month:m,day:dd});
                             }}
                             className="adm-input"
-                            style={{background:"rgba(255,255,255,0.9)",border:"1px solid rgba(0,0,0,0.1)",color:"#1a1a2e",padding:"5px 8px",fontSize:11,borderRadius:7}}/>
+                            style={{background:"var(--raise)",border:"1px solid var(--line)",color:"var(--ink)",padding:"5px 8px",fontSize:11,borderRadius:7}}/>
                         </div>
                         <div style={{display:"flex",flexDirection:"column",gap:5,width:"90px"}}>
-                          <label style={{color:"#9ca3af",fontSize:10,letterSpacing:0.8,textTransform:"uppercase",fontWeight:600}}>Heure</label>
+                          <label style={{color:"var(--ink-faint)",fontSize:10,letterSpacing:0.8,textTransform:"uppercase",fontWeight:600}}>Heure</label>
                           <input type="time" value={ev.time||""} onChange={e=>ensureCustom(i,{time:e.target.value})}
-                            className="adm-input" style={{background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#1a1a2e",padding:"8px 8px",fontSize:12,borderRadius:8,width:"90px"}}/>
+                            className="adm-input" style={{background:"var(--raise)",border:"1px solid var(--line)",color:"var(--ink)",padding:"8px 8px",fontSize:12,borderRadius:8,width:"90px"}}/>
                         </div>
                         <Field label="Lieu" value={ev.location||""} onChange={v=>ensureCustom(i,{location:v})} width="130px"/>
-                        <button onClick={()=>updList(effective.filter((_,j)=>j!==i))} style={{background:"none",border:"none",color:"#d1d5db",cursor:"pointer",fontSize:16,padding:"0 4px",marginTop:18}}>×</button>
+                        <button onClick={()=>updList(effective.filter((_,j)=>j!==i))} style={{background:"none",border:"none",color:"var(--ink-faint)",cursor:"pointer",fontSize:16,padding:"0 4px",marginTop:18}}>×</button>
                       </div>
                     </div>
                   );})}
@@ -3464,16 +3476,16 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
           const updItems = (list) => upd("conspiracyFeed", list);
           return (
             <div style={{display:"flex",flexDirection:"column",gap:10}}>
-              <div style={{color:"#888",fontSize:10,letterSpacing:1,textTransform:"uppercase"}}>Widget "Truth Feed" (écran d'accueil)</div>
+              <div style={{color:"var(--ink-faint)",fontSize:10,letterSpacing:1,textTransform:"uppercase"}}>Widget "Truth Feed" (écran d'accueil)</div>
               <Field label="Titre du widget" value={d.conspiracyFeedTitle||"TRUTH FEED"} onChange={v=>upd("conspiracyFeedTitle",v)} width="220px"/>
               {items.map((item,i)=>(
-                <div key={i} className="adm-card" style={{display:"flex",gap:8,alignItems:"center",background:"rgba(255,255,255,0.85)",padding:10,borderRadius:10,border:"1px solid rgba(0,0,0,0.07)",flexWrap:"wrap"}}>
+                <div key={i} className="adm-card" style={{display:"flex",gap:8,alignItems:"center",background:"var(--raise)",padding:10,borderRadius:10,border:"1px solid var(--line)",flexWrap:"wrap"}}>
                   <Field label="Icône" value={item.icon||""} onChange={v=>{const f=[...items];f[i]={...f[i],icon:v};updItems(f);}} width="60px"/>
                   <Field label="Titre" value={item.title||""} onChange={v=>{const f=[...items];f[i]={...f[i],title:v};updItems(f);}} width="220px"/>
                   <Field label="Source" value={item.src||""} onChange={v=>{const f=[...items];f[i]={...f[i],src:v};updItems(f);}} width="140px"/>
                   <Field label="Temps (ex: il y a 2:00am)" value={item.time||""} onChange={v=>{const f=[...items];f[i]={...f[i],time:v};updItems(f);}} width="160px"/>
                   <button onClick={()=>updItems(items.filter((_,j)=>j!==i))}
-                    className="adm-del-btn" style={{background:"rgba(239,68,68,0.06)",border:"1px solid rgba(239,68,68,0.2)",color:"#ef4444",borderRadius:6,padding:"4px 8px",cursor:"pointer",fontSize:11}}>✕</button>
+                    className="adm-del-btn" style={{background:"rgba(239,68,68,0.06)",border:"1px solid rgba(239,68,68,0.2)",color:"var(--danger)",borderRadius:6,padding:"4px 8px",cursor:"pointer",fontSize:11}}>✕</button>
                 </div>
               ))}
               <button onClick={()=>updItems([...items,{icon:"📰",title:"Nouvel article",src:"source.com",time:"il y a 1:00am"}])}
@@ -3495,11 +3507,11 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
           const updList = (newList) => upd("wikipedia", newList);
           return (<>
                         {effective.map((art,i)=>(
-              <div key={i} style={{display:"flex",gap:8,alignItems:"center",background:"rgba(255,255,255,0.85)",padding:"8px 10px",borderRadius:10,border:"1px solid rgba(0,0,0,0.07)",opacity:isCustom?1:0.75}}>
+              <div key={i} style={{display:"flex",gap:8,alignItems:"center",background:"var(--raise)",padding:"8px 10px",borderRadius:10,border:"1px solid var(--line)",opacity:isCustom?1:0.75}}>
                 <Field label="Titre" value={art[0]||""} onChange={v=>{const w=[...effective];w[i]=[v,art[1]||"",art[2]||""];updList(w);}}/>
                 <Field label="Extrait" value={art[1]||""} onChange={v=>{const w=[...effective];w[i]=[art[0]||"",v,art[2]||""];updList(w);}} width="200px"/>
                 <LoreDateTimeInput label="Date" showTime={false} value={art[2]||""} onChange={v=>{const w=[...effective];w[i]=[art[0]||"",art[1]||"",v];updList(w);}} width="150px"/>
-                <button onClick={()=>updList(effective.filter((_,j)=>j!==i))} className="adm-del-btn" style={{background:"none",border:"none",color:"#d1d5db",cursor:"pointer",fontSize:16,padding:"0 4px",borderRadius:5}}>×</button>
+                <button onClick={()=>updList(effective.filter((_,j)=>j!==i))} className="adm-del-btn" style={{background:"none",border:"none",color:"var(--ink-faint)",cursor:"pointer",fontSize:16,padding:"0 4px",borderRadius:5}}>×</button>
               </div>
             ))}
             <button onClick={()=>updList([...effective,["","","1 oct"]])} style={{background:"rgba(91,145,206,0.08)",border:"1px dashed rgba(91,145,206,0.35)",color:"#5b91ce",borderRadius:8,padding:"10px 18px",cursor:"pointer",fontSize:12,fontWeight:600}}>+ Article</button>
@@ -3523,17 +3535,17 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
 
           return (<>
             {/* Dossiers */}
-            <div style={{fontSize:12,fontWeight:700,color:"#374151",letterSpacing:0.3}}>📁 Dossiers</div>
+            <div style={{fontSize:12,fontWeight:700,color:"var(--ink-soft)",letterSpacing:0.3}}>📁 Dossiers</div>
             {folders.map((folder,fi)=>(
-              <div key={folder.id||fi} className="adm-card" style={{background:"rgba(255,255,255,0.9)",borderRadius:10,border:"1px solid rgba(0,0,0,0.07)",overflow:"hidden"}}>
+              <div key={folder.id||fi} className="adm-card" style={{background:"var(--raise)",borderRadius:10,border:"1px solid var(--line)",overflow:"hidden"}}>
                 {/* Header du dossier */}
-                <div style={{background:"rgba(160,112,24,0.08)",padding:"10px 12px",display:"flex",gap:8,alignItems:"center",borderBottom:"1px solid rgba(0,0,0,0.06)"}}>
+                <div style={{background:"rgba(160,112,24,0.08)",padding:"10px 12px",display:"flex",gap:8,alignItems:"center",borderBottom:"1px solid var(--line)"}}>
                   <span style={{fontSize:20}}>📁</span>
                   <input value={folder.name||""} onChange={e=>{const f=[...folders];f[fi]={...f[fi],name:e.target.value};updFiles({folders:f});}}
                     placeholder="Nom du dossier" className="adm-input"
-                    style={{flex:1,background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#1a1a2e",padding:"6px 10px",fontSize:13,borderRadius:7,fontWeight:600}}/>
+                    style={{flex:1,background:"var(--raise)",border:"1px solid var(--line)",color:"var(--ink)",padding:"6px 10px",fontSize:13,borderRadius:7,fontWeight:600}}/>
                   <button onClick={()=>updFiles({folders:folders.filter((_,j)=>j!==fi)})}
-                    className="adm-del-btn" style={{background:"rgba(239,68,68,0.07)",border:"1px solid rgba(239,68,68,0.2)",color:"#ef4444",borderRadius:6,padding:"5px 8px",cursor:"pointer",fontSize:11}}>✕</button>
+                    className="adm-del-btn" style={{background:"rgba(239,68,68,0.07)",border:"1px solid rgba(239,68,68,0.2)",color:"var(--danger)",borderRadius:6,padding:"5px 8px",cursor:"pointer",fontSize:11}}>✕</button>
                 </div>
                 {/* Fichiers dans ce dossier */}
                 <div style={{padding:"8px 12px",display:"flex",flexDirection:"column",gap:6}}>
@@ -3545,22 +3557,22 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                       const meta=fileTypeMeta(ext);
                       const updFile=(patch)=>{const f=[...folders];const fs=[...(f[fi].files||[])];fs[fj]={...fs[fj],...patch};f[fi]={...f[fi],files:fs};updFiles({folders:f});};
                       return (
-                        <div key={file.id||fj} style={{display:"flex",gap:5,alignItems:"center",background:"rgba(0,0,0,0.02)",borderRadius:7,padding:"6px 8px",border:"1px solid rgba(0,0,0,0.05)",flexWrap:"wrap"}}>
+                        <div key={file.id||fj} style={{display:"flex",gap:5,alignItems:"center",background:"var(--line-soft)",borderRadius:7,padding:"6px 8px",border:"1px solid var(--line-soft)",flexWrap:"wrap"}}>
                           <span style={{fontSize:16,flexShrink:0}}>{meta.icon}</span>
                           <input value={baseName} onChange={e=>updFile({name:ext&&ext!=="other"?`${e.target.value}.${ext}`:e.target.value})}
                             placeholder="nom du fichier" className="adm-input"
-                            style={{flex:2,minWidth:80,background:"rgba(255,255,255,0.9)",border:"1px solid rgba(0,0,0,0.1)",color:"#1a1a2e",padding:"5px 8px",fontSize:12,borderRadius:6}}/>
+                            style={{flex:2,minWidth:80,background:"var(--raise)",border:"1px solid var(--line)",color:"var(--ink)",padding:"5px 8px",fontSize:12,borderRadius:6}}/>
                           <select value={ext} onChange={e=>{const newExt=e.target.value;updFile({name:newExt&&newExt!=="other"?`${baseName}.${newExt}`:baseName,ext:newExt});}}
-                            className="adm-input" style={{width:72,background:"rgba(255,255,255,0.9)",border:"1px solid rgba(0,0,0,0.1)",color:"#374151",padding:"5px 4px",fontSize:11,borderRadius:6,cursor:"pointer"}}>
+                            className="adm-input" style={{width:72,background:"var(--raise)",border:"1px solid var(--line)",color:"var(--ink-soft)",padding:"5px 4px",fontSize:11,borderRadius:6,cursor:"pointer"}}>
                             {FILE_EXTS.map(e=><option key={e} value={e}>{e.toUpperCase()}</option>)}
                           </select>
                           <LoreDateTimeInput showLabel={false} showTime={false} width="130px"
                             value={file.date||""} onChange={v=>updFile({date:v})}/>
                           <input value={file.size||""} onChange={e=>updFile({size:e.target.value})}
                             placeholder="4,7 MB" className="adm-input"
-                            style={{width:68,background:"rgba(255,255,255,0.9)",border:"1px solid rgba(0,0,0,0.1)",color:"#6b7280",padding:"5px 8px",fontSize:11,borderRadius:6}}/>
+                            style={{width:68,background:"var(--raise)",border:"1px solid var(--line)",color:"var(--ink-soft)",padding:"5px 8px",fontSize:11,borderRadius:6}}/>
                           <button onClick={()=>{const f=[...folders];f[fi]={...f[fi],files:(f[fi].files||[]).filter((_,k)=>k!==fj)};updFiles({folders:f});}}
-                            style={{background:"none",border:"none",color:"#d1d5db",cursor:"pointer",fontSize:14,padding:"0 2px",flexShrink:0}}>×</button>
+                            style={{background:"none",border:"none",color:"var(--ink-faint)",cursor:"pointer",fontSize:14,padding:"0 2px",flexShrink:0}}>×</button>
                         </div>
                       );
                     });
@@ -3574,7 +3586,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
               style={{background:"rgba(160,112,24,0.08)",border:"1px dashed rgba(160,112,24,0.4)",color:FOLDER_COLOR,borderRadius:8,padding:"10px 18px",cursor:"pointer",fontSize:12,fontWeight:600}}>+ Dossier</button>
 
             {/* Fichiers à la racine */}
-            <div style={{fontSize:12,fontWeight:700,color:"#374151",letterSpacing:0.3,marginTop:8}}>📄 Fichiers à la racine</div>
+            <div style={{fontSize:12,fontWeight:700,color:"var(--ink-soft)",letterSpacing:0.3,marginTop:8}}>📄 Fichiers à la racine</div>
             {(()=>{
               return rootFiles.map((file,i)=>{
                 const rawExt=(file.name||"").includes(".")?(file.name||"").split(".").pop().toLowerCase():(file.ext||"other");
@@ -3583,28 +3595,28 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                 const meta=fileTypeMeta(ext);
                 const updFile=(patch)=>{const rf=[...rootFiles];rf[i]={...rf[i],...patch};updFiles({rootFiles:rf});};
                 return (
-                  <div key={file.id||i} style={{display:"flex",gap:5,alignItems:"center",background:"rgba(255,255,255,0.85)",borderRadius:8,padding:"8px 10px",border:"1px solid rgba(0,0,0,0.07)",flexWrap:"wrap"}}>
+                  <div key={file.id||i} style={{display:"flex",gap:5,alignItems:"center",background:"var(--raise)",borderRadius:8,padding:"8px 10px",border:"1px solid var(--line)",flexWrap:"wrap"}}>
                     <span style={{fontSize:18,flexShrink:0}}>{meta.icon}</span>
                     <input value={baseName} onChange={e=>updFile({name:ext&&ext!=="other"?`${e.target.value}.${ext}`:e.target.value})}
                       placeholder="nom du fichier" className="adm-input"
-                      style={{flex:2,minWidth:80,background:"rgba(255,255,255,0.9)",border:"1px solid rgba(0,0,0,0.1)",color:"#1a1a2e",padding:"6px 9px",fontSize:12,borderRadius:7}}/>
+                      style={{flex:2,minWidth:80,background:"var(--raise)",border:"1px solid var(--line)",color:"var(--ink)",padding:"6px 9px",fontSize:12,borderRadius:7}}/>
                     <select value={ext} onChange={e=>{const newExt=e.target.value;updFile({name:newExt&&newExt!=="other"?`${baseName}.${newExt}`:baseName,ext:newExt});}}
-                      className="adm-input" style={{width:72,background:"rgba(255,255,255,0.9)",border:"1px solid rgba(0,0,0,0.1)",color:"#374151",padding:"6px 4px",fontSize:11,borderRadius:7,cursor:"pointer"}}>
+                      className="adm-input" style={{width:72,background:"var(--raise)",border:"1px solid var(--line)",color:"var(--ink-soft)",padding:"6px 4px",fontSize:11,borderRadius:7,cursor:"pointer"}}>
                       {FILE_EXTS.map(e=><option key={e} value={e}>{e.toUpperCase()}</option>)}
                     </select>
                     <LoreDateTimeInput showLabel={false} showTime={false} width="130px"
                       value={file.date||""} onChange={v=>updFile({date:v})}/>
                     <input value={file.size||""} onChange={e=>updFile({size:e.target.value})}
                       placeholder="Taille" className="adm-input"
-                      style={{width:68,background:"rgba(255,255,255,0.9)",border:"1px solid rgba(0,0,0,0.1)",color:"#6b7280",padding:"6px 8px",fontSize:11,borderRadius:7}}/>
+                      style={{width:68,background:"var(--raise)",border:"1px solid var(--line)",color:"var(--ink-soft)",padding:"6px 8px",fontSize:11,borderRadius:7}}/>
                     <button onClick={()=>updFiles({rootFiles:rootFiles.filter((_,j)=>j!==i)})}
-                      style={{background:"none",border:"none",color:"#d1d5db",cursor:"pointer",fontSize:16,padding:"0 2px",flexShrink:0}}>×</button>
+                      style={{background:"none",border:"none",color:"var(--ink-faint)",cursor:"pointer",fontSize:16,padding:"0 2px",flexShrink:0}}>×</button>
                   </div>
                 );
               });
             })()}
             <button onClick={()=>updFiles({rootFiles:[...rootFiles,{id:Date.now(),name:"",date:"",size:""}]})}
-              style={{background:"rgba(99,102,241,0.08)",border:"1px dashed rgba(99,102,241,0.4)",color:"#6366f1",borderRadius:8,padding:"10px 18px",cursor:"pointer",fontSize:12,fontWeight:600}}>+ Fichier racine</button>
+              style={{background:"var(--accent-wash)",border:"1px dashed var(--accent-line)",color:"var(--accent)",borderRadius:8,padding:"10px 18px",cursor:"pointer",fontSize:12,fontWeight:600}}>+ Fichier racine</button>
           </>);
         })()}
       </div>
@@ -3620,12 +3632,12 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
           return (<>
             {/* Bookmarks */}
             <div style={{display:"flex",flexDirection:"column",gap:8}}>
-              <div style={{fontSize:12,fontWeight:700,color:"#374151"}}>Favoris</div>
+              <div style={{fontSize:12,fontWeight:700,color:"var(--ink-soft)"}}>Favoris</div>
               {(b.bookmarks||[]).map((bm,i)=>(
-                <div key={bm.id??i} style={{display:"flex",gap:6,alignItems:"center",background:"rgba(255,255,255,0.85)",padding:"8px 10px",borderRadius:8,border:"1px solid rgba(0,0,0,0.07)"}}>
+                <div key={bm.id??i} style={{display:"flex",gap:6,alignItems:"center",background:"var(--raise)",padding:"8px 10px",borderRadius:8,border:"1px solid var(--line)"}}>
                   <Field label="Titre" value={bm.title||""} onChange={v=>{const bks=[...b.bookmarks];bks[i]={...bks[i],title:v};upB({bookmarks:bks});}} style={{flex:1}}/>
                   <Field label="URL" value={bm.url||""} onChange={v=>{const bks=[...b.bookmarks];bks[i]={...bks[i],url:v};upB({bookmarks:bks});}} style={{flex:1}}/>
-                  <button onClick={()=>upB({bookmarks:b.bookmarks.filter((_,j)=>j!==i)})} style={{background:"none",border:"none",color:"#d1d5db",cursor:"pointer",fontSize:16}}>×</button>
+                  <button onClick={()=>upB({bookmarks:b.bookmarks.filter((_,j)=>j!==i)})} style={{background:"none",border:"none",color:"var(--ink-faint)",cursor:"pointer",fontSize:16}}>×</button>
                 </div>
               ))}
               <button onClick={()=>upB({bookmarks:[...b.bookmarks,{id:Date.now(),title:"",url:""}]})}
@@ -3633,13 +3645,13 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
             </div>
             {/* History */}
             <div style={{display:"flex",flexDirection:"column",gap:8}}>
-              <div style={{fontSize:12,fontWeight:700,color:"#374151"}}>Historique</div>
+              <div style={{fontSize:12,fontWeight:700,color:"var(--ink-soft)"}}>Historique</div>
               {(b.history||[]).map((h,i)=>(
-                <div key={h.id??i} style={{display:"flex",gap:6,alignItems:"center",background:"rgba(255,255,255,0.85)",padding:"8px 10px",borderRadius:8,border:"1px solid rgba(0,0,0,0.07)"}}>
+                <div key={h.id??i} style={{display:"flex",gap:6,alignItems:"center",background:"var(--raise)",padding:"8px 10px",borderRadius:8,border:"1px solid var(--line)"}}>
                   <Field label="Titre" value={h.title||""} onChange={v=>{const hist=[...b.history];hist[i]={...hist[i],title:v};upB({history:hist});}} style={{flex:1}}/>
                   <Field label="URL" value={h.url||""} onChange={v=>{const hist=[...b.history];hist[i]={...hist[i],url:v};upB({history:hist});}} style={{flex:1}}/>
                   <LoreDateTimeInput value={h.time||""} onChange={v=>{const hist=[...b.history];hist[i]={...hist[i],time:v};upB({history:hist});}} width="190px"/>
-                  <button onClick={()=>upB({history:b.history.filter((_,j)=>j!==i)})} style={{background:"none",border:"none",color:"#d1d5db",cursor:"pointer",fontSize:16}}>×</button>
+                  <button onClick={()=>upB({history:b.history.filter((_,j)=>j!==i)})} style={{background:"none",border:"none",color:"var(--ink-faint)",cursor:"pointer",fontSize:16}}>×</button>
                 </div>
               ))}
               <button onClick={()=>upB({history:[...b.history,{id:Date.now(),title:"",url:"",time:""}]})}
@@ -3666,9 +3678,9 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
           const AMZ="#FF9900";
           return (<>
                         {effective.map((book,i)=>(
-              <div key={book.id??i} style={{background:"rgba(255,255,255,0.9)",borderRadius:10,border:"1px solid rgba(0,0,0,0.07)",padding:"10px 12px",display:"flex",gap:10,alignItems:"flex-start"}}>
+              <div key={book.id??i} style={{background:"var(--raise)",borderRadius:10,border:"1px solid var(--line)",padding:"10px 12px",display:"flex",gap:10,alignItems:"flex-start"}}>
                 {/* Couverture */}
-                <label style={{width:44,height:62,borderRadius:3,overflow:"hidden",cursor:"pointer",flexShrink:0,background:`hsl(${(i*60)%360},40%,72%)`,border:"1px solid rgba(0,0,0,0.1)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,position:"relative"}}>
+                <label style={{width:44,height:62,borderRadius:3,overflow:"hidden",cursor:"pointer",flexShrink:0,background:`hsl(${(i*60)%360},40%,72%)`,border:"1px solid var(--line)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,position:"relative"}}>
                   {book.cover
                     ? <img src={book.cover} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
                     : <span style={{color:"rgba(0,0,0,0.25)",fontSize:20}}>📚</span>}
@@ -3684,7 +3696,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                     <Field label="Auteur" value={book.author||""} onChange={v=>ensureCustom(i,{author:v})} style={{flex:1}}/>
                     <Field label="% lu" value={String(book.pct||0)} onChange={v=>ensureCustom(i,{pct:Math.min(100,Math.max(0,parseInt(v)||0))})} width="60px"/>
                   </div>
-                  {book.cover && <button onClick={()=>ensureCustom(i,{cover:null})} style={{background:"none",border:"none",color:"#9ca3af",cursor:"pointer",fontSize:10,textAlign:"left",padding:0}}>× Supprimer la couverture</button>}
+                  {book.cover && <button onClick={()=>ensureCustom(i,{cover:null})} style={{background:"none",border:"none",color:"var(--ink-faint)",cursor:"pointer",fontSize:10,textAlign:"left",padding:0}}>× Supprimer la couverture</button>}
                 </div>
                 <div style={{display:"flex",gap:4,flexDirection:"column",alignItems:"center",flexShrink:0}}>
                   <MoveButtons 
@@ -3693,7 +3705,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                     onMoveUp={() => { const l=[...effective]; [l[i-1],l[i]]=[l[i],l[i-1]]; updList(l); }}
                     onMoveDown={() => { const l=[...effective]; [l[i+1],l[i]]=[l[i],l[i+1]]; updList(l); }}
                   />
-                  <button onClick={()=>updList(effective.filter((_,j)=>j!==i).map((b,j)=>({...b,id:Date.now()+j})))} style={{background:"none",border:"none",color:"#d1d5db",cursor:"pointer",fontSize:16,padding:"0 2px"}}>×</button>
+                  <button onClick={()=>updList(effective.filter((_,j)=>j!==i).map((b,j)=>({...b,id:Date.now()+j})))} style={{background:"none",border:"none",color:"var(--ink-faint)",cursor:"pointer",fontSize:16,padding:"0 2px"}}>×</button>
                 </div>
               </div>
             ))}
@@ -3708,24 +3720,24 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
   const renderVpn = () => {
  return (
       <div style={{display:"flex",flexDirection:"column",gap:8}}>
-        <div style={{fontSize:11,color:"#9ca3af",marginBottom:4}}>Serveurs VPN affichés dans l'appli.</div>
+        <div style={{fontSize:11,color:"var(--ink-faint)",marginBottom:4}}>Serveurs VPN affichés dans l'appli.</div>
         {(()=>{
           const isCustom = (d.vpnServers||[]).length > 0;
           const effective = isCustom ? d.vpnServers : VPN_DEFAULTS;
           const patch=(i,p)=>upd("vpnServers",effective.map((s,j)=>j===i?{...s,...p}:s));
           return (<>
           {effective.map((srv,i)=>(
-          <div key={i} style={{display:"flex",gap:8,alignItems:"center",background:"rgba(255,255,255,0.85)",padding:"8px 10px",borderRadius:10,border:"1px solid rgba(0,0,0,0.07)",flexWrap:"wrap"}}>
+          <div key={i} style={{display:"flex",gap:8,alignItems:"center",background:"var(--raise)",padding:"8px 10px",borderRadius:10,border:"1px solid var(--line)",flexWrap:"wrap"}}>
             <input value={srv.flag||""} onChange={e=>patch(i,{flag:e.target.value})}
-              placeholder="🏳" className="adm-input" style={{width:44,background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#1a1a2e",padding:"6px 8px",fontSize:16,borderRadius:7,textAlign:"center"}}/>
+              placeholder="🏳" className="adm-input" style={{width:44,background:"var(--raise)",border:"1px solid var(--line)",color:"var(--ink)",padding:"6px 8px",fontSize:16,borderRadius:7,textAlign:"center"}}/>
             <input value={srv.loc||""} onChange={e=>patch(i,{loc:e.target.value})}
-              placeholder="Serveur" className="adm-input" style={{flex:1,background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#1a1a2e",padding:"6px 9px",fontSize:12,borderRadius:7}}/>
+              placeholder="Serveur" className="adm-input" style={{flex:1,background:"var(--raise)",border:"1px solid var(--line)",color:"var(--ink)",padding:"6px 9px",fontSize:12,borderRadius:7}}/>
             <input value={String(srv.ping||"")} onChange={e=>patch(i,{ping:parseInt(e.target.value)||0})}
-              placeholder="Ping ms" className="adm-input" style={{width:70,background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#6b7280",padding:"6px 8px",fontSize:11,borderRadius:7}}/>
+              placeholder="Ping ms" className="adm-input" style={{width:70,background:"var(--raise)",border:"1px solid var(--line)",color:"var(--ink-soft)",padding:"6px 8px",fontSize:11,borderRadius:7}}/>
             <input value={String(srv.load||"")} onChange={e=>patch(i,{load:parseInt(e.target.value)||0})}
-              placeholder="Load %" className="adm-input" style={{width:70,background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#6b7280",padding:"6px 8px",fontSize:11,borderRadius:7}}/>
+              placeholder="Load %" className="adm-input" style={{width:70,background:"var(--raise)",border:"1px solid var(--line)",color:"var(--ink-soft)",padding:"6px 8px",fontSize:11,borderRadius:7}}/>
             {isCustom && <button onClick={()=>upd("vpnServers",effective.filter((_,j)=>j!==i))}
-              className="adm-del-btn" style={{background:"none",border:"none",color:"#d1d5db",cursor:"pointer",fontSize:16,padding:"0 4px",borderRadius:5}}>×</button>}
+              className="adm-del-btn" style={{background:"none",border:"none",color:"var(--ink-faint)",cursor:"pointer",fontSize:16,padding:"0 4px",borderRadius:5}}>×</button>}
           </div>
           ))}
           <button onClick={()=>upd("vpnServers",[...effective,{flag:"🏳",loc:"",ping:0,load:0}])}
@@ -3747,28 +3759,28 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
           <Field label="Rang" value={d.inaturalist?.rank||""} onChange={v=>upd("inaturalist",{...(d.inaturalist||{}),rank:v})} width="160px"/>
         </div>
         {(d.inaturalist?.list||[]).map((obs,i)=>(
-          <div key={obs.id||i} className="adm-card" style={{background:"rgba(255,255,255,0.85)",borderRadius:12,padding:14,border:"1px solid rgba(0,0,0,0.07)",boxShadow:"0 2px 8px rgba(0,0,0,0.04)"}}>
+          <div key={obs.id||i} className="adm-card" style={{background:"var(--raise)",borderRadius:12,padding:14,border:"1px solid var(--line)",boxShadow:"0 2px 8px var(--line-soft)"}}>
             <div style={{display:"flex",gap:8,marginBottom:8,flexWrap:"wrap",alignItems:"center"}}>
               <input value={obs.emoji||""} onChange={e=>{const l=[...(d.inaturalist?.list||[])];l[i]={...l[i],emoji:e.target.value};upd("inaturalist",{...d.inaturalist,list:l});}}
-                className="adm-input" style={{width:44,background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#1a1a2e",padding:"6px 8px",fontSize:16,borderRadius:7,textAlign:"center"}} placeholder="🔬"/>
+                className="adm-input" style={{width:44,background:"var(--raise)",border:"1px solid var(--line)",color:"var(--ink)",padding:"6px 8px",fontSize:16,borderRadius:7,textAlign:"center"}} placeholder="🔬"/>
               <Field label="Nom commun" value={obs.common||""} onChange={v=>{const l=[...(d.inaturalist?.list||[])];l[i]={...l[i],common:v};upd("inaturalist",{...d.inaturalist,list:l});}}/>
               <Field label="Nom latin" value={obs.latin||""} onChange={v=>{const l=[...(d.inaturalist?.list||[])];l[i]={...l[i],latin:v};upd("inaturalist",{...d.inaturalist,list:l});}} width="180px"/>
               <LoreDateTimeInput label="Date" showTime={false} value={obs.date||""} onChange={v=>{const l=[...(d.inaturalist?.list||[])];l[i]={...l[i],date:v};upd("inaturalist",{...d.inaturalist,list:l});}} width="150px"/>
               <div style={{display:"flex",gap:4,alignItems:"center",marginTop:18}}>
                 {[["Research Grade","✓ Research"],["Needs ID","? Needs ID"],["Casual","Casual"]].map(([val,lbl])=>(
                   <button key={val} onClick={()=>{const l=[...(d.inaturalist?.list||[])];l[i]={...l[i],grade:val};upd("inaturalist",{...d.inaturalist,list:l});}}
-                    style={{fontSize:9,padding:"3px 7px",border:`1px solid ${obs.grade===val?"#74AC00":"rgba(0,0,0,0.1)"}`,background:obs.grade===val?"#74AC0018":"transparent",color:obs.grade===val?"#74AC00":"#6b7280",borderRadius:5,cursor:"pointer",fontWeight:obs.grade===val?700:400}}>
+                    style={{fontSize:9,padding:"3px 7px",border:`1px solid ${obs.grade===val?"#74AC00":"var(--line)"}`,background:obs.grade===val?"#74AC0018":"transparent",color:obs.grade===val?"#74AC00":"var(--ink-soft)",borderRadius:5,cursor:"pointer",fontWeight:obs.grade===val?700:400}}>
                     {lbl}
                   </button>
                 ))}
               </div>
               <button onClick={()=>{const l=(d.inaturalist?.list||[]).filter((_,j)=>j!==i);upd("inaturalist",{...d.inaturalist,list:l});}}
-                className="adm-del-btn" style={{background:"rgba(239,68,68,0.06)",border:"1px solid rgba(239,68,68,0.2)",color:"#ef4444",borderRadius:6,padding:"4px 8px",cursor:"pointer",fontSize:11,marginTop:18}}>✕</button>
+                className="adm-del-btn" style={{background:"rgba(239,68,68,0.06)",border:"1px solid rgba(239,68,68,0.2)",color:"var(--danger)",borderRadius:6,padding:"4px 8px",cursor:"pointer",fontSize:11,marginTop:18}}>✕</button>
             </div>
             <Field label="Lieu" value={obs.place||""} onChange={v=>{const l=[...(d.inaturalist?.list||[])];l[i]={...l[i],place:v};upd("inaturalist",{...d.inaturalist,list:l});}}/>
             <Field label="Note" value={obs.note||""} onChange={v=>{const l=[...(d.inaturalist?.list||[])];l[i]={...l[i],note:v};upd("inaturalist",{...d.inaturalist,list:l});}} textarea style={{marginTop:6}}/>
             <div style={{display:"flex",alignItems:"center",gap:6,marginTop:8}}>
-              <label style={{display:"flex",alignItems:"center",gap:4,fontSize:11,color:"#6b7280",cursor:"pointer"}}>
+              <label style={{display:"flex",alignItems:"center",gap:4,fontSize:11,color:"var(--ink-soft)",cursor:"pointer"}}>
                 <input type="checkbox" checked={!!obs.glitch} onChange={e=>{const l=[...(d.inaturalist?.list||[])];l[i]={...l[i],glitch:e.target.checked};upd("inaturalist",{...d.inaturalist,list:l});}}/> Glitch (anomalie narrative)
               </label>
             </div>
@@ -3783,8 +3795,8 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
   const renderMail = () => {
       const MAIL_TAB_DEFS = [
         {key:"inbox",   label:"📥 Inbox",   color:"#4a7ab5", storageKey:"mail_override",  defaultFn:(un)=>EMAILS_BY_CHAR[un]||EMAILS_BY_CHAR.glindatheverygood},
-        {key:"drafts",  label:"📝 Drafts",  color:"#6366f1", storageKey:"mail_drafts",    defaultFn:(un)=>MAIL_DRAFTS_BY_CHAR[un]||[]},
-        {key:"deleted", label:"🗑 Deleted",  color:"#ef4444", storageKey:"mail_deleted",   defaultFn:(un)=>MAIL_DELETED_BY_CHAR[un]||[]},
+        {key:"drafts",  label:"📝 Drafts",  color:"var(--accent)", storageKey:"mail_drafts",    defaultFn:(un)=>MAIL_DRAFTS_BY_CHAR[un]||[]},
+        {key:"deleted", label:"🗑 Deleted",  color:"var(--danger)", storageKey:"mail_deleted",   defaultFn:(un)=>MAIL_DELETED_BY_CHAR[un]||[]},
       ];
       const curTabDef = MAIL_TAB_DEFS.find(t=>t.key===mailAdmTab);
       const un = d.username || "glindatheverygood";
@@ -3797,22 +3809,22 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
       return (
         <div style={{display:"flex",flexDirection:"column",gap:12}}>
           {/* Adresse mail du perso */}
-          <div style={{background:"rgba(255,255,255,0.85)",border:"1px solid rgba(0,0,0,0.07)",borderRadius:10,padding:"10px 14px",display:"flex",alignItems:"center",gap:10}}>
+          <div style={{background:"var(--raise)",border:"1px solid var(--line)",borderRadius:10,padding:"10px 14px",display:"flex",alignItems:"center",gap:10}}>
             <div style={{flex:1}}>
-              <div style={{fontSize:10,color:"#9ca3af",fontWeight:600,letterSpacing:0.5,textTransform:"uppercase",marginBottom:4}}>Adresse email du perso</div>
+              <div style={{fontSize:10,color:"var(--ink-faint)",fontWeight:600,letterSpacing:0.5,textTransform:"uppercase",marginBottom:4}}>Adresse email du perso</div>
               <Field value={currentEmail} onChange={v=>upd("mailEmail",v)} style={{width:"100%"}} placeholder={`${un}@uma.edu`}/>
             </div>
-            <div style={{fontSize:10,color:"#9ca3af",lineHeight:1.4,maxWidth:200}}>S'affiche dans le champ "À" des mails reçus sur ce téléphone</div>
+            <div style={{fontSize:10,color:"var(--ink-faint)",lineHeight:1.4,maxWidth:200}}>S'affiche dans le champ "À" des mails reçus sur ce téléphone</div>
           </div>
           {/* 3 onglets */}
-          <div className="adm-subtabs" style={{display:"flex",gap:0,background:"rgba(0,0,0,0.05)",borderRadius:10,padding:3,alignSelf:"stretch"}}>
+          <div className="adm-subtabs" style={{display:"flex",gap:0,background:"var(--line-soft)",borderRadius:10,padding:3,alignSelf:"stretch"}}>
             {MAIL_TAB_DEFS.map(t=>(
               <button key={t.key} onClick={()=>setMailAdmTab(t.key)} style={{
                 flex:1,padding:"9px 12px",border:"none",borderRadius:8,cursor:"pointer",fontSize:12,
                 fontWeight:mailAdmTab===t.key?700:400,
-                background:mailAdmTab===t.key?"#fff":"transparent",
-                color:mailAdmTab===t.key?t.color:"#6b7280",
-                boxShadow:mailAdmTab===t.key?"0 1px 3px rgba(0,0,0,0.1)":"none",
+                background:mailAdmTab===t.key?"var(--card)":"transparent",
+                color:mailAdmTab===t.key?t.color:"var(--ink-soft)",
+                boxShadow:mailAdmTab===t.key?"0 1px 3px var(--line)":"none",
                 transition:"all 0.15s",whiteSpace:"nowrap",
               }}>{t.label}</button>
             ))}
@@ -3824,12 +3836,12 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
             const isOpen = mailOpen.has(mid);
             const toggle = toggleInSet(setMailOpen);
             return (
-              <div key={m.id||i} style={{background:"rgba(255,255,255,0.9)",borderRadius:10,border:"1px solid rgba(0,0,0,0.07)",overflow:"hidden"}}>
+              <div key={m.id||i} style={{background:"var(--raise)",borderRadius:10,border:"1px solid var(--line)",overflow:"hidden"}}>
                 <div onClick={()=>toggle(mid)} style={{display:"flex",gap:10,alignItems:"center",padding:"12px 14px",minHeight:44,WebkitTapHighlightColor:"transparent",cursor:"pointer"}}>
                   {mailAdmTab==="inbox" && <span style={{width:7,height:7,borderRadius:"50%",background:m.unread?"#4a7ab5":"transparent",flexShrink:0}}/>}
                   <div style={{flex:1,minWidth:0}}>
-                    <div style={{fontSize:12,fontWeight:m.unread?700:400,color:"#374151",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{m.from||<em style={{color:"#9ca3af"}}>(sans expéditeur)</em>} {m.subj?`— ${m.subj}`:""}</div>
-                    <div style={{fontSize:10,color:"#9ca3af"}}>{m.time||"—"}</div>
+                    <div style={{fontSize:12,fontWeight:m.unread?700:400,color:"var(--ink-soft)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{m.from||<em style={{color:"var(--ink-faint)"}}>(sans expéditeur)</em>} {m.subj?`— ${m.subj}`:""}</div>
+                    <div style={{fontSize:10,color:"var(--ink-faint)"}}>{m.time||"—"}</div>
                   </div>
                   <AdminChevron open={isOpen}/>
                 </div>
@@ -3840,7 +3852,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                   <LoreDateTimeInput value={m.time||""} onChange={v=>updMail({time:v})} width="180px"/>
                   {mailAdmTab==="inbox" && (
                     <div style={{display:"flex",flexDirection:"column",gap:2,marginTop:18}}>
-                      <label style={{display:"flex",alignItems:"center",gap:5,fontSize:11,color:"#6b7280",cursor:"pointer",whiteSpace:"nowrap"}}>
+                      <label style={{display:"flex",alignItems:"center",gap:5,fontSize:11,color:"var(--ink-soft)",cursor:"pointer",whiteSpace:"nowrap"}}>
                         <input type="checkbox" checked={!!m.unread} onChange={e=>updMail({unread:e.target.checked})}/> Non lu
                       </label>
                     </div>
@@ -3849,7 +3861,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                     <MoveButtons index={i} length={mails.length}
                       onMoveUp={()=>{const l=[...mails];[l[i-1],l[i]]=[l[i],l[i-1]];updMailList(l);}}
                       onMoveDown={()=>{const l=[...mails];[l[i+1],l[i]]=[l[i],l[i+1]];updMailList(l);}}/>
-                    <button onClick={()=>updMailList(mails.filter((_,j)=>j!==i))} style={{background:"none",border:"none",color:"#d1d5db",cursor:"pointer",fontSize:16,padding:"0 2px",marginTop:18}}>×</button>
+                    <button onClick={()=>updMailList(mails.filter((_,j)=>j!==i))} style={{background:"none",border:"none",color:"var(--ink-faint)",cursor:"pointer",fontSize:16,padding:"0 2px",marginTop:18}}>×</button>
                   </div>
                 </div>
                 <Field label="Objet" value={m.subj||""} onChange={v=>updMail({subj:v})} style={{width:"100%"}}/>
@@ -3895,14 +3907,14 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
       return (
         <div style={{display:"flex",flexDirection:"column",gap:12}}>
           {/* Tab bar */}
-          <div className="adm-subtabs" style={{display:"flex",gap:0,background:"rgba(0,0,0,0.05)",borderRadius:8,padding:2,alignSelf:"flex-start"}}>
+          <div className="adm-subtabs" style={{display:"flex",gap:0,background:"var(--line-soft)",borderRadius:8,padding:2,alignSelf:"flex-start"}}>
             {SubTabs.map(([k,label])=>(
               <button key={k} onClick={()=>setFbTab(k)} style={{
                 padding:"6px 14px",border:"none",borderRadius:6,cursor:"pointer",fontSize:11,
                 fontWeight:fbTab===k?700:400,
-                background:fbTab===k?"#fff":"transparent",
-                color:fbTab===k?FB_COLOR:"#6b7280",
-                boxShadow:fbTab===k?"0 1px 3px rgba(0,0,0,0.1)":"none",
+                background:fbTab===k?"var(--card)":"transparent",
+                color:fbTab===k?FB_COLOR:"var(--ink-soft)",
+                boxShadow:fbTab===k?"0 1px 3px var(--line)":"none",
                 transition:"all 0.15s",whiteSpace:"nowrap",
               }}>{label}</button>
             ))}
@@ -3910,18 +3922,18 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
 
           {/* ── MON PROFIL ── */}
           {fbTab==="users" && (
-            <div className="adm-card" style={{background:"rgba(255,255,255,0.85)",borderRadius:10,padding:"14px 16px",border:"1px solid rgba(0,0,0,0.07)",display:"flex",flexDirection:"column",gap:10}}>
-              <div style={{fontSize:10,fontWeight:700,color:"#9ca3af",letterSpacing:0.5,marginBottom:2}}>★ CE PERSO — synchronisé pour les 4</div>
+            <div className="adm-card" style={{background:"var(--raise)",borderRadius:10,padding:"14px 16px",border:"1px solid var(--line)",display:"flex",flexDirection:"column",gap:10}}>
+              <div style={{fontSize:10,fontWeight:700,color:"var(--ink-faint)",letterSpacing:0.5,marginBottom:2}}>★ CE PERSO — synchronisé pour les 4</div>
               {/* Photo de profil */}
               <div style={{display:"flex",gap:12,alignItems:"center"}}>
-                <label style={{width:56,height:56,borderRadius:8,overflow:"hidden",background:FB_COLOR,display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontWeight:700,fontSize:20,cursor:"pointer",border:"1px solid rgba(0,0,0,0.1)"}}>
+                <label style={{width:56,height:56,borderRadius:8,overflow:"hidden",background:FB_COLOR,display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontWeight:700,fontSize:20,cursor:"pointer",border:"1px solid var(--line)"}}>
                   {d.avatar?<img src={d.avatar} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:(CHAR_NAMES[tab]||tab)[0]}
                   <input type="file" accept="image/*" style={{display:"none"}} onChange={e=>{const f=e.target.files?.[0];if(!f)return;const r=new UploadReader();r.onload=ev=>{upd("avatar",ev.target.result);onUpdate("_sharedAvatars",{...(data.sharedThreads?._sharedAvatars||{}),[tab]:ev.target.result});};r.readAsDataURL(f);e.target.value="";}}/>
                 </label>
                 <div style={{flex:1}}>
-                  <div style={{fontSize:12,fontWeight:600,color:"#374151"}}>Photo de profil Facebook</div>
-                  <div style={{fontSize:10,color:"#9ca3af"}}>Visible sur les posts et dans le fil des autres</div>
-                  {d.avatar && <button onClick={()=>{upd("avatar",null);onUpdate("_sharedAvatars",{...(data.sharedThreads?._sharedAvatars||{}),[tab]:null});}} style={{fontSize:10,color:"#ef4444",background:"none",border:"none",cursor:"pointer",padding:0,marginTop:2}}>Supprimer</button>}
+                  <div style={{fontSize:12,fontWeight:600,color:"var(--ink-soft)"}}>Photo de profil Facebook</div>
+                  <div style={{fontSize:10,color:"var(--ink-faint)"}}>Visible sur les posts et dans le fil des autres</div>
+                  {d.avatar && <button onClick={()=>{upd("avatar",null);onUpdate("_sharedAvatars",{...(data.sharedThreads?._sharedAvatars||{}),[tab]:null});}} style={{fontSize:10,color:"var(--danger)",background:"none",border:"none",cursor:"pointer",padding:0,marginTop:2}}>Supprimer</button>}
                 </div>
               </div>
               {/* Nom affiché */}
@@ -3946,27 +3958,27 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
           {/* ── PAGES SUIVIES ── */}
           {fbTab==="pages" && (
             <div style={{display:"flex",flexDirection:"column",gap:8}}>
-              <div style={{fontSize:11,color:"#6b7280",lineHeight:1.5}}>Posts de pages suivies par <strong>{CHAR_NAMES[tab]||tab}</strong> uniquement — non partagés entre persos.</div>
+              <div style={{fontSize:11,color:"var(--ink-soft)",lineHeight:1.5}}>Posts de pages suivies par <strong>{CHAR_NAMES[tab]||tab}</strong> uniquement — non partagés entre persos.</div>
               {pages.map((p,i)=>{
                 const updPage = (patch) => updPages(pages.map((p2,j)=>j===i?{...p2,...patch}:p2));
                 const isOpen = fbPagesOpen.has(i);
                 const toggle = toggleInSet(setFbPagesOpen);
                 return (
-                  <div key={i} className="adm-card" style={{background:"rgba(255,255,255,0.85)",borderRadius:10,border:"1px solid rgba(0,0,0,0.07)",overflow:"hidden"}}>
+                  <div key={i} className="adm-card" style={{background:"var(--raise)",borderRadius:10,border:"1px solid var(--line)",overflow:"hidden"}}>
                     <div onClick={()=>toggle(i)} style={{display:"flex",gap:10,alignItems:"center",padding:"8px 12px",cursor:"pointer"}}>
                       <div style={{width:30,height:30,borderRadius:6,overflow:"hidden",background:FB_COLOR,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,fontSize:13,color:"#fff",fontWeight:700}}>
                         {p.avatar?<img src={p.avatar} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:(p.name||"?")[0]?.toUpperCase()}
                       </div>
                       <div style={{flex:1,minWidth:0}}>
-                        <div style={{fontSize:12,color:"#374151",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{p.name||<em style={{color:"#9ca3af"}}>(sans nom)</em>} {p.text?`— ${p.text}`:""}</div>
-                        <div style={{fontSize:10,color:"#9ca3af"}}>{p.time||"—"}</div>
+                        <div style={{fontSize:12,color:"var(--ink-soft)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{p.name||<em style={{color:"var(--ink-faint)"}}>(sans nom)</em>} {p.text?`— ${p.text}`:""}</div>
+                        <div style={{fontSize:10,color:"var(--ink-faint)"}}>{p.time||"—"}</div>
                       </div>
                       <AdminChevron open={isOpen}/>
                     </div>
                     {isOpen && (
                     <div style={{display:"flex",gap:10,alignItems:"flex-start",padding:"0 12px 12px"}}>
                     {/* Avatar de la page */}
-                    <label style={{width:44,height:44,borderRadius:6,overflow:"hidden",background:FB_COLOR,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",flexShrink:0,border:"1px solid rgba(0,0,0,0.08)",fontSize:16,color:"#fff",fontWeight:700}}>
+                    <label style={{width:44,height:44,borderRadius:6,overflow:"hidden",background:FB_COLOR,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",flexShrink:0,border:"1px solid var(--line)",fontSize:16,color:"#fff",fontWeight:700}}>
                       {p.avatar?<img src={p.avatar} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:(p.name||"?")[0]?.toUpperCase()}
                       <input type="file" accept="image/*" style={{display:"none"}} onChange={e=>{
                         const f=e.target.files?.[0]; if(!f) return;
@@ -3977,12 +3989,12 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                     <div style={{display:"flex",gap:6,flexWrap:"wrap",alignItems:"flex-end"}}>
                       <Field label="Page" value={p.name||""} onChange={v=>updPage({name:v})} style={{flex:1}} placeholder="ex: Stephen King…"/>
                       <LoreDateTimeInput value={p.time||""} onChange={v=>updPage({time:v})} width="190px" showLabel={true}/>
-                      {p.avatar && <button onClick={()=>updPage({avatar:null})} style={{fontSize:10,color:"#ef4444",background:"none",border:"none",cursor:"pointer",padding:0,alignSelf:"center"}}>× Suppr. photo</button>}
+                      {p.avatar && <button onClick={()=>updPage({avatar:null})} style={{fontSize:10,color:"var(--danger)",background:"none",border:"none",cursor:"pointer",padding:0,alignSelf:"center"}}>× Suppr. photo</button>}
                       <div style={{display:"flex",gap:4,alignItems:"flex-start"}}>
                         <MoveButtons index={i} length={pages.length}
                           onMoveUp={()=>{const l=[...pages];[l[i-1],l[i]]=[l[i],l[i-1]];updPages(l);}}
                           onMoveDown={()=>{const l=[...pages];[l[i+1],l[i]]=[l[i],l[i+1]];updPages(l);}}/>
-                        <button onClick={()=>updPages(pages.filter((_,j)=>j!==i))} className="adm-del-btn" style={{background:"rgba(239,68,68,0.07)",border:"1px solid rgba(239,68,68,0.2)",color:"#ef4444",borderRadius:6,padding:"5px 8px",cursor:"pointer",fontSize:11,marginTop:18}}>✕</button>
+                        <button onClick={()=>updPages(pages.filter((_,j)=>j!==i))} className="adm-del-btn" style={{background:"rgba(239,68,68,0.07)",border:"1px solid rgba(239,68,68,0.2)",color:"var(--danger)",borderRadius:6,padding:"5px 8px",cursor:"pointer",fontSize:11,marginTop:18}}>✕</button>
                       </div>
                     </div>
                     <Field label="Texte du post" value={p.text||""} onChange={v=>updPage({text:v})} textarea/>
@@ -4012,7 +4024,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
           {ytVideos.map((v,i)=>{
             const updVid = (patch) => updYtList(ytVideos.map((v2,j)=>j===i?{...v2,...patch,id:v2.id||Date.now()+j}:{...v2,id:v2.id||Date.now()+j}));
             return (
-              <div key={v.id??i} className="adm-card" style={{background:"rgba(255,255,255,0.9)",borderRadius:10,padding:"10px 12px",border:"1px solid rgba(0,0,0,0.07)",display:"flex",flexDirection:"column",gap:6}}>
+              <div key={v.id??i} className="adm-card" style={{background:"var(--raise)",borderRadius:10,padding:"10px 12px",border:"1px solid var(--line)",display:"flex",flexDirection:"column",gap:6}}>
                 <div style={{display:"flex",gap:6}}>
                   <Field label="Chaîne" value={v.ch||""} onChange={c=>updVid({ch:c})} style={{flex:1}}/>
                   <div style={{display:"flex",gap:6,alignItems:"flex-start"}}>
@@ -4022,7 +4034,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                       onMoveUp={() => { const l=[...ytVideos]; [l[i-1],l[i]]=[l[i],l[i-1]]; updYtList(l); }}
                       onMoveDown={() => { const l=[...ytVideos]; [l[i+1],l[i]]=[l[i],l[i+1]]; updYtList(l); }}
                     />
-                    <button onClick={()=>updYtList(ytVideos.filter((_,j)=>j!==i))} className="adm-del-btn" style={{background:"rgba(239,68,68,0.07)",border:"1px solid rgba(239,68,68,0.2)",color:"#ef4444",borderRadius:6,padding:"5px 8px",cursor:"pointer",fontSize:11,marginTop:18}}>✕</button>
+                    <button onClick={()=>updYtList(ytVideos.filter((_,j)=>j!==i))} className="adm-del-btn" style={{background:"rgba(239,68,68,0.07)",border:"1px solid rgba(239,68,68,0.2)",color:"var(--danger)",borderRadius:6,padding:"5px 8px",cursor:"pointer",fontSize:11,marginTop:18}}>✕</button>
                   </div>
                 </div>
                 <Field label="Titre de la vidéo" value={v.title||""} onChange={c=>updVid({title:c})} textarea/>
@@ -4044,10 +4056,10 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                     const r=new UploadReader(); r.onload=ev=>updVid({thumbImg:ev.target.result}); r.readAsDataURL(f); e.target.value="";
                   }}/>
                   <div style={{flex:1}}>
-                    <div style={{fontSize:11,fontWeight:600,color:"#374151"}}>Miniature</div>
-                    <div style={{fontSize:10,color:"#9ca3af"}}>Cliquez pour importer une image</div>
+                    <div style={{fontSize:11,fontWeight:600,color:"var(--ink-soft)"}}>Miniature</div>
+                    <div style={{fontSize:10,color:"var(--ink-faint)"}}>Cliquez pour importer une image</div>
                   </div>
-                  {v.thumbImg && <button onClick={()=>updVid({thumbImg:null})} style={{fontSize:10,color:"#ef4444",background:"none",border:"none",cursor:"pointer",padding:0}}>Supprimer</button>}
+                  {v.thumbImg && <button onClick={()=>updVid({thumbImg:null})} style={{fontSize:10,color:"var(--danger)",background:"none",border:"none",cursor:"pointer",padding:0}}>Supprimer</button>}
                 </div>
               </div>
             );
@@ -4106,7 +4118,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
     }
   };
 
-  const charColor = char?.color || "#6366f1";
+  const charColor = char?.color || "var(--accent)";
   const charColorLight = charColor + "22";
   const charColorMid   = charColor + "55";
 
@@ -4136,38 +4148,70 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
   ];
 
   return (
-    <div ref={adminRootRef} style={{minHeight:"100vh",background:"#f4f5f7",fontFamily:FF_IOS,display:"flex",flexDirection:"column",color:"#1a1a2e"}}>
+    <div ref={adminRootRef} style={{minHeight:"100vh",background:"var(--paper)",fontFamily:FF_IOS,display:"flex",flexDirection:"column",color:"var(--ink)"}}>
       <style>{`
+        /* ── Design tokens « Atelier » — clair par défaut, nuit selon l'appareil, togglable ── */
+        :root{
+          --paper:#f0eee9; --card:#fbfaf8; --raise:#ffffff;
+          --ink:#211e26; --ink-soft:#6f6b76; --ink-faint:#9b96a2;
+          --line:#e4e0d8; --line-soft:#ece9e2;
+          --ok:#2e8f60; --danger:#cf4a45; --accent-ink:#ffffff;
+          --accent:#7d7f8c;
+          --accent-wash:color-mix(in srgb, var(--accent) 11%, var(--card));
+          --accent-line:color-mix(in srgb, var(--accent) 40%, var(--line));
+          --shadow:0 1px 2px rgba(30,25,40,.05), 0 6px 20px rgba(30,25,40,.05);
+        }
+        @media (prefers-color-scheme:dark){
+          :root:not([data-theme="light"]){
+            --paper:#17151c; --card:#211e28; --raise:#282430;
+            --ink:#f0edf3; --ink-soft:#a49fae; --ink-faint:#726d7c;
+            --line:#332f3c; --line-soft:#2a2732;
+            --ok:#4fb98a; --danger:#e0716c;
+            --accent-wash:color-mix(in srgb, var(--accent) 22%, var(--card));
+            --accent-line:color-mix(in srgb, var(--accent) 45%, var(--line));
+            --shadow:0 1px 2px rgba(0,0,0,.3), 0 8px 26px rgba(0,0,0,.35);
+          }
+        }
+        :root[data-theme="dark"]{
+          --paper:#17151c; --card:#211e28; --raise:#282430;
+          --ink:#f0edf3; --ink-soft:#a49fae; --ink-faint:#726d7c;
+          --line:#332f3c; --line-soft:#2a2732;
+          --ok:#4fb98a; --danger:#e0716c;
+          --accent-wash:color-mix(in srgb, var(--accent) 22%, var(--card));
+          --accent-line:color-mix(in srgb, var(--accent) 45%, var(--line));
+          --shadow:0 1px 2px rgba(0,0,0,.3), 0 8px 26px rgba(0,0,0,.35);
+        }
         @keyframes fadeToBlack { from { opacity:0; } to { opacity:1; } }
         @keyframes wakeUp { from { opacity:0; } to { opacity:1; } }
         @keyframes spin360 { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-        .adm-input { transition: border-color 0.15s, box-shadow 0.15s; }
-        .adm-input:focus { outline: none; border-color: #6366f1 !important; box-shadow: 0 0 0 3px rgba(99,102,241,0.12); }
-        .adm-card { transition: box-shadow 0.15s; }
-        .adm-card:hover { box-shadow: 0 4px 20px rgba(0,0,0,0.08) !important; }
+        .adm-input { transition: border-color 0.15s, box-shadow 0.15s; color:var(--ink); }
+        .adm-input::placeholder { color:var(--ink-faint); }
+        .adm-input:focus { outline: none; border-color: var(--accent) !important; box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent); }
+        .adm-card { transition: box-shadow 0.15s, border-color 0.15s; }
+        .adm-card:hover { box-shadow: var(--shadow) !important; }
         .adm-btn-primary { transition: all 0.15s; }
-        .adm-btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(99,102,241,0.3); }
-        .adm-del-btn:hover { color: #ef4444 !important; }
-        .nav-item:hover { background: rgba(0,0,0,0.04) !important; }
-        .nav-item.active { background: var(--char-color-light) !important; color: var(--char-color) !important; font-weight: 700 !important; }
+        .adm-btn-primary:hover { transform: translateY(-1px); filter: brightness(1.04); }
+        .adm-del-btn:hover { color: var(--danger) !important; }
+        .nav-item:hover { background: var(--line-soft) !important; }
+        .nav-item.active { background: var(--accent-wash) !important; color: var(--accent) !important; font-weight: 700 !important; }
         .char-tab:hover { opacity: 0.85; }
         ::-webkit-scrollbar { width: 4px; height: 4px; }
         ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.12); border-radius: 10px; }
+        ::-webkit-scrollbar-thumb { background: var(--line); border-radius: 10px; }
         @media (max-width: 560px) {
           .nav-item-label { display: none !important; }
           .nav-item { padding: 8px !important; justify-content: center !important; }
         }
         @media (max-width: 700px) {
           .adm-topbar { flex-wrap: wrap !important; height: auto !important; padding: 8px 12px !important; gap: 6px !important; }
-          .adm-topbar-chars { flex: 1 1 100% !important; order: 2 !important; overflow-x: auto !important; scrollbar-width: none !important; border-top: 1px solid #f0f0f0 !important; padding-top: 4px !important; }
+          .adm-topbar-chars { flex: 1 1 100% !important; order: 2 !important; overflow-x: auto !important; scrollbar-width: none !important; border-top: 1px solid var(--line-soft) !important; padding-top: 4px !important; }
           .adm-topbar-chars::-webkit-scrollbar { display: none !important; }
           .adm-topbar-right { margin-left: auto !important; }
           .adm-topbar-date { display: none !important; }
           .adm-topbar-logo-label { display: none !important; }
           .char-tab { padding: 6px 10px !important; font-size: 12px !important; border-bottom: 3px solid transparent !important; }
           .adm-shell { flex-direction: column !important; }
-          .adm-sidebar { width: 100% !important; min-height: auto !important; flex-direction: row !important; overflow-x: auto !important; border-right: none !important; border-bottom: 1px solid #e5e7eb !important; padding: 4px 6px !important; scrollbar-width: none !important; }
+          .adm-sidebar { width: 100% !important; min-height: auto !important; flex-direction: row !important; overflow-x: auto !important; border-right: none !important; border-bottom: 1px solid var(--line) !important; padding: 4px 6px !important; scrollbar-width: none !important; }
           .adm-sidebar::-webkit-scrollbar { display: none !important; }
           .adm-sidebar-inner { flex-direction: row !important; gap: 2px !important; padding: 4px !important; }
           .adm-sidebar-charhead { display: none !important; }
@@ -4185,16 +4229,16 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
       `}</style>
 
       {/* ── TOP BAR ──────────────────────────────────────────────────────────── */}
-      <div className="adm-topbar" style={{background:"#fff",borderBottom:"1px solid #e5e7eb",padding:isMobile?"8px 12px":"0 20px",display:"flex",alignItems:isMobile?"center":"stretch",flexShrink:0,gap:isMobile?6:0,height:isMobile?"auto":52,flexWrap:isMobile?"wrap":"nowrap"}}>
+      <div className="adm-topbar" style={{background:"var(--card)",borderBottom:"1px solid var(--line)",padding:isMobile?"8px 12px":"0 20px",display:"flex",alignItems:isMobile?"center":"stretch",flexShrink:0,gap:isMobile?6:0,height:isMobile?"auto":52,flexWrap:isMobile?"wrap":"nowrap"}}>
 
         {/* Logo */}
-        <div style={{display:"flex",alignItems:"center",gap:10,paddingRight:20,borderRight:"1px solid #f0f0f0",marginRight:4,flexShrink:0}}>
-          <div style={{width:28,height:28,borderRadius:8,background:"linear-gradient(135deg,#6366f1,#8b5cf6)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:14}}>⚙</div>
-          {!isMobile && <div style={{fontWeight:700,fontSize:14,color:"#1a1a2e",letterSpacing:-0.3}}>IT: Welcome to UMA <span style={{color:"#9ca3af",fontWeight:400,fontSize:11}}>admin</span></div>}
+        <div style={{display:"flex",alignItems:"center",gap:10,paddingRight:20,borderRight:"1px solid var(--line-soft)",marginRight:4,flexShrink:0}}>
+          <div style={{width:28,height:28,borderRadius:8,background:"linear-gradient(135deg,var(--accent),var(--accent))",display:"flex",alignItems:"center",justifyContent:"center",fontSize:14}}>⚙</div>
+          {!isMobile && <div style={{fontWeight:700,fontSize:14,color:"var(--ink)",letterSpacing:-0.3}}>IT: Welcome to UMA <span style={{color:"var(--ink-faint)",fontWeight:400,fontSize:11}}>admin</span></div>}
         </div>
 
         {/* Character tabs */}
-        <div className="adm-topbar-chars" style={{display:"flex",alignItems:"stretch",flex:isMobile?"1 1 100%":1,gap:0,order:isMobile?2:0,overflowX:isMobile?"auto":"visible",borderTop:isMobile?"1px solid #f0f0f0":"none",paddingTop:isMobile?4:0}}>
+        <div className="adm-topbar-chars" style={{display:"flex",alignItems:"stretch",flex:isMobile?"1 1 100%":1,gap:0,order:isMobile?2:0,overflowX:isMobile?"auto":"visible",borderTop:isMobile?"1px solid var(--line-soft)":"none",paddingTop:isMobile?4:0}}>
           {CHARACTERS.map(c=>{
             const isActive = tab===c.key;
             const emoji = c.key==="glinda"?"🌸":c.key==="eoghan"?"🌈":c.key==="drew"?"🪱":"🖤";
@@ -4205,7 +4249,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                   display:"flex",alignItems:"center",gap:7,padding:"0 16px",
                   border:"none",borderBottom:`3px solid ${isActive?c.color:"transparent"}`,
                   background:"transparent",
-                  color:isActive?c.color:"#6b7280",
+                  color:isActive?c.color:"var(--ink-soft)",
                   cursor:"pointer",fontSize:13,fontWeight:isActive?700:500,
                   transition:"all 0.15s",flexShrink:0,
                 }}>
@@ -4217,44 +4261,49 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
         </div>
 
         {/* Right actions */}
-        <div className="adm-topbar-right" style={{display:"flex",alignItems:"center",gap:6,paddingLeft:isMobile?0:12,borderLeft:isMobile?"none":"1px solid #f0f0f0",flexShrink:0,order:isMobile?1:0,marginLeft:isMobile?"auto":0}}>
+        <div className="adm-topbar-right" style={{display:"flex",alignItems:"center",gap:6,paddingLeft:isMobile?0:12,borderLeft:isMobile?"none":"1px solid var(--line-soft)",flexShrink:0,order:isMobile?1:0,marginLeft:isMobile?"auto":0}}>
 
           {isMobile ? (
             <>
             <div style={{position:"relative"}}>
               <button onClick={()=>setBurgerOpen(o=>!o)}
-                style={{background:burgerOpen?"#f3f4f6":"transparent",border:"1px solid #e5e7eb",color:"#374151",padding:"6px 10px",borderRadius:7,fontSize:15,cursor:"pointer",lineHeight:1}}>
+                style={{background:burgerOpen?"var(--line-soft)":"transparent",border:"1px solid var(--line)",color:"var(--ink-soft)",padding:"6px 10px",borderRadius:7,fontSize:15,cursor:"pointer",lineHeight:1}}>
                 ☰
               </button>
               {burgerOpen && <>
                 {/* Overlay invisible pour fermer le menu en cliquant en dehors */}
                 <div onClick={()=>setBurgerOpen(false)} style={{position:"fixed",inset:0,zIndex:40}}/>
-                <div style={{position:"absolute",top:"calc(100% + 6px)",right:0,background:"#fff",border:"1px solid #e5e7eb",borderRadius:10,boxShadow:"0 10px 30px rgba(0,0,0,0.15)",padding:8,display:"flex",flexDirection:"column",gap:6,zIndex:50,minWidth:210}}>
+                <div style={{position:"absolute",top:"calc(100% + 6px)",right:0,background:"var(--card)",border:"1px solid var(--line)",borderRadius:10,boxShadow:"0 10px 30px rgba(0,0,0,0.15)",padding:8,display:"flex",flexDirection:"column",gap:6,zIndex:50,minWidth:210}}>
 
-                  <div style={{display:"flex",alignItems:"center",gap:5,background:"#f8fafc",border:"1px solid #e5e7eb",borderRadius:7,padding:"5px 9px"}}>
+                  <div style={{display:"flex",alignItems:"center",gap:5,background:"var(--line-soft)",border:"1px solid var(--line)",borderRadius:7,padding:"5px 9px"}}>
                     <span style={{fontSize:12}}>📅</span>
                     <input type="date" value={loreDate} onChange={e=>onLoreDateChange(e.target.value)}
-                      style={{background:"transparent",border:"none",color:"#6366f1",fontSize:11,cursor:"pointer",outline:"none",fontFamily:"monospace",fontWeight:600,flex:1}}/>
+                      style={{background:"transparent",border:"none",color:"var(--accent)",fontSize:11,cursor:"pointer",outline:"none",fontFamily:"monospace",fontWeight:600,flex:1}}/>
                   </div>
 
                   <button onClick={()=>{setExportOpen(true); setBurgerOpen(false);}}
-                    style={{background:"transparent",border:"1px solid #e5e7eb",color:"#374151",padding:"8px 12px",borderRadius:7,fontSize:12,cursor:"pointer",fontWeight:500,textAlign:"left"}}>
+                    style={{background:"transparent",border:"1px solid var(--line)",color:"var(--ink-soft)",padding:"8px 12px",borderRadius:7,fontSize:12,cursor:"pointer",fontWeight:500,textAlign:"left"}}>
                     📤 Exporter JSON
                   </button>
 
                   <button onClick={()=>{ resetImport(); setImportOpen(true); setBurgerOpen(false); }}
-                    style={{background:"transparent",border:"1px solid #e5e7eb",color:"#374151",padding:"8px 12px",borderRadius:7,fontSize:12,cursor:"pointer",fontWeight:500,textAlign:"left"}}>
+                    style={{background:"transparent",border:"1px solid var(--line)",color:"var(--ink-soft)",padding:"8px 12px",borderRadius:7,fontSize:12,cursor:"pointer",fontWeight:500,textAlign:"left"}}>
                     📥 Importer JSON
                   </button>
 
                   <button onClick={()=>{ openRestorePanel(); setBurgerOpen(false); }}
-                    style={{background:"transparent",border:"1px solid #e5e7eb",color:"#374151",padding:"8px 12px",borderRadius:7,fontSize:12,cursor:"pointer",fontWeight:500,textAlign:"left"}}>
+                    style={{background:"transparent",border:"1px solid var(--line)",color:"var(--ink-soft)",padding:"8px 12px",borderRadius:7,fontSize:12,cursor:"pointer",fontWeight:500,textAlign:"left"}}>
                     🕐 Restaurer
                   </button>
 
                   <button onClick={()=>{ setMigrateStatus(null); setMigrateOpen(true); setBurgerOpen(false); }}
-                    style={{background:"transparent",border:"1px solid #e5e7eb",color:"#374151",padding:"8px 12px",borderRadius:7,fontSize:12,cursor:"pointer",fontWeight:500,textAlign:"left"}}>
+                    style={{background:"transparent",border:"1px solid var(--line)",color:"var(--ink-soft)",padding:"8px 12px",borderRadius:7,fontSize:12,cursor:"pointer",fontWeight:500,textAlign:"left"}}>
                     🧹 Migrer images
+                  </button>
+
+                  <button onClick={toggleTheme}
+                    style={{background:"transparent",border:"1px solid var(--line)",color:"var(--ink-soft)",padding:"8px 12px",borderRadius:7,fontSize:12,cursor:"pointer",fontWeight:500,textAlign:"left"}}>
+                    {isDarkTheme ? "☀︎ Mode jour" : "☾ Mode nuit"}
                   </button>
 
                 </div>
@@ -4263,46 +4312,52 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
 
             {/* Retour — sorti du burger, toujours visible juste à côté */}
             <button onClick={onExit}
-              style={{background:"transparent",border:"1px solid #e5e7eb",color:"#374151",padding:"6px 12px",borderRadius:7,fontSize:12,cursor:"pointer",fontWeight:500}}>
+              style={{background:"transparent",border:"1px solid var(--line)",color:"var(--ink-soft)",padding:"6px 12px",borderRadius:7,fontSize:12,cursor:"pointer",fontWeight:500}}>
               ← Retour
             </button>
             </>
           ) : <>
 
+          {/* Toggle jour / nuit */}
+          <button onClick={toggleTheme} title="Basculer jour / nuit" aria-label="Basculer jour / nuit"
+            style={{background:"transparent",border:"1px solid var(--line)",color:"var(--ink-soft)",padding:"6px 11px",borderRadius:7,fontSize:14,cursor:"pointer",fontWeight:600,lineHeight:1}}>
+            {isDarkTheme ? "☾" : "☀︎"}
+          </button>
+
           {/* Date lore */}
-          <div style={{display:"flex",alignItems:"center",gap:5,background:"#f8fafc",border:"1px solid #e5e7eb",borderRadius:7,padding:"5px 9px"}}>
+          <div style={{display:"flex",alignItems:"center",gap:5,background:"var(--line-soft)",border:"1px solid var(--line)",borderRadius:7,padding:"5px 9px"}}>
             <span style={{fontSize:12}}>📅</span>
             <input type="date" value={loreDate} onChange={e=>onLoreDateChange(e.target.value)}
-              style={{background:"transparent",border:"none",color:"#6366f1",fontSize:11,cursor:"pointer",outline:"none",fontFamily:"monospace",fontWeight:600,width:110}}/>
+              style={{background:"transparent",border:"none",color:"var(--accent)",fontSize:11,cursor:"pointer",outline:"none",fontFamily:"monospace",fontWeight:600,width:110}}/>
           </div>
 
           {/* Export JSON */}
           <button onClick={()=>setExportOpen(true)}
-            style={{background:"transparent",border:"1px solid #e5e7eb",color:"#374151",padding:"6px 12px",borderRadius:7,fontSize:12,cursor:"pointer",fontWeight:500}}>
+            style={{background:"transparent",border:"1px solid var(--line)",color:"var(--ink-soft)",padding:"6px 12px",borderRadius:7,fontSize:12,cursor:"pointer",fontWeight:500}}>
             📤 Exporter JSON
           </button>
 
           {/* Import JSON */}
           <button onClick={()=>{ resetImport(); setImportOpen(true); }}
-            style={{background:"transparent",border:"1px solid #e5e7eb",color:"#374151",padding:"6px 12px",borderRadius:7,fontSize:12,cursor:"pointer",fontWeight:500}}>
+            style={{background:"transparent",border:"1px solid var(--line)",color:"var(--ink-soft)",padding:"6px 12px",borderRadius:7,fontSize:12,cursor:"pointer",fontWeight:500}}>
             📥 Importer JSON
           </button>
 
           {/* Restaurer un snapshot */}
           <button onClick={openRestorePanel}
-            style={{background:"transparent",border:"1px solid #e5e7eb",color:"#374151",padding:"6px 12px",borderRadius:7,fontSize:12,cursor:"pointer",fontWeight:500}}>
+            style={{background:"transparent",border:"1px solid var(--line)",color:"var(--ink-soft)",padding:"6px 12px",borderRadius:7,fontSize:12,cursor:"pointer",fontWeight:500}}>
             🕐 Restaurer
           </button>
 
           {/* Migrer les images base64 restantes vers Supabase */}
           <button onClick={()=>{ setMigrateStatus(null); setMigrateOpen(true); }}
-            style={{background:"transparent",border:"1px solid #e5e7eb",color:"#374151",padding:"6px 12px",borderRadius:7,fontSize:12,cursor:"pointer",fontWeight:500}}>
+            style={{background:"transparent",border:"1px solid var(--line)",color:"var(--ink-soft)",padding:"6px 12px",borderRadius:7,fontSize:12,cursor:"pointer",fontWeight:500}}>
             🧹 Migrer images
           </button>
 
           {/* Back */}
           <button onClick={onExit}
-            style={{background:"transparent",border:"1px solid #e5e7eb",color:"#374151",padding:"6px 12px",borderRadius:7,fontSize:12,cursor:"pointer",fontWeight:500}}>
+            style={{background:"transparent",border:"1px solid var(--line)",color:"var(--ink-soft)",padding:"6px 12px",borderRadius:7,fontSize:12,cursor:"pointer",fontWeight:500}}>
             ← Retour
           </button>
 
@@ -4314,14 +4369,14 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
       <div className="adm-shell" style={{flex:1,display:"flex",overflow:"hidden",minHeight:0,flexDirection:"column"}}
         // CSS variable for active char color used by nav-item.active
       >
-        <style>{`:root{--char-color:${charColor};--char-color-light:${charColor}18;}`}</style>
+        <style>{`:root{--accent:${charColor};--char-color:${charColor};--char-color-light:${charColor}18;}`}</style>
 
         {/* ── LEFT SIDEBAR ─────────────────────────────────────────────────── */}
-        <div className="adm-sidebar" style={{width:"100%",background:"#fff",borderRight:"none",borderBottom:"1px solid #e5e7eb",display:"flex",flexDirection:"row",flexShrink:0,overflowX:"auto",overflowY:"hidden"}}>
+        <div className="adm-sidebar" style={{width:"100%",background:"var(--card)",borderRight:"none",borderBottom:"1px solid var(--line)",display:"flex",flexDirection:"row",flexShrink:0,overflowX:"auto",overflowY:"hidden"}}>
           <div className="adm-sidebar-inner" style={{display:"flex",flexDirection:"row",padding:"6px 8px",gap:2,minWidth:"max-content"}}>
 
             {/* Character header pill */}
-            {false && <div style={{display:"flex",alignItems:"center",gap:8,padding:"8px 10px 12px",borderBottom:"1px solid #f0f0f0",marginBottom:6}}>
+            {false && <div style={{display:"flex",alignItems:"center",gap:8,padding:"8px 10px 12px",borderBottom:"1px solid var(--line-soft)",marginBottom:6}}>
               <div style={{width:10,height:10,borderRadius:"50%",background:charColor,boxShadow:`0 0 0 3px ${charColor}22`,flexShrink:0}}/>
               <div>
                 <div style={{fontSize:12,fontWeight:700,color:charColor}}>{char?.label}</div>
@@ -4331,7 +4386,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
 
             {SECTION_GROUPS.map(group=>(
               <div key={group.label} style={{display:"flex",flexDirection:"row",alignItems:"center"}}>
-                {false && <div style={{fontSize:9,fontWeight:700,letterSpacing:1,color:"#c0c4cc",textTransform:"uppercase",padding:"8px 10px 4px"}}>
+                {false && <div style={{fontSize:9,fontWeight:700,letterSpacing:1,color:"var(--ink-faint)",textTransform:"uppercase",padding:"8px 10px 4px"}}>
                   {group.label}
                 </div>}
                 {group.items.map(item=>{
@@ -4346,7 +4401,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                         borderLeft:"none",
                         borderBottom:`2px solid ${active?charColor:"transparent"}`,
                         background:active?charColor+"18":"transparent",
-                        color:active?charColor:"#4b5563",
+                        color:active?charColor:"var(--ink-soft)",
                         fontSize:12,fontWeight:active?700:400,
                         cursor:"pointer",borderRadius:6,
                         transition:"all 0.12s",whiteSpace:"nowrap",flexShrink:0,
@@ -4362,20 +4417,20 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
         </div>
 
         {/* ── MAIN CONTENT ─────────────────────────────────────────────────── */}
-        <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden",minHeight:0,background:"#f4f5f7"}}>
+        <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden",minHeight:0,background:"var(--paper)"}}>
 
           {/* Content header breadcrumb */}
-          <div className="adm-breadcrumb" style={{background:"#fff",borderBottom:"1px solid #e5e7eb",padding:isMobile?"8px 12px":"12px 24px",display:"flex",alignItems:"center",justifyContent:"space-between",flexShrink:0}}>
+          <div className="adm-breadcrumb" style={{background:"var(--card)",borderBottom:"1px solid var(--line)",padding:isMobile?"8px 12px":"12px 24px",display:"flex",alignItems:"center",justifyContent:"space-between",flexShrink:0}}>
             <div style={{display:"flex",alignItems:"center",gap:6}}>
-              <span style={{fontSize:11,color:"#9ca3af"}}>{char?.label}</span>
-              <span style={{fontSize:11,color:"#d1d5db"}}>›</span>
-              <span style={{fontSize:12,fontWeight:600,color:"#374151"}}>
+              <span style={{fontSize:11,color:"var(--ink-faint)"}}>{char?.label}</span>
+              <span style={{fontSize:11,color:"var(--ink-faint)"}}>›</span>
+              <span style={{fontSize:12,fontWeight:600,color:"var(--ink-soft)"}}>
                 {[...SECTION_GROUPS.flatMap(g=>g.items)].find(i=>i.key===section)?.icon}{" "}
                 {[...SECTION_GROUPS.flatMap(g=>g.items)].find(i=>i.key===section)?.label || section}
               </span>
             </div>
             <button onClick={save}
-              style={{background:saved?"#10b981":"linear-gradient(135deg,#6366f1,#8b5cf6)",border:"none",color:"#fff",padding:"6px 16px",borderRadius:7,fontWeight:600,fontSize:12,cursor:"pointer",transition:"background 0.2s"}}>
+              style={{background:saved?"var(--ok)":"linear-gradient(135deg,var(--accent),var(--accent))",border:"none",color:"#fff",padding:"6px 16px",borderRadius:7,fontWeight:600,fontSize:12,cursor:"pointer",transition:"background 0.2s"}}>
               {saved?"✓ Enregistré":"Enregistrer"}
             </button>
           </div>
@@ -4390,21 +4445,21 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
       {/* ── MODAL EXPORT JSON ────────────────────────────────────────────────── */}
       {exportOpen && (
         <div onClick={()=>setExportOpen(false)} style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.5)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:1002,padding:16}}>
-          <div onClick={e=>e.stopPropagation()} style={{background:"#fff",borderRadius:14,width:"min(480px,100%)",display:"flex",flexDirection:"column",overflow:"hidden",boxShadow:"0 20px 60px rgba(0,0,0,0.3)"}}>
-            <div style={{padding:"16px 20px",borderBottom:"1px solid #e5e7eb",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-              <div style={{fontWeight:700,fontSize:14,color:"#1a1a2e"}}>📤 Exporter JSON</div>
-              <button onClick={()=>setExportOpen(false)} style={{background:"none",border:"none",fontSize:18,color:"#9ca3af",cursor:"pointer"}}>×</button>
+          <div onClick={e=>e.stopPropagation()} style={{background:"var(--card)",borderRadius:14,width:"min(480px,100%)",display:"flex",flexDirection:"column",overflow:"hidden",boxShadow:"0 20px 60px rgba(0,0,0,0.3)"}}>
+            <div style={{padding:"16px 20px",borderBottom:"1px solid var(--line)",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+              <div style={{fontWeight:700,fontSize:14,color:"var(--ink)"}}>📤 Exporter JSON</div>
+              <button onClick={()=>setExportOpen(false)} style={{background:"none",border:"none",fontSize:18,color:"var(--ink-faint)",cursor:"pointer"}}>×</button>
             </div>
             <div style={{padding:"16px 20px",display:"flex",flexDirection:"column",gap:16}}>
               {/* Scope */}
               <div>
-                <div style={{fontSize:11,fontWeight:700,color:"#6b7280",letterSpacing:0.5,textTransform:"uppercase",marginBottom:8}}>Périmètre</div>
+                <div style={{fontSize:11,fontWeight:700,color:"var(--ink-soft)",letterSpacing:0.5,textTransform:"uppercase",marginBottom:8}}>Périmètre</div>
                 <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
                   {[["all","🌍 Tout le projet"],["char","👤 Un seul perso"]].map(([v,label])=>(
                     <button key={v} onClick={()=>setExportScope(v)}
                       style={{padding:"8px 16px",borderRadius:8,border:"none",cursor:"pointer",fontSize:12,fontWeight:exportScope===v?700:500,
-                        background:exportScope===v?"linear-gradient(135deg,#6366f1,#8b5cf6)":"rgba(0,0,0,0.05)",
-                        color:exportScope===v?"#fff":"#374151",transition:"all 0.15s"}}>
+                        background:exportScope===v?"linear-gradient(135deg,var(--accent),var(--accent))":"var(--line-soft)",
+                        color:exportScope===v?"#fff":"var(--ink-soft)",transition:"all 0.15s"}}>
                       {label}
                     </button>
                   ))}
@@ -4414,8 +4469,8 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                     {[["glinda","🌸 Glinda"],["eoghan","🌈 Eoghan"],["drew","🪱 Drew"],["elias","🖤 Elias"]].map(([ck,label])=>(
                       <button key={ck} onClick={()=>setExportChar(ck)}
                         style={{padding:"6px 14px",borderRadius:7,border:"none",cursor:"pointer",fontSize:11,fontWeight:exportChar===ck?700:500,
-                          background:exportChar===ck?"rgba(99,102,241,0.15)":"rgba(0,0,0,0.04)",
-                          color:exportChar===ck?"#6366f1":"#6b7280",transition:"all 0.15s"}}>
+                          background:exportChar===ck?"var(--accent-wash)":"var(--line-soft)",
+                          color:exportChar===ck?"var(--accent)":"var(--ink-soft)",transition:"all 0.15s"}}>
                         {label}
                       </button>
                     ))}
@@ -4424,31 +4479,31 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
               </div>
               {/* Contenu */}
               <div>
-                <div style={{fontSize:11,fontWeight:700,color:"#6b7280",letterSpacing:0.5,textTransform:"uppercase",marginBottom:8}}>Contenu</div>
+                <div style={{fontSize:11,fontWeight:700,color:"var(--ink-soft)",letterSpacing:0.5,textTransform:"uppercase",marginBottom:8}}>Contenu</div>
                 <div style={{display:"flex",flexDirection:"column",gap:6}}>
                   {[
                     ["full",   "📦 Texte + images", "Export complet — plus lourd mais rien ne manque"],
                     ["text",   "📝 Texte uniquement", "Sans les photos en base64 — léger, rapide, lisible"],
                     ["images", "🖼️ Images uniquement", "Seulement les photos (avatars, galerie, pochettes...)"],
                   ].map(([v,label,desc])=>(
-                    <label key={v} onClick={()=>setExportContent(v)} style={{display:"flex",alignItems:"flex-start",gap:10,background:exportContent===v?"rgba(99,102,241,0.06)":"rgba(0,0,0,0.02)",border:`1px solid ${exportContent===v?"rgba(99,102,241,0.25)":"rgba(0,0,0,0.07)"}`,borderRadius:8,padding:"10px 12px",cursor:"pointer"}}>
-                      <input type="radio" readOnly checked={exportContent===v} style={{marginTop:2,flexShrink:0,accentColor:"#6366f1"}}/>
+                    <label key={v} onClick={()=>setExportContent(v)} style={{display:"flex",alignItems:"flex-start",gap:10,background:exportContent===v?"rgba(99,102,241,0.06)":"var(--line-soft)",border:`1px solid ${exportContent===v?"rgba(99,102,241,0.25)":"var(--line)"}`,borderRadius:8,padding:"10px 12px",cursor:"pointer"}}>
+                      <input type="radio" readOnly checked={exportContent===v} style={{marginTop:2,flexShrink:0,accentColor:"var(--accent)"}}/>
                       <div>
-                        <div style={{fontSize:12,fontWeight:exportContent===v?700:500,color:exportContent===v?"#6366f1":"#374151"}}>{label}</div>
-                        <div style={{fontSize:11,color:"#9ca3af",marginTop:2}}>{desc}</div>
+                        <div style={{fontSize:12,fontWeight:exportContent===v?700:500,color:exportContent===v?"var(--accent)":"var(--ink-soft)"}}>{label}</div>
+                        <div style={{fontSize:11,color:"var(--ink-faint)",marginTop:2}}>{desc}</div>
                       </div>
                     </label>
                   ))}
                 </div>
               </div>
-              <div style={{fontSize:11,color:"#9ca3af",lineHeight:1.5}}>
+              <div style={{fontSize:11,color:"var(--ink-faint)",lineHeight:1.5}}>
                 Le fichier téléchargé reflète l'état Firebase le plus récent — pas seulement ce qui est affiché à l'écran.
               </div>
             </div>
-            <div style={{padding:"12px 20px",borderTop:"1px solid #e5e7eb",display:"flex",justifyContent:"flex-end",gap:8}}>
-              <button onClick={()=>setExportOpen(false)} style={{background:"transparent",border:"1px solid #e5e7eb",color:"#374151",padding:"8px 14px",borderRadius:7,fontSize:12,cursor:"pointer"}}>Annuler</button>
+            <div style={{padding:"12px 20px",borderTop:"1px solid var(--line)",display:"flex",justifyContent:"flex-end",gap:8}}>
+              <button onClick={()=>setExportOpen(false)} style={{background:"transparent",border:"1px solid var(--line)",color:"var(--ink-soft)",padding:"8px 14px",borderRadius:7,fontSize:12,cursor:"pointer"}}>Annuler</button>
               <button onClick={doExport}
-                style={{background:"linear-gradient(135deg,#6366f1,#8b5cf6)",border:"none",color:"#fff",padding:"8px 18px",borderRadius:7,fontWeight:700,fontSize:12,cursor:"pointer"}}>
+                style={{background:"linear-gradient(135deg,var(--accent),var(--accent))",border:"none",color:"#fff",padding:"8px 18px",borderRadius:7,fontWeight:700,fontSize:12,cursor:"pointer"}}>
                 ⬇️ Télécharger
               </button>
             </div>
@@ -4459,26 +4514,26 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
       {/* ── MODAL RESTAURATION SNAPSHOT ─────────────────────────────────────── */}
       {restoreOpen && (
         <div onClick={()=>setRestoreOpen(false)} style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.5)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:1001,padding:16}}>
-          <div onClick={e=>e.stopPropagation()} style={{background:"#fff",borderRadius:14,width:"min(500px,100%)",maxHeight:"80vh",display:"flex",flexDirection:"column",overflow:"hidden",boxShadow:"0 20px 60px rgba(0,0,0,0.3)"}}>
-            <div style={{padding:"16px 20px",borderBottom:"1px solid #e5e7eb",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+          <div onClick={e=>e.stopPropagation()} style={{background:"var(--card)",borderRadius:14,width:"min(500px,100%)",maxHeight:"80vh",display:"flex",flexDirection:"column",overflow:"hidden",boxShadow:"0 20px 60px rgba(0,0,0,0.3)"}}>
+            <div style={{padding:"16px 20px",borderBottom:"1px solid var(--line)",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
               <div>
-                <div style={{fontWeight:700,fontSize:14,color:"#1a1a2e"}}>🕐 Restaurer une version</div>
-                <div style={{fontSize:11,color:"#9ca3af",marginTop:2}}>Un snapshot automatique est pris toutes les 30s lors de tes modifications. Les {snapshots.length||"…"} derniers sont conservés.</div>
+                <div style={{fontWeight:700,fontSize:14,color:"var(--ink)"}}>🕐 Restaurer une version</div>
+                <div style={{fontSize:11,color:"var(--ink-faint)",marginTop:2}}>Un snapshot automatique est pris toutes les 30s lors de tes modifications. Les {snapshots.length||"…"} derniers sont conservés.</div>
               </div>
-              <button onClick={()=>setRestoreOpen(false)} style={{background:"none",border:"none",fontSize:18,color:"#9ca3af",cursor:"pointer"}}>×</button>
+              <button onClick={()=>setRestoreOpen(false)} style={{background:"none",border:"none",fontSize:18,color:"var(--ink-faint)",cursor:"pointer"}}>×</button>
             </div>
             <div style={{flex:1,overflowY:"auto",padding:"12px 16px",display:"flex",flexDirection:"column",gap:8}}>
-              {restoreStatus==="loading" && <div style={{textAlign:"center",color:"#9ca3af",padding:24,fontSize:13}}>Chargement…</div>}
-              {restoreStatus==="empty" && <div style={{textAlign:"center",color:"#9ca3af",padding:24,fontSize:13}}>Aucun snapshot trouvé. Les snapshots se créent automatiquement à partir de la prochaine modification.</div>}
-              {restoreStatus==="error" && <div style={{background:"rgba(239,68,68,0.07)",border:"1px solid rgba(239,68,68,0.2)",color:"#ef4444",borderRadius:8,padding:"10px 14px",fontSize:12}}>Erreur de lecture. Vérifie la connexion Firebase.</div>}
+              {restoreStatus==="loading" && <div style={{textAlign:"center",color:"var(--ink-faint)",padding:24,fontSize:13}}>Chargement…</div>}
+              {restoreStatus==="empty" && <div style={{textAlign:"center",color:"var(--ink-faint)",padding:24,fontSize:13}}>Aucun snapshot trouvé. Les snapshots se créent automatiquement à partir de la prochaine modification.</div>}
+              {restoreStatus==="error" && <div style={{background:"rgba(239,68,68,0.07)",border:"1px solid rgba(239,68,68,0.2)",color:"var(--danger)",borderRadius:8,padding:"10px 14px",fontSize:12}}>Erreur de lecture. Vérifie la connexion Firebase.</div>}
               {snapshots.map((snap,i)=>(
-                <div key={snap.ts} style={{display:"flex",alignItems:"center",gap:12,background:i===0?"rgba(99,102,241,0.05)":"rgba(0,0,0,0.02)",border:`1px solid ${i===0?"rgba(99,102,241,0.2)":"rgba(0,0,0,0.07)"}`,borderRadius:10,padding:"10px 14px"}}>
+                <div key={snap.ts} style={{display:"flex",alignItems:"center",gap:12,background:i===0?"var(--accent-wash)":"var(--line-soft)",border:`1px solid ${i===0?"var(--accent-wash)":"var(--line)"}`,borderRadius:10,padding:"10px 14px"}}>
                   <div style={{flex:1}}>
-                    <div style={{fontSize:13,fontWeight:i===0?700:500,color:i===0?"#6366f1":"#374151"}}>{snap.label}{i===0?" — le plus récent":""}</div>
-                    <div style={{fontSize:10,color:"#9ca3af",marginTop:2}}>{new Date(parseInt(snap.ts)).toLocaleString("fr-FR")}</div>
+                    <div style={{fontSize:13,fontWeight:i===0?700:500,color:i===0?"var(--accent)":"var(--ink-soft)"}}>{snap.label}{i===0?" — le plus récent":""}</div>
+                    <div style={{fontSize:10,color:"var(--ink-faint)",marginTop:2}}>{new Date(parseInt(snap.ts)).toLocaleString("fr-FR")}</div>
                   </div>
                   <button onClick={()=>doRestore(snap)}
-                    style={{background:i===0?"linear-gradient(135deg,#6366f1,#8b5cf6)":"rgba(0,0,0,0.06)",border:"none",color:i===0?"#fff":"#374151",padding:"7px 14px",borderRadius:7,fontWeight:600,fontSize:12,cursor:"pointer"}}>
+                    style={{background:i===0?"linear-gradient(135deg,var(--accent),var(--accent))":"var(--line)",border:"none",color:i===0?"#fff":"var(--ink-soft)",padding:"7px 14px",borderRadius:7,fontWeight:600,fontSize:12,cursor:"pointer"}}>
                     Restaurer
                   </button>
                 </div>
@@ -4491,54 +4546,54 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
       {/* ── MODAL MIGRATION IMAGES BASE64 → SUPABASE ────────────────────────── */}
       {migrateOpen && (
         <div onClick={()=>{ if(!migrateStatus?.running) setMigrateOpen(false); }} style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.5)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:1001,padding:16}}>
-          <div onClick={e=>e.stopPropagation()} style={{background:"#fff",borderRadius:14,width:"min(480px,100%)",display:"flex",flexDirection:"column",overflow:"hidden",boxShadow:"0 20px 60px rgba(0,0,0,0.3)"}}>
-            <div style={{padding:"16px 20px",borderBottom:"1px solid #e5e7eb",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+          <div onClick={e=>e.stopPropagation()} style={{background:"var(--card)",borderRadius:14,width:"min(480px,100%)",display:"flex",flexDirection:"column",overflow:"hidden",boxShadow:"0 20px 60px rgba(0,0,0,0.3)"}}>
+            <div style={{padding:"16px 20px",borderBottom:"1px solid var(--line)",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
               <div>
-                <div style={{fontWeight:700,fontSize:14,color:"#1a1a2e"}}>🧹 Migrer les images vers Supabase</div>
-                <div style={{fontSize:11,color:"#9ca3af",marginTop:2}}>Retrouve toutes les images encore stockées en base64 (anciens uploads) et les envoie vers Supabase Storage pour alléger Firebase.</div>
+                <div style={{fontWeight:700,fontSize:14,color:"var(--ink)"}}>🧹 Migrer les images vers Supabase</div>
+                <div style={{fontSize:11,color:"var(--ink-faint)",marginTop:2}}>Retrouve toutes les images encore stockées en base64 (anciens uploads) et les envoie vers Supabase Storage pour alléger Firebase.</div>
               </div>
-              {!migrateStatus?.running && <button onClick={()=>setMigrateOpen(false)} style={{background:"none",border:"none",fontSize:18,color:"#9ca3af",cursor:"pointer"}}>×</button>}
+              {!migrateStatus?.running && <button onClick={()=>setMigrateOpen(false)} style={{background:"none",border:"none",fontSize:18,color:"var(--ink-faint)",cursor:"pointer"}}>×</button>}
             </div>
             <div style={{padding:"16px 20px",display:"flex",flexDirection:"column",gap:14}}>
               {!migrateStatus && (
-                <div style={{fontSize:12,color:"#6b7280",lineHeight:1.6}}>
+                <div style={{fontSize:12,color:"var(--ink-soft)",lineHeight:1.6}}>
                   Cette opération peut prendre un moment selon le nombre d'images à migrer. Ne ferme pas cette fenêtre pendant la migration.
                 </div>
               )}
               {migrateStatus?.running && (
                 <div style={{display:"flex",flexDirection:"column",gap:8}}>
-                  <div style={{fontSize:13,fontWeight:600,color:"#374151"}}>
+                  <div style={{fontSize:13,fontWeight:600,color:"var(--ink-soft)"}}>
                     {migrateStatus.done} / {migrateStatus.total} images traitées…
                   </div>
-                  <div style={{height:8,background:"rgba(0,0,0,0.06)",borderRadius:5,overflow:"hidden"}}>
-                    <div style={{height:"100%",width:`${migrateStatus.total ? Math.round(migrateStatus.done/migrateStatus.total*100) : 0}%`,background:"linear-gradient(90deg,#6366f1,#8b5cf6)",transition:"width 0.2s"}}/>
+                  <div style={{height:8,background:"var(--line)",borderRadius:5,overflow:"hidden"}}>
+                    <div style={{height:"100%",width:`${migrateStatus.total ? Math.round(migrateStatus.done/migrateStatus.total*100) : 0}%`,background:"linear-gradient(90deg,var(--accent),var(--accent))",transition:"width 0.2s"}}/>
                   </div>
-                  {migrateStatus.failed > 0 && <div style={{fontSize:11,color:"#ef4444"}}>{migrateStatus.failed} échec(s) jusqu'ici — resteront en base64.</div>}
+                  {migrateStatus.failed > 0 && <div style={{fontSize:11,color:"var(--danger)"}}>{migrateStatus.failed} échec(s) jusqu'ici — resteront en base64.</div>}
                 </div>
               )}
               {migrateStatus?.done && (
                 <div style={{display:"flex",flexDirection:"column",gap:8}}>
                   {migrateStatus.error ? (
-                    <div style={{background:"rgba(239,68,68,0.07)",border:"1px solid rgba(239,68,68,0.2)",color:"#ef4444",borderRadius:8,padding:"10px 14px",fontSize:12}}>{migrateStatus.error}</div>
+                    <div style={{background:"rgba(239,68,68,0.07)",border:"1px solid rgba(239,68,68,0.2)",color:"var(--danger)",borderRadius:8,padding:"10px 14px",fontSize:12}}>{migrateStatus.error}</div>
                   ) : migrateStatus.total===0 ? (
-                    <div style={{background:"rgba(16,185,129,0.08)",border:"1px solid rgba(16,185,129,0.25)",color:"#059669",borderRadius:8,padding:"10px 14px",fontSize:12,fontWeight:600}}>
+                    <div style={{background:"rgba(16,185,129,0.08)",border:"1px solid rgba(16,185,129,0.25)",color:"var(--ok)",borderRadius:8,padding:"10px 14px",fontSize:12,fontWeight:600}}>
                       ✓ Aucune image en base64 trouvée — tout est déjà propre !
                     </div>
                   ) : (
-                    <div style={{background:"rgba(16,185,129,0.08)",border:"1px solid rgba(16,185,129,0.25)",color:"#059669",borderRadius:8,padding:"10px 14px",fontSize:12,fontWeight:600}}>
+                    <div style={{background:"rgba(16,185,129,0.08)",border:"1px solid rgba(16,185,129,0.25)",color:"var(--ok)",borderRadius:8,padding:"10px 14px",fontSize:12,fontWeight:600}}>
                       ✓ {migrateStatus.migrated} image(s) migrée(s) vers Supabase{migrateStatus.failed>0?`, ${migrateStatus.failed} échec(s) (restées en base64)`:""}.
                     </div>
                   )}
                 </div>
               )}
             </div>
-            <div style={{padding:"12px 20px",borderTop:"1px solid #e5e7eb",display:"flex",justifyContent:"flex-end",gap:8}}>
+            <div style={{padding:"12px 20px",borderTop:"1px solid var(--line)",display:"flex",justifyContent:"flex-end",gap:8}}>
               {!migrateStatus?.running && (
-                <button onClick={()=>setMigrateOpen(false)} style={{background:"transparent",border:"1px solid #e5e7eb",color:"#374151",padding:"8px 14px",borderRadius:7,fontSize:12,cursor:"pointer"}}>Fermer</button>
+                <button onClick={()=>setMigrateOpen(false)} style={{background:"transparent",border:"1px solid var(--line)",color:"var(--ink-soft)",padding:"8px 14px",borderRadius:7,fontSize:12,cursor:"pointer"}}>Fermer</button>
               )}
               {!migrateStatus?.running && (
                 <button onClick={runMigration}
-                  style={{background:"linear-gradient(135deg,#6366f1,#8b5cf6)",border:"none",color:"#fff",padding:"8px 18px",borderRadius:7,fontWeight:700,fontSize:12,cursor:"pointer"}}>
+                  style={{background:"linear-gradient(135deg,var(--accent),var(--accent))",border:"none",color:"#fff",padding:"8px 18px",borderRadius:7,fontWeight:700,fontSize:12,cursor:"pointer"}}>
                   {migrateStatus?.done ? "Relancer" : "Lancer la migration"}
                 </button>
               )}
@@ -4550,20 +4605,20 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
       {/* ── MODAL IMPORT JSON ────────────────────────────────────────────────── */}
       {importOpen && (
         <div onClick={()=>setImportOpen(false)} style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.5)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:1000,padding:16}}>
-          <div onClick={e=>e.stopPropagation()} style={{background:"#fff",borderRadius:14,width:"min(640px,100%)",maxHeight:"85vh",display:"flex",flexDirection:"column",overflow:"hidden",boxShadow:"0 20px 60px rgba(0,0,0,0.3)"}}>
-            <div style={{padding:"16px 20px",borderBottom:"1px solid #e5e7eb",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-              <div style={{fontWeight:700,fontSize:14,color:"#1a1a2e"}}>📥 Importer un JSON</div>
-              <button onClick={()=>setImportOpen(false)} style={{background:"none",border:"none",fontSize:18,color:"#9ca3af",cursor:"pointer"}}>×</button>
+          <div onClick={e=>e.stopPropagation()} style={{background:"var(--card)",borderRadius:14,width:"min(640px,100%)",maxHeight:"85vh",display:"flex",flexDirection:"column",overflow:"hidden",boxShadow:"0 20px 60px rgba(0,0,0,0.3)"}}>
+            <div style={{padding:"16px 20px",borderBottom:"1px solid var(--line)",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+              <div style={{fontWeight:700,fontSize:14,color:"var(--ink)"}}>📥 Importer un JSON</div>
+              <button onClick={()=>setImportOpen(false)} style={{background:"none",border:"none",fontSize:18,color:"var(--ink-faint)",cursor:"pointer"}}>×</button>
             </div>
             <div style={{padding:"16px 20px",overflowY:"auto",flex:1,display:"flex",flexDirection:"column",gap:14}}>
-              <div style={{fontSize:11,color:"#6b7280",lineHeight:1.5}}>
+              <div style={{fontSize:11,color:"var(--ink-soft)",lineHeight:1.5}}>
                 Choisis un fichier JSON (export complet ou export par perso). Seules les catégories
                 listées ci-dessous sont prises en charge. L'import est <strong>toujours additif</strong> : les
                 items déjà présents (détectés par contenu) ne sont jamais dupliqués, et rien n'est supprimé
                 ni écrasé — ni dans cette catégorie, ni ailleurs.
               </div>
 
-              <label style={{alignSelf:"flex-start",background:"rgba(99,102,241,0.08)",border:"1px dashed rgba(99,102,241,0.4)",color:"#6366f1",borderRadius:8,padding:"8px 14px",fontSize:12,fontWeight:600,cursor:"pointer"}}>
+              <label style={{alignSelf:"flex-start",background:"var(--accent-wash)",border:"1px dashed var(--accent-line)",color:"var(--accent)",borderRadius:8,padding:"8px 14px",fontSize:12,fontWeight:600,cursor:"pointer"}}>
                 {importFileName ? `📄 ${importFileName}` : "Choisir un fichier .json"}
                 <input type="file" accept=".json,application/json" style={{display:"none"}} onChange={e=>{
                   const f = e.target.files?.[0]; if(!f) return; handleImportFile(f); e.target.value="";
@@ -4571,11 +4626,11 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
               </label>
 
               {importError && (
-                <div style={{background:"rgba(239,68,68,0.07)",border:"1px solid rgba(239,68,68,0.2)",color:"#ef4444",borderRadius:8,padding:"8px 12px",fontSize:11}}>{importError}</div>
+                <div style={{background:"rgba(239,68,68,0.07)",border:"1px solid rgba(239,68,68,0.2)",color:"var(--danger)",borderRadius:8,padding:"8px 12px",fontSize:11}}>{importError}</div>
               )}
 
               {importDone && (
-                <div style={{background:"rgba(16,185,129,0.08)",border:"1px solid rgba(16,185,129,0.25)",color:"#059669",borderRadius:8,padding:"8px 12px",fontSize:12,fontWeight:600}}>
+                <div style={{background:"rgba(16,185,129,0.08)",border:"1px solid rgba(16,185,129,0.25)",color:"var(--ok)",borderRadius:8,padding:"8px 12px",fontSize:12,fontWeight:600}}>
                   ✓ {importDone.added} élément(s) importé(s){importDone.skipped>0 ? `, ${importDone.skipped} déjà présent(s) ignoré(s)` : ""}.
                 </div>
               )}
@@ -4583,12 +4638,12 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
               {importParsed && !importDone && (()=>{
                 const visible = importScan.filter(s=>s.incomingCount>0);
                 if(visible.length===0) return (
-                  <div style={{fontSize:12,color:"#9ca3af",fontStyle:"italic"}}>Aucune donnée reconnue (Facebook / Twitter / Tumblr / Instagram) trouvée dans ce fichier.</div>
+                  <div style={{fontSize:12,color:"var(--ink-faint)",fontStyle:"italic"}}>Aucune donnée reconnue (Facebook / Twitter / Tumblr / Instagram) trouvée dans ce fichier.</div>
                 );
                 const grouped = visible.reduce((acc,s)=>{ (acc[s.appLabel]=acc[s.appLabel]||[]).push(s); return acc; },{});
                 return (<div style={{display:"flex",flexDirection:"column",gap:10}}>
                   {/* ── Niveau 1 : sélecteurs d'app ── */}
-                  <div style={{fontSize:11,fontWeight:700,color:"#9ca3af",letterSpacing:0.5,textTransform:"uppercase"}}>Apps à importer</div>
+                  <div style={{fontSize:11,fontWeight:700,color:"var(--ink-faint)",letterSpacing:0.5,textTransform:"uppercase"}}>Apps à importer</div>
                   <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
                     {Object.entries(grouped).map(([appLabel, defs])=>{
                       const appOn = importSelectedApps.has(appLabel);
@@ -4599,13 +4654,13 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                           style={{
                             display:"flex",alignItems:"center",gap:6,
                             padding:"8px 14px",borderRadius:8,border:"none",
-                            background:appOn?"linear-gradient(135deg,#6366f1,#8b5cf6)":"rgba(0,0,0,0.05)",
-                            color:appOn?"#fff":totalNew===0?"#d1d5db":"#374151",
+                            background:appOn?"linear-gradient(135deg,var(--accent),var(--accent))":"var(--line-soft)",
+                            color:appOn?"#fff":totalNew===0?"var(--ink-faint)":"var(--ink-soft)",
                             fontWeight:appOn?700:500,fontSize:12,cursor:totalNew===0?"default":"pointer",
                             transition:"all 0.15s",
                           }}>
                           {appLabel}
-                          <span style={{fontSize:10,background:appOn?"rgba(255,255,255,0.25)":"rgba(0,0,0,0.08)",borderRadius:10,padding:"1px 7px",fontWeight:700}}>
+                          <span style={{fontSize:10,background:appOn?"rgba(255,255,255,0.25)":"var(--line)",borderRadius:10,padding:"1px 7px",fontWeight:700}}>
                             {totalNew} nv.
                           </span>
                         </button>
@@ -4617,10 +4672,10 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                   {Object.entries(grouped).map(([appLabel, defs])=>{
                     if(!importSelectedApps.has(appLabel)) return null;
                     return (
-                      <div key={appLabel} style={{display:"flex",flexDirection:"column",gap:5,background:"rgba(99,102,241,0.03)",border:"1px solid rgba(99,102,241,0.1)",borderRadius:10,padding:"10px 12px"}}>
-                        <div style={{fontSize:11,fontWeight:700,color:"#6366f1",marginBottom:2}}>{appLabel} — catégories</div>
+                      <div key={appLabel} style={{display:"flex",flexDirection:"column",gap:5,background:"rgba(99,102,241,0.03)",border:"1px solid var(--accent-wash)",borderRadius:10,padding:"10px 12px"}}>
+                        <div style={{fontSize:11,fontWeight:700,color:"var(--accent)",marginBottom:2}}>{appLabel} — catégories</div>
                         {defs.map(def=>(
-                          <label key={def.id} style={{display:"flex",alignItems:"center",gap:8,background:importEffectiveSelected.has(def.id)?"rgba(99,102,241,0.06)":"rgba(0,0,0,0.02)",border:`1px solid ${importEffectiveSelected.has(def.id)?"rgba(99,102,241,0.2)":"rgba(0,0,0,0.06)"}`,borderRadius:8,padding:"7px 10px",cursor:def.newCount>0?"pointer":"default",opacity:def.newCount>0?1:0.5}}>
+                          <label key={def.id} style={{display:"flex",alignItems:"center",gap:8,background:importEffectiveSelected.has(def.id)?"rgba(99,102,241,0.06)":"var(--line-soft)",border:`1px solid ${importEffectiveSelected.has(def.id)?"var(--accent-wash)":"var(--line)"}`,borderRadius:8,padding:"7px 10px",cursor:def.newCount>0?"pointer":"default",opacity:def.newCount>0?1:0.5}}>
                             <input type="checkbox" checked={importEffectiveSelected.has(def.id)} disabled={def.newCount===0}
                               onChange={e=>{
                                 const next = new Set(importSelected);
@@ -4628,8 +4683,8 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                                 setImportSelected(next);
                               }}/>
                             <div style={{flex:1}}>
-                              <div style={{fontSize:12,color:"#1a1a2e"}}>{def.label}</div>
-                              <div style={{fontSize:10,color:"#9ca3af"}}>
+                              <div style={{fontSize:12,color:"var(--ink)"}}>{def.label}</div>
+                              <div style={{fontSize:10,color:"var(--ink-faint)"}}>
                                 {def.incomingCount} trouvé(s) — {def.newCount>0 ? `${def.newCount} nouveau(x)` : "déjà tous présents"}
                               </div>
                             </div>
@@ -4642,10 +4697,10 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
               })()}
             </div>
             {importParsed && !importDone && (
-              <div style={{padding:"14px 20px",borderTop:"1px solid #e5e7eb",display:"flex",justifyContent:"flex-end",gap:8}}>
-                <button onClick={()=>setImportOpen(false)} style={{background:"transparent",border:"1px solid #e5e7eb",color:"#374151",padding:"8px 14px",borderRadius:7,fontSize:12,cursor:"pointer"}}>Annuler</button>
+              <div style={{padding:"14px 20px",borderTop:"1px solid var(--line)",display:"flex",justifyContent:"flex-end",gap:8}}>
+                <button onClick={()=>setImportOpen(false)} style={{background:"transparent",border:"1px solid var(--line)",color:"var(--ink-soft)",padding:"8px 14px",borderRadius:7,fontSize:12,cursor:"pointer"}}>Annuler</button>
                 <button onClick={runImport} disabled={importEffectiveSelected.size===0}
-                  style={{background:importEffectiveSelected.size===0?"#d1d5db":"linear-gradient(135deg,#6366f1,#8b5cf6)",border:"none",color:"#fff",padding:"8px 16px",borderRadius:7,fontWeight:600,fontSize:12,cursor:importEffectiveSelected.size===0?"default":"pointer"}}>
+                  style={{background:importEffectiveSelected.size===0?"var(--ink-faint)":"linear-gradient(135deg,var(--accent),var(--accent))",border:"none",color:"#fff",padding:"8px 16px",borderRadius:7,fontWeight:600,fontSize:12,cursor:importEffectiveSelected.size===0?"default":"pointer"}}>
                   Importer la sélection
                 </button>
               </div>

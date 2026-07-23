@@ -34,14 +34,14 @@ const LoreDateTimeInput = ({value, onChange, width="100%", showLabel=true, showT
   };
   return (
     <div style={{display:"flex",flexDirection:"column",gap:5,width}}>
-      {showLabel && <label style={{color:"#9ca3af",fontSize:10,letterSpacing:0.8,textTransform:"uppercase",fontWeight:600}}>{label}</label>}
+      {showLabel && <label style={{color:"var(--ink-faint, #9ca3af)",fontSize:10,letterSpacing:0.8,textTransform:"uppercase",fontWeight:600}}>{label}</label>}
       <div style={{display:"flex",gap:4,flexWrap:"wrap"}}>
         <input type="date" value={dateVal}
           onChange={e=>onChange(build(e.target.value, timeVal))}
-          className="adm-input" style={{flex:"1 1 120px",minWidth:0,background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#1a1a2e",padding:"7px 8px",fontSize:11,borderRadius:7}}/>
+          className="adm-input" style={{flex:"1 1 120px",minWidth:0,background:"var(--raise, rgba(255,255,255,0.8))",border:"1px solid var(--line, rgba(0,0,0,0.1))",color:"var(--ink, #1a1a2e)",padding:"7px 8px",fontSize:11,borderRadius:7}}/>
         {showTime && <input type="time" value={timeVal}
           onChange={e=>onChange(build(dateVal, e.target.value))}
-          className="adm-input" style={{flex:"1 1 90px",minWidth:0,background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#1a1a2e",padding:"7px 8px",fontSize:11,borderRadius:7}}/>}
+          className="adm-input" style={{flex:"1 1 90px",minWidth:0,background:"var(--raise, rgba(255,255,255,0.8))",border:"1px solid var(--line, rgba(0,0,0,0.1))",color:"var(--ink, #1a1a2e)",padding:"7px 8px",fontSize:11,borderRadius:7}}/>}
       </div>
     </div>
   );
@@ -71,9 +71,9 @@ const LoreTimeInput = ({value, onChange, width="100%", showLabel=true, label="He
   const timeVal = p ? `${String(p.h).padStart(2,'0')}:${String(p.min).padStart(2,'0')}` : '';
   return (
     <div style={{display:"flex",flexDirection:"column",gap:5,width}}>
-      {showLabel && <label style={{color:"#9ca3af",fontSize:10,letterSpacing:0.8,textTransform:"uppercase",fontWeight:600}}>{label}</label>}
+      {showLabel && <label style={{color:"var(--ink-faint, #9ca3af)",fontSize:10,letterSpacing:0.8,textTransform:"uppercase",fontWeight:600}}>{label}</label>}
       <input type="time" value={timeVal} onChange={e=>onChange(buildClock(e.target.value))}
-        className="adm-input" style={{width:"100%",boxSizing:"border-box",background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#1a1a2e",padding:"7px 8px",fontSize:11,borderRadius:7}}/>
+        className="adm-input" style={{width:"100%",boxSizing:"border-box",background:"var(--raise, rgba(255,255,255,0.8))",border:"1px solid var(--line, rgba(0,0,0,0.1))",color:"var(--ink, #1a1a2e)",padding:"7px 8px",fontSize:11,borderRadius:7}}/>
     </div>
   );
 };
@@ -83,12 +83,12 @@ const LoreTimeInput = ({value, onChange, width="100%", showLabel=true, label="He
 // étaient auparavant ignorés silencieusement sur des dizaines d'appels.
 const Field = ({label, value, onChange, textarea=false, width="100%", style={}, placeholder}) => (
   <div style={{display:"flex",flexDirection:"column",gap:5,width,...style}}>
-    <label style={{color:"#9ca3af",fontSize:10,letterSpacing:0.8,textTransform:"uppercase",fontWeight:600}}>{label}</label>
+    <label style={{color:"var(--ink-faint, #9ca3af)",fontSize:10,letterSpacing:0.8,textTransform:"uppercase",fontWeight:600}}>{label}</label>
     {textarea
       ?<textarea value={value||""} onChange={e=>onChange(e.target.value)} rows={4} placeholder={placeholder} className="adm-input"
-          style={{background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#1a1a2e",padding:"8px 12px",fontSize:12,borderRadius:8,resize:"vertical",fontFamily:"inherit",boxShadow:"0 1px 2px rgba(0,0,0,0.04)"}}/>
+          style={{background:"var(--raise, rgba(255,255,255,0.8))",border:"1px solid var(--line, rgba(0,0,0,0.1))",color:"var(--ink, #1a1a2e)",padding:"8px 12px",fontSize:12,borderRadius:8,resize:"vertical",fontFamily:"inherit",boxShadow:"0 1px 2px rgba(0,0,0,0.04)"}}/>
       :<input value={value||""} onChange={e=>onChange(e.target.value)} placeholder={placeholder} className="adm-input"
-          style={{background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#1a1a2e",padding:"8px 12px",fontSize:12,borderRadius:8,width:"100%",boxSizing:"border-box",boxShadow:"0 1px 2px rgba(0,0,0,0.04)"}}/>
+          style={{background:"var(--raise, rgba(255,255,255,0.8))",border:"1px solid var(--line, rgba(0,0,0,0.1))",color:"var(--ink, #1a1a2e)",padding:"8px 12px",fontSize:12,borderRadius:8,width:"100%",boxSizing:"border-box",boxShadow:"0 1px 2px rgba(0,0,0,0.04)"}}/>
     }
   </div>
 );
