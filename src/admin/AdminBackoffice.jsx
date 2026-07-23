@@ -23,6 +23,7 @@ import { fileTypeMeta } from "../screens/FilesScreen.jsx";
 import { Field, LoreDateTimeInput, LoreTimeInput } from "../shared/admin-fields.jsx";
 import { GRINDR_DMS_DEFAULT } from "../screens/GrindrScreen.jsx";
 import { VPN_DEFAULTS } from "../screens/VPNScreen.jsx";
+import { WIFI_DEFAULT } from "../screens/SettingsScreen.jsx";
 
 // Éditeur générique pour les "posts partagés" (mêmes principes que Twitter : un tableau partagé
 // entre les 4 persos, chacun ne voit/modifie que les posts dont il est l'auteur, ajout d'image et
@@ -3544,8 +3545,11 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
 
         {/* ── Réseaux Wi-Fi connus ── (Réglages ▸ Wi-Fi sur le téléphone) */}
         {(()=>{
-          const nets = d.wifiNetworks || [];
-          const updNets = (l)=>upd("wifiNetworks", l);
+          // Mêmes défauts que l'écran (source unique WIFI_DEFAULT) tant que rien n'est custom ;
+          // toute édition matérialise la liste avec des id.
+          const isCustom = (d.wifiNetworks||[]).length > 0;
+          const nets = isCustom ? d.wifiNetworks : WIFI_DEFAULT;
+          const updNets = (l)=>upd("wifiNetworks", l.map((n,k)=>({...n,id:n.id??Date.now()+k})));
           const patchNet = (i,p)=>updNets(nets.map((n,j)=>{ let nn=j===i?{...n,...p}:n; if(p.current && j!==i) nn={...nn,current:false}; return nn; }));
           return (
           <div style={{display:"flex",flexDirection:"column",gap:8}}>
