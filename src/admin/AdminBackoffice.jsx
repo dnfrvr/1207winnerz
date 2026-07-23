@@ -843,7 +843,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
               </div>
             ))}
             <button onClick={()=>updSC("tracks",[...tracks,{id:Date.now(),title:"",dur:"0:00",tag:"",desc:"",plays:0,likes:0,reposts:0,posted:"aujourd'hui",wave:[],comments:[]}])}
-              style={{background:"rgba(242,111,33,0.08)",border:"1px dashed rgba(242,111,33,0.4)",color:"#f26f21",borderRadius:8,padding:"10px 18px",cursor:"pointer",fontSize:12,fontWeight:600}}>+ Track</button>
+              style={{background:"var(--accent)",border:"none",color:"#fff",borderRadius:9,boxShadow:"var(--shadow)",padding:"10px 18px",cursor:"pointer",fontSize:12,fontWeight:600}}>+ Track</button>
           </>);
         })()}
       </div>
@@ -879,7 +879,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
               </div>
             ))}
             <button onClick={()=>upNK("runs",[...runs,{id:Date.now(),distance:"",date:"",time:"",pace:"",cal:0,route:"",note:""}])}
-              style={{background:"rgba(192,57,43,0.08)",border:"1px dashed rgba(192,57,43,0.35)",color:"#c0392b",borderRadius:8,padding:"10px 18px",cursor:"pointer",fontSize:12,fontWeight:600}}>+ Sortie</button>
+              style={{background:"var(--accent)",border:"none",color:"#fff",borderRadius:9,boxShadow:"var(--shadow)",padding:"10px 18px",cursor:"pointer",fontSize:12,fontWeight:600}}>+ Sortie</button>
           </>);
         })()}
       </div>
@@ -914,7 +914,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                 : <div style={{width:44,height:34,borderRadius:6,overflow:"hidden",border:"1px solid var(--line)"}}>
                     <img src={d.wallpaper} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
                   </div>}
-              <label style={{background:"var(--accent-wash)",border:"1px dashed var(--accent-line)",color:"var(--accent)",borderRadius:8,padding:"6px 12px",cursor:"pointer",fontSize:11,fontWeight:600}}>
+              <label style={{background:"var(--accent)",border:"none",color:"#fff",borderRadius:9,boxShadow:"var(--shadow)",padding:"6px 12px",cursor:"pointer",fontSize:11,fontWeight:600}}>
                 📁 Image<input type="file" accept="image/*" style={{display:"none"}} onChange={e=>{const f=e.target.files?.[0];if(!f)return;const r=new UploadReader();r.onload=ev=>upd("wallpaper",ev.target.result);r.readAsDataURL(f);}}/>
               </label>
               {d.wallpaper&&!d.wallpaper.startsWith("#")&&<button onClick={()=>upd("wallpaper","#000000")} style={{background:"none",border:"none",color:"var(--danger)",cursor:"pointer",fontSize:18,padding:"0 4px"}}>×</button>}
@@ -924,7 +924,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
             <label style={{color:"var(--ink-faint)",fontSize:10,letterSpacing:0.8,fontWeight:600,textTransform:"uppercase"}}>Avatar</label>
             <div style={{display:"flex",gap:8,alignItems:"center"}}>
               {d.avatar&&<img src={d.avatar} style={{width:34,height:34,borderRadius:"50%",objectFit:"cover",border:"1px solid var(--line)"}}/>}
-              <label style={{background:"var(--accent-wash)",border:"1px dashed var(--accent-line)",color:"var(--accent)",borderRadius:8,padding:"6px 12px",cursor:"pointer",fontSize:11,fontWeight:600}}>
+              <label style={{background:"var(--accent)",border:"none",color:"#fff",borderRadius:9,boxShadow:"var(--shadow)",padding:"6px 12px",cursor:"pointer",fontSize:11,fontWeight:600}}>
                 {d.avatar?"🔄":"📁"}<input type="file" accept="image/*" style={{display:"none"}} onChange={e=>{const f=e.target.files?.[0];if(!f)return;const r=new UploadReader();r.onload=ev=>upd("avatar",ev.target.result);r.readAsDataURL(f);}}/>
               </label>
               {d.avatar&&<button onClick={()=>upd("avatar",null)} style={{background:"none",border:"none",color:"var(--danger)",cursor:"pointer",fontSize:18,padding:"0 4px"}}>×</button>}
@@ -941,7 +941,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                 :<div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",color:"#ccc",fontSize:22}}>📱</div>}
             </div>
             <div style={{display:"flex",flexDirection:"column",gap:8}}>
-              <label style={{background:"var(--accent-wash)",border:"1px dashed var(--accent-line)",color:"var(--accent)",borderRadius:8,padding:"8px 14px",cursor:"pointer",fontSize:11,fontWeight:600}}>
+              <label style={{background:"var(--accent)",border:"none",color:"#fff",borderRadius:9,boxShadow:"var(--shadow)",padding:"8px 14px",cursor:"pointer",fontSize:11,fontWeight:600}}>
                 {d.chassisPng?"🔄 Change":"📂 Import PNG"}
                 <input type="file" accept="image/png,image/webp" style={{display:"none"}} onChange={e=>{const f=e.target.files?.[0];if(!f)return;const r=new UploadReader();r.onload=ev=>upd("chassisPng",ev.target.result);r.readAsDataURL(f);e.target.value="";}}/>
               </label>
@@ -1474,7 +1474,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
         })}
         {msgAdminTab==="inbox" && (
         <button onClick={()=>upd("messages",[{id:Date.now(),contact:"Nouveau contact",thread:[{from:"them",text:"",time:"maintenant"}]},...(d.messages||[])])}
-          style={{background:"var(--accent-wash)",border:"1px dashed var(--accent-line)",color:"var(--accent)",borderRadius:8,padding:"10px 18px",cursor:"pointer",fontSize:12,fontWeight:600}}>+ Nouvelle conversation</button>
+          style={{background:"var(--accent)",border:"none",color:"#fff",borderRadius:9,boxShadow:"var(--shadow)",padding:"10px 18px",cursor:"pointer",fontSize:12,fontWeight:600}}>+ Nouvelle conversation</button>
         )}
         {msgAdminTab==="deleted" && deletedMsgs.length===0 && (
           <div style={{textAlign:"center",color:"var(--ink-faint)",fontSize:12,padding:"20px 0"}}>Aucune conversation supprimée.</div>
@@ -1520,7 +1520,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                 </div>
               ))}
               <button onClick={()=>upd("calls",[{id:Date.now(),contact:"",type:"outgoing",time:"1 oct",duration:null},...(d.calls||[])])}
-                style={{background:"var(--accent-wash)",border:"1px dashed var(--accent-line)",color:"var(--accent)",borderRadius:8,padding:"10px 18px",cursor:"pointer",fontSize:12,fontWeight:600}}>+ Call</button>
+                style={{background:"var(--accent)",border:"none",color:"#fff",borderRadius:9,boxShadow:"var(--shadow)",padding:"10px 18px",cursor:"pointer",fontSize:12,fontWeight:600}}>+ Call</button>
             </div>
           )}
 
@@ -1579,7 +1579,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                   </div>
                 ))}
                 <button onClick={addContact}
-                  style={{background:"var(--accent-wash)",border:"1px dashed var(--accent-line)",color:"var(--accent)",borderRadius:8,padding:"10px 18px",cursor:"pointer",fontSize:12,fontWeight:600,alignSelf:"flex-start"}}>+ Contact</button>
+                  style={{background:"var(--accent)",border:"none",color:"#fff",borderRadius:9,boxShadow:"var(--shadow)",padding:"10px 18px",cursor:"pointer",fontSize:12,fontWeight:600,alignSelf:"flex-start"}}>+ Contact</button>
               </div>
             );
           })()}
@@ -1704,7 +1704,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                   </div>
                 ))}
                 <button onClick={addVm}
-                  style={{background:"var(--accent-wash)",border:"1px dashed var(--accent-line)",color:"var(--accent)",borderRadius:8,padding:"10px 18px",cursor:"pointer",fontSize:12,fontWeight:600,alignSelf:"flex-start"}}>+ Message vocal</button>
+                  style={{background:"var(--accent)",border:"none",color:"#fff",borderRadius:9,boxShadow:"var(--shadow)",padding:"10px 18px",cursor:"pointer",fontSize:12,fontWeight:600,alignSelf:"flex-start"}}>+ Message vocal</button>
               </div>
             );
           })()}
@@ -1728,7 +1728,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
           </div>
         ))}
         <button onClick={()=>upd("notes",[{id:Date.now(),title:"",body:"",date:"1 oct"},...(d.notes||[])])}
-          style={{background:"var(--accent-wash)",border:"1px dashed var(--accent-line)",color:"var(--accent)",borderRadius:8,padding:"10px 18px",cursor:"pointer",fontSize:12,fontWeight:600}}>+ Note</button>
+          style={{background:"var(--accent)",border:"none",color:"#fff",borderRadius:9,boxShadow:"var(--shadow)",padding:"10px 18px",cursor:"pointer",fontSize:12,fontWeight:600}}>+ Note</button>
       </div>
     );
 
@@ -2222,7 +2222,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
               })}
               <button onClick={()=>{
                 updPlaylists(fresh=>[...fresh, {id:"pl_"+Date.now(), name:"Nouvelle playlist", cover:null, trackIds:[]}]);
-              }} style={{background:"var(--accent-wash)",border:"1px dashed var(--accent-line)",color:"var(--accent)",borderRadius:8,padding:"8px 16px",cursor:"pointer",fontSize:12,fontWeight:600,alignSelf:"flex-start"}}>+ Nouvelle playlist</button>
+              }} style={{background:"var(--accent)",border:"none",color:"#fff",borderRadius:9,boxShadow:"var(--shadow)",padding:"8px 16px",cursor:"pointer",fontSize:12,fontWeight:600,alignSelf:"flex-start"}}>+ Nouvelle playlist</button>
             </>;
           })()}
         </div>
@@ -2312,7 +2312,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
             const freshMusic = freshChar.music || [];
             onUpdate(tab, {...freshChar, music: [{id:Date.now(),title:"",artist:"",duration:"3:00"},...freshMusic]});
           }}
-            style={{background:"var(--accent-wash)",border:"1px dashed var(--accent-line)",color:"var(--accent)",borderRadius:8,padding:"10px 18px",cursor:"pointer",fontSize:12,fontWeight:600}}>+ Add manually</button>
+            style={{background:"var(--accent)",border:"none",color:"#fff",borderRadius:9,boxShadow:"var(--shadow)",padding:"10px 18px",cursor:"pointer",fontSize:12,fontWeight:600}}>+ Add manually</button>
         </div>
       </div>
     );
@@ -2610,7 +2610,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
               );})}
 
               <button onClick={()=>updEffective([...effectiveTweets.map((t,j)=>({...t,id:t.id||Date.now()+j})),{id:Date.now(),h:"@handle",name:"Nom",text:"",time:"1:00am",av:"?",rp:0,rt:0,fav:0}])}
-                style={{background:"rgba(29,161,242,0.08)",border:"1px dashed rgba(29,161,242,0.4)",color:"#1da1f2",borderRadius:8,padding:"10px 18px",cursor:"pointer",fontSize:12,fontWeight:600}}>+ Tweet</button>
+                style={{background:"var(--accent)",border:"none",color:"#fff",borderRadius:9,boxShadow:"var(--shadow)",padding:"10px 18px",cursor:"pointer",fontSize:12,fontWeight:600}}>+ Tweet</button>
             </div>
             );
           })()}
@@ -2729,7 +2729,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
               </div>
             ))}
             <button onClick={()=>updList([...effective.map((s,j)=>isCustom?s:{...s,id:Date.now()+j}),{id:Date.now(),contact:"",type:"photo",preview:"📸",time:"1 oct, 12:00pm",opened:false,sent:false}])}
-              style={{background:"rgba(232,196,0,0.1)",border:"1px dashed rgba(232,196,0,0.5)",color:"#a38900",borderRadius:8,padding:"10px 18px",cursor:"pointer",fontSize:12,fontWeight:600}}>+ Snap</button>
+              style={{background:"var(--accent)",border:"none",color:"#fff",borderRadius:9,boxShadow:"var(--shadow)",padding:"10px 18px",cursor:"pointer",fontSize:12,fontWeight:600}}>+ Snap</button>
           </>);
         })()}
       </div>
@@ -3371,7 +3371,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                 <button onClick={()=>updList(effective.filter((_,j)=>j!==i))} className="adm-del-btn" style={{background:"none",border:"none",color:"var(--ink-faint)",cursor:"pointer",fontSize:16,padding:"0 4px",borderRadius:5}}>×</button>
               </div>
             ))}
-            <button onClick={()=>updList([...effective.map((p,j)=>({...p,id:p.id||Date.now()+j})),{id:Date.now(),sub:"r/",title:"",pts:"0",comm:0,age:"1h",saved:false}])} style={{background:"rgba(255,69,0,0.08)",border:"1px dashed rgba(255,69,0,0.35)",color:"#ff4500",borderRadius:8,padding:"10px 18px",cursor:"pointer",fontSize:12,fontWeight:600}}>+ Post</button>
+            <button onClick={()=>updList([...effective.map((p,j)=>({...p,id:p.id||Date.now()+j})),{id:Date.now(),sub:"r/",title:"",pts:"0",comm:0,age:"1h",saved:false}])} style={{background:"var(--accent)",border:"none",color:"#fff",borderRadius:9,boxShadow:"var(--shadow)",padding:"10px 18px",cursor:"pointer",fontSize:12,fontWeight:600}}>+ Post</button>
           </>);
         })()}
       </div>
@@ -3489,7 +3489,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
             ))}
 
             <button onClick={()=>updCities([...cities.map((c)=>({...c})),{name:"",current:65,condition:"Clear",condIcon:"☀️",forecast:[],updated:""}])}
-              style={{background:"rgba(74,144,217,0.08)",border:"1px dashed rgba(74,144,217,0.35)",color:"#1a6bb5",borderRadius:8,padding:"10px 18px",cursor:"pointer",fontSize:12,fontWeight:600}}>+ Ville</button>
+              style={{background:"var(--accent)",border:"none",color:"#fff",borderRadius:9,boxShadow:"var(--shadow)",padding:"10px 18px",cursor:"pointer",fontSize:12,fontWeight:600}}>+ Ville</button>
           </>);
         })()}
       </div>
@@ -3529,7 +3529,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                 </div>
               ))}
               <button onClick={()=>updItems([...items,{icon:"📰",title:"Nouvel article",src:"source.com",time:"il y a 1:00am"}])}
-                style={{background:"rgba(220,38,38,0.08)",border:"1px dashed rgba(220,38,38,0.4)",color:"#dc2626",borderRadius:8,padding:"10px 18px",cursor:"pointer",fontSize:12,fontWeight:600,alignSelf:"flex-start"}}>+ Article</button>
+                style={{background:"var(--accent)",border:"none",color:"#fff",borderRadius:9,boxShadow:"var(--shadow)",padding:"10px 18px",cursor:"pointer",fontSize:12,fontWeight:600,alignSelf:"flex-start"}}>+ Article</button>
             </div>
           );
         })()}
@@ -3554,7 +3554,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                 <button onClick={()=>updList(effective.filter((_,j)=>j!==i))} className="adm-del-btn" style={{background:"none",border:"none",color:"var(--ink-faint)",cursor:"pointer",fontSize:16,padding:"0 4px",borderRadius:5}}>×</button>
               </div>
             ))}
-            <button onClick={()=>updList([...effective,["","","1 oct"]])} style={{background:"rgba(91,145,206,0.08)",border:"1px dashed rgba(91,145,206,0.35)",color:"#5b91ce",borderRadius:8,padding:"10px 18px",cursor:"pointer",fontSize:12,fontWeight:600}}>+ Article</button>
+            <button onClick={()=>updList([...effective,["","","1 oct"]])} style={{background:"var(--accent)",border:"none",color:"#fff",borderRadius:9,boxShadow:"var(--shadow)",padding:"10px 18px",cursor:"pointer",fontSize:12,fontWeight:600}}>+ Article</button>
           </>);
         })()}
       </div>
@@ -3656,7 +3656,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
               });
             })()}
             <button onClick={()=>updFiles({rootFiles:[...rootFiles,{id:Date.now(),name:"",date:"",size:""}]})}
-              style={{background:"var(--accent-wash)",border:"1px dashed var(--accent-line)",color:"var(--accent)",borderRadius:8,padding:"10px 18px",cursor:"pointer",fontSize:12,fontWeight:600}}>+ Fichier racine</button>
+              style={{background:"var(--accent)",border:"none",color:"#fff",borderRadius:9,boxShadow:"var(--shadow)",padding:"10px 18px",cursor:"pointer",fontSize:12,fontWeight:600}}>+ Fichier racine</button>
           </>);
         })()}
       </div>
@@ -3681,7 +3681,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                 </div>
               ))}
               <button onClick={()=>upB({bookmarks:[...b.bookmarks,{id:Date.now(),title:"",url:""}]})}
-                style={{background:"rgba(59,130,246,0.08)",border:"1px dashed rgba(59,130,246,0.35)",color:"#3b82f6",borderRadius:8,padding:"8px 14px",cursor:"pointer",fontSize:11,fontWeight:600}}>+ Favori</button>
+                style={{background:"var(--accent)",border:"none",color:"#fff",borderRadius:9,boxShadow:"var(--shadow)",padding:"8px 14px",cursor:"pointer",fontSize:11,fontWeight:600}}>+ Favori</button>
             </div>
             {/* History */}
             <div style={{display:"flex",flexDirection:"column",gap:8}}>
@@ -3695,7 +3695,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                 </div>
               ))}
               <button onClick={()=>upB({history:[...b.history,{id:Date.now(),title:"",url:"",time:""}]})}
-                style={{background:"rgba(59,130,246,0.08)",border:"1px dashed rgba(59,130,246,0.35)",color:"#3b82f6",borderRadius:8,padding:"8px 14px",cursor:"pointer",fontSize:11,fontWeight:600}}>+ Page</button>
+                style={{background:"var(--accent)",border:"none",color:"#fff",borderRadius:9,boxShadow:"var(--shadow)",padding:"8px 14px",cursor:"pointer",fontSize:11,fontWeight:600}}>+ Page</button>
             </div>
           </>);
         })()}
@@ -3781,7 +3781,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
           </div>
           ))}
           <button onClick={()=>upd("vpnServers",[...effective,{flag:"🏳",loc:"",ping:0,load:0}])}
-            style={{background:"rgba(91,145,206,0.08)",border:"1px dashed rgba(91,145,206,0.35)",color:"#5b91ce",borderRadius:8,padding:"10px 18px",cursor:"pointer",fontSize:12,fontWeight:600}}>+ Serveur</button>
+            style={{background:"var(--accent)",border:"none",color:"#fff",borderRadius:9,boxShadow:"var(--shadow)",padding:"10px 18px",cursor:"pointer",fontSize:12,fontWeight:600}}>+ Serveur</button>
           </>);
         })()}
       </div>
@@ -3827,7 +3827,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
           </div>
         ))}
         <button onClick={()=>upd("inaturalist",{...(d.inaturalist||{}),list:[...(d.inaturalist?.list||[]),{id:Date.now(),emoji:"🔬",common:"",latin:"",place:"",date:"1 oct 2012",grade:"Needs ID",ids:0,note:""}]})}
-          style={{background:"rgba(116,172,0,0.08)",border:"1px dashed rgba(116,172,0,0.35)",color:"#74AC00",borderRadius:8,padding:"10px 18px",cursor:"pointer",fontSize:12,fontWeight:600}}>+ Observation</button>
+          style={{background:"var(--accent)",border:"none",color:"#fff",borderRadius:9,boxShadow:"var(--shadow)",padding:"10px 18px",cursor:"pointer",fontSize:12,fontWeight:600}}>+ Observation</button>
       </div>
     );
 
@@ -4106,7 +4106,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
           })}
 
           <button onClick={addYtVideo}
-            style={{background:"rgba(204,0,0,0.08)",border:"1px dashed rgba(204,0,0,0.4)",color:"#cc0000",borderRadius:8,padding:"10px 18px",cursor:"pointer",fontSize:12,fontWeight:600}}>+ Vidéo YouTube</button>
+            style={{background:"var(--accent)",border:"none",color:"#fff",borderRadius:9,boxShadow:"var(--shadow)",padding:"10px 18px",cursor:"pointer",fontSize:12,fontWeight:600}}>+ Vidéo YouTube</button>
         </div>
       );
     };
@@ -4670,7 +4670,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                 ni écrasé — ni dans cette catégorie, ni ailleurs.
               </div>
 
-              <label style={{alignSelf:"flex-start",background:"var(--accent-wash)",border:"1px dashed var(--accent-line)",color:"var(--accent)",borderRadius:8,padding:"8px 14px",fontSize:12,fontWeight:600,cursor:"pointer"}}>
+              <label style={{alignSelf:"flex-start",background:"var(--accent)",border:"none",color:"#fff",borderRadius:9,boxShadow:"var(--shadow)",padding:"8px 14px",fontSize:12,fontWeight:600,cursor:"pointer"}}>
                 {importFileName ? `📄 ${importFileName}` : "Choisir un fichier .json"}
                 <input type="file" accept=".json,application/json" style={{display:"none"}} onChange={e=>{
                   const f = e.target.files?.[0]; if(!f) return; handleImportFile(f); e.target.value="";
