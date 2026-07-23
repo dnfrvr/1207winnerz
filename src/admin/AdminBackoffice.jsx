@@ -1138,7 +1138,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                       // Tri chronologique croissant pour affichage — le tableau écrit en retour suit cet ordre,
                       // Firebase stocke donc toujours les messages dans l'ordre chronologique.
                       const sortedThread = [...thread].sort((a,b)=>loreSortKey(a.time)-loreSortKey(b.time));
-                      const writeThread = (t) => onUpdate(gid, t);
+                      const writeThread = (t) => onUpdate(gid, t.map((m,k)=>m.id!=null?m:{...m,id:Date.now()+k}));
                       const senderOptions = allMembers.map(m=>({
                         key:m, label:CHAR_NAMES[m]||m, color:CHAR_COLORS[m]||"#6366f1"
                       }));
@@ -1161,7 +1161,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                               const t=[...sortedThread]; t[si]={...t[si],...patch}; writeThread(t);
                             };
                             return (
-                            <React.Fragment key={si}>
+                            <React.Fragment key={m2.id ?? si}>
                             <div style={{display:"flex",flexDirection:"column",gap:4,background:"rgba(0,0,0,0.02)",borderRadius:8,padding:"8px 10px",border:"1px solid rgba(0,0,0,0.05)"}}>
                               <div style={{display:"flex",gap:6,alignItems:"center"}}>
                                 <div style={{display:"flex",flexDirection:"column",gap:2,flexShrink:0}}>
@@ -1192,7 +1192,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                     {gOpen && !isSharedGroup && (()=>{
                       const rawLocal = gMsg.thread||[];
                       const sortedLocal = [...rawLocal].sort((a,b)=>loreSortKey(a.time)-loreSortKey(b.time));
-                      const writeLocal = (t) => upd("messages", d.messages.map(m=>m===gMsg ? {...m, thread:t} : m));
+                      const writeLocal = (t) => { const ti=t.map((m,k)=>m.id!=null?m:{...m,id:Date.now()+k}); upd("messages", d.messages.map(m=>m===gMsg ? {...m, thread:ti} : m)); };
                       const insertAt = (si) => {
                         const prev=sortedLocal[si-1]; const next=sortedLocal[si];
                         const time=next?.time||prev?.time||"maintenant";
@@ -1207,7 +1207,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                             const mc = isMe ? charColor : "#6b7280";
                             const updMsg = (patch) => { const t=[...sortedLocal]; t[si]={...t[si],...patch}; writeLocal(t); };
                             return (
-                            <React.Fragment key={si}>
+                            <React.Fragment key={m2.id ?? si}>
                             <div style={{display:"flex",flexDirection:"column",gap:4,background:"rgba(0,0,0,0.02)",borderRadius:8,padding:"8px 10px",border:"1px solid rgba(0,0,0,0.05)"}}>
                               <div style={{display:"flex",gap:6,alignItems:"center",flexWrap:"wrap"}}>
                                 <div style={{display:"flex",flexDirection:"column",gap:2,flexShrink:0}}>
@@ -1334,11 +1334,12 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                 : rawLocal;
               const sortedDisplay = [...displayThread].sort((a,b)=>loreSortKey(a.time)-loreSortKey(b.time));
               const writeThread = (newDisplay) => {
+                const withIds = newDisplay.map((m,k)=>m.id!=null?m:{...m,id:Date.now()+k});
                 if(isShared){
-                  const raw = newDisplay.map(m=>({...m, from: m.from==='me'?myL:otherL}));
+                  const raw = withIds.map(m=>({...m, from: m.from==='me'?myL:otherL}));
                   onUpdate(msg.sharedThreadId, raw);
                 } else {
-                  upd("messages", d.messages.map(mm=>mm===msg?{...mm,thread:newDisplay}:mm));
+                  upd("messages", d.messages.map(mm=>mm===msg?{...mm,thread:withIds}:mm));
                 }
               };
               const insertAt = (si) => {
@@ -1351,7 +1352,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
               return (<>
               <InsertMsgBtn onClick={()=>insertAt(0)}/>
               {sortedDisplay.map((msg2,si)=>(
-              <React.Fragment key={si}>
+              <React.Fragment key={msg2.id ?? si}>
               <div style={{display:"flex",flexDirection:"column",gap:4,background:"rgba(0,0,0,0.02)",borderRadius:8,padding:"8px 10px",border:"1px solid rgba(0,0,0,0.05)"}}>
                 {/* Row 1: image, sender, time, move, delete */}
                 <div style={{display:"flex",gap:6,alignItems:"center",flexWrap:"wrap"}}>
