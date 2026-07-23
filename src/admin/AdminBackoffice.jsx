@@ -1750,8 +1750,11 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
       const activeTab = tabList.find(t=>t.key===galTab) ? galTab : "roll";
       const currentPhotos = photosForTab(activeTab);
 
-      const PhotoCard = ({photo}) => (
-        <div style={{background:"rgba(255,255,255,0.9)",borderRadius:10,overflow:"hidden",border:"1px solid rgba(0,0,0,0.07)"}}>
+      // Fonction de rendu (pas un composant monté via <PhotoCard/>) : définie dans
+      // renderSection, un composant remonté à chaque frappe ferait perdre le focus
+      // (le sélecteur de date se refermait). Appelée en place, le nœud DOM survit.
+      const renderPhotoCard = (photo) => (
+        <div key={photo.id} style={{background:"rgba(255,255,255,0.9)",borderRadius:10,overflow:"hidden",border:"1px solid rgba(0,0,0,0.07)"}}>
           <div style={{aspectRatio:"1",background:photo.color||"#1a1a1a",position:"relative",overflow:"hidden"}}>
             {photo.src
               ? <img src={photo.src} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
@@ -1834,7 +1837,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
 
           {/* Grille de photos */}
           <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(130px,1fr))",gap:10}}>
-            {currentPhotos.map(photo=><PhotoCard key={photo.id} photo={photo}/>)}
+            {currentPhotos.map(photo=>renderPhotoCard(photo))}
             <label style={{
               aspectRatio:"1",background:"rgba(99,102,241,0.05)",border:"2px dashed rgba(99,102,241,0.25)",
               borderRadius:10,display:"flex",alignItems:"center",justifyContent:"center",
