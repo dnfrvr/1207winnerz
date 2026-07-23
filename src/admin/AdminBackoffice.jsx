@@ -829,18 +829,20 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
             <div style={{fontSize:11,fontWeight:600,color:"var(--ink-soft)",marginBottom:4}}>Tracks</div>
             {tracks.map((tr,i)=>(
               <div key={tr.id??i} className="adm-card" style={{background:"var(--raise)",borderRadius:10,padding:"10px 12px",border:"1px solid var(--line)",display:"flex",flexDirection:"column",gap:6}}>
-                <div style={{display:"flex",gap:6,alignItems:"center"}}>
-                  <Field label="Titre" value={tr.title||""} onChange={v=>{const t=[...tracks];t[i]={...t[i],title:v};updSC("tracks",t);}} style={{flex:1}}/>
-                  <Field label="Durée" value={tr.dur||""} onChange={v=>{const t=[...tracks];t[i]={...t[i],dur:v};updSC("tracks",t);}} width="64px"/>
-                  <Field label="Tag" value={tr.tag||""} onChange={v=>{const t=[...tracks];t[i]={...t[i],tag:v};updSC("tracks",t);}} width="120px"/>
-                  <button onClick={()=>updSC("tracks",tracks.filter((_,j)=>j!==i))} style={{background:"none",border:"none",color:"var(--ink-faint)",cursor:"pointer",fontSize:16,padding:"0 4px",marginTop:18}}>×</button>
+                <div style={{display:"flex",gap:8,alignItems:"flex-start"}}>
+                  <div style={{flex:1,minWidth:0}}><Field label="Titre" value={tr.title||""} onChange={v=>{const t=[...tracks];t[i]={...t[i],title:v};updSC("tracks",t);}} placeholder="Titre du morceau"/></div>
+                  <button onClick={()=>updSC("tracks",tracks.filter((_,j)=>j!==i))} className="adm-del-btn" title="Supprimer" style={{background:"none",border:"none",color:"var(--ink-faint)",cursor:"pointer",fontSize:17,padding:"2px 4px",marginTop:16,borderRadius:5,flexShrink:0}}>×</button>
+                </div>
+                <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+                  <div style={{flex:"1 1 90px"}}><Field label="Durée" value={tr.dur||""} onChange={v=>{const t=[...tracks];t[i]={...t[i],dur:v};updSC("tracks",t);}}/></div>
+                  <div style={{flex:"2 1 140px"}}><Field label="Tag" value={tr.tag||""} onChange={v=>{const t=[...tracks];t[i]={...t[i],tag:v};updSC("tracks",t);}}/></div>
                 </div>
                 <Field label="Description" value={tr.desc||""} onChange={v=>{const t=[...tracks];t[i]={...t[i],desc:v};updSC("tracks",t);}} textarea/>
-                <div style={{display:"flex",gap:6}}>
-                  <Field label="▶ Plays" value={String(tr.plays||0)} onChange={v=>{const t=[...tracks];t[i]={...t[i],plays:parseInt(v)||0};updSC("tracks",t);}} width="80px"/>
-                  <Field label="❤ Likes" value={String(tr.likes||0)} onChange={v=>{const t=[...tracks];t[i]={...t[i],likes:parseInt(v)||0};updSC("tracks",t);}} width="80px"/>
-                  <Field label="🔁 Reposts" value={String(tr.reposts||0)} onChange={v=>{const t=[...tracks];t[i]={...t[i],reposts:parseInt(v)||0};updSC("tracks",t);}} width="80px"/>
-                  <LoreDateTimeInput label="Date" showTime={false} value={tr.posted||""} onChange={v=>{const t=[...tracks];t[i]={...t[i],posted:v};updSC("tracks",t);}} width="150px"/>
+                <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+                  <div style={{flex:"1 1 80px"}}><Field label="▶ Plays" value={String(tr.plays||0)} onChange={v=>{const t=[...tracks];t[i]={...t[i],plays:parseInt(v)||0};updSC("tracks",t);}}/></div>
+                  <div style={{flex:"1 1 80px"}}><Field label="❤ Likes" value={String(tr.likes||0)} onChange={v=>{const t=[...tracks];t[i]={...t[i],likes:parseInt(v)||0};updSC("tracks",t);}}/></div>
+                  <div style={{flex:"1 1 80px"}}><Field label="🔁 Reposts" value={String(tr.reposts||0)} onChange={v=>{const t=[...tracks];t[i]={...t[i],reposts:parseInt(v)||0};updSC("tracks",t);}}/></div>
+                  <div style={{flex:"1 1 140px"}}><LoreDateTimeInput label="Date" showTime={false} value={tr.posted||""} onChange={v=>{const t=[...tracks];t[i]={...t[i],posted:v};updSC("tracks",t);}} width="100%"/></div>
                 </div>
               </div>
             ))}
@@ -869,13 +871,15 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
             <div style={{fontSize:11,fontWeight:600,color:"var(--ink-soft)",marginBottom:4}}>Sorties</div>
             {runs.map((run,i)=>(
               <div key={run.id??i} className="adm-card" style={{background:"var(--raise)",borderRadius:10,padding:"10px 12px",border:"1px solid var(--line)",display:"flex",flexDirection:"column",gap:6}}>
-                <div style={{display:"flex",gap:6,flexWrap:"wrap",alignItems:"center"}}>
-                  <Field label="Distance" value={run.distance||""} onChange={v=>{const r=[...runs];r[i]={...r[i],distance:v};upNK("runs",r);}} width="90px"/>
-                  <LoreDateTimeInput label="Date" showTime={false} value={run.date||""} onChange={v=>{const r=[...runs];r[i]={...r[i],date:v};upNK("runs",r);}} width="150px"/>
-                  <Field label="Durée" value={run.time||""} onChange={v=>{const r=[...runs];r[i]={...r[i],time:v};upNK("runs",r);}} width="80px"/>
-                  <Field label="Allure" value={run.pace||""} onChange={v=>{const r=[...runs];r[i]={...r[i],pace:v};upNK("runs",r);}} width="90px"/>
-                  <Field label="Cal" value={String(run.cal||0)} onChange={v=>{const r=[...runs];r[i]={...r[i],cal:parseInt(v)||0};upNK("runs",r);}} width="60px"/>
-                  <button onClick={()=>upNK("runs",runs.filter((_,j)=>j!==i))} style={{background:"none",border:"none",color:"var(--ink-faint)",cursor:"pointer",fontSize:16,padding:"0 4px",marginTop:18}}>×</button>
+                <div style={{display:"flex",gap:8,alignItems:"flex-end",flexWrap:"wrap"}}>
+                  <div style={{flex:"1 1 160px",minWidth:0}}><LoreDateTimeInput label="Date" showTime={false} value={run.date||""} onChange={v=>{const r=[...runs];r[i]={...r[i],date:v};upNK("runs",r);}} width="100%"/></div>
+                  <button onClick={()=>upNK("runs",runs.filter((_,j)=>j!==i))} className="adm-del-btn" title="Supprimer" style={{background:"none",border:"none",color:"var(--ink-faint)",cursor:"pointer",fontSize:17,padding:"2px 4px",marginBottom:6,borderRadius:5,flexShrink:0}}>×</button>
+                </div>
+                <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+                  <div style={{flex:"1 1 90px"}}><Field label="Distance" value={run.distance||""} onChange={v=>{const r=[...runs];r[i]={...r[i],distance:v};upNK("runs",r);}}/></div>
+                  <div style={{flex:"1 1 90px"}}><Field label="Durée" value={run.time||""} onChange={v=>{const r=[...runs];r[i]={...r[i],time:v};upNK("runs",r);}}/></div>
+                  <div style={{flex:"1 1 90px"}}><Field label="Allure" value={run.pace||""} onChange={v=>{const r=[...runs];r[i]={...r[i],pace:v};upNK("runs",r);}}/></div>
+                  <div style={{flex:"1 1 80px"}}><Field label="Cal" value={String(run.cal||0)} onChange={v=>{const r=[...runs];r[i]={...r[i],cal:parseInt(v)||0};upNK("runs",r);}}/></div>
                 </div>
                 <Field label="Note" value={run.note||""} onChange={v=>{const r=[...runs];r[i]={...r[i],note:v};upNK("runs",r);}} textarea/>
               </div>
@@ -2644,13 +2648,15 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                 </label>
                 <div style={{flex:1,display:"flex",flexDirection:"column",gap:5}}>
                   <Field label="Description" value={p.desc||""} onChange={v=>ensureCustom(i,{desc:v})}/>
-                  <div style={{display:"flex",gap:5,flexWrap:"wrap",alignItems:"center"}}>
-                    <Field label="Board" value={p.board||""} onChange={v=>ensureCustom(i,{board:v})} style={{flex:1}}/>
-                    <Field label="Pinner" value={p.pinner||""} onChange={v=>ensureCustom(i,{pinner:v})} style={{flex:1}}/>
-                    <Field label="Repins" value={String(p.repins??0)} onChange={v=>ensureCustom(i,{repins:parseInt(v)||0})} style={{width:70}}/>
-                    <Field label="Emoji" value={p.emoji||""} onChange={v=>ensureCustom(i,{emoji:v})} style={{width:52}}/>
-                    <label style={{display:"flex",alignItems:"center",gap:3,fontSize:10,color:"var(--ink-soft)",cursor:"pointer",whiteSpace:"nowrap"}}>
-                      <input type="checkbox" checked={!!p.tall} onChange={e=>ensureCustom(i,{tall:e.target.checked})}/>Grand
+                  <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+                    <div style={{flex:"1 1 120px",minWidth:0}}><Field label="Board" value={p.board||""} onChange={v=>ensureCustom(i,{board:v})}/></div>
+                    <div style={{flex:"1 1 120px",minWidth:0}}><Field label="Pinner" value={p.pinner||""} onChange={v=>ensureCustom(i,{pinner:v})}/></div>
+                  </div>
+                  <div style={{display:"flex",gap:8,flexWrap:"wrap",alignItems:"flex-end"}}>
+                    <div style={{flex:"1 1 90px"}}><Field label="Repins" value={String(p.repins??0)} onChange={v=>ensureCustom(i,{repins:parseInt(v)||0})}/></div>
+                    <div style={{flex:"0 1 74px"}}><Field label="Emoji" value={p.emoji||""} onChange={v=>ensureCustom(i,{emoji:v})}/></div>
+                    <label style={{display:"flex",alignItems:"center",gap:5,fontSize:12,color:"var(--ink-soft)",cursor:"pointer",whiteSpace:"nowrap",padding:"8px 4px"}}>
+                      <input type="checkbox" checked={!!p.tall} onChange={e=>ensureCustom(i,{tall:e.target.checked})} style={{width:16,height:16}}/>Grand format
                     </label>
                   </div>
                   {p.img && <button onClick={()=>ensureCustom(i,{img:null})} style={{background:"none",border:"none",color:"var(--ink-faint)",cursor:"pointer",fontSize:10,textAlign:"left",padding:0}}>× Supprimer l'image</button>}
