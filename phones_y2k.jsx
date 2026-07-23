@@ -27,7 +27,6 @@ import { INaturalistScreen } from "./src/screens/INaturalistScreen.jsx";
 import { CalendarScreen, CALENDAR_SEED } from "./src/screens/CalendarScreen.jsx";
 import { ClockScreen } from "./src/screens/ClockScreen.jsx";
 import { MapsScreen } from "./src/screens/MapsScreen.jsx";
-import { ShazamScreen } from "./src/screens/ShazamScreen.jsx";
 import { YouTubeScreen, YOUTUBE_FEEDS_DEFAULT } from "./src/screens/YouTubeScreen.jsx";
 import { RedditScreen, REDDIT_ALL_POSTS } from "./src/screens/RedditScreen.jsx";
 import { VPNScreen } from "./src/screens/VPNScreen.jsx";
@@ -1886,7 +1885,7 @@ const IOSPhone = ({data,admin,onUpdate,onUpdateShared=()=>{},loreDate:loreDatePr
   if(app==="contacts")  return <Shell><IOSStatusBar/><NavBar title="Contacts" back={goHome}/><ContactsScreen data={data} isIos={true} accent={accent}/></Shell>;
   if(app==="clock")     return <Shell><IOSStatusBar/><NavBar title="Clock" back={goHome}/><ClockScreen isIos={true} accent={accent}/></Shell>;
   if(app==="maps")      return <Shell><IOSStatusBar/><NavBar title="Maps" back={goHome}/><MapsScreen isIos={true} accent={accent}/></Shell>;
-  if(app==="shazam") return null;
+  // Shazam est purement décoratif : l'icône s'affiche mais n'est pas ouvrable (exclue de IOS_APPS/AND_APPS).
 
   return null;
 };

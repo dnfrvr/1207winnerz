@@ -270,7 +270,6 @@ const APP_SECTIONS = {
   inaturalist:{icon:"🔬", label:"iNaturalist"},
   soundcloud: {icon:"🎧", label:"SoundCloud"},
   nikeplus:   {icon:"👟", label:"Nike+"},
-  shazam:     {icon:"🎵", label:"Shazam"},
   groupme:    {icon:"💬", label:"GroupMe"},
   gmail:      {icon:"✉️", label:"Mails"},
   mail:       {icon:"✉️", label:"Mails"},
@@ -847,22 +846,6 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
               style={{background:"rgba(192,57,43,0.08)",border:"1px dashed rgba(192,57,43,0.35)",color:"#c0392b",borderRadius:8,padding:"10px 18px",cursor:"pointer",fontSize:12,fontWeight:600}}>+ Sortie</button>
           </>);
         })()}
-      </div>
-    );
-
-    case "shazam": return (
-      <div style={{display:"flex",flexDirection:"column",gap:8}}>
-        <div style={{fontSize:11,color:"#9ca3af",marginBottom:4}}>Historique Shazam.</div>
-        {(d.shazam||[]).map((s,i)=>(
-          <div key={i} className="adm-card" style={{display:"flex",gap:8,alignItems:"center",background:"rgba(255,255,255,0.85)",padding:"8px 10px",borderRadius:10,border:"1px solid rgba(0,0,0,0.07)",flexWrap:"wrap"}}>
-            <Field label="Titre" value={s.title||""} onChange={v=>{const sh=[...d.shazam];sh[i]={...sh[i],title:v};upd("shazam",sh);}}/>
-            <Field label="Artiste" value={s.artist||""} onChange={v=>{const sh=[...d.shazam];sh[i]={...sh[i],artist:v};upd("shazam",sh);}} width="140px"/>
-            <LoreDateTimeInput label="Date" showTime={false} value={s.date||""} onChange={v=>{const sh=[...d.shazam];sh[i]={...sh[i],date:v};upd("shazam",sh);}} width="150px"/>
-            <button onClick={()=>upd("shazam",(d.shazam||[]).filter((_,j)=>j!==i))} style={{background:"none",border:"none",color:"#d1d5db",cursor:"pointer",fontSize:16,padding:"0 4px"}}>×</button>
-          </div>
-        ))}
-        <button onClick={()=>upd("shazam",[...(d.shazam||[]),{title:"",artist:"",date:"1 oct"}])}
-          style={{background:"rgba(29,161,242,0.08)",border:"1px dashed rgba(29,161,242,0.35)",color:"#0a84ff",borderRadius:8,padding:"10px 18px",cursor:"pointer",fontSize:12,fontWeight:600}}>+ Shazam</button>
       </div>
     );
 
