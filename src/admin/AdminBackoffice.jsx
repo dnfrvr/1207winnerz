@@ -22,6 +22,7 @@ import { EMAILS_BY_CHAR, MAIL_DRAFTS_BY_CHAR, MAIL_DELETED_BY_CHAR } from "../sc
 import { fileTypeMeta } from "../screens/FilesScreen.jsx";
 import { Field, LoreDateTimeInput, LoreTimeInput } from "../shared/admin-fields.jsx";
 import { GRINDR_DMS_DEFAULT } from "../screens/GrindrScreen.jsx";
+import { VPN_DEFAULTS } from "../screens/VPNScreen.jsx";
 
 // Éditeur générique pour les "posts partagés" (mêmes principes que Twitter : un tableau partagé
 // entre les 4 persos, chacun ne voit/modifie que les posts dont il est l'auteur, ajout d'image et
@@ -1259,7 +1260,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
 
         {/* ── Conversations 1-à-1 ───────────────────────────────── */}
         {visibleMsgs.map((msg,i)=>{
-          const cKey = "c_" + tab + "_" + msg.id + "_" + i;
+          const cKey = "c_" + tab + "_" + msg.id;
           const cOpen = openConvs.has(cKey);
           const threadLen = msg.sharedThreadId
             ? (data.sharedThreads?.[msg.sharedThreadId]||[]).length
@@ -1269,7 +1270,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
               ? (data.sharedThreads?.[msg.sharedThreadId]||[])
               : (msg.thread||[]);
             const last = t[t.length-1];
-            return last ? last.text.slice(0,40)+(last.text.length>40?"...":"") : "";
+            return last ? (last.text||"").slice(0,40)+((last.text||"").length>40?"...":"") : "";
           })();
           return (
           <div key={cKey} className="adm-card" style={{background:"rgba(255,255,255,0.85)",borderRadius:12,border:"1px solid rgba(0,0,0,0.07)",boxShadow:"0 2px 8px rgba(0,0,0,0.04)",overflow:"hidden"}}>
@@ -1279,12 +1280,16 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
               {/* Reorder arrows */}
               <div style={{display:"flex",flexDirection:"column",gap:2,flexShrink:0}} onClick={e=>e.stopPropagation()}>
                 <button onClick={()=>{
-                  const all=[...d.messages];const ni=all.indexOf(msg);
-                  if(ni===0)return;[all[ni-1],all[ni]]=[all[ni],all[ni-1]];upd("messages",all);
+                  // Réordonne au sein de la liste VISIBLE (visibleMsgs exclut groupes + autre onglet),
+                  // en permutant les positions absolues des 2 conversations visibles dans d.messages.
+                  const vi=visibleMsgs.indexOf(msg); if(vi<=0)return;
+                  const all=[...d.messages];const a=all.indexOf(visibleMsgs[vi-1]);const b=all.indexOf(msg);
+                  if(a<0||b<0)return;[all[a],all[b]]=[all[b],all[a]];upd("messages",all);
                 }} style={{background:"none",border:"1px solid rgba(0,0,0,0.1)",borderRadius:4,width:18,height:18,cursor:"pointer",color:"#6366f1",fontSize:10,display:"flex",alignItems:"center",justifyContent:"center",padding:0}}><svg width="8" height="8" viewBox="0 0 10 10" fill="currentColor"><path d="M5 1L9 9H1z"/></svg></button>
                 <button onClick={()=>{
-                  const all=[...d.messages];const ni=all.indexOf(msg);
-                  if(ni===all.length-1)return;[all[ni+1],all[ni]]=[all[ni],all[ni+1]];upd("messages",all);
+                  const vi=visibleMsgs.indexOf(msg); if(vi<0||vi>=visibleMsgs.length-1)return;
+                  const all=[...d.messages];const a=all.indexOf(msg);const b=all.indexOf(visibleMsgs[vi+1]);
+                  if(a<0||b<0)return;[all[a],all[b]]=[all[b],all[a]];upd("messages",all);
                 }} style={{background:"none",border:"1px solid rgba(0,0,0,0.1)",borderRadius:4,width:18,height:18,cursor:"pointer",color:"#6366f1",fontSize:10,display:"flex",alignItems:"center",justifyContent:"center",padding:0}}><svg width="8" height="8" viewBox="0 0 10 10" fill="currentColor"><path d="M5 9L1 1H9z"/></svg></button>
               </div>
               {/* Contact name — editable inline, stop propagation so click doesn't toggle */}
@@ -2668,7 +2673,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                 </div>
               </div>
             ))}
-            <button onClick={()=>updList([...effective.map((s,j)=>isCustom?s:{...s,id:Date.now()+j}),{id:Date.now(),contact:"",type:"photo",preview:"📸",time:"Oct 1 at 12:00PM",opened:false,sent:false}])}
+            <button onClick={()=>updList([...effective.map((s,j)=>isCustom?s:{...s,id:Date.now()+j}),{id:Date.now(),contact:"",type:"photo",preview:"📸",time:"1 oct, 12:00pm",opened:false,sent:false}])}
               style={{background:"rgba(232,196,0,0.1)",border:"1px dashed rgba(232,196,0,0.5)",color:"#a38900",borderRadius:8,padding:"10px 18px",cursor:"pointer",fontSize:12,fontWeight:600}}>+ Snap</button>
           </>);
         })()}
@@ -3683,7 +3688,6 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
       <div style={{display:"flex",flexDirection:"column",gap:8}}>
         <div style={{fontSize:11,color:"#9ca3af",marginBottom:4}}>Serveurs VPN affichés dans l'appli.</div>
         {(()=>{
-          const VPN_DEFAULTS=[{loc:"FR Paris",flag:"🇫🇷",ping:12,load:34},{loc:"DE Frankfurt",flag:"🇩🇪",ping:18,load:51},{loc:"NL Amsterdam",flag:"🇳🇱",ping:22,load:28},{loc:"US New York",flag:"🇺🇸",ping:89,load:62},{loc:"JP Tokyo",flag:"🇯🇵",ping:178,load:19}];
           const isCustom = (d.vpnServers||[]).length > 0;
           const effective = isCustom ? d.vpnServers : VPN_DEFAULTS;
           const patch=(i,p)=>upd("vpnServers",effective.map((s,j)=>j===i?{...s,...p}:s));
