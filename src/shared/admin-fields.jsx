@@ -47,6 +47,37 @@ const LoreDateTimeInput = ({value, onChange, width="100%", showLabel=true, showT
   );
 };
 
+// Sélecteur d'HEURE seule (input type=time natif) ↔ format lore "2:14pm".
+// Pour les champs qui ne portent qu'une heure (horodatage de bulle de chat, dernier message)
+// où LoreDateTimeInput injecterait une date absolue indésirable. NB : parseLoreTime exige une
+// date, donc on parse/format l'horloge nous-mêmes ici.
+const parseClock = (str) => {
+  const m = String(str||"").toLowerCase().match(/(\d{1,2}):(\d{2})\s*(am|pm)?/);
+  if(!m) return null;
+  let h = parseInt(m[1]); const min = parseInt(m[2]); const period = m[3];
+  if(period==='pm' && h!==12) h+=12;
+  if(period==='am' && h===12) h=0;
+  return {h: h%24, min};
+};
+const buildClock = (hhmm) => {
+  if(!hhmm) return "";
+  const [h, mm] = hhmm.split(':').map(Number);
+  const period = h < 12 ? 'am' : 'pm';
+  const h12 = h % 12 === 0 ? 12 : h % 12;
+  return `${h12}:${String(mm).padStart(2,'0')}${period}`;
+};
+const LoreTimeInput = ({value, onChange, width="100%", showLabel=true, label="Heure"}) => {
+  const p = parseClock(value);
+  const timeVal = p ? `${String(p.h).padStart(2,'0')}:${String(p.min).padStart(2,'0')}` : '';
+  return (
+    <div style={{display:"flex",flexDirection:"column",gap:5,width}}>
+      {showLabel && <label style={{color:"#9ca3af",fontSize:10,letterSpacing:0.8,textTransform:"uppercase",fontWeight:600}}>{label}</label>}
+      <input type="time" value={timeVal} onChange={e=>onChange(buildClock(e.target.value))}
+        className="adm-input" style={{width:"100%",boxSizing:"border-box",background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#1a1a2e",padding:"7px 8px",fontSize:11,borderRadius:7}}/>
+    </div>
+  );
+};
+
 // `style` fusionne sur le conteneur (les appelants passent surtout `flex:1` pour
 // la mise en page en ligne) ; `placeholder` est transmis au champ. Les deux
 // étaient auparavant ignorés silencieusement sur des dizaines d'appels.
@@ -62,4 +93,4 @@ const Field = ({label, value, onChange, textarea=false, width="100%", style={}, 
   </div>
 );
 
-export { Field, LoreDateTimeInput };
+export { Field, LoreDateTimeInput, LoreTimeInput };

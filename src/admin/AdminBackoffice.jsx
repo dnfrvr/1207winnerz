@@ -20,7 +20,7 @@ import { PIN_DEFAULTS } from "../screens/PinterestScreen.jsx";
 import { FACEBOOK_FRIENDS_FEED_DEFAULT, FACEBOOK_PAGES_DEFAULT } from "../screens/FacebookScreen.jsx";
 import { EMAILS_BY_CHAR, MAIL_DRAFTS_BY_CHAR, MAIL_DELETED_BY_CHAR } from "../screens/GmailScreen.jsx";
 import { fileTypeMeta } from "../screens/FilesScreen.jsx";
-import { Field, LoreDateTimeInput } from "../shared/admin-fields.jsx";
+import { Field, LoreDateTimeInput, LoreTimeInput } from "../shared/admin-fields.jsx";
 
 // Éditeur générique pour les "posts partagés" (mêmes principes que Twitter : un tableau partagé
 // entre les 4 persos, chacun ne voit/modifie que les posts dont il est l'auteur, ajout d'image et
@@ -764,7 +764,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                 <div style={{display:"flex",gap:6,flexWrap:"wrap",alignItems:"center"}}>
                   <Field label="Nom du groupe" value={g.name||""} onChange={v=>ensureCustom(i,{name:v})} style={{flex:1}}/>
                   <Field label="Membres" value={String(g.members||0)} onChange={v=>ensureCustom(i,{members:parseInt(v)||0})} width="70px"/>
-                  <Field label="Heure" value={g.time||""} onChange={v=>ensureCustom(i,{time:v})} width="70px"/>
+                  <LoreTimeInput label="Heure" value={g.time||""} onChange={v=>ensureCustom(i,{time:v})} width="110px"/>
                   <Field label="Non-lus" value={String(g.n||0)} onChange={v=>ensureCustom(i,{n:parseInt(v)||0})} width="60px"/>
                   <button onClick={()=>updList(effective.filter((_,j)=>j!==i).map((g,j)=>({...g,id:Date.now()+j})))} style={{background:"none",border:"none",color:"#d1d5db",cursor:"pointer",fontSize:16,padding:"0 4px",marginTop:18}}>×</button>
                 </div>
@@ -2862,8 +2862,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                       </select>
                       <input value={msg.text||""} onChange={e=>{const nd=[...dms];nd[ci]={...nd[ci],thread:nd[ci].thread.map((m,j)=>j===mi?{...m,text:e.target.value}:m)};updDms(nd);}}
                         className="adm-input" style={{flex:1,background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#1a1a2e",padding:"4px 8px",fontSize:11,borderRadius:6}}/>
-                      <input value={msg.time||""} onChange={e=>{const nd=[...dms];nd[ci]={...nd[ci],thread:nd[ci].thread.map((m,j)=>j===mi?{...m,time:e.target.value}:m)};updDms(nd);}}
-                        className="adm-input" style={{width:70,background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#6b7280",padding:"4px 6px",fontSize:10,borderRadius:6}}/>
+                      <LoreTimeInput showLabel={false} width="96px" value={msg.time||""} onChange={v=>{const nd=[...dms];nd[ci]={...nd[ci],thread:nd[ci].thread.map((m,j)=>j===mi?{...m,time:v}:m)};updDms(nd);}}/>
                       <button onClick={()=>{const nd=[...dms];nd[ci]={...nd[ci],thread:nd[ci].thread.filter((_,j)=>j!==mi)};updDms(nd);}} style={{background:"none",border:"none",color:"#d1d5db",cursor:"pointer",fontSize:14,padding:"0 2px"}}>×</button>
                     </div>
                       ))}
