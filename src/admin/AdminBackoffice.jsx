@@ -4361,6 +4361,10 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
 
           {isMobile ? (
             <>
+            <button onClick={toggleTheme} title={isDarkTheme?"Passer en mode jour":"Passer en mode nuit"} aria-label="Basculer jour / nuit"
+              style={{background:"transparent",border:"1px solid var(--line)",color:"var(--ink-soft)",padding:"6px 11px",borderRadius:7,fontSize:15,cursor:"pointer",lineHeight:1}}>
+              {isDarkTheme ? "☀︎" : "☾"}
+            </button>
             <div style={{position:"relative"}}>
               <button onClick={()=>setBurgerOpen(o=>!o)}
                 style={{background:burgerOpen?"var(--line-soft)":"transparent",border:"1px solid var(--line)",color:"var(--ink-soft)",padding:"6px 10px",borderRadius:7,fontSize:15,cursor:"pointer",lineHeight:1}}>
@@ -4395,11 +4399,6 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                   <button onClick={()=>{ setMigrateStatus(null); setMigrateOpen(true); setBurgerOpen(false); }}
                     style={{background:"transparent",border:"1px solid var(--line)",color:"var(--ink-soft)",padding:"8px 12px",borderRadius:7,fontSize:12,cursor:"pointer",fontWeight:500,textAlign:"left"}}>
                     🧹 Migrer images
-                  </button>
-
-                  <button onClick={toggleTheme}
-                    style={{background:"transparent",border:"1px solid var(--line)",color:"var(--ink-soft)",padding:"8px 12px",borderRadius:7,fontSize:12,cursor:"pointer",fontWeight:500,textAlign:"left"}}>
-                    {isDarkTheme ? "☀︎ Mode jour" : "☾ Mode nuit"}
                   </button>
 
                 </div>
