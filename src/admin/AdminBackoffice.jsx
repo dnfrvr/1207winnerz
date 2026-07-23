@@ -3783,25 +3783,30 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
     case "vpn": return (
       <div style={{display:"flex",flexDirection:"column",gap:8}}>
         <div style={{fontSize:11,color:"#9ca3af",marginBottom:4}}>Serveurs VPN affichés dans l'appli.</div>
-        {(d.vpnServers||[{loc:"FR Paris",flag:"🇫🇷",ping:12,load:34},{loc:"DE Frankfurt",flag:"🇩🇪",ping:18,load:51},{loc:"NL Amsterdam",flag:"🇳🇱",ping:22,load:28},{loc:"US New York",flag:"🇺🇸",ping:89,load:62},{loc:"JP Tokyo",flag:"🇯🇵",ping:178,load:19}]).map((srv,i)=>{
-          const list = d.vpnServers || [];
-          const isCustom = list.length > 0;
-          return (
+        {(()=>{
+          const VPN_DEFAULTS=[{loc:"FR Paris",flag:"🇫🇷",ping:12,load:34},{loc:"DE Frankfurt",flag:"🇩🇪",ping:18,load:51},{loc:"NL Amsterdam",flag:"🇳🇱",ping:22,load:28},{loc:"US New York",flag:"🇺🇸",ping:89,load:62},{loc:"JP Tokyo",flag:"🇯🇵",ping:178,load:19}];
+          const isCustom = (d.vpnServers||[]).length > 0;
+          const effective = isCustom ? d.vpnServers : VPN_DEFAULTS;
+          const patch=(i,p)=>upd("vpnServers",effective.map((s,j)=>j===i?{...s,...p}:s));
+          return (<>
+          {effective.map((srv,i)=>(
           <div key={i} style={{display:"flex",gap:8,alignItems:"center",background:"rgba(255,255,255,0.85)",padding:"8px 10px",borderRadius:10,border:"1px solid rgba(0,0,0,0.07)",flexWrap:"wrap"}}>
-            <input value={srv.flag||""} onChange={e=>{const s=isCustom?[...list]:[];s[i]={...(s[i]||srv),flag:e.target.value};upd("vpnServers",s);}}
+            <input value={srv.flag||""} onChange={e=>patch(i,{flag:e.target.value})}
               placeholder="🏳" className="adm-input" style={{width:44,background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#1a1a2e",padding:"6px 8px",fontSize:16,borderRadius:7,textAlign:"center"}}/>
-            <input value={srv.loc||""} onChange={e=>{const s=isCustom?[...list]:[];s[i]={...(s[i]||srv),loc:e.target.value};upd("vpnServers",s);}}
+            <input value={srv.loc||""} onChange={e=>patch(i,{loc:e.target.value})}
               placeholder="Serveur" className="adm-input" style={{flex:1,background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#1a1a2e",padding:"6px 9px",fontSize:12,borderRadius:7}}/>
-            <input value={String(srv.ping||"")} onChange={e=>{const s=isCustom?[...list]:[];s[i]={...(s[i]||srv),ping:parseInt(e.target.value)||0};upd("vpnServers",s);}}
+            <input value={String(srv.ping||"")} onChange={e=>patch(i,{ping:parseInt(e.target.value)||0})}
               placeholder="Ping ms" className="adm-input" style={{width:70,background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#6b7280",padding:"6px 8px",fontSize:11,borderRadius:7}}/>
-            <input value={String(srv.load||"")} onChange={e=>{const s=isCustom?[...list]:[];s[i]={...(s[i]||srv),load:parseInt(e.target.value)||0};upd("vpnServers",s);}}
+            <input value={String(srv.load||"")} onChange={e=>patch(i,{load:parseInt(e.target.value)||0})}
               placeholder="Load %" className="adm-input" style={{width:70,background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#6b7280",padding:"6px 8px",fontSize:11,borderRadius:7}}/>
-            {isCustom && <button onClick={()=>upd("vpnServers",list.filter((_,j)=>j!==i))}
+            {isCustom && <button onClick={()=>upd("vpnServers",effective.filter((_,j)=>j!==i))}
               className="adm-del-btn" style={{background:"none",border:"none",color:"#d1d5db",cursor:"pointer",fontSize:16,padding:"0 4px",borderRadius:5}}>×</button>}
           </div>
-        );})}
-        <button onClick={()=>upd("vpnServers",[...(d.vpnServers||[{loc:"FR Paris",flag:"🇫🇷",ping:12,load:34},{loc:"DE Frankfurt",flag:"🇩🇪",ping:18,load:51},{loc:"NL Amsterdam",flag:"🇳🇱",ping:22,load:28},{loc:"US New York",flag:"🇺🇸",ping:89,load:62},{loc:"JP Tokyo",flag:"🇯🇵",ping:178,load:19}]),{flag:"🏳",loc:"",ping:0,load:0}])}
-          style={{background:"rgba(91,145,206,0.08)",border:"1px dashed rgba(91,145,206,0.35)",color:"#5b91ce",borderRadius:8,padding:"10px 18px",cursor:"pointer",fontSize:12,fontWeight:600}}>+ Serveur</button>
+          ))}
+          <button onClick={()=>upd("vpnServers",[...effective,{flag:"🏳",loc:"",ping:0,load:0}])}
+            style={{background:"rgba(91,145,206,0.08)",border:"1px dashed rgba(91,145,206,0.35)",color:"#5b91ce",borderRadius:8,padding:"10px 18px",cursor:"pointer",fontSize:12,fontWeight:600}}>+ Serveur</button>
+          </>);
+        })()}
       </div>
     );
 
