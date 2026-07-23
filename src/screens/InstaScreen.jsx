@@ -65,24 +65,24 @@ const IgCommentEditor = ({comments, onChange, accentColor="#3d6b8f", depth=0}) =
   return (
     <div style={{display:"flex",flexDirection:"column",gap:4, marginLeft: indent>0 ? indent : 0}}>
       {depth===0&&(
-        <div style={{fontSize:10,fontWeight:600,color:"#9ca3af",letterSpacing:0.4,marginBottom:2}}>
+        <div style={{fontSize:10,fontWeight:600,color:"var(--ink-faint, #9ca3af)",letterSpacing:0.4,marginBottom:2}}>
           Commentaires ({comments.length})
         </div>
       )}
       {comments.map((c,ci)=>(
         <div key={ci} style={{
-          background: depth===0 ? "rgba(61,107,143,0.04)" : "rgba(0,0,0,0.03)",
-          border:"1px solid rgba(0,0,0,0.07)", borderRadius:8,
+          background: depth===0 ? "rgba(61,107,143,0.04)" : "var(--line-soft, rgba(0,0,0,0.03))",
+          border:"1px solid var(--line, rgba(0,0,0,0.07))", borderRadius:8,
           padding:"8px 10px", display:"flex", flexDirection:"column", gap:6
         }}>
           {/* Ligne principale */}
           <div style={{display:"flex",gap:4,alignItems:"flex-end",flexWrap:"wrap"}}>
             <div style={{display:"flex",flexDirection:"column",gap:2}}>
-              <label style={{color:"#9ca3af",fontSize:9,letterSpacing:0.5,fontWeight:600,textTransform:"uppercase"}}>Auteur</label>
+              <label style={{color:"var(--ink-faint, #9ca3af)",fontSize:9,letterSpacing:0.5,fontWeight:600,textTransform:"uppercase"}}>Auteur</label>
               <select value={c.authorKey||"__custom__"} onChange={e=>{
                 const v = e.target.value;
                 v==="__custom__" ? updComment(ci,{authorKey:null}) : updComment(ci,{authorKey:v, user:""});
-              }} className="adm-input" style={{background:"rgba(255,255,255,0.9)",border:"1px solid rgba(0,0,0,0.1)",color:"#1a1a2e",padding:"6px 8px",fontSize:11,borderRadius:6,width:100}}>
+              }} className="adm-input" style={{background:"var(--raise, rgba(255,255,255,0.9))",border:"1px solid var(--line, rgba(0,0,0,0.1))",color:"var(--ink, #1a1a2e)",padding:"6px 8px",fontSize:11,borderRadius:6,width:100}}>
                 <option value="__custom__">Personnalisé</option>
                 <option value="glinda">Glinda</option>
                 <option value="eoghan">Eoghan</option>
@@ -93,13 +93,13 @@ const IgCommentEditor = ({comments, onChange, accentColor="#3d6b8f", depth=0}) =
             {!c.authorKey && (
               <input value={c.user||""} onChange={e=>updComment(ci,{user:e.target.value})}
                 placeholder="@pseudo" className="adm-input"
-                style={{width:100,background:"rgba(255,255,255,0.9)",border:"1px solid rgba(0,0,0,0.1)",
-                  color:"#1a1a2e",padding:"6px 8px",fontSize:11,borderRadius:6}}/>
+                style={{width:100,background:"var(--raise, rgba(255,255,255,0.9))",border:"1px solid var(--line, rgba(0,0,0,0.1))",
+                  color:"var(--ink, #1a1a2e)",padding:"6px 8px",fontSize:11,borderRadius:6}}/>
             )}
             <input value={c.text||""} onChange={e=>updComment(ci,{text:e.target.value})}
               placeholder="commentaire" className="adm-input"
-              style={{flex:1,minWidth:120,background:"rgba(255,255,255,0.9)",border:"1px solid rgba(0,0,0,0.1)",
-                color:"#1a1a2e",padding:"6px 8px",fontSize:11,borderRadius:6}}/>
+              style={{flex:1,minWidth:120,background:"var(--raise, rgba(255,255,255,0.9))",border:"1px solid var(--line, rgba(0,0,0,0.1))",
+                color:"var(--ink, #1a1a2e)",padding:"6px 8px",fontSize:11,borderRadius:6}}/>
             <LoreDateTimeInput value={c.time||""} onChange={v=>updComment(ci,{time:v})} width="200px" showLabel={false}/>
             <button onClick={()=>addReply(ci)} title="Ajouter une réponse"
               style={{background:"rgba(61,107,143,0.08)",border:"1px solid rgba(61,107,143,0.25)",
@@ -107,7 +107,7 @@ const IgCommentEditor = ({comments, onChange, accentColor="#3d6b8f", depth=0}) =
               ↩ Reply
             </button>
             <button onClick={()=>delComment(ci)}
-              style={{background:"none",border:"none",color:"#d1d5db",cursor:"pointer",fontSize:14,padding:"0 2px",flexShrink:0}}>×</button>
+              style={{background:"none",border:"none",color:"var(--ink-faint, #d1d5db)",cursor:"pointer",fontSize:14,padding:"0 2px",flexShrink:0}}>×</button>
           </div>
           {/* Réponses récursives */}
           {(c.replies||[]).length>0&&(
@@ -244,7 +244,7 @@ const InstaScreen = ({data, isIos, accent, onBack}) => {
     const curPhoto = photos[Math.min(photoIdx,photos.length-1)] || null;
     const taggedName = p.taggedWith ? ({glinda:"Glinda",eoghan:"Eoghan",drew:"Drew",elias:"Elias"}[p.taggedWith]) : null;
     return (
-      <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden",background:"#fff"}}>
+      <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden",background:"var(--card, #fff)"}}>
         <Header title="Photo" left={<BackArrow onClick={()=>setView(p._fromFeed?"feed":"profile")}/>}/>
         <div style={{flex:1,overflowY:"auto"}}>
           {/* Auteur — photo de profil carrée (pas ronde) */}
@@ -263,10 +263,10 @@ const InstaScreen = ({data, isIos, accent, onBack}) => {
           <div style={{width:"100%",aspectRatio:"1",background:"#efefef",overflow:"hidden",position:"relative"}}>
             {curPhoto?<img src={curPhoto} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:<div style={{width:"100%",height:"100%",display:"flex",alignItems:"center",justifyContent:"center",fontSize:40,color:"#ccc"}}>📷</div>}
             {photos.length>1 && <>
-              {photoIdx>0 && <button onClick={()=>setPhotoIdx(photoIdx-1)} style={{position:"absolute",left:6,top:"50%",transform:"translateY(-50%)",background:"rgba(255,255,255,0.85)",border:"none",borderRadius:"50%",width:26,height:26,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}><svg width="7" height="12" viewBox="0 0 7 12" fill="none"><path d="M6 1L1 6l5 5" stroke="#333" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/></svg></button>}
-              {photoIdx<photos.length-1 && <button onClick={()=>setPhotoIdx(photoIdx+1)} style={{position:"absolute",right:6,top:"50%",transform:"translateY(-50%)",background:"rgba(255,255,255,0.85)",border:"none",borderRadius:"50%",width:26,height:26,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}><svg width="7" height="12" viewBox="0 0 7 12" fill="none"><path d="M1 1l5 5-5 5" stroke="#333" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/></svg></button>}
+              {photoIdx>0 && <button onClick={()=>setPhotoIdx(photoIdx-1)} style={{position:"absolute",left:6,top:"50%",transform:"translateY(-50%)",background:"var(--raise, rgba(255,255,255,0.85))",border:"none",borderRadius:"50%",width:26,height:26,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}><svg width="7" height="12" viewBox="0 0 7 12" fill="none"><path d="M6 1L1 6l5 5" stroke="#333" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/></svg></button>}
+              {photoIdx<photos.length-1 && <button onClick={()=>setPhotoIdx(photoIdx+1)} style={{position:"absolute",right:6,top:"50%",transform:"translateY(-50%)",background:"var(--raise, rgba(255,255,255,0.85))",border:"none",borderRadius:"50%",width:26,height:26,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}><svg width="7" height="12" viewBox="0 0 7 12" fill="none"><path d="M1 1l5 5-5 5" stroke="#333" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/></svg></button>}
               <div style={{position:"absolute",bottom:8,left:0,right:0,display:"flex",justifyContent:"center",gap:5}}>
-                {photos.map((_,pi)=>(<span key={pi} style={{width:6,height:6,borderRadius:"50%",background:pi===photoIdx?"#3b88c3":"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.15)"}}/>))}
+                {photos.map((_,pi)=>(<span key={pi} style={{width:6,height:6,borderRadius:"50%",background:pi===photoIdx?"#3b88c3":"var(--raise, rgba(255,255,255,0.8))",border:"1px solid rgba(0,0,0,0.15)"}}/>))}
               </div>
             </>}
           </div>
@@ -310,7 +310,7 @@ const InstaScreen = ({data, isIos, accent, onBack}) => {
             const postHandle = p.handle || p.author || "";
             const postAvatar = p.avatar || sharedAvatars[p.author] || null;
             return (
-              <div key={p.id||i} style={{background:"#fff",marginBottom:8,borderTop:i===0?"none":"none"}}>
+              <div key={p.id||i} style={{background:"var(--card, #fff)",marginBottom:8,borderTop:i===0?"none":"none"}}>
                 {/* Header du post */}
                 <div style={{display:"flex",alignItems:"center",gap:8,padding:"8px 10px",borderBottom:"1px solid #f0f0f0"}}>
                   <div style={{width:36,height:36,borderRadius:"50%",overflow:"hidden",background:"#d0d0d0",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,fontWeight:700,color:"#fff"}}>
@@ -348,11 +348,11 @@ const InstaScreen = ({data, isIos, accent, onBack}) => {
 
   // ── Vue profil ──
   return (
-    <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden",background:"#fff"}}>
+    <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden",background:"var(--card, #fff)"}}>
       <Header title={handle} left={null}/>
       <div style={{flex:1,overflowY:"auto",background:"#fafafa"}}>
         {/* Bloc profil */}
-        <div style={{background:"#fff",borderBottom:"1px solid #dbdbdb"}}>
+        <div style={{background:"var(--card, #fff)",borderBottom:"1px solid #dbdbdb"}}>
           <div style={{display:"flex",alignItems:"flex-start",padding:"14px 12px 10px",gap:12}}>
             <div style={{width:70,height:70,borderRadius:4,overflow:"hidden",flexShrink:0,border:"1px solid #d0d0d0",background:"#e0e0e0",display:"flex",alignItems:"center",justifyContent:"center",color:"#888",fontWeight:700,fontSize:26}}>
               {avatar?<img src={avatar} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:(handleLo||"?")[0].toUpperCase()}
@@ -372,14 +372,14 @@ const InstaScreen = ({data, isIos, accent, onBack}) => {
           </div>
         </div>
         {/* Nom + bio */}
-        <div style={{background:"#fff",padding:"10px 12px 12px",borderBottom:"1px solid #dbdbdb"}}>
+        <div style={{background:"var(--card, #fff)",padding:"10px 12px 12px",borderBottom:"1px solid #dbdbdb"}}>
           <div style={{fontSize:14,fontWeight:700,color:"#262626",marginBottom:3}}>{name}</div>
           {bio&&<div style={{fontSize:13,color:"#262626",lineHeight:1.5,whiteSpace:"pre-wrap"}}>{bio}</div>}
           {ig.link&&<div style={{fontSize:13,color:IG_BLUE,marginTop:2}}>{ig.link}</div>}
         </div>
         {/* Séparateur + onglets */}
         <div style={{background:"#efefef",height:8,borderTop:"1px solid #dbdbdb",borderBottom:"1px solid #dbdbdb"}}/>
-        <div style={{background:"#fff",display:"flex",alignItems:"center",borderBottom:"1px solid #dbdbdb"}}>
+        <div style={{background:"var(--card, #fff)",display:"flex",alignItems:"center",borderBottom:"1px solid #dbdbdb"}}>
           <button onClick={()=>setInstaTab("grid")} style={{flex:1,height:42,border:"none",borderBottom:instaTab==="grid"?"2px solid #4a7fa0":"none",background:"none",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><rect x="2" y="2" width="9" height="9" rx="1" fill={instaTab==="grid"?"#4a7fa0":"#c0c0c0"}/><rect x="13" y="2" width="9" height="9" rx="1" fill={instaTab==="grid"?"#4a7fa0":"#c0c0c0"}/><rect x="2" y="13" width="9" height="9" rx="1" fill={instaTab==="grid"?"#4a7fa0":"#c0c0c0"}/><rect x="13" y="13" width="9" height="9" rx="1" fill={instaTab==="grid"?"#4a7fa0":"#c0c0c0"}/></svg>
           </button>
@@ -394,7 +394,7 @@ const InstaScreen = ({data, isIos, accent, onBack}) => {
         </div>
         {/* Contenu grille */}
         {instaTab==="grid"&&(gridPosts.length===0
-          ?<div style={{padding:"40px 24px",textAlign:"center",color:"#999",fontSize:13,background:"#fff"}}><div style={{fontSize:36,marginBottom:8}}>📷</div>Aucun post pour l'instant</div>
+          ?<div style={{padding:"40px 24px",textAlign:"center",color:"#999",fontSize:13,background:"var(--card, #fff)"}}><div style={{fontSize:36,marginBottom:8}}>📷</div>Aucun post pour l'instant</div>
           :<div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:4,padding:4,background:"#e0e0e0"}}>
             {gridPosts.map((p,i)=>{
               const photos = (p.photos&&p.photos.length) ? p.photos : (p.src?[p.src]:[]);
@@ -409,9 +409,9 @@ const InstaScreen = ({data, isIos, accent, onBack}) => {
           </div>
         )}
         {instaTab==="list"&&(gridPosts.length===0
-          ?<div style={{padding:"40px 24px",textAlign:"center",color:"#999",fontSize:13,background:"#fff"}}>Aucun post</div>
+          ?<div style={{padding:"40px 24px",textAlign:"center",color:"#999",fontSize:13,background:"var(--card, #fff)"}}>Aucun post</div>
           :<div>{gridPosts.map((p,i)=>(
-              <div key={p.id||i} onClick={()=>openPost({...p,_fromFeed:false})} style={{display:"flex",gap:10,padding:"10px 12px",borderBottom:"1px solid #efefef",cursor:"pointer",background:"#fff",alignItems:"flex-start"}}>
+              <div key={p.id||i} onClick={()=>openPost({...p,_fromFeed:false})} style={{display:"flex",gap:10,padding:"10px 12px",borderBottom:"1px solid #efefef",cursor:"pointer",background:"var(--card, #fff)",alignItems:"flex-start"}}>
                 <div style={{width:60,height:60,borderRadius:3,overflow:"hidden",flexShrink:0,background:"#e8e8e8"}}>{(()=>{ const ph=(p.photos&&p.photos.length)?p.photos[0]:p.src; return ph?<img src={ph} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:<div style={{width:"100%",height:"100%",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,color:"#bbb"}}>📷</div>; })()}</div>
                 <div style={{flex:1,minWidth:0}}>
                   {p.pinned&&<div style={{fontSize:10,color:"#3b88c3",fontWeight:700,marginBottom:2}}>📌 Épinglé</div>}
@@ -421,7 +421,7 @@ const InstaScreen = ({data, isIos, accent, onBack}) => {
               </div>
             ))}</div>
         )}
-        {instaTab==="map"&&<div style={{padding:"40px 24px",textAlign:"center",color:"#999",fontSize:13,background:"#fff"}}><div style={{fontSize:36,marginBottom:8}}>🗺️</div>Aucune photo géolocalisée</div>}
+        {instaTab==="map"&&<div style={{padding:"40px 24px",textAlign:"center",color:"#999",fontSize:13,background:"var(--card, #fff)"}}><div style={{fontSize:36,marginBottom:8}}>🗺️</div>Aucune photo géolocalisée</div>}
       </div>
       <TabBar active="profile"/>
     </div>

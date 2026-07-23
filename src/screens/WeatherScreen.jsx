@@ -63,7 +63,7 @@ const WeatherScreen = ({isIos, accent, data, admin}) => {
               background:"linear-gradient(180deg,#1565C0 0%,#0D47A1 60%,#0A3880 100%)",
               display:"flex",flexDirection:"column",overflowY:"auto"}}>
               <div style={{padding:"12px 16px 8px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-                <div style={{color:"rgba(255,255,255,0.85)",fontSize:14,fontWeight:400}}>{c.name}</div>
+                <div style={{color:"var(--raise, rgba(255,255,255,0.85))",fontSize:14,fontWeight:400}}>{c.name}</div>
               </div>
               <div style={{display:"flex",flexDirection:"column",alignItems:"center",padding:"4px 0 14px"}}>
                 <div style={{fontSize:52}}>{c.condIcon||"🌤️"}</div>
@@ -73,7 +73,7 @@ const WeatherScreen = ({isIos, accent, data, admin}) => {
               <div style={{height:1,background:"rgba(255,255,255,0.15)",margin:"0 16px 4px"}}/>
               {c.forecast.map((f,i)=>(
                 <div key={i} style={{display:"flex",alignItems:"center",padding:"7px 18px",borderBottom:"1px solid rgba(255,255,255,0.06)"}}>
-                  <div style={{color:"rgba(255,255,255,0.85)",fontSize:12,fontWeight:500,width:110}}>{f.day}</div>
+                  <div style={{color:"var(--raise, rgba(255,255,255,0.85))",fontSize:12,fontWeight:500,width:110}}>{f.day}</div>
                   <div style={{fontSize:18,flex:1,textAlign:"center"}}>{f.icon}</div>
                   <div style={{color:"#fff",fontSize:13,fontWeight:600,width:36,textAlign:"right"}}>{f.hi}°</div>
                   <div style={{color:"rgba(255,255,255,0.5)",fontSize:13,width:36,textAlign:"right"}}>{f.lo}°</div>
@@ -164,44 +164,44 @@ const WeatherScreen = ({isIos, accent, data, admin}) => {
 const WeatherCityCard = ({city, ci, COND_ICONS, DAY_OPTS, ensureCustom, updForecast, updCities, cities}) => {
   const [open, setOpen] = useState(true);
   return (
-    <div style={{background:"rgba(255,255,255,0.9)",borderRadius:10,border:"1px solid rgba(0,0,0,0.07)",overflow:"hidden"}}>
+    <div style={{background:"var(--raise, rgba(255,255,255,0.9))",borderRadius:10,border:"1px solid var(--line, rgba(0,0,0,0.07))",overflow:"hidden"}}>
       <div onClick={()=>setOpen(o=>!o)} style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"10px 14px",cursor:"pointer",userSelect:"none",gap:8}}>
         <div style={{display:"flex",alignItems:"center",gap:7}}>
           <span style={{fontSize:16}}>{city.condIcon||"🌤️"}</span>
-          <span style={{fontSize:13,fontWeight:600,color:"#1a1a2e"}}>{city.name||"Ville"}</span>
-          <span style={{fontSize:11,color:"#9ca3af"}}>{city.current||"—"}°</span>
+          <span style={{fontSize:13,fontWeight:600,color:"var(--ink, #1a1a2e)"}}>{city.name||"Ville"}</span>
+          <span style={{fontSize:11,color:"var(--ink-faint, #9ca3af)"}}>{city.current||"—"}°</span>
         </div>
-        <span style={{fontSize:12,color:"#9ca3af",transform:open?"rotate(180deg)":"rotate(0deg)",transition:"transform .2s",display:"inline-block"}}>▾</span>
+        <span style={{fontSize:12,color:"var(--ink-faint, #9ca3af)",transform:open?"rotate(180deg)":"rotate(0deg)",transition:"transform .2s",display:"inline-block"}}>▾</span>
       </div>
       {open && (
-        <div style={{padding:"0 14px 12px",display:"flex",flexDirection:"column",gap:8,borderTop:"1px solid rgba(0,0,0,0.05)"}}>
+        <div style={{padding:"0 14px 12px",display:"flex",flexDirection:"column",gap:8,borderTop:"1px solid var(--line-soft, rgba(0,0,0,0.05))"}}>
           <div style={{display:"flex",gap:8,alignItems:"center",flexWrap:"wrap",paddingTop:10}}>
             <Field label="Ville" value={city.name||""} onChange={v=>ensureCustom(ci,{name:v})} style={{flex:1}}/>
             <Field label="Temp °C" value={String(city.current||"")} onChange={v=>ensureCustom(ci,{current:parseInt(v)||0})} width="70px"/>
             <div style={{display:"flex",flexDirection:"column",gap:2}}>
-              <label style={{color:"#9ca3af",fontSize:10,letterSpacing:0.6,fontWeight:600,textTransform:"uppercase"}}>Icône</label>
+              <label style={{color:"var(--ink-faint, #9ca3af)",fontSize:10,letterSpacing:0.6,fontWeight:600,textTransform:"uppercase"}}>Icône</label>
               <select value={city.condIcon||"☀️"} onChange={e=>ensureCustom(ci,{condIcon:e.target.value})}
-                style={{background:"rgba(255,255,255,0.9)",border:"1px solid rgba(0,0,0,0.1)",color:"#1a1a2e",padding:"5px 7px",fontSize:16,borderRadius:7,width:64}}>
+                style={{background:"var(--raise, rgba(255,255,255,0.9))",border:"1px solid var(--line, rgba(0,0,0,0.1))",color:"var(--ink, #1a1a2e)",padding:"5px 7px",fontSize:16,borderRadius:7,width:64}}>
                 {COND_ICONS.map(ic=><option key={ic} value={ic}>{ic}</option>)}
               </select>
             </div>
             <Field label="Condition" value={city.condition||""} onChange={v=>ensureCustom(ci,{condition:v})} width="140px"/>
-            <button onClick={()=>updCities(cities.filter((_,j)=>j!==ci))} style={{background:"none",border:"none",color:"#d1d5db",cursor:"pointer",fontSize:16,padding:"0 2px",marginTop:18}}>×</button>
+            <button onClick={()=>updCities(cities.filter((_,j)=>j!==ci))} style={{background:"none",border:"none",color:"var(--ink-faint, #d1d5db)",cursor:"pointer",fontSize:16,padding:"0 2px",marginTop:18}}>×</button>
           </div>
-          <div style={{fontSize:10,fontWeight:600,color:"#6b7280",marginTop:2,marginBottom:-4}}>Prévisions</div>
+          <div style={{fontSize:10,fontWeight:600,color:"var(--ink-soft, #6b7280)",marginTop:2,marginBottom:-4}}>Prévisions</div>
           {(city.forecast||[]).map((f,fi)=>(
             <div key={fi} style={{display:"flex",gap:5,alignItems:"center",flexWrap:"wrap"}}>
               <select value={f.day||"MONDAY"} onChange={e=>updForecast(ci,fi,{day:e.target.value})}
-                style={{background:"rgba(255,255,255,0.9)",border:"1px solid rgba(0,0,0,0.1)",color:"#1a1a2e",padding:"4px 5px",fontSize:10,borderRadius:6,width:90}}>
+                style={{background:"var(--raise, rgba(255,255,255,0.9))",border:"1px solid var(--line, rgba(0,0,0,0.1))",color:"var(--ink, #1a1a2e)",padding:"4px 5px",fontSize:10,borderRadius:6,width:90}}>
                 {DAY_OPTS.map(d=><option key={d} value={d}>{d}</option>)}
               </select>
               <select value={f.icon||"☀️"} onChange={e=>updForecast(ci,fi,{icon:e.target.value})}
-                style={{background:"rgba(255,255,255,0.9)",border:"1px solid rgba(0,0,0,0.1)",color:"#1a1a2e",padding:"4px 5px",fontSize:14,borderRadius:6,width:52}}>
+                style={{background:"var(--raise, rgba(255,255,255,0.9))",border:"1px solid var(--line, rgba(0,0,0,0.1))",color:"var(--ink, #1a1a2e)",padding:"4px 5px",fontSize:14,borderRadius:6,width:52}}>
                 {COND_ICONS.map(ic=><option key={ic} value={ic}>{ic}</option>)}
               </select>
               <Field label="Max" value={String(f.hi||"")} onChange={v=>updForecast(ci,fi,{hi:parseInt(v)||0})} width="54px"/>
               <Field label="Min" value={String(f.lo||"")} onChange={v=>updForecast(ci,fi,{lo:parseInt(v)||0})} width="54px"/>
-              <button onClick={()=>ensureCustom(ci,{forecast:(city.forecast||[]).filter((_,k)=>k!==fi)})} style={{background:"none",border:"none",color:"#d1d5db",cursor:"pointer",fontSize:14,padding:"0 2px",marginTop:18}}>×</button>
+              <button onClick={()=>ensureCustom(ci,{forecast:(city.forecast||[]).filter((_,k)=>k!==fi)})} style={{background:"none",border:"none",color:"var(--ink-faint, #d1d5db)",cursor:"pointer",fontSize:14,padding:"0 2px",marginTop:18}}>×</button>
             </div>
           ))}
           <button onClick={()=>ensureCustom(ci,{forecast:[...(city.forecast||[]),{day:"MONDAY",icon:"☀️",hi:70,lo:55}]})}
