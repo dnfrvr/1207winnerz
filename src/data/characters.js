@@ -94,6 +94,11 @@ export const GROUP_SEED = [
 
 export const mkData = () => ({
   "glinda": {
+    "btDevices": [
+      {"name":"Jambox de Cynthia","connected":false},
+      {"name":"Beats Pill d'Eoghan","connected":false},
+      {"name":"Enceinte Ravingfool","connected":false}
+    ],
     "name": "Glinda Ravingfool",
     "username": "glindatheverygood",
     "wifiNetworks": [
@@ -2514,6 +2519,11 @@ export const mkData = () => ({
     "appNames": {}
   },
   "eoghan": {
+    "btDevices": [
+      {"name":"Beats Pill de Glinda","connected":false},
+      {"name":"JBL du vestiaire","connected":false},
+      {"name":"スピーカー マスダ家","connected":false}
+    ],
     "wifiNetworks": [
       {"name":"UMA_Student","secured":true,"current":true},
       {"name":"UMA_Guest","secured":false},
@@ -4488,6 +4498,10 @@ export const mkData = () => ({
     }
   },
   "drew": {
+    "btDevices": [
+      {"name":"Bose des mamas","connected":false},
+      {"name":"Jambox d'Elias","connected":false}
+    ],
     "wifiNetworks": [
       {"name":"UMA_Student","secured":true,"current":true},
       {"name":"UMA_Guest","secured":false},
@@ -6994,7 +7008,9 @@ export const mkData = () => ({
       {"name":"GreenFamily_2G","secured":true}
     ],
     "btDevices": [
-      {"name":"iPod d'Anna","connected":false}
+      {"name":"iPod d'Anna","connected":false},
+      {"name":"Radio de Mamie","connected":false},
+      {"name":"Beats Pill de Drew","connected":false}
     ],
     "name": "Elias Green",
     "username": "noteliasgreen",
