@@ -1173,7 +1173,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                       const thread = dataRef.current.sharedThreads?.[gid]||[];
                       // Tri chronologique croissant pour affichage — le tableau écrit en retour suit cet ordre,
                       // Firebase stocke donc toujours les messages dans l'ordre chronologique.
-                      const sortedThread = [...thread].sort((a,b)=>loreSortKey(a.time)-loreSortKey(b.time));
+                      const sortedThread = thread; // ordre stocké stable (le téléphone trie par heure)
                       const writeThread = (t) => onUpdate(gid, t.map((m,k)=>m.id!=null?m:{...m,id:Date.now()+k}));
                       const senderOptions = allMembers.map(m=>({
                         key:m, label:CHAR_NAMES[m]||m, color:CHAR_COLORS[m]||"var(--accent)"
@@ -1227,7 +1227,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                     {/* ── Éditeur de messages du groupe — groupe LOCAL (pas de sharedThreadId) ── */}
                     {gOpen && !isSharedGroup && (()=>{
                       const rawLocal = gMsg.thread||[];
-                      const sortedLocal = [...rawLocal].sort((a,b)=>loreSortKey(a.time)-loreSortKey(b.time));
+                      const sortedLocal = rawLocal; // ordre stocké stable (le téléphone trie par heure)
                       const writeLocal = (t) => { const ti=t.map((m,k)=>m.id!=null?m:{...m,id:Date.now()+k}); upd("messages", d.messages.map(m=>m===gMsg ? {...m, thread:ti} : m)); };
                       const insertAt = (si) => {
                         const prev=sortedLocal[si-1]; const next=sortedLocal[si];
@@ -1372,7 +1372,9 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
               const displayThread = isShared
                 ? rawShared.map(m=>({...m, from: m.from===myL?'me':'them'}))
                 : rawLocal;
-              const sortedDisplay = [...displayThread].sort((a,b)=>loreSortKey(a.time)-loreSortKey(b.time));
+              // Ordre STOCKÉ (stable pendant l'édition) — plus de saut quand on change une heure.
+              // Le téléphone re-trie toujours par heure à l'affichage, donc l'ordre ici est libre.
+              const sortedDisplay = displayThread;
               const writeThread = (newDisplay) => {
                 const withIds = newDisplay.map((m,k)=>m.id!=null?m:{...m,id:Date.now()+k});
                 if(isShared){
@@ -1390,6 +1392,11 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                 writeThread(t);
               };
               return (<>
+              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:8,flexWrap:"wrap",marginBottom:2}}>
+                <span style={{fontSize:11,color:"var(--ink-faint)"}}>💬 Sur le téléphone, du plus ancien au plus récent (par heure).</span>
+                <button onClick={()=>writeThread([...sortedDisplay].sort((a,b)=>loreSortKey(a.time)-loreSortKey(b.time)))}
+                  style={{background:"var(--accent-wash)",border:"1px solid var(--accent-line)",color:"var(--accent)",borderRadius:7,padding:"4px 10px",cursor:"pointer",fontSize:11,fontWeight:600}}>↕ Trier par heure</button>
+              </div>
               <InsertMsgBtn onClick={()=>insertAt(0)}/>
               {sortedDisplay.map((msg2,si)=>(
               <React.Fragment key={msg2.id ?? si}>
