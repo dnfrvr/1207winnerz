@@ -3391,30 +3391,31 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
           const dayKeys = Object.keys(grouped).sort();
           const [openDays, setOpenDays] = [calCollapsedSet, setCalCollapsedSet];
           const toggleDay = k => setOpenDays(prev=>{const s=new Set(prev);s.has(k)?s.delete(k):s.add(k);return s;});
-          const CAL_RED="#e04444";
           return (<>
-            
             {dayKeys.map(k=>{
               const {label, indices} = grouped[k];
               const isOpen = openDays.has(k);
               return (
-                <div key={k}>
-                  {/* Day header — togglable */}
-                  <button onClick={()=>toggleDay(k)} style={{width:"100%",display:"flex",alignItems:"center",gap:8,minHeight:44,WebkitTapHighlightColor:"transparent",background:"rgba(224,68,68,0.07)",border:"1px solid rgba(224,68,68,0.18)",borderRadius:8,padding:"7px 12px",cursor:"pointer",textAlign:"left"}}>
+                <div key={k} style={{display:"flex",flexDirection:"column"}}>
+                  {/* En-tête de jour — repliable */}
+                  <button onClick={()=>toggleDay(k)} style={{width:"100%",display:"flex",alignItems:"center",gap:9,minHeight:44,WebkitTapHighlightColor:"transparent",background:isOpen?"var(--accent-wash)":"var(--card)",border:`1px solid ${isOpen?"var(--accent-line)":"var(--line)"}`,borderRadius:isOpen?"9px 9px 0 0":9,padding:"9px 13px",cursor:"pointer",textAlign:"left",transition:"background .12s"}}>
                     <AdminChevron open={isOpen} size={14}/>
-                    <span style={{fontSize:12,fontWeight:700,color:"#c0392b",flex:1}}>{label}</span>
-                    <span style={{fontSize:10,color:"var(--ink-faint)"}}>{indices.length} événement{indices.length>1?"s":""}</span>
+                    <span style={{fontSize:13,fontWeight:700,color:"var(--ink)",flex:1}}>{label}</span>
+                    <span style={{fontSize:10.5,color:"var(--ink-faint)",fontWeight:600,flexShrink:0}}>{indices.length} évt{indices.length>1?"s":""}</span>
                   </button>
 
-                  {isOpen && indices.map(i=>{
+                  {isOpen && <div style={{display:"flex",flexDirection:"column",gap:8,border:"1px solid var(--accent-line)",borderTop:"none",borderRadius:"0 0 9px 9px",padding:10,background:"var(--card)"}}>
+                    {indices.map(i=>{
                     const ev = effective[i];
                     return (
-                    <div key={ev.id??i} className="adm-card" style={{background:"var(--raise)",borderRadius:"0 0 10px 10px",padding:"10px 12px",border:"1px solid var(--line)",borderTop:"none",display:"flex",flexDirection:"column",gap:7,marginTop:0}}>
-                      <Field label="Titre" value={ev.title||""} onChange={v=>ensureCustom(i,{title:v})}/>
-                      <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
-                        {/* Date picker — même input type=date que partout ailleurs, s'ouvre sur oct 2012 */}
-                        <div style={{display:"flex",flexDirection:"column",gap:2}}>
-                          <label style={{color:"var(--ink-faint)",fontSize:10,letterSpacing:0.6,fontWeight:600,textTransform:"uppercase"}}>Date</label>
+                    <div key={ev.id??i} style={{background:"var(--raise)",borderRadius:9,padding:"10px 11px",border:"1px solid var(--line)",display:"flex",flexDirection:"column",gap:8}}>
+                      <div style={{display:"flex",gap:8,alignItems:"flex-start"}}>
+                        <div style={{flex:1,minWidth:0}}><Field label="Titre" value={ev.title||""} onChange={v=>ensureCustom(i,{title:v})} placeholder="Nom de l'événement"/></div>
+                        <button onClick={()=>updList(effective.filter((_,j)=>j!==i))} className="adm-del-btn" title="Supprimer" style={{background:"none",border:"none",color:"var(--ink-faint)",cursor:"pointer",fontSize:17,padding:"2px 4px",marginTop:16,flexShrink:0,borderRadius:5}}>×</button>
+                      </div>
+                      <div style={{display:"flex",gap:8,flexWrap:"wrap",alignItems:"flex-end"}}>
+                        <div style={{display:"flex",flexDirection:"column",gap:5,flex:"1 1 130px",minWidth:120}}>
+                          <label style={{color:"var(--ink-faint)",fontSize:10,letterSpacing:0.8,fontWeight:600,textTransform:"uppercase"}}>Date</label>
                           <input type="date"
                             value={`${ev.year||2012}-${String(ev.month||10).padStart(2,"0")}-${String(ev.day||1).padStart(2,"0")}`}
                             onChange={e=>{
@@ -3423,24 +3424,24 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                               ensureCustom(i,{year:y,month:m,day:dd});
                             }}
                             className="adm-input"
-                            style={{background:"var(--raise)",border:"1px solid var(--line)",color:"var(--ink)",padding:"5px 8px",fontSize:11,borderRadius:7}}/>
+                            style={{background:"var(--raise)",border:"1px solid var(--line)",color:"var(--ink)",padding:"8px 9px",fontSize:12,borderRadius:8,width:"100%",boxSizing:"border-box"}}/>
                         </div>
-                        <div style={{display:"flex",flexDirection:"column",gap:5,width:"90px"}}>
+                        <div style={{display:"flex",flexDirection:"column",gap:5,flex:"0 1 110px"}}>
                           <label style={{color:"var(--ink-faint)",fontSize:10,letterSpacing:0.8,textTransform:"uppercase",fontWeight:600}}>Heure</label>
                           <input type="time" value={ev.time||""} onChange={e=>ensureCustom(i,{time:e.target.value})}
-                            className="adm-input" style={{background:"var(--raise)",border:"1px solid var(--line)",color:"var(--ink)",padding:"8px 8px",fontSize:12,borderRadius:8,width:"90px"}}/>
+                            className="adm-input" style={{background:"var(--raise)",border:"1px solid var(--line)",color:"var(--ink)",padding:"8px 9px",fontSize:12,borderRadius:8,width:"100%",boxSizing:"border-box"}}/>
                         </div>
-                        <Field label="Lieu" value={ev.location||""} onChange={v=>ensureCustom(i,{location:v})} width="130px"/>
-                        <button onClick={()=>updList(effective.filter((_,j)=>j!==i))} style={{background:"none",border:"none",color:"var(--ink-faint)",cursor:"pointer",fontSize:16,padding:"0 4px",marginTop:18}}>×</button>
+                        <div style={{flex:"1 1 140px",minWidth:120}}><Field label="Lieu" value={ev.location||""} onChange={v=>ensureCustom(i,{location:v})} placeholder="optionnel"/></div>
                       </div>
                     </div>
                   );})}
+                  </div>}
                 </div>
               );
             })}
 
             <button onClick={()=>{const today={id:Date.now(),day:1,month:10,year:2012,title:"",time:"",location:""};updList(isCustom?[...effective,today]:([...defaults,today].map((e,j)=>({...e,id:Date.now()+j}))))}}
-              style={{background:"rgba(224,68,68,0.08)",border:"1px dashed rgba(224,68,68,0.35)",color:"#e04444",borderRadius:8,padding:"10px 18px",cursor:"pointer",fontSize:12,fontWeight:600}}>+ Événement</button>
+              style={{alignSelf:"flex-start",display:"inline-flex",alignItems:"center",gap:8,background:"var(--accent)",border:"none",color:"#fff",borderRadius:9,padding:"10px 18px",cursor:"pointer",fontSize:12.5,fontWeight:700,boxShadow:"var(--shadow)"}}>+ Événement</button>
           </>);
         })()}
       </div>
