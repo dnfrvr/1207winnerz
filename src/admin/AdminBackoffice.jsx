@@ -223,26 +223,30 @@ const MoveButtons = ({index, length, onMoveUp, onMoveDown}) => (
 // Composant stable pour une ligne de track musicale — en dehors de AdminBackoffice pour éviter
 // la recréation des nœuds DOM (et donc la perte de l'event handler onChange) à chaque render.
 const MusicTrackRow = ({track, index, total, onCoverChange, onFieldChange, onMoveUp, onMoveDown, onDelete}) => (
-  <div className="adm-card" style={{display:"flex",gap:8,alignItems:"center",background:"var(--raise)",padding:10,borderRadius:10,border:"1px solid var(--line)",flexWrap:"wrap"}}>
-    <label style={{width:40,height:40,borderRadius:6,background:"var(--accent-wash)",border:"1px dashed var(--accent-line)",overflow:"hidden",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer"}}>
-      {track.cover
-        ? <img src={track.cover} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
-        : <span style={{fontSize:16}}>🎵</span>}
-      <input type="file" accept="image/*" style={{display:"none"}} onChange={e=>{
-        const f=e.target.files?.[0]; if(!f) return;
-        onCoverChange(f); e.target.value="";
-      }}/>
-    </label>
-    <input value={track.title||""} onChange={e=>onFieldChange("title",e.target.value)}
-      placeholder="Titre" className="adm-input" style={{flex:2,background:"var(--raise)",border:"1px solid var(--line)",color:"var(--ink)",padding:"7px 10px",fontSize:12,borderRadius:7}}/>
-    <input value={track.artist||""} onChange={e=>onFieldChange("artist",e.target.value)}
-      placeholder="Artiste" className="adm-input" style={{flex:2,background:"var(--raise)",border:"1px solid var(--line)",color:"var(--ink-soft)",padding:"7px 10px",fontSize:12,borderRadius:7}}/>
-    <input value={track.album||""} onChange={e=>onFieldChange("album",e.target.value)}
-      placeholder="Album" className="adm-input" style={{flex:2,background:"var(--raise)",border:"1px solid var(--line)",color:"var(--ink-soft)",padding:"7px 10px",fontSize:12,borderRadius:7}}/>
-    <input value={track.duration||""} onChange={e=>onFieldChange("duration",e.target.value)}
-      placeholder="3:00" className="adm-input" style={{width:60,background:"var(--raise)",border:"1px solid var(--line)",color:"var(--ink-soft)",padding:"7px 8px",fontSize:11,borderRadius:7}}/>
-    <MoveButtons index={index} length={total} onMoveUp={onMoveUp} onMoveDown={onMoveDown}/>
-    <button onClick={onDelete} className="adm-del-btn" style={{background:"none",border:"none",color:"var(--ink-faint)",cursor:"pointer",fontSize:16,padding:"2px 6px",borderRadius:5,transition:"all 0.15s"}}>×</button>
+  <div className="adm-card" style={{display:"flex",flexDirection:"column",gap:8,background:"var(--raise)",padding:"10px 11px",borderRadius:10,border:"1px solid var(--line)"}}>
+    <div style={{display:"flex",gap:8,alignItems:"center"}}>
+      <label style={{width:40,height:40,borderRadius:6,background:track.cover?"transparent":"var(--accent-wash)",border:"1px dashed var(--accent-line)",overflow:"hidden",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer"}}>
+        {track.cover
+          ? <img src={track.cover} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+          : <span style={{fontSize:16}}>🎵</span>}
+        <input type="file" accept="image/*" style={{display:"none"}} onChange={e=>{
+          const f=e.target.files?.[0]; if(!f) return;
+          onCoverChange(f); e.target.value="";
+        }}/>
+      </label>
+      <input value={track.title||""} onChange={e=>onFieldChange("title",e.target.value)}
+        placeholder="Titre" className="adm-input" style={{flex:1,minWidth:0,background:"var(--raise)",border:"1px solid var(--line)",color:"var(--ink)",padding:"7px 10px",fontSize:13,borderRadius:7}}/>
+      <MoveButtons index={index} length={total} onMoveUp={onMoveUp} onMoveDown={onMoveDown}/>
+      <button onClick={onDelete} className="adm-del-btn" title="Supprimer" style={{background:"none",border:"none",color:"var(--ink-faint)",cursor:"pointer",fontSize:17,padding:"2px 5px",borderRadius:5,flexShrink:0}}>×</button>
+    </div>
+    <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+      <input value={track.artist||""} onChange={e=>onFieldChange("artist",e.target.value)}
+        placeholder="Artiste" className="adm-input" style={{flex:"1 1 130px",minWidth:0,background:"var(--raise)",border:"1px solid var(--line)",color:"var(--ink-soft)",padding:"7px 10px",fontSize:12,borderRadius:7}}/>
+      <input value={track.album||""} onChange={e=>onFieldChange("album",e.target.value)}
+        placeholder="Album" className="adm-input" style={{flex:"1 1 130px",minWidth:0,background:"var(--raise)",border:"1px solid var(--line)",color:"var(--ink-soft)",padding:"7px 10px",fontSize:12,borderRadius:7}}/>
+      <input value={track.duration||""} onChange={e=>onFieldChange("duration",e.target.value)}
+        placeholder="3:00" className="adm-input" style={{flex:"0 1 80px",background:"var(--raise)",border:"1px solid var(--line)",color:"var(--ink-soft)",padding:"7px 8px",fontSize:12,borderRadius:7}}/>
+    </div>
   </div>
 );
 
@@ -1961,8 +1965,13 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                     dragIdx.current=null;
                   }}
                   style={{display:"flex",alignItems:"center",gap:8,background:"var(--raise)",borderRadius:8,padding:"7px 10px",border:"1px solid var(--line)",cursor:"grab",transition:"background 0.1s,border-color 0.1s,box-shadow 0.1s"}}>
-                  {/* Handle drag */}
+                  {/* Handle drag (desktop) + flèches (tactile) */}
                   <span style={{color:"var(--ink-faint)",fontSize:14,flexShrink:0,cursor:"grab",userSelect:"none"}}>⠿</span>
+                  <div onClick={e=>e.stopPropagation()} style={{flexShrink:0}}>
+                    <MoveButtons index={i} length={list.length}
+                      onMoveUp={()=>{const l=[...list];[l[i-1],l[i]]=[l[i],l[i-1]];upd(listKey,l);}}
+                      onMoveDown={()=>{const l=[...list];[l[i+1],l[i]]=[l[i],l[i+1]];upd(listKey,l);}}/>
+                  </div>
                   {/* Icône */}
                   <label style={{width:36,height:36,background:"var(--line-soft)",borderRadius:7,overflow:"hidden",display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,flexShrink:0,cursor:"pointer",border:"1px solid var(--line)"}}>
                     {cur?<img src={cur} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:meta.iosIcon||"📱"}
