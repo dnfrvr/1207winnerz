@@ -683,6 +683,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
   const [grindrOpenDms, setGrindrOpenDms] = useState(new Set());
   const toggleGrindrDm = (id) => setGrindrOpenDms(prev => { const n=new Set(prev); n.has(id)?n.delete(id):n.add(id); return n; });
   const [msgAdminTab, setMsgAdminTab] = useState("inbox"); // "inbox" | "deleted"
+  const [msgFocusId, setMsgFocusId] = useState(null); // bulle de message en cours d'édition (vue conversation)
   const [mailAdmTab, setMailAdmTab] = useState("inbox"); // "inbox" | "drafts" | "deleted"
   const [twTab, setTwTab] = useState("users"); // "users" | "shared" | "tweets"
   const [tbTab, setTbTab] = useState("users"); // "users" | "shared" | "feed"
@@ -1391,60 +1392,71 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                 t.splice(si,0,{from:"them",text:"",time});
                 writeThread(t);
               };
+              const patch = (si, p) => { const t=[...sortedDisplay]; t[si]={...t[si],...p}; writeThread(t); };
               return (<>
-              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:8,flexWrap:"wrap",marginBottom:2}}>
-                <span style={{fontSize:11,color:"var(--ink-faint)"}}>💬 Sur le téléphone, du plus ancien au plus récent (par heure).</span>
+              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:8,flexWrap:"wrap",marginBottom:6}}>
+                <span style={{fontSize:11,color:"var(--ink-faint)"}}>💬 Aperçu conversation — clique une bulle pour l'éditer.</span>
                 <button onClick={()=>writeThread([...sortedDisplay].sort((a,b)=>loreSortKey(a.time)-loreSortKey(b.time)))}
                   style={{background:"var(--accent-wash)",border:"1px solid var(--accent-line)",color:"var(--accent)",borderRadius:7,padding:"4px 10px",cursor:"pointer",fontSize:11,fontWeight:600}}>↕ Trier par heure</button>
               </div>
-              <InsertMsgBtn onClick={()=>insertAt(0)}/>
-              {sortedDisplay.map((msg2,si)=>(
-              <React.Fragment key={msg2.id ?? si}>
-              <div style={{display:"flex",flexDirection:"column",gap:8,background:"var(--card)",borderRadius:10,padding:"10px 11px",border:"1px solid var(--line)"}}>
-                {/* Ligne 1 : expéditeur (segmenté) · heure · contrôles */}
-                <div style={{display:"flex",gap:8,alignItems:"center",flexWrap:"wrap"}}>
-                  <div style={{display:"inline-flex",background:"var(--paper)",border:"1px solid var(--line)",borderRadius:8,padding:2,flexShrink:0}}>
-                    {["me","them"].map(v=>(
-                      <button key={v} onClick={()=>{const t=[...sortedDisplay];t[si]={...t[si],from:v};writeThread(t);}}
-                        style={{border:0,background:msg2.from===v?"var(--accent)":"transparent",color:msg2.from===v?"#fff":"var(--ink-soft)",padding:"5px 13px",borderRadius:6,cursor:"pointer",fontSize:12,fontWeight:600}}>
-                        {v==="me"?"moi":"eux"}</button>
-                    ))}
-                  </div>
-                  <div style={{flex:1,minWidth:130}}><LoreDateTimeInput value={msg2.time} onChange={v=>{const t=[...sortedDisplay];t[si]={...t[si],time:v};writeThread(t);}} width="100%" showLabel={false}/></div>
-                  <div style={{display:"flex",alignItems:"center",gap:3,flexShrink:0}}>
-                    <label title="Image jointe" style={{width:32,height:32,borderRadius:7,overflow:"hidden",flexShrink:0,background:msg2.img?"transparent":"var(--accent-wash)",border:"1px dashed var(--accent-line)",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer"}}>
-                      {msg2.img ? <img src={msg2.img} style={{width:"100%",height:"100%",objectFit:"cover"}}/> : <span style={{fontSize:14,color:"var(--accent)"}}>📷</span>}
-                      <input type="file" accept="image/*" style={{display:"none"}} onChange={e=>{
-                        const f=e.target.files?.[0]; if(!f) return;
-                        const r=new UploadReader(); r.onload=ev=>{const t=[...sortedDisplay]; t[si]={...t[si],img:ev.target.result}; writeThread(t);};
-                        r.readAsDataURL(f); e.target.value="";
-                      }}/>
-                    </label>
-                    {msg2.img && <button onClick={()=>{const t=[...sortedDisplay];t[si]={...t[si],img:null};writeThread(t);}}
-                      title="Retirer l'image" style={{background:"none",border:"none",color:"var(--danger)",cursor:"pointer",fontSize:13,padding:"0 2px",flexShrink:0}}>✕</button>}
-                    <div style={{display:"flex",flexDirection:"column",gap:1,flexShrink:0}}>
-                      <MsgMoveBtn dir="up" disabled={si===0} onClick={()=>{const t=[...sortedDisplay];[t[si-1],t[si]]=[t[si],t[si-1]];t[si]={...t[si],time:shiftLoreTime(t[si].time,-1)};writeThread(t);}}/>
-                      <MsgMoveBtn dir="down" disabled={si===sortedDisplay.length-1} onClick={()=>{const t=[...sortedDisplay];[t[si+1],t[si]]=[t[si],t[si+1]];t[si]={...t[si],time:shiftLoreTime(t[si].time,+1)};writeThread(t);}}/>
+              {/* ── Vue conversation (bulles WYSIWYG) ── */}
+              <div style={{display:"flex",flexDirection:"column",gap:9,background:"var(--paper)",border:"1px solid var(--line)",borderRadius:12,padding:"12px 12px 8px"}}>
+                {sortedDisplay.length===0 && <div style={{textAlign:"center",color:"var(--ink-faint)",fontSize:12,padding:"14px 0"}}>Conversation vide — écris le premier message ci-dessous.</div>}
+                {sortedDisplay.map((msg2,si)=>{
+                  const isMe = msg2.from==="me";
+                  const mid = msg2.id ?? ("i"+si);
+                  const focused = msgFocusId===mid;
+                  return (
+                  <div key={msg2.id ?? si} style={{display:"flex",flexDirection:"column",alignItems:isMe?"flex-end":"flex-start",gap:3}}>
+                    <div style={{maxWidth:"86%",minWidth:focused?"min(280px,86%)":140,display:"flex",flexDirection:"column",alignItems:isMe?"flex-end":"flex-start",gap:4,width:focused?"86%":"auto"}}>
+                      {msg2.img && <div style={{position:"relative"}}>
+                        <img src={msg2.img} style={{maxWidth:"100%",maxHeight:180,borderRadius:13,display:"block",border:"1px solid var(--line)"}}/>
+                        {focused && <button onClick={()=>patch(si,{img:null})} title="Retirer l'image" style={{position:"absolute",top:4,right:4,background:"rgba(0,0,0,0.55)",border:"none",color:"#fff",borderRadius:"50%",width:22,height:22,cursor:"pointer",fontSize:12}}>✕</button>}
+                      </div>}
+                      <textarea value={msg2.text||""}
+                        onFocus={()=>setMsgFocusId(mid)}
+                        onChange={e=>patch(si,{text:e.target.value})}
+                        rows={Math.max(1,Math.ceil((msg2.text||"").length/34))}
+                        placeholder={isMe?"Ton message…":"Leur message…"}
+                        style={{width:"100%",resize:"none",fontFamily:"inherit",
+                          background:isMe?"var(--accent)":"var(--raise)",
+                          color:isMe?"#fff":"var(--ink)",
+                          border:"1px solid "+(isMe?"transparent":"var(--line)"),
+                          borderRadius:isMe?"15px 15px 5px 15px":"15px 15px 15px 5px",
+                          padding:"9px 13px",fontSize:13.5,lineHeight:1.4,boxSizing:"border-box",outline:"none",
+                          boxShadow:focused?"0 0 0 3px var(--accent-wash)":"none",transition:"box-shadow .12s"}}/>
                     </div>
-                    <button onClick={()=>{const t=[...sortedDisplay];t.splice(si,1);writeThread(t);}}
-                      className="adm-del-btn" title="Supprimer" style={{background:"none",border:"none",color:"var(--ink-faint)",cursor:"pointer",fontSize:17,padding:"2px 6px",flexShrink:0,borderRadius:5}}>×</button>
+                    {focused ? (
+                      <div style={{display:"flex",alignItems:"center",gap:6,flexWrap:"wrap",flexDirection:isMe?"row-reverse":"row",padding:"3px 2px 2px",maxWidth:"100%"}}>
+                        <button onClick={()=>patch(si,{from:isMe?"them":"me"})} title="Changer d'expéditeur"
+                          style={{background:"var(--accent-wash)",border:"1px solid var(--accent-line)",color:"var(--accent)",borderRadius:7,padding:"4px 9px",cursor:"pointer",fontSize:11,fontWeight:600,whiteSpace:"nowrap"}}>⇄ {isMe?"moi":"eux"}</button>
+                        <div style={{width:172}}><LoreDateTimeInput value={msg2.time} onChange={v=>patch(si,{time:v})} width="100%" showLabel={false}/></div>
+                        <label title="Ajouter une image" style={{width:30,height:30,borderRadius:7,flexShrink:0,background:"var(--accent-wash)",border:"1px dashed var(--accent-line)",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer"}}>
+                          <span style={{fontSize:13,color:"var(--accent)"}}>📷</span>
+                          <input type="file" accept="image/*" style={{display:"none"}} onChange={e=>{const f=e.target.files?.[0]; if(!f) return; const r=new UploadReader(); r.onload=ev=>patch(si,{img:ev.target.result}); r.readAsDataURL(f); e.target.value="";}}/>
+                        </label>
+                        <div style={{display:"flex",flexDirection:"column",gap:1,flexShrink:0}}>
+                          <MsgMoveBtn dir="up" disabled={si===0} onClick={()=>{const t=[...sortedDisplay];[t[si-1],t[si]]=[t[si],t[si-1]];t[si]={...t[si],time:shiftLoreTime(t[si].time,-1)};writeThread(t);}}/>
+                          <MsgMoveBtn dir="down" disabled={si===sortedDisplay.length-1} onClick={()=>{const t=[...sortedDisplay];[t[si+1],t[si]]=[t[si],t[si+1]];t[si]={...t[si],time:shiftLoreTime(t[si].time,+1)};writeThread(t);}}/>
+                        </div>
+                        <button onClick={()=>{const t=[...sortedDisplay];t.splice(si,1);writeThread(t);setMsgFocusId(null);}}
+                          className="adm-del-btn" title="Supprimer le message" style={{background:"none",border:"1px solid var(--line)",color:"var(--ink-faint)",cursor:"pointer",fontSize:15,padding:"3px 8px",flexShrink:0,borderRadius:7}}>🗑</button>
+                      </div>
+                    ) : (
+                      <div style={{fontSize:10,color:"var(--ink-faint)",padding:"0 6px",fontFamily:"monospace"}}>{msg2.time||"—"} · {isMe?"moi":"eux"}</div>
+                    )}
                   </div>
-                </div>
-                {/* Ligne 2 : texte du message */}
-                <textarea value={msg2.text||""} onChange={e=>{const t=[...sortedDisplay];t[si]={...t[si],text:e.target.value};writeThread(t);}}
-                  rows={Math.max(1,Math.ceil((msg2.text||"").length/40))} placeholder={msg2.from==="me"?"Message envoyé…":"Message reçu…"}
-                  className="adm-input" style={{width:"100%",resize:"vertical",background:"var(--raise)",border:"1px solid var(--line)",color:"var(--ink)",padding:"8px 11px",fontSize:13,borderRadius:8,lineHeight:1.45,minHeight:38,boxSizing:"border-box"}}/>
+                  );
+                })}
               </div>
-              <InsertMsgBtn onClick={()=>insertAt(si+1)}/>
-              </React.Fragment>
-              ))}
+              {/* Composeur rapide */}
+              <div style={{display:"flex",gap:7,alignItems:"center",flexWrap:"wrap",marginTop:8}}>
+                <button onClick={()=>insertAt(sortedDisplay.length)}
+                  style={{background:"var(--accent)",border:"none",color:"#fff",borderRadius:9,padding:"9px 15px",cursor:"pointer",fontSize:12.5,fontWeight:700,boxShadow:"var(--shadow)"}}>+ Message</button>
+                <span style={{fontSize:10.5,color:"var(--ink-faint)"}}>Le nouveau message reprend l'heure du dernier — ajuste-la ensuite.</span>
+              </div>
               </>);
             })()}
-            <button onClick={()=>{
-              if(msg.sharedThreadId){
-                onUpdate(msg.sharedThreadId,[...(dataRef.current.sharedThreads?.[msg.sharedThreadId]||[]),{from:msg.perspective||'a',text:"",time:"maintenant"}]);
-              }else{upd("messages",d.messages.map(mm=>mm===msg?{...mm,thread:[...(mm.thread||[]),{from:"me",text:"",time:"maintenant"}]}:mm));}
-            }} style={{background:"var(--line-soft)",border:"1px dashed rgba(0,0,0,0.15)",color:"var(--ink-faint)",borderRadius:6,padding:"5px 12px",cursor:"pointer",fontSize:11,marginTop:4}}>+ message</button>
             <ThreadComposer isGroup={false} tab={tab} onApply={(parsed,mode)=>{
               if(msg.sharedThreadId){
                 const cur=dataRef.current.sharedThreads?.[msg.sharedThreadId]||[];
@@ -4347,9 +4359,9 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
           ) : <>
 
           {/* Toggle jour / nuit */}
-          <button onClick={toggleTheme} title="Basculer jour / nuit" aria-label="Basculer jour / nuit"
+          <button onClick={toggleTheme} title={isDarkTheme?"Passer en mode jour":"Passer en mode nuit"} aria-label="Basculer jour / nuit"
             style={{background:"transparent",border:"1px solid var(--line)",color:"var(--ink-soft)",padding:"6px 11px",borderRadius:7,fontSize:14,cursor:"pointer",fontWeight:600,lineHeight:1}}>
-            {isDarkTheme ? "☾" : "☀︎"}
+            {isDarkTheme ? "☀︎" : "☾"}
           </button>
 
           {/* Date lore */}
