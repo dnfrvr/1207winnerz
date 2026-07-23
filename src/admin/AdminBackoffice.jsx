@@ -745,10 +745,9 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
   const row = {display:"flex",gap:14,flexWrap:"wrap"};
 
   // ── Sections ───────────────────────────────────────────────────────────────
-  const renderSection = () => {
-    switch(section) {
-
-    case "groupme": return (
+  // ── Panneaux d’édition par app (extraits du switch pour la lisibilité ; même closure). ──
+  const renderGroupme = () => {
+ return (
       <div style={{display:"flex",flexDirection:"column",gap:8}}>
         {(()=>{
           const isCustom = (d.groupmeGroups||[]).length > 0;
@@ -779,7 +778,9 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
       </div>
     );
 
-        case "soundcloud": return (
+  };
+  const renderSoundcloud = () => {
+ return (
       <div style={{display:"flex",flexDirection:"column",gap:12}}>
         {(()=>{
           const sc = d.soundcloud || {};
@@ -817,7 +818,9 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
       </div>
     );
 
-    case "nikeplus": return (
+  };
+  const renderNikeplus = () => {
+ return (
       <div style={{display:"flex",flexDirection:"column",gap:12}}>
         {(()=>{
           const nk = d.nikeplus || {};
@@ -851,7 +854,9 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
       </div>
     );
 
-        case "apparence": return (
+  };
+  const renderApparence = () => {
+ return (
       <div style={{display:"flex",flexDirection:"column",gap:18}}>
 
         <div style={{display:"flex",gap:14,flexWrap:"wrap",alignItems:"flex-end"}}>
@@ -932,7 +937,8 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
       </div>
     );
 
-    case "photos_profil": {
+  };
+  const renderPhotosProfil = () => {
       const CHARS_PROF = [
         {key:"glinda", label:"Glinda 🌸", color:"#e91e8c"},
         {key:"eoghan", label:"Eoghan 🌈", color:"#00d435"},
@@ -979,9 +985,8 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
           </div>
         </div>
       );
-    }
-
-    case "messages": {
+    };
+  const renderMessages = () => {
       const CHARS = [
         {key:"glinda", label:"Glinda"},
         {key:"eoghan", label:"Eoghan"},
@@ -1425,9 +1430,8 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
         )}
       </div>
       );
-    }
-
-    case "phone": {
+    };
+  const renderPhone = () => {
       // ── Sous-onglets : Appels | Contacts | Messages vocaux ──
       const phoneSubTabs = [["calls","📞 Appels"],["contacts","👥 Contacts"],["favorites","⭐ Favoris"],["voicemail","📼 Messages vocaux"]];
       return (
@@ -1655,14 +1659,9 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
           })()}
         </div>
       );
-    }
-
-    case "calls": return null; // Fusionné dans "phone"
-    case "contacts": return null; // Fusionné dans "phone"
-    case "voicemail": return null; // Fusionné dans "phone"
-
-
-    case "notes": return (
+    };
+  const renderNotes = () => {
+ return (
       <div style={{display:"flex",flexDirection:"column",gap:12}}>
         {(d.notes||[]).map((note,i)=>(
           <div key={note.id} className="adm-card" style={{background:"rgba(255,255,255,0.85)",borderRadius:12,padding:14,border:"1px solid rgba(0,0,0,0.07)",boxShadow:"0 2px 8px rgba(0,0,0,0.04)"}}>
@@ -1682,7 +1681,8 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
       </div>
     );
 
-    case "gallery": {
+  };
+  const renderGallery = () => {
       const allPhotos = d.gallery || [];
       const albums = d.galleryAlbums || []; // [{id, name, cover}]
       const [galTab, setGalTab] = [galSection, setGalSection];
@@ -1832,11 +1832,9 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
           </div>
         </div>
       );
-    }
-
-
-
-    case "icons": return (
+    };
+  const renderIcons = () => {
+ return (
       <div style={{display:"flex",flexDirection:"column",gap:12}}>
         {d.os==="android"&&<div style={{background:"rgba(16,185,129,0.08)",border:"1px solid rgba(16,185,129,0.2)",borderRadius:8,padding:"10px 14px",fontSize:11,color:"#059669",fontWeight:500}}>
           📱 These icons apply to Drew's Android phone
@@ -1944,7 +1942,9 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
       </div>
     );
 
-    case "music": return (
+  };
+  const renderMusic = () => {
+ return (
       <div style={{display:"flex",flexDirection:"column",gap:10}}>
 
         <div style={{display:"flex",gap:12,alignItems:"center",background:"rgba(255,255,255,0.85)",padding:12,borderRadius:10,border:"1px solid rgba(0,0,0,0.07)"}}>
@@ -2266,7 +2266,8 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
       </div>
     );
 
-    case "twitter": {
+  };
+  const renderTwitter = () => {
       const twUsers = data.sharedThreads?._sharedTwitterUsers || {};
       // Comptes communs : les 4 vrais persos + les comptes qui circulent dans plusieurs timelines
       // (ou qu'on prévoit de voir apparaître ailleurs). Une seule fiche, synchronisée pour tous.
@@ -2564,8 +2565,9 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
           })()}
         </div>
       );
-    }
-    case "pinterest": return (
+    };
+  const renderPinterest = () => {
+ return (
       <div style={{display:"flex",flexDirection:"column",gap:8}}>
         {(()=>{
           const isCustom = (d.pinterest||[]).length > 0;
@@ -2610,7 +2612,9 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
       </div>
     );
 
-    case "snapchat": return (
+  };
+  const renderSnapchat = () => {
+ return (
       <div style={{display:"flex",flexDirection:"column",gap:8}}>
         {(()=>{
           const defaults = SNAPCHAT_DEFAULTS[tab] || [];
@@ -2680,7 +2684,9 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
       </div>
     );
 
-    case "grindr": return (
+  };
+  const renderGrindr = () => {
+ return (
       <div style={{display:"flex",flexDirection:"column",gap:14}}>
         {(()=>{
           const OR="#f5811f";
@@ -2852,7 +2858,8 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
       </div>
     );
 
-    case "tumblr": {
+  };
+  const renderTumblr = () => {
       const TB_COLOR = "#35465c";
       const sharedPosts = data.sharedThreads?._sharedTumblrPosts || [];
       // Même fix anti-écrasement que Twitter/Facebook : ne jamais réécrire la liste entière à partir
@@ -2988,9 +2995,8 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
           })()}
         </div>
       );
-    }
-
-    case "insta": {
+    };
+  const renderInsta = () => {
       const IG_COLOR = "#3d6b8f";
       const igProfile = d.instagram || {};
       const igPosts   = igProfile.posts || [];
@@ -3295,9 +3301,9 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
           )}
         </div>
       );
-    }
-
-    case "reddit": return (
+    };
+  const renderReddit = () => {
+ return (
       <div style={{display:"flex",flexDirection:"column",gap:8}}>
         {(()=>{
           const isCustom = (d.reddit||[]).length > 0;
@@ -3320,7 +3326,9 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
       </div>
     );
 
-    case "calendar": return (
+  };
+  const renderCalendar = () => {
+ return (
       <div style={{display:"flex",flexDirection:"column",gap:8}}>
         {(()=>{
           const seed = CALENDAR_SEED[tab] || {};
@@ -3400,7 +3408,9 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
       </div>
     );
 
-    case "weather": return (
+  };
+  const renderWeather = () => {
+ return (
       <div style={{display:"flex",flexDirection:"column",gap:10}}>
         {(()=>{
           const wd = d.weather || {};
@@ -3433,7 +3443,9 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
       </div>
     );
 
-    case "settings": return (
+  };
+  const renderSettings = () => {
+ return (
       <div style={{display:"flex",flexDirection:"column",gap:14}}>
         <div style={{display:"flex",gap:10,flexWrap:"wrap"}}>
           <Field label="Prénom affiché" value={d.settings?.displayName||d.name||""} onChange={v=>upd("settings",{...(d.settings||{}),displayName:v})}/>
@@ -3472,7 +3484,9 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
       </div>
     );
 
-    case "wikipedia": return (
+  };
+  const renderWikipedia = () => {
+ return (
       <div style={{display:"flex",flexDirection:"column",gap:8}}>
         {(()=>{
           const defaults = WIKI_FEEDS[tab] || WIKI_FEEDS.elias;
@@ -3494,7 +3508,9 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
       </div>
     );
 
-    case "files": return (
+  };
+  const renderFiles = () => {
+ return (
       <div style={{display:"flex",flexDirection:"column",gap:12}}>
         {(()=>{
           const files = d.files || {folders:[], rootFiles:[]};
@@ -3594,7 +3610,9 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
       </div>
     );
 
-    case "browser": return (
+  };
+  const renderBrowser = () => {
+ return (
       <div style={{display:"flex",flexDirection:"column",gap:12}}>
         {(()=>{
           const b = d.browser || {bookmarks:[], history:[]};
@@ -3632,7 +3650,9 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
       </div>
     );
 
-    case "kindle": return (
+  };
+  const renderKindle = () => {
+ return (
       <div style={{display:"flex",flexDirection:"column",gap:8}}>
         {(()=>{
           const defaults = KINDLE_DEFAULT_BOOKS.map((b,i)=>({id:i,title:b.t,author:b.a,pct:b.p,cover:null}));
@@ -3684,7 +3704,9 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
       </div>
     );
 
-    case "vpn": return (
+  };
+  const renderVpn = () => {
+ return (
       <div style={{display:"flex",flexDirection:"column",gap:8}}>
         <div style={{fontSize:11,color:"#9ca3af",marginBottom:4}}>Serveurs VPN affichés dans l'appli.</div>
         {(()=>{
@@ -3713,7 +3735,9 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
       </div>
     );
 
-    case "inaturalist": return (
+  };
+  const renderInaturalist = () => {
+ return (
       <div style={{display:"flex",flexDirection:"column",gap:12}}>
         <div style={{display:"flex",gap:10,flexWrap:"wrap",marginBottom:4}}>
           <Field label="Observer" value={d.inaturalist?.observer||""} onChange={v=>upd("inaturalist",{...(d.inaturalist||{}),observer:v})}/>
@@ -3755,7 +3779,8 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
       </div>
     );
 
-    case "mail": {
+  };
+  const renderMail = () => {
       const MAIL_TAB_DEFS = [
         {key:"inbox",   label:"📥 Inbox",   color:"#4a7ab5", storageKey:"mail_override",  defaultFn:(un)=>EMAILS_BY_CHAR[un]||EMAILS_BY_CHAR.glindatheverygood},
         {key:"drafts",  label:"📝 Drafts",  color:"#6366f1", storageKey:"mail_drafts",    defaultFn:(un)=>MAIL_DRAFTS_BY_CHAR[un]||[]},
@@ -3837,9 +3862,8 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
           <button onClick={newMail} style={{background:`rgba(${mailAdmTab==="inbox"?"74,122,181":mailAdmTab==="drafts"?"99,102,241":"239,68,68"},0.08)`,border:`1px dashed rgba(${mailAdmTab==="inbox"?"74,122,181":mailAdmTab==="drafts"?"99,102,241":"239,68,68"},0.4)`,color:curTabDef.color,borderRadius:8,padding:"10px 18px",cursor:"pointer",fontSize:12,fontWeight:600}}>+ Mail ({curTabDef.label.split(" ")[1]})</button>
         </div>
       );
-    }
-
-    case "facebook": {
+    };
+  const renderFacebook = () => {
       const FB_COLOR = "#3B5998";
       const nameToKey = Object.fromEntries(Object.entries(CHAR_NAMES).map(([k,v])=>[v,k]));
       const withAuthors = (list) => list.map(p => p.author ? p : {...p, author: nameToKey[p.name] || p.author});
@@ -3978,9 +4002,8 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
           )}
         </div>
       );
-    }
-
-    case "youtube": {
+    };
+  const renderYoutube = () => {
       const ytVideos = d.youtubeVideos?.[tab] || YOUTUBE_FEEDS_DEFAULT[tab] || YOUTUBE_FEEDS_DEFAULT.elias;
       const updYtList = (list) => upd("youtubeVideos", {...(d.youtubeVideos||{}), [tab]: list});
       const addYtVideo = () => updYtList([...ytVideos, {id:Date.now(), ch:"", chAvatar:"📺", age:"1d", views:"0 vue", dur:"0:00", thumb:"#1a1a1a", thumbImg:null, title:""}]);
@@ -4034,8 +4057,43 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
             style={{background:"rgba(204,0,0,0.08)",border:"1px dashed rgba(204,0,0,0.4)",color:"#cc0000",borderRadius:8,padding:"10px 18px",cursor:"pointer",fontSize:12,fontWeight:600}}>+ Vidéo YouTube</button>
         </div>
       );
-    }
+    };
 
+  const renderSection = () => {
+    switch(section) {
+    case "groupme": return renderGroupme();
+    case "soundcloud": return renderSoundcloud();
+    case "nikeplus": return renderNikeplus();
+    case "apparence": return renderApparence();
+    case "photos_profil": return renderPhotosProfil();
+    case "messages": return renderMessages();
+    case "phone": return renderPhone();
+    case "calls": return null; // Fusionné dans "phone"
+    case "contacts": return null; // Fusionné dans "phone"
+    case "voicemail": return null; // Fusionné dans "phone"
+    case "notes": return renderNotes();
+    case "gallery": return renderGallery();
+    case "icons": return renderIcons();
+    case "music": return renderMusic();
+    case "twitter": return renderTwitter();
+    case "pinterest": return renderPinterest();
+    case "snapchat": return renderSnapchat();
+    case "grindr": return renderGrindr();
+    case "tumblr": return renderTumblr();
+    case "insta": return renderInsta();
+    case "reddit": return renderReddit();
+    case "calendar": return renderCalendar();
+    case "weather": return renderWeather();
+    case "settings": return renderSettings();
+    case "wikipedia": return renderWikipedia();
+    case "files": return renderFiles();
+    case "browser": return renderBrowser();
+    case "kindle": return renderKindle();
+    case "vpn": return renderVpn();
+    case "inaturalist": return renderInaturalist();
+    case "mail": return renderMail();
+    case "facebook": return renderFacebook();
+    case "youtube": return renderYoutube();
     default: {
       // Auto-redirect to first available section
       const firstApp = charAppSections[0];
