@@ -1511,18 +1511,31 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
           {phoneSubTab==="calls" && (
             <div style={{display:"flex",flexDirection:"column",gap:8}}>
               {(d.calls||[]).map((call,i)=>(
-                <div key={call.id} className="adm-card" style={{display:"flex",gap:8,alignItems:"center",background:"var(--raise)",padding:10,borderRadius:10,border:"1px solid var(--line)",flexWrap:"wrap"}}>
-                  <input value={call.contact} onChange={e=>{const c=[...d.calls];c[i]={...c[i],contact:e.target.value};upd("calls",c);}}
-                    placeholder="Contact" className="adm-input" style={{flex:1,background:"var(--raise)",border:"1px solid var(--line)",color:"var(--ink)",padding:"7px 10px",fontSize:12,borderRadius:7}}/>
-                  <select value={call.type} onChange={e=>{const c=[...d.calls];c[i]={...c[i],type:e.target.value};upd("calls",c);}}
-                    className="adm-input" style={{background:"var(--raise)",border:"1px solid var(--line)",color:"var(--ink-soft)",padding:"7px 8px",fontSize:11,borderRadius:7}}>
-                    <option value="incoming">incoming</option><option value="outgoing">outgoing</option><option value="missed">missed (entrant)</option><option value="outgoing_missed">outgoing sans réponse</option>
-                  </select>
-                  <LoreDateTimeInput value={call.time} onChange={v=>{const c=[...d.calls];c[i]={...c[i],time:v};upd("calls",c);}} width="190px" showLabel={false}/>
-                  <input value={call.duration||""} onChange={e=>{const c=[...d.calls];c[i]={...c[i],duration:e.target.value||null};upd("calls",c);}}
-                    placeholder="Duration" className="adm-input" style={{width:90,background:"var(--raise)",border:"1px solid var(--line)",color:"var(--ink-soft)",padding:"7px 8px",fontSize:11,borderRadius:7}}/>
-                  <button onClick={()=>upd("calls",d.calls.filter((_,j)=>j!==i))}
-                    className="adm-del-btn" style={{background:"none",border:"none",color:"var(--ink-faint)",cursor:"pointer",fontSize:16,padding:"2px 6px",borderRadius:5,transition:"all 0.15s"}}>×</button>
+                <div key={call.id} className="adm-card" style={{display:"flex",flexDirection:"column",gap:8,background:"var(--raise)",padding:"10px 11px",borderRadius:10,border:"1px solid var(--line)"}}>
+                  <div style={{display:"flex",gap:8,alignItems:"flex-start"}}>
+                    <div style={{flex:1,minWidth:0,display:"flex",flexDirection:"column",gap:5}}>
+                      <label style={{color:"var(--ink-faint)",fontSize:10,letterSpacing:0.8,textTransform:"uppercase",fontWeight:600}}>Contact</label>
+                      <input value={call.contact} onChange={e=>{const c=[...d.calls];c[i]={...c[i],contact:e.target.value};upd("calls",c);}}
+                        placeholder="Nom du contact" className="adm-input" style={{width:"100%",boxSizing:"border-box",background:"var(--raise)",border:"1px solid var(--line)",color:"var(--ink)",padding:"8px 10px",fontSize:13,borderRadius:8}}/>
+                    </div>
+                    <button onClick={()=>upd("calls",d.calls.filter((_,j)=>j!==i))}
+                      className="adm-del-btn" title="Supprimer" style={{background:"none",border:"none",color:"var(--ink-faint)",cursor:"pointer",fontSize:17,padding:"2px 4px",marginTop:16,borderRadius:5,flexShrink:0}}>×</button>
+                  </div>
+                  <div style={{display:"flex",gap:8,flexWrap:"wrap",alignItems:"flex-end"}}>
+                    <div style={{flex:"1 1 150px",display:"flex",flexDirection:"column",gap:5}}>
+                      <label style={{color:"var(--ink-faint)",fontSize:10,letterSpacing:0.8,textTransform:"uppercase",fontWeight:600}}>Type</label>
+                      <select value={call.type} onChange={e=>{const c=[...d.calls];c[i]={...c[i],type:e.target.value};upd("calls",c);}}
+                        className="adm-input" style={{width:"100%",boxSizing:"border-box",background:"var(--raise)",border:"1px solid var(--line)",color:"var(--ink)",padding:"8px 8px",fontSize:12,borderRadius:8}}>
+                        <option value="incoming">Entrant</option><option value="outgoing">Sortant</option><option value="missed">Manqué (entrant)</option><option value="outgoing_missed">Sortant sans réponse</option>
+                      </select>
+                    </div>
+                    <div style={{flex:"1 1 180px"}}><LoreDateTimeInput label="Date / heure" value={call.time} onChange={v=>{const c=[...d.calls];c[i]={...c[i],time:v};upd("calls",c);}} width="100%"/></div>
+                    <div style={{flex:"1 1 100px",display:"flex",flexDirection:"column",gap:5}}>
+                      <label style={{color:"var(--ink-faint)",fontSize:10,letterSpacing:0.8,textTransform:"uppercase",fontWeight:600}}>Durée</label>
+                      <input value={call.duration||""} onChange={e=>{const c=[...d.calls];c[i]={...c[i],duration:e.target.value||null};upd("calls",c);}}
+                        placeholder="ex. 2:34" className="adm-input" style={{width:"100%",boxSizing:"border-box",background:"var(--raise)",border:"1px solid var(--line)",color:"var(--ink)",padding:"8px 8px",fontSize:12,borderRadius:8}}/>
+                    </div>
+                  </div>
                 </div>
               ))}
               <button onClick={()=>upd("calls",[{id:Date.now(),contact:"",type:"outgoing",time:"1 oct",duration:null},...(d.calls||[])])}
@@ -3626,22 +3639,25 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                       const meta=fileTypeMeta(ext);
                       const updFile=(patch)=>{const f=[...folders];const fs=[...(f[fi].files||[])];fs[fj]={...fs[fj],...patch};f[fi]={...f[fi],files:fs};updFiles({folders:f});};
                       return (
-                        <div key={file.id||fj} style={{display:"flex",gap:5,alignItems:"center",background:"var(--line-soft)",borderRadius:7,padding:"6px 8px",border:"1px solid var(--line-soft)",flexWrap:"wrap"}}>
-                          <span style={{fontSize:16,flexShrink:0}}>{meta.icon}</span>
-                          <input value={baseName} onChange={e=>updFile({name:ext&&ext!=="other"?`${e.target.value}.${ext}`:e.target.value})}
-                            placeholder="nom du fichier" className="adm-input"
-                            style={{flex:2,minWidth:80,background:"var(--raise)",border:"1px solid var(--line)",color:"var(--ink)",padding:"5px 8px",fontSize:12,borderRadius:6}}/>
-                          <select value={ext} onChange={e=>{const newExt=e.target.value;updFile({name:newExt&&newExt!=="other"?`${baseName}.${newExt}`:baseName,ext:newExt});}}
-                            className="adm-input" style={{width:72,background:"var(--raise)",border:"1px solid var(--line)",color:"var(--ink-soft)",padding:"5px 4px",fontSize:11,borderRadius:6,cursor:"pointer"}}>
-                            {FILE_EXTS.map(e=><option key={e} value={e}>{e.toUpperCase()}</option>)}
-                          </select>
-                          <LoreDateTimeInput showLabel={false} showTime={false} width="130px"
-                            value={file.date||""} onChange={v=>updFile({date:v})}/>
-                          <input value={file.size||""} onChange={e=>updFile({size:e.target.value})}
-                            placeholder="4,7 MB" className="adm-input"
-                            style={{width:68,background:"var(--raise)",border:"1px solid var(--line)",color:"var(--ink-soft)",padding:"5px 8px",fontSize:11,borderRadius:6}}/>
-                          <button onClick={()=>{const f=[...folders];f[fi]={...f[fi],files:(f[fi].files||[]).filter((_,k)=>k!==fj)};updFiles({folders:f});}}
-                            style={{background:"none",border:"none",color:"var(--ink-faint)",cursor:"pointer",fontSize:14,padding:"0 2px",flexShrink:0}}>×</button>
+                        <div key={file.id||fj} style={{display:"flex",flexDirection:"column",gap:6,background:"var(--line-soft)",borderRadius:8,padding:"8px 9px",border:"1px solid var(--line)"}}>
+                          <div style={{display:"flex",gap:7,alignItems:"center"}}>
+                            <span style={{fontSize:17,flexShrink:0}}>{meta.icon}</span>
+                            <input value={baseName} onChange={e=>updFile({name:ext&&ext!=="other"?`${e.target.value}.${ext}`:e.target.value})}
+                              placeholder="Nom du fichier" className="adm-input"
+                              style={{flex:1,minWidth:0,background:"var(--raise)",border:"1px solid var(--line)",color:"var(--ink)",padding:"7px 9px",fontSize:13,borderRadius:7}}/>
+                            <button onClick={()=>{const f=[...folders];f[fi]={...f[fi],files:(f[fi].files||[]).filter((_,k)=>k!==fj)};updFiles({folders:f});}}
+                              className="adm-del-btn" title="Supprimer" style={{background:"none",border:"none",color:"var(--ink-faint)",cursor:"pointer",fontSize:16,padding:"0 3px",flexShrink:0}}>×</button>
+                          </div>
+                          <div style={{display:"flex",gap:6,flexWrap:"wrap",alignItems:"center"}}>
+                            <select value={ext} onChange={e=>{const newExt=e.target.value;updFile({name:newExt&&newExt!=="other"?`${baseName}.${newExt}`:baseName,ext:newExt});}}
+                              className="adm-input" style={{flex:"1 1 90px",background:"var(--raise)",border:"1px solid var(--line)",color:"var(--ink-soft)",padding:"6px 6px",fontSize:11,borderRadius:7,cursor:"pointer"}}>
+                              {FILE_EXTS.map(e=><option key={e} value={e}>{e.toUpperCase()}</option>)}
+                            </select>
+                            <div style={{flex:"1 1 130px"}}><LoreDateTimeInput showLabel={false} showTime={false} width="100%" value={file.date||""} onChange={v=>updFile({date:v})}/></div>
+                            <input value={file.size||""} onChange={e=>updFile({size:e.target.value})}
+                              placeholder="4,7 MB" className="adm-input"
+                              style={{flex:"1 1 80px",background:"var(--raise)",border:"1px solid var(--line)",color:"var(--ink-soft)",padding:"6px 8px",fontSize:11,borderRadius:7}}/>
+                          </div>
                         </div>
                       );
                     });
@@ -3664,22 +3680,25 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                 const meta=fileTypeMeta(ext);
                 const updFile=(patch)=>{const rf=[...rootFiles];rf[i]={...rf[i],...patch};updFiles({rootFiles:rf});};
                 return (
-                  <div key={file.id||i} style={{display:"flex",gap:5,alignItems:"center",background:"var(--raise)",borderRadius:8,padding:"8px 10px",border:"1px solid var(--line)",flexWrap:"wrap"}}>
-                    <span style={{fontSize:18,flexShrink:0}}>{meta.icon}</span>
-                    <input value={baseName} onChange={e=>updFile({name:ext&&ext!=="other"?`${e.target.value}.${ext}`:e.target.value})}
-                      placeholder="nom du fichier" className="adm-input"
-                      style={{flex:2,minWidth:80,background:"var(--raise)",border:"1px solid var(--line)",color:"var(--ink)",padding:"6px 9px",fontSize:12,borderRadius:7}}/>
-                    <select value={ext} onChange={e=>{const newExt=e.target.value;updFile({name:newExt&&newExt!=="other"?`${baseName}.${newExt}`:baseName,ext:newExt});}}
-                      className="adm-input" style={{width:72,background:"var(--raise)",border:"1px solid var(--line)",color:"var(--ink-soft)",padding:"6px 4px",fontSize:11,borderRadius:7,cursor:"pointer"}}>
-                      {FILE_EXTS.map(e=><option key={e} value={e}>{e.toUpperCase()}</option>)}
-                    </select>
-                    <LoreDateTimeInput showLabel={false} showTime={false} width="130px"
-                      value={file.date||""} onChange={v=>updFile({date:v})}/>
-                    <input value={file.size||""} onChange={e=>updFile({size:e.target.value})}
-                      placeholder="Taille" className="adm-input"
-                      style={{width:68,background:"var(--raise)",border:"1px solid var(--line)",color:"var(--ink-soft)",padding:"6px 8px",fontSize:11,borderRadius:7}}/>
-                    <button onClick={()=>updFiles({rootFiles:rootFiles.filter((_,j)=>j!==i)})}
-                      style={{background:"none",border:"none",color:"var(--ink-faint)",cursor:"pointer",fontSize:16,padding:"0 2px",flexShrink:0}}>×</button>
+                  <div key={file.id||i} style={{display:"flex",flexDirection:"column",gap:6,background:"var(--raise)",borderRadius:8,padding:"8px 10px",border:"1px solid var(--line)"}}>
+                    <div style={{display:"flex",gap:7,alignItems:"center"}}>
+                      <span style={{fontSize:18,flexShrink:0}}>{meta.icon}</span>
+                      <input value={baseName} onChange={e=>updFile({name:ext&&ext!=="other"?`${e.target.value}.${ext}`:e.target.value})}
+                        placeholder="Nom du fichier" className="adm-input"
+                        style={{flex:1,minWidth:0,background:"var(--raise)",border:"1px solid var(--line)",color:"var(--ink)",padding:"7px 9px",fontSize:13,borderRadius:7}}/>
+                      <button onClick={()=>updFiles({rootFiles:rootFiles.filter((_,j)=>j!==i)})}
+                        className="adm-del-btn" title="Supprimer" style={{background:"none",border:"none",color:"var(--ink-faint)",cursor:"pointer",fontSize:16,padding:"0 3px",flexShrink:0}}>×</button>
+                    </div>
+                    <div style={{display:"flex",gap:6,flexWrap:"wrap",alignItems:"center"}}>
+                      <select value={ext} onChange={e=>{const newExt=e.target.value;updFile({name:newExt&&newExt!=="other"?`${baseName}.${newExt}`:baseName,ext:newExt});}}
+                        className="adm-input" style={{flex:"1 1 90px",background:"var(--raise)",border:"1px solid var(--line)",color:"var(--ink-soft)",padding:"6px 6px",fontSize:11,borderRadius:7,cursor:"pointer"}}>
+                        {FILE_EXTS.map(e=><option key={e} value={e}>{e.toUpperCase()}</option>)}
+                      </select>
+                      <div style={{flex:"1 1 130px"}}><LoreDateTimeInput showLabel={false} showTime={false} width="100%" value={file.date||""} onChange={v=>updFile({date:v})}/></div>
+                      <input value={file.size||""} onChange={e=>updFile({size:e.target.value})}
+                        placeholder="Taille" className="adm-input"
+                        style={{flex:"1 1 80px",background:"var(--raise)",border:"1px solid var(--line)",color:"var(--ink-soft)",padding:"6px 8px",fontSize:11,borderRadius:7}}/>
+                    </div>
                   </div>
                 );
               });
