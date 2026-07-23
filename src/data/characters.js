@@ -96,6 +96,15 @@ export const mkData = () => ({
   "glinda": {
     "name": "Glinda Ravingfool",
     "username": "glindatheverygood",
+    "wifiNetworks": [
+      {"name":"UMA_Student","secured":true,"current":true},
+      {"name":"UMA_Guest","secured":false},
+      {"name":"eduroam","secured":true},
+      {"name":"Ravingfool","secured":true},
+      {"name":"elphiebedroom","secured":true},
+      {"name":"Starbucks Chicago","secured":false},
+      {"name":"Starbucks Pittsburgh","secured":false}
+    ],
     "os": "ios",
     "apps": [
       "messages",
@@ -2505,6 +2514,17 @@ export const mkData = () => ({
     "appNames": {}
   },
   "eoghan": {
+    "wifiNetworks": [
+      {"name":"UMA_Student","secured":true,"current":true},
+      {"name":"UMA_Guest","secured":false},
+      {"name":"eduroam","secured":true},
+      {"name":"Masuda_Home","secured":true},
+      {"name":"Starbucks Astoria","secured":false},
+      {"name":"UMA Fitness Center","secured":true},
+      {"name":"Planet Fitness Augusta","secured":false},
+      {"name":"Gold's Gym","secured":true},
+      {"name":"マスダ家_沖縄","secured":true}
+    ],
     "name": "Eoghan Masuda",
     "username": "eoghan_masuda",
     "os": "ios",
@@ -4468,6 +4488,15 @@ export const mkData = () => ({
     }
   },
   "drew": {
+    "wifiNetworks": [
+      {"name":"UMA_Student","secured":true,"current":true},
+      {"name":"UMA_Guest","secured":false},
+      {"name":"eduroam","secured":true},
+      {"name":"Keene Pharmacy Guest","secured":false},
+      {"name":"Keene House","secured":true},
+      {"name":"iPhone de Nils","secured":true},
+      {"name":"MamasHouse-Derry","secured":true}
+    ],
     "name": "Drew Buckley",
     "username": "dreww_orms",
     "os": "android",
@@ -6957,6 +6986,16 @@ export const mkData = () => ({
     }
   },
   "elias": {
+    "wifiNetworks": [
+      {"name":"UMA_Student","secured":true,"current":true},
+      {"name":"UMA_Guest","secured":false},
+      {"name":"eduroam","secured":true},
+      {"name":"Derry Home Hospital","secured":false},
+      {"name":"GreenFamily_2G","secured":true}
+    ],
+    "btDevices": [
+      {"name":"iPod d'Anna","connected":false}
+    ],
     "name": "Elias Green",
     "username": "noteliasgreen",
     "os": "ios",
