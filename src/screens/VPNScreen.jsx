@@ -1,17 +1,20 @@
 import React, { useState } from "react";
 
-const VPNScreen = ({isIos}) => {
+// Serveurs VPN par défaut — source unique, aussi importée par l'admin.
+const VPN_DEFAULTS = [
+  {loc:"FR Paris",     flag:"🇫🇷", ping:12, load:34},
+  {loc:"DE Frankfurt", flag:"🇩🇪", ping:18, load:51},
+  {loc:"NL Amsterdam", flag:"🇳🇱", ping:22, load:28},
+  {loc:"US New York",  flag:"🇺🇸", ping:89, load:62},
+  {loc:"JP Tokyo",     flag:"🇯🇵", ping:178,load:19},
+];
+
+const VPNScreen = ({isIos, data={}}) => {
+  const servers = (data.vpnServers && data.vpnServers.length) ? data.vpnServers : VPN_DEFAULTS;
   const [connected, setConnected] = useState(false);
-  const [server, setServer] = useState("FR Paris");
+  const [server, setServer] = useState(servers[0]?.loc || "");
   const [tab, setTab] = useState("servers");
   const BLU="#007AFF", GRN="#4CD964", RED="#FF3B30", ACC=connected?GRN:BLU;
-  const servers=[
-    {loc:"FR Paris",     flag:"🇫🇷", ping:12, load:34},
-    {loc:"DE Frankfurt", flag:"🇩🇪", ping:18, load:51},
-    {loc:"NL Amsterdam", flag:"🇳🇱", ping:22, load:28},
-    {loc:"US New York",  flag:"🇺🇸", ping:89, load:62},
-    {loc:"JP Tokyo",     flag:"🇯🇵", ping:178,load:19},
-  ];
 
   if(isIos) return (
     <div style={{flex:1,display:"flex",flexDirection:"column",background:"#efede8",overflow:"hidden",fontFamily:"Helvetica,'Helvetica Neue',Arial,sans-serif"}}>
@@ -140,4 +143,4 @@ const VPNScreen = ({isIos}) => {
   );
 };
 
-export { VPNScreen };
+export { VPNScreen, VPN_DEFAULTS };
