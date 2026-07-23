@@ -791,19 +791,21 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
           const GM="#00AFF0";
           return (<>
                         {effective.map((g,i)=>(
-              <div key={g.id??i} className="adm-card" style={{background:"var(--raise)",borderRadius:10,padding:"10px 12px",border:"1px solid var(--line)",display:"flex",flexDirection:"column",gap:6}}>
-                <div style={{display:"flex",gap:6,flexWrap:"wrap",alignItems:"center"}}>
-                  <Field label="Nom du groupe" value={g.name||""} onChange={v=>ensureCustom(i,{name:v})} style={{flex:1}}/>
-                  <Field label="Membres" value={String(g.members||0)} onChange={v=>ensureCustom(i,{members:parseInt(v)||0})} width="70px"/>
-                  <LoreTimeInput label="Heure" value={g.time||""} onChange={v=>ensureCustom(i,{time:v})} width="110px"/>
-                  <Field label="Non-lus" value={String(g.n||0)} onChange={v=>ensureCustom(i,{n:parseInt(v)||0})} width="60px"/>
-                  <button onClick={()=>updList(effective.filter((_,j)=>j!==i).map((g,j)=>({...g,id:Date.now()+j})))} style={{background:"none",border:"none",color:"var(--ink-faint)",cursor:"pointer",fontSize:16,padding:"0 4px",marginTop:18}}>×</button>
+              <div key={g.id??i} className="adm-card" style={{background:"var(--raise)",borderRadius:10,padding:"10px 12px",border:"1px solid var(--line)",display:"flex",flexDirection:"column",gap:8}}>
+                <div style={{display:"flex",gap:8,alignItems:"flex-start"}}>
+                  <div style={{flex:1,minWidth:0}}><Field label="Nom du groupe" value={g.name||""} onChange={v=>ensureCustom(i,{name:v})} placeholder="Nom du groupe"/></div>
+                  <button onClick={()=>updList(effective.filter((_,j)=>j!==i).map((g,j)=>({...g,id:Date.now()+j})))} className="adm-del-btn" title="Supprimer" style={{background:"none",border:"none",color:"var(--ink-faint)",cursor:"pointer",fontSize:17,padding:"2px 4px",marginTop:16,flexShrink:0,borderRadius:5}}>×</button>
                 </div>
-                <Field label="Dernier message" value={g.last||""} onChange={v=>ensureCustom(i,{last:v})}/>
+                <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+                  <div style={{flex:"1 1 90px"}}><Field label="Membres" value={String(g.members||0)} onChange={v=>ensureCustom(i,{members:parseInt(v)||0})}/></div>
+                  <div style={{flex:"1 1 90px"}}><Field label="Non-lus" value={String(g.n||0)} onChange={v=>ensureCustom(i,{n:parseInt(v)||0})}/></div>
+                  <div style={{flex:"1 1 120px"}}><LoreTimeInput label="Heure" value={g.time||""} onChange={v=>ensureCustom(i,{time:v})} width="100%"/></div>
+                </div>
+                <Field label="Dernier message" value={g.last||""} onChange={v=>ensureCustom(i,{last:v})} placeholder="Aperçu du dernier message"/>
               </div>
             ))}
             <button onClick={()=>updList([...effective.map((g,j)=>isCustom?g:{...g,id:Date.now()+j}),{id:Date.now(),name:"",last:"",time:"",n:0,members:0}])}
-              style={{background:"rgba(0,175,240,0.08)",border:"1px dashed rgba(0,175,240,0.35)",color:GM,borderRadius:8,padding:"10px 18px",cursor:"pointer",fontSize:12,fontWeight:600}}>+ Groupe</button>
+              style={{background:"var(--accent)",border:"none",color:"#fff",borderRadius:9,boxShadow:"var(--shadow)",padding:"10px 18px",cursor:"pointer",fontSize:12,fontWeight:600}}>+ Groupe</button>
           </>);
         })()}
       </div>
@@ -3362,13 +3364,17 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
           const updList = (newList) => upd("reddit", newList);
           return (<>
                         {effective.map((post,i)=>(
-              <div key={post.id??i} className="adm-card" style={{display:"flex",gap:8,alignItems:"center",background:"var(--raise)",padding:"8px 10px",borderRadius:10,border:"1px solid var(--line)",flexWrap:"wrap",opacity:isCustom?1:0.75}}>
-                <Field label="Sub" value={post.sub||""} onChange={v=>{const r=[...effective].map((p,j)=>({...p,id:p.id||Date.now()+j}));r[i]={...r[i],sub:v};updList(r);}} width="120px"/>
-                <Field label="Titre" value={post.title||""} onChange={v=>{const r=[...effective].map((p,j)=>({...p,id:p.id||Date.now()+j}));r[i]={...r[i],title:v};updList(r);}}/>
-                <Field label="Pts" value={String(post.pts||"")} onChange={v=>{const r=[...effective].map((p,j)=>({...p,id:p.id||Date.now()+j}));r[i]={...r[i],pts:v};updList(r);}} width="70px"/>
-                <Field label="Comm." value={String(post.comm||0)} onChange={v=>{const r=[...effective].map((p,j)=>({...p,id:p.id||Date.now()+j}));r[i]={...r[i],comm:parseInt(v)||0};updList(r);}} width="60px"/>
-                <Field label="Âge" value={post.age||""} onChange={v=>{const r=[...effective].map((p,j)=>({...p,id:p.id||Date.now()+j}));r[i]={...r[i],age:v};updList(r);}} width="60px"/>
-                <button onClick={()=>updList(effective.filter((_,j)=>j!==i))} className="adm-del-btn" style={{background:"none",border:"none",color:"var(--ink-faint)",cursor:"pointer",fontSize:16,padding:"0 4px",borderRadius:5}}>×</button>
+              <div key={post.id??i} className="adm-card" style={{display:"flex",flexDirection:"column",gap:8,background:"var(--raise)",padding:"10px 11px",borderRadius:10,border:"1px solid var(--line)",opacity:isCustom?1:0.75}}>
+                <div style={{display:"flex",gap:8,alignItems:"flex-start"}}>
+                  <div style={{flex:1,minWidth:0}}><Field label="Titre" value={post.title||""} onChange={v=>{const r=[...effective].map((p,j)=>({...p,id:p.id||Date.now()+j}));r[i]={...r[i],title:v};updList(r);}} placeholder="Titre du post"/></div>
+                  <button onClick={()=>updList(effective.filter((_,j)=>j!==i))} className="adm-del-btn" title="Supprimer" style={{background:"none",border:"none",color:"var(--ink-faint)",cursor:"pointer",fontSize:17,padding:"2px 4px",marginTop:16,borderRadius:5,flexShrink:0}}>×</button>
+                </div>
+                <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+                  <div style={{flex:"1 1 140px",minWidth:110}}><Field label="Subreddit" value={post.sub||""} onChange={v=>{const r=[...effective].map((p,j)=>({...p,id:p.id||Date.now()+j}));r[i]={...r[i],sub:v};updList(r);}}/></div>
+                  <div style={{flex:"1 1 80px"}}><Field label="Points" value={String(post.pts||"")} onChange={v=>{const r=[...effective].map((p,j)=>({...p,id:p.id||Date.now()+j}));r[i]={...r[i],pts:v};updList(r);}}/></div>
+                  <div style={{flex:"1 1 80px"}}><Field label="Comm." value={String(post.comm||0)} onChange={v=>{const r=[...effective].map((p,j)=>({...p,id:p.id||Date.now()+j}));r[i]={...r[i],comm:parseInt(v)||0};updList(r);}}/></div>
+                  <div style={{flex:"1 1 80px"}}><Field label="Âge" value={post.age||""} onChange={v=>{const r=[...effective].map((p,j)=>({...p,id:p.id||Date.now()+j}));r[i]={...r[i],age:v};updList(r);}}/></div>
+                </div>
               </div>
             ))}
             <button onClick={()=>updList([...effective.map((p,j)=>({...p,id:p.id||Date.now()+j})),{id:Date.now(),sub:"r/",title:"",pts:"0",comm:0,age:"1h",saved:false}])} style={{background:"var(--accent)",border:"none",color:"#fff",borderRadius:9,boxShadow:"var(--shadow)",padding:"10px 18px",cursor:"pointer",fontSize:12,fontWeight:600}}>+ Post</button>
@@ -3547,11 +3553,13 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
           const updList = (newList) => upd("wikipedia", newList);
           return (<>
                         {effective.map((art,i)=>(
-              <div key={i} style={{display:"flex",gap:8,alignItems:"center",background:"var(--raise)",padding:"8px 10px",borderRadius:10,border:"1px solid var(--line)",opacity:isCustom?1:0.75}}>
-                <Field label="Titre" value={art[0]||""} onChange={v=>{const w=[...effective];w[i]=[v,art[1]||"",art[2]||""];updList(w);}}/>
-                <Field label="Extrait" value={art[1]||""} onChange={v=>{const w=[...effective];w[i]=[art[0]||"",v,art[2]||""];updList(w);}} width="200px"/>
-                <LoreDateTimeInput label="Date" showTime={false} value={art[2]||""} onChange={v=>{const w=[...effective];w[i]=[art[0]||"",art[1]||"",v];updList(w);}} width="150px"/>
-                <button onClick={()=>updList(effective.filter((_,j)=>j!==i))} className="adm-del-btn" style={{background:"none",border:"none",color:"var(--ink-faint)",cursor:"pointer",fontSize:16,padding:"0 4px",borderRadius:5}}>×</button>
+              <div key={i} style={{display:"flex",flexDirection:"column",gap:8,background:"var(--raise)",padding:"10px 11px",borderRadius:10,border:"1px solid var(--line)",opacity:isCustom?1:0.75}}>
+                <div style={{display:"flex",gap:8,alignItems:"flex-end",flexWrap:"wrap"}}>
+                  <div style={{flex:"1 1 170px",minWidth:0}}><Field label="Titre" value={art[0]||""} onChange={v=>{const w=[...effective];w[i]=[v,art[1]||"",art[2]||""];updList(w);}} placeholder="Titre de l'article"/></div>
+                  <div style={{flex:"0 1 170px"}}><LoreDateTimeInput label="Modifié le" showTime={false} value={art[2]||""} onChange={v=>{const w=[...effective];w[i]=[art[0]||"",art[1]||"",v];updList(w);}} width="100%"/></div>
+                  <button onClick={()=>updList(effective.filter((_,j)=>j!==i))} className="adm-del-btn" title="Supprimer" style={{background:"none",border:"none",color:"var(--ink-faint)",cursor:"pointer",fontSize:17,padding:"2px 4px",marginBottom:6,borderRadius:5,flexShrink:0}}>×</button>
+                </div>
+                <Field label="Extrait" textarea value={art[1]||""} onChange={v=>{const w=[...effective];w[i]=[art[0]||"",v,art[2]||""];updList(w);}} placeholder="Début de l'article…"/>
               </div>
             ))}
             <button onClick={()=>updList([...effective,["","","1 oct"]])} style={{background:"var(--accent)",border:"none",color:"#fff",borderRadius:9,boxShadow:"var(--shadow)",padding:"10px 18px",cursor:"pointer",fontSize:12,fontWeight:600}}>+ Article</button>
@@ -3767,17 +3775,19 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
           const patch=(i,p)=>upd("vpnServers",effective.map((s,j)=>j===i?{...s,...p}:s));
           return (<>
           {effective.map((srv,i)=>(
-          <div key={i} style={{display:"flex",gap:8,alignItems:"center",background:"var(--raise)",padding:"8px 10px",borderRadius:10,border:"1px solid var(--line)",flexWrap:"wrap"}}>
-            <input value={srv.flag||""} onChange={e=>patch(i,{flag:e.target.value})}
-              placeholder="🏳" className="adm-input" style={{width:44,background:"var(--raise)",border:"1px solid var(--line)",color:"var(--ink)",padding:"6px 8px",fontSize:16,borderRadius:7,textAlign:"center"}}/>
-            <input value={srv.loc||""} onChange={e=>patch(i,{loc:e.target.value})}
-              placeholder="Serveur" className="adm-input" style={{flex:1,background:"var(--raise)",border:"1px solid var(--line)",color:"var(--ink)",padding:"6px 9px",fontSize:12,borderRadius:7}}/>
-            <input value={String(srv.ping||"")} onChange={e=>patch(i,{ping:parseInt(e.target.value)||0})}
-              placeholder="Ping ms" className="adm-input" style={{width:70,background:"var(--raise)",border:"1px solid var(--line)",color:"var(--ink-soft)",padding:"6px 8px",fontSize:11,borderRadius:7}}/>
-            <input value={String(srv.load||"")} onChange={e=>patch(i,{load:parseInt(e.target.value)||0})}
-              placeholder="Load %" className="adm-input" style={{width:70,background:"var(--raise)",border:"1px solid var(--line)",color:"var(--ink-soft)",padding:"6px 8px",fontSize:11,borderRadius:7}}/>
-            {isCustom && <button onClick={()=>upd("vpnServers",effective.filter((_,j)=>j!==i))}
-              className="adm-del-btn" style={{background:"none",border:"none",color:"var(--ink-faint)",cursor:"pointer",fontSize:16,padding:"0 4px",borderRadius:5}}>×</button>}
+          <div key={i} style={{display:"flex",flexDirection:"column",gap:8,background:"var(--raise)",padding:"10px 11px",borderRadius:10,border:"1px solid var(--line)"}}>
+            <div style={{display:"flex",gap:8,alignItems:"flex-end"}}>
+              <div style={{display:"flex",flexDirection:"column",gap:5,flexShrink:0}}>
+                <label style={{color:"var(--ink-faint)",fontSize:10,letterSpacing:0.8,textTransform:"uppercase",fontWeight:600}}>Drapeau</label>
+                <input value={srv.flag||""} onChange={e=>patch(i,{flag:e.target.value})} placeholder="🏳" className="adm-input" style={{width:52,background:"var(--raise)",border:"1px solid var(--line)",color:"var(--ink)",padding:"7px 8px",fontSize:16,borderRadius:8,textAlign:"center"}}/>
+              </div>
+              <div style={{flex:1,minWidth:0}}><Field label="Serveur" value={srv.loc||""} onChange={v=>patch(i,{loc:v})} placeholder="ex. FR Paris"/></div>
+              {isCustom && <button onClick={()=>upd("vpnServers",effective.filter((_,j)=>j!==i))} className="adm-del-btn" title="Supprimer" style={{background:"none",border:"none",color:"var(--ink-faint)",cursor:"pointer",fontSize:17,padding:"2px 4px",marginBottom:6,borderRadius:5,flexShrink:0}}>×</button>}
+            </div>
+            <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+              <div style={{flex:"1 1 110px"}}><Field label="Ping (ms)" value={String(srv.ping||"")} onChange={v=>patch(i,{ping:parseInt(v)||0})}/></div>
+              <div style={{flex:"1 1 110px"}}><Field label="Charge (%)" value={String(srv.load||"")} onChange={v=>patch(i,{load:parseInt(v)||0})}/></div>
+            </div>
           </div>
           ))}
           <button onClick={()=>upd("vpnServers",[...effective,{flag:"🏳",loc:"",ping:0,load:0}])}
