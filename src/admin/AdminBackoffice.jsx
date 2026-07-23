@@ -1192,7 +1192,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                                 <button onClick={()=>{const t=[...sortedThread];t.splice(si,1);writeThread(t);}}
                                   className="adm-del-btn" style={{background:"none",border:"none",color:"#d1d5db",cursor:"pointer",fontSize:16,padding:"0 4px",flexShrink:0}}>×</button>
                               </div>
-                              <textarea value={m2.text} onChange={e=>updMsg({text:e.target.value})}
+                              <textarea value={m2.text||""} onChange={e=>updMsg({text:e.target.value})}
                                 rows={Math.max(1,Math.ceil((m2.text||"").length/40))}
                                 className="adm-input" style={{width:"100%",resize:"vertical",background:"rgba(255,255,255,0.9)",border:"1px solid rgba(0,0,0,0.08)",color:"#1a1a2e",padding:"6px 10px",fontSize:12,borderRadius:6,lineHeight:1.4,minHeight:36,boxSizing:"border-box"}}/>
                             </div>
@@ -1243,7 +1243,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                                 <button onClick={()=>{const t=[...sortedLocal];t.splice(si,1);writeLocal(t);}}
                                   className="adm-del-btn" style={{background:"none",border:"none",color:"#d1d5db",cursor:"pointer",fontSize:16,padding:"0 4px",flexShrink:0}}>×</button>
                               </div>
-                              <textarea value={m2.text} onChange={e=>updMsg({text:e.target.value})}
+                              <textarea value={m2.text||""} onChange={e=>updMsg({text:e.target.value})}
                                 rows={Math.max(1,Math.ceil((m2.text||"").length/40))}
                                 className="adm-input" style={{width:"100%",resize:"vertical",background:"rgba(255,255,255,0.9)",border:"1px solid rgba(0,0,0,0.08)",color:"#1a1a2e",padding:"6px 10px",fontSize:12,borderRadius:6,lineHeight:1.4,minHeight:36,boxSizing:"border-box"}}/>
                             </div>
@@ -1398,7 +1398,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                   className="adm-del-btn" style={{background:"none",border:"none",color:"#d1d5db",cursor:"pointer",fontSize:16,padding:"2px 6px",flexShrink:0,borderRadius:5}}>×</button>
                 </div>
                 {/* Row 2: message text */}
-                <textarea value={msg2.text} onChange={e=>{const t=[...sortedDisplay];t[si]={...t[si],text:e.target.value};writeThread(t);}}
+                <textarea value={msg2.text||""} onChange={e=>{const t=[...sortedDisplay];t[si]={...t[si],text:e.target.value};writeThread(t);}}
                   rows={Math.max(1,Math.ceil((msg2.text||"").length/40))}
                   className="adm-input" style={{width:"100%",resize:"vertical",background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#1a1a2e",padding:"6px 10px",fontSize:12,borderRadius:7,lineHeight:1.4,minHeight:36,boxSizing:"border-box"}}/>
               </div>
