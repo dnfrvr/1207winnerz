@@ -3458,6 +3458,7 @@ export default function App() {
 
             // homeBaseTweets + feedPosts Tumblr par perso : toujours remplacer (séparation corrigée)
             const USERNAME_MAP = {glinda:"glindatheverygood",eoghan:"eoghan_masuda",drew:"dreww_orms",elias:"noteliasgreen"};
+            const seedChars = mkData(); // source des seeds par perso (wifiNetworks/btDevices…)
             ["glinda","eoghan","drew","elias"].forEach(k => {
               patches[`${k}/homeBaseTweets`] = SEED_HOME_BASE_TWEETS[k] || [];
               const username = USERNAME_MAP[k];
@@ -3492,6 +3493,10 @@ export default function App() {
               if(!remote[k]?.facebookPages) {
                 patches[`${k}/facebookPages`] = { [k]: FACEBOOK_PAGES_DEFAULT[k] || [] };
               }
+              // v9 : réseaux Wi-Fi connus + appareils Bluetooth appairés (vecteur de lore Réglages).
+              // Seedés une seule fois, seulement si le perso n'a pas encore ces champs (pas d'écrasement).
+              if(!remote[k]?.wifiNetworks) patches[`${k}/wifiNetworks`] = seedChars[k]?.wifiNetworks || [];
+              if(!remote[k]?.btDevices)    patches[`${k}/btDevices`]    = seedChars[k]?.btDevices    || [];
             });
 
             update(ref(firebaseDb), patches).catch(e => console.error("[seed] Erreur migration seeds :", e));

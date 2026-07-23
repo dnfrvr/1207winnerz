@@ -718,7 +718,7 @@ export const FORCED_PLAYLISTS = {
     ]
   }
 };
-export const SEED_VERSION = 8;
+export const SEED_VERSION = 9;
 
 
 // Injectés dans loadData() si les clés partagées sont absentes ou vides.
