@@ -3590,6 +3590,11 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
           const updFiles = (patch) => upd("files", {...files, ...patch});
           const FILE_TYPES = [".pdf",".mp3",".mp4",".mov",".jpg",".png",".doc",".docx",".xls",".xlsx",".ppt",".zip",".txt",".other"];
           const FOLDER_COLOR = "#a07018";
+          // Helpers de date des fichiers — partagés entre dossiers et racine (formats identiques).
+          const FILE_EXTS=["pdf","mp3","mp4","mov","jpg","png","doc","docx","xls","xlsx","ppt","zip","txt","other"];
+          const LORE_MONTHS_SHORT=["","jan","fév","mar","avr","mai","juin","juil","août","sep","oct","nov","déc"];
+          const buildDate=(v)=>{if(!v)return"";const[,mo,da]=v.split("-").map(Number);return`${da} ${LORE_MONTHS_SHORT[mo]}`;};
+          const parseDateVal=(dt)=>{const m=(dt||"").match(/(\d+)\s+(\w+)/);if(m){const mn={jan:1,fév:2,mar:3,avr:4,mai:5,juin:6,juil:7,ao:8,sep:9,oct:10,nov:11,déc:12}[m[2].toLowerCase().slice(0,3)]||1;return`2012-${String(mn).padStart(2,"0")}-${String(m[1]).padStart(2,"0")}`;}return"2012-10-01";};
 
           return (<>
             {/* Dossiers */}
@@ -3608,10 +3613,6 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                 {/* Fichiers dans ce dossier */}
                 <div style={{padding:"8px 12px",display:"flex",flexDirection:"column",gap:6}}>
                   {(()=>{
-                    const FILE_EXTS=["pdf","mp3","mp4","mov","jpg","png","doc","docx","xls","xlsx","ppt","zip","txt","other"];
-                    const LORE_MONTHS_SHORT=["","jan","fév","mar","avr","mai","juin","juil","août","sep","oct","nov","déc"];
-                    const buildDate=(v)=>{if(!v)return"";const[,mo,da]=v.split("-").map(Number);return`${da} ${LORE_MONTHS_SHORT[mo]}`;};
-                    const parseDateVal=(d)=>{const m=(d||"").match(/(\d+)\s+(\w+)/);if(m){const mn={jan:1,fév:2,mar:3,avr:4,mai:5,juin:6,juil:7,ao:8,sep:9,oct:10,nov:11,déc:12}[m[2].toLowerCase().slice(0,3)]||1;return`2012-${String(mn).padStart(2,"0")}-${String(m[1]).padStart(2,"0")}`;}return"2012-10-01";};
                     return (folder.files||[]).map((file,fj)=>{
                       const rawExt=(file.name||"").includes(".")?(file.name||"").split(".").pop().toLowerCase():(file.ext||"other");
                       const ext=FILE_EXTS.includes(rawExt)?rawExt:"other";
@@ -3651,10 +3652,6 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
             {/* Fichiers à la racine */}
             <div style={{fontSize:12,fontWeight:700,color:"#374151",letterSpacing:0.3,marginTop:8}}>📄 Fichiers à la racine</div>
             {(()=>{
-              const FILE_EXTS=["pdf","mp3","mp4","mov","jpg","png","doc","docx","xls","xlsx","ppt","zip","txt","other"];
-              const LORE_MONTHS_SHORT=["","jan","fév","mar","avr","mai","juin","juil","août","sep","oct","nov","déc"];
-              const buildDate=(v)=>{if(!v)return"";const[,mo,da]=v.split("-").map(Number);return`${da} ${LORE_MONTHS_SHORT[mo]}`;};
-              const parseDateVal=(d)=>{const m=(d||"").match(/(\d+)\s+(\w+)/);if(m){const mn={jan:1,fév:2,mar:3,avr:4,mai:5,juin:6,juil:7,ao:8,sep:9,oct:10,nov:11,déc:12}[m[2].toLowerCase().slice(0,3)]||1;return`2012-${String(mn).padStart(2,"0")}-${String(m[1]).padStart(2,"0")}`;}return"2012-10-01";};
               return rootFiles.map((file,i)=>{
                 const rawExt=(file.name||"").includes(".")?(file.name||"").split(".").pop().toLowerCase():(file.ext||"other");
                 const ext=FILE_EXTS.includes(rawExt)?rawExt:"other";
