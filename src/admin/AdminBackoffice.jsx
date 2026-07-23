@@ -2687,7 +2687,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
               </div>
             ))}
             <button onClick={()=>updList([...effective.map((p,j)=>isCustom?p:{...p,id:Date.now()+j}),{id:Date.now(),desc:"",emoji:"📌",tall:false,img:null,board:"",pinner:"",repins:0}])}
-              style={{background:"rgba(230,0,35,0.08)",border:"1px dashed rgba(230,0,35,0.3)",color:RED,borderRadius:8,padding:"10px 18px",cursor:"pointer",fontSize:12,fontWeight:600}}>+ Pin</button>
+              style={{background:"var(--accent)",border:"none",color:"#fff",borderRadius:9,boxShadow:"var(--shadow)",padding:"10px 18px",cursor:"pointer",fontSize:12,fontWeight:600}}>+ Pin</button>
           </>);
         })()}
       </div>
@@ -2806,7 +2806,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                 </div>
               ))}
               <button onClick={()=>upd("grindr",[...grid,{id:Date.now(),name:"",distance:"0.5 mi",age:"",photo:null,online:true}])}
-                style={{background:"rgba(245,129,31,0.08)",border:"1px dashed rgba(245,129,31,0.4)",color:OR,borderRadius:8,padding:"10px 18px",cursor:"pointer",fontSize:12,fontWeight:600}}>+ Profil</button>
+                style={{background:"var(--accent)",border:"none",color:"#fff",borderRadius:9,boxShadow:"var(--shadow)",padding:"10px 18px",cursor:"pointer",fontSize:12,fontWeight:600}}>+ Profil</button>
             </>}
 
             {/* DMs */}
@@ -2885,7 +2885,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
               );
               })}
               <button onClick={()=>updDms([...dms,{id:Date.now(),name:"",distance:"",photo:null,online:true,thread:[]}])}
-                style={{background:"rgba(245,129,31,0.08)",border:"1px dashed rgba(245,129,31,0.4)",color:OR,borderRadius:8,padding:"10px 18px",cursor:"pointer",fontSize:12,fontWeight:600}}>+ Conversation</button>
+                style={{background:"var(--accent)",border:"none",color:"#fff",borderRadius:9,boxShadow:"var(--shadow)",padding:"10px 18px",cursor:"pointer",fontSize:12,fontWeight:600}}>+ Conversation</button>
             </>}
 
             {/* Profil */}
@@ -3074,7 +3074,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                   );
                 })}
                 <button onClick={()=>updFeed([{id:Date.now(),username:"",avatarBg:"#8e7cc3",body:"",notes:0,date:"1 oct",type:"text"},...effectiveFeedRaw])}
-                  style={{background:"rgba(53,70,92,0.08)",border:"1px dashed rgba(53,70,92,0.4)",color:TB_COLOR,borderRadius:8,padding:"10px 18px",cursor:"pointer",fontSize:12,fontWeight:600}}>+ Post du fil</button>
+                  style={{background:"var(--accent)",border:"none",color:"#fff",borderRadius:9,boxShadow:"var(--shadow)",padding:"10px 18px",cursor:"pointer",fontSize:12,fontWeight:600}}>+ Post du fil</button>
               </div>
             );
           })()}
@@ -3224,28 +3224,28 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                     </div>
                     <div style={{display:"flex",gap:10,alignItems:"flex-start"}}>
                       <div style={{flex:1,minWidth:0,display:"flex",flexDirection:"column",gap:6}}>
-                        <div style={{display:"flex",gap:6,flexWrap:"wrap",alignItems:"flex-end"}}>
-                          <LoreDateTimeInput value={post.date||""} onChange={v=>updPost({date:v})} width="160px" showLabel={true}/>
-                          <Field label="Likes" value={String(post.likes??"")} onChange={v=>updPost({likes:parseInt(v)||0})} width="70px"/>
-                          <Field label="📍 Lieu" value={post.location||""} onChange={v=>updPost({location:v||null})} style={{flex:1,minWidth:100}}/>
-                          <div style={{display:"flex",flexDirection:"column",gap:2}}>
-                            <label style={{color:"var(--ink-faint)",fontSize:9,letterSpacing:0.5,fontWeight:600,textTransform:"uppercase"}}>Avec (tag)</label>
-                            <select value={post.taggedWith||""} onChange={e=>updPost({taggedWith:e.target.value||null})} className="adm-input" style={{background:"var(--raise)",border:"1px solid var(--line)",color:"var(--ink)",padding:"6px 8px",fontSize:12,borderRadius:7}}>
+                        <div style={{display:"flex",gap:8,flexWrap:"wrap",alignItems:"flex-end"}}>
+                          <div style={{flex:"1 1 160px",minWidth:0}}><LoreDateTimeInput label="Date / heure" value={post.date||""} onChange={v=>updPost({date:v})} width="100%"/></div>
+                          <div style={{flex:"0 1 90px"}}><Field label="Likes" value={String(post.likes??"")} onChange={v=>updPost({likes:parseInt(v)||0})}/></div>
+                          <div style={{flex:"1 1 140px",minWidth:0}}><Field label="📍 Lieu" value={post.location||""} onChange={v=>updPost({location:v||null})}/></div>
+                        </div>
+                        <div style={{display:"flex",gap:10,flexWrap:"wrap",alignItems:"flex-end"}}>
+                          <div style={{display:"flex",flexDirection:"column",gap:5,flex:"1 1 150px",minWidth:0}}>
+                            <label style={{color:"var(--ink-faint)",fontSize:10,letterSpacing:0.8,fontWeight:600,textTransform:"uppercase"}}>Avec (tag)</label>
+                            <select value={post.taggedWith||""} onChange={e=>updPost({taggedWith:e.target.value||null})} className="adm-input" style={{width:"100%",boxSizing:"border-box",background:"var(--raise)",border:"1px solid var(--line)",color:"var(--ink)",padding:"7px 8px",fontSize:12,borderRadius:8}}>
                               <option value="">— Aucun —</option>
                               {otherChars.map(ck=><option key={ck} value={ck}>{CHAR_NAMES[ck]||ck}</option>)}
                             </select>
                           </div>
-                          <div style={{display:"flex",alignItems:"flex-end",gap:10}}>
-                            <label style={{display:"flex",alignItems:"center",gap:4,fontSize:11,color:"var(--ink-soft)",cursor:"pointer",paddingBottom:4}}>
-                              <input type="checkbox" checked={!!post.pinned} onChange={e=>setPinned(e.target.checked)} style={{cursor:"pointer"}}/>
-                              📌 Épinglé
-                            </label>
-                            <label style={{display:"flex",alignItems:"center",gap:4,fontSize:11,color:"var(--ink-soft)",cursor:"pointer",paddingBottom:4}}>
-                              <input type="checkbox" checked={!!post.archived} onChange={e=>updPost({archived:e.target.checked})} style={{cursor:"pointer"}}/>
-                              Archivé
-                            </label>
-                          </div>
-                          <button onClick={()=>updPosts(igPosts.filter(p2=>p2.id!==post.id))} style={{background:"rgba(239,68,68,0.06)",border:"1px solid rgba(239,68,68,0.2)",color:"var(--danger)",borderRadius:6,padding:"5px 8px",cursor:"pointer",fontSize:11,alignSelf:"flex-end"}}>✕</button>
+                          <label style={{display:"flex",alignItems:"center",gap:5,fontSize:12,color:"var(--ink-soft)",cursor:"pointer",padding:"8px 2px"}}>
+                            <input type="checkbox" checked={!!post.pinned} onChange={e=>setPinned(e.target.checked)} style={{width:16,height:16,cursor:"pointer"}}/>
+                            📌 Épinglé
+                          </label>
+                          <label style={{display:"flex",alignItems:"center",gap:5,fontSize:12,color:"var(--ink-soft)",cursor:"pointer",padding:"8px 2px"}}>
+                            <input type="checkbox" checked={!!post.archived} onChange={e=>updPost({archived:e.target.checked})} style={{width:16,height:16,cursor:"pointer"}}/>
+                            Archivé
+                          </label>
+                          <button onClick={()=>updPosts(igPosts.filter(p2=>p2.id!==post.id))} className="adm-del-btn" title="Supprimer le post" style={{background:"none",border:"none",color:"var(--ink-faint)",cursor:"pointer",fontSize:17,padding:"2px 6px",borderRadius:5,marginLeft:"auto"}}>×</button>
                         </div>
                         <Field label="Légende" value={post.caption||""} onChange={v=>updPost({caption:v})} textarea/>
                       </div>
@@ -3258,7 +3258,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                 );
               })}
               <button onClick={()=>updPosts([...igPosts,{id:Date.now(),src:null,photos:[],pinned:false,taggedWith:null,caption:"",likes:0,date:"Oct 2012",location:null,comments:[],archived:false}])}
-                style={{background:"rgba(61,107,143,0.08)",border:"1px dashed rgba(61,107,143,0.4)",color:IG_COLOR,borderRadius:8,padding:"10px 18px",cursor:"pointer",fontSize:12,fontWeight:600}}>+ Post Instagram</button>
+                style={{background:"var(--accent)",border:"none",color:"#fff",borderRadius:9,boxShadow:"var(--shadow)",padding:"10px 18px",cursor:"pointer",fontSize:12,fontWeight:600}}>+ Post Instagram</button>
             </div>
           )}
 
@@ -3322,7 +3322,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                   </div>
                 )}
                 <button onClick={()=>updSharedIg([...sharedIgPosts,{id:Date.now(),author:tab,handle:myHandle,avatar:dataRef.current[tab]?.avatar||null,src:null,caption:"",likes:0,date:"Oct 2012",location:null,comments:[]}])}
-                  style={{background:"rgba(61,107,143,0.08)",border:"1px dashed rgba(61,107,143,0.4)",color:IG_COLOR,borderRadius:8,padding:"10px 18px",cursor:"pointer",fontSize:12,fontWeight:600}}>+ Mon post dans le fil</button>
+                  style={{background:"var(--accent)",border:"none",color:"#fff",borderRadius:9,boxShadow:"var(--shadow)",padding:"10px 18px",cursor:"pointer",fontSize:12,fontWeight:600}}>+ Mon post dans le fil</button>
               </div>
             );
           })()}
@@ -3381,7 +3381,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                 );
               })}
               <button onClick={()=>updDecoIg([{id:Date.now(),handle:"",avatar:null,src:null,caption:"",likes:0,date:"1 oct",location:null,comments:[]},...decoIg])}
-                style={{background:"rgba(61,107,143,0.08)",border:"1px dashed rgba(61,107,143,0.4)",color:IG_COLOR,borderRadius:8,padding:"10px 18px",cursor:"pointer",fontSize:12,fontWeight:600}}>+ Post déco</button>
+                style={{background:"var(--accent)",border:"none",color:"#fff",borderRadius:9,boxShadow:"var(--shadow)",padding:"10px 18px",cursor:"pointer",fontSize:12,fontWeight:600}}>+ Post déco</button>
             </div>
           )}
         </div>
@@ -3661,12 +3661,12 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                     });
                   })()}
                   <button onClick={()=>{const f=[...folders];f[fi]={...f[fi],files:[...(f[fi].files||[]),{id:Date.now(),name:"",date:"",size:""}]};updFiles({folders:f});}}
-                    style={{background:"rgba(160,112,24,0.07)",border:"1px dashed rgba(160,112,24,0.35)",color:FOLDER_COLOR,borderRadius:7,padding:"6px 12px",cursor:"pointer",fontSize:11,fontWeight:600,alignSelf:"flex-start"}}>+ Fichier</button>
+                    style={{background:"var(--accent)",border:"none",color:"#fff",borderRadius:9,boxShadow:"var(--shadow)",padding:"6px 12px",cursor:"pointer",fontSize:11,fontWeight:600,alignSelf:"flex-start"}}>+ Fichier</button>
                 </div>
               </div>
             ))}
             <button onClick={()=>updFiles({folders:[...folders,{id:Date.now(),name:"",files:[]}]})}
-              style={{background:"rgba(160,112,24,0.08)",border:"1px dashed rgba(160,112,24,0.4)",color:FOLDER_COLOR,borderRadius:8,padding:"10px 18px",cursor:"pointer",fontSize:12,fontWeight:600}}>+ Dossier</button>
+              style={{background:"var(--accent)",border:"none",color:"#fff",borderRadius:9,boxShadow:"var(--shadow)",padding:"10px 18px",cursor:"pointer",fontSize:12,fontWeight:600}}>+ Dossier</button>
 
             {/* Fichiers à la racine */}
             <div style={{fontSize:12,fontWeight:700,color:"var(--ink-soft)",letterSpacing:0.3,marginTop:8}}>📄 Fichiers à la racine</div>
@@ -3796,7 +3796,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
               </div>
             ))}
             <button onClick={()=>updList([...effective.map((b,j)=>isCustom?b:{...b,id:Date.now()+j}),{id:Date.now(),title:"",author:"",pct:0,cover:null}])}
-              style={{background:"rgba(255,153,0,0.08)",border:"1px dashed rgba(255,153,0,0.4)",color:AMZ,borderRadius:8,padding:"10px 18px",cursor:"pointer",fontSize:12,fontWeight:600}}>+ Livre</button>
+              style={{background:"var(--accent)",border:"none",color:"#fff",borderRadius:9,boxShadow:"var(--shadow)",padding:"10px 18px",cursor:"pointer",fontSize:12,fontWeight:600}}>+ Livre</button>
           </>);
         })()}
       </div>
@@ -4104,7 +4104,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                 );
               })}
               <button onClick={()=>updPages([...pages,{name:"",time:"à l'instant",text:"",likes:0,comments:0}])}
-                style={{background:"rgba(59,89,152,0.08)",border:"1px dashed rgba(59,89,152,0.4)",color:FB_COLOR,borderRadius:8,padding:"10px 18px",cursor:"pointer",fontSize:12,fontWeight:600}}>+ Page suivie</button>
+                style={{background:"var(--accent)",border:"none",color:"#fff",borderRadius:9,boxShadow:"var(--shadow)",padding:"10px 18px",cursor:"pointer",fontSize:12,fontWeight:600}}>+ Page suivie</button>
             </div>
           )}
         </div>
