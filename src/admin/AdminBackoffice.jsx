@@ -2842,21 +2842,36 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                           <button onClick={e=>{e.stopPropagation();updDms(dms.filter((_,j)=>j!==ci));}} style={{background:"none",border:"none",color:"var(--ink-faint)",cursor:"pointer",fontSize:16,padding:"0 4px"}}>×</button>
                         </div>
                       </div>
-                      {(conv.thread||[]).map((msg,mi)=>(
-                    <div key={mi} style={{display:"flex",gap:5,marginBottom:4,alignItems:"center"}}>
-                      <select value={msg.from} onChange={e=>{const nd=[...dms];nd[ci]={...nd[ci],thread:nd[ci].thread.map((m,j)=>j===mi?{...m,from:e.target.value}:m)};updDms(nd);}}
-                        style={{background:"var(--raise)",border:"1px solid var(--line)",color:"var(--ink)",padding:"4px 6px",fontSize:10,borderRadius:6,width:64,flexShrink:0}}>
-                        <option value="me">moi</option>
-                        <option value="them">eux</option>
-                      </select>
-                      <input value={msg.text||""} onChange={e=>{const nd=[...dms];nd[ci]={...nd[ci],thread:nd[ci].thread.map((m,j)=>j===mi?{...m,text:e.target.value}:m)};updDms(nd);}}
-                        className="adm-input" style={{flex:1,background:"var(--raise)",border:"1px solid var(--line)",color:"var(--ink)",padding:"4px 8px",fontSize:11,borderRadius:6}}/>
-                      <LoreTimeInput showLabel={false} width="96px" value={msg.time||""} onChange={v=>{const nd=[...dms];nd[ci]={...nd[ci],thread:nd[ci].thread.map((m,j)=>j===mi?{...m,time:v}:m)};updDms(nd);}}/>
-                      <button onClick={()=>{const nd=[...dms];nd[ci]={...nd[ci],thread:nd[ci].thread.filter((_,j)=>j!==mi)};updDms(nd);}} style={{background:"none",border:"none",color:"var(--ink-faint)",cursor:"pointer",fontSize:14,padding:"0 2px"}}>×</button>
-                    </div>
-                      ))}
-                      <button onClick={()=>{const nd=[...dms];nd[ci]={...nd[ci],thread:[...(nd[ci].thread||[]),{from:"them",text:"",time:""}]};updDms(nd);}}
-                        style={{background:"rgba(245,129,31,0.06)",border:"1px dashed rgba(245,129,31,0.3)",color:OR,borderRadius:6,padding:"4px 10px",cursor:"pointer",fontSize:10,marginTop:4}}>+ Message</button>
+                      {(()=>{
+                        const dmThread = conv.thread || [];
+                        const otherName = (conv.name||"").trim() || "lui";
+                        const patchMsg = (mi,p)=>{const nd=[...dms];nd[ci]={...nd[ci],thread:dmThread.map((m,j)=>j===mi?{...m,...p}:m)};updDms(nd);};
+                        const delMsg = (mi)=>{const nd=[...dms];nd[ci]={...nd[ci],thread:dmThread.filter((_,j)=>j!==mi)};updDms(nd);};
+                        return (
+                        <div style={{display:"flex",flexDirection:"column",gap:8,background:"var(--paper)",border:"1px solid var(--line)",borderRadius:10,padding:10,maxWidth:520,width:"100%"}}>
+                          {dmThread.length===0 && <div style={{textAlign:"center",color:"var(--ink-faint)",fontSize:11,padding:"8px 0"}}>Aucun message — ajoute le premier ci-dessous.</div>}
+                          {dmThread.map((msg,mi)=>{
+                            const isMe = msg.from==="me";
+                            return (
+                            <div key={mi} style={{display:"flex",flexDirection:"column",alignItems:isMe?"flex-end":"flex-start",gap:3}}>
+                              <div style={{maxWidth:"88%",width:"88%",display:"flex",justifyContent:isMe?"flex-end":"flex-start"}}>
+                                <textarea value={msg.text||""} onChange={e=>patchMsg(mi,{text:e.target.value})}
+                                  rows={Math.max(1,Math.ceil((msg.text||"").length/30))} placeholder={isMe?"Ton message…":"Son message…"}
+                                  style={{width:"100%",resize:"none",fontFamily:"inherit",background:isMe?"var(--accent)":"var(--raise)",color:isMe?"#fff":"var(--ink)",border:"1px solid "+(isMe?"transparent":"var(--line)"),borderRadius:isMe?"14px 14px 4px 14px":"14px 14px 14px 4px",padding:"8px 12px",fontSize:13,lineHeight:1.4,boxSizing:"border-box",outline:"none"}}/>
+                              </div>
+                              <div style={{display:"flex",gap:5,alignItems:"center",flexDirection:isMe?"row-reverse":"row",padding:"0 2px"}}>
+                                <button onClick={()=>patchMsg(mi,{from:isMe?"them":"me"})} title="Changer d'expéditeur" style={{background:"var(--accent-wash)",border:"1px solid var(--accent-line)",color:"var(--accent)",borderRadius:6,padding:"3px 8px",cursor:"pointer",fontSize:10.5,fontWeight:600,whiteSpace:"nowrap",maxWidth:120,overflow:"hidden",textOverflow:"ellipsis"}}>⇄ {isMe?"moi":otherName}</button>
+                                <div style={{width:118}}><LoreTimeInput showLabel={false} value={msg.time||""} onChange={v=>patchMsg(mi,{time:v})} width="100%"/></div>
+                                <button onClick={()=>delMsg(mi)} className="adm-del-btn" title="Supprimer" style={{background:"none",border:"none",color:"var(--ink-faint)",cursor:"pointer",fontSize:15,padding:"0 4px"}}>×</button>
+                              </div>
+                            </div>
+                            );
+                          })}
+                          <button onClick={()=>{const nd=[...dms];nd[ci]={...nd[ci],thread:[...dmThread,{from:"them",text:"",time:""}]};updDms(nd);}}
+                            style={{alignSelf:"flex-start",background:"var(--accent)",border:"none",color:"#fff",borderRadius:8,boxShadow:"var(--shadow)",padding:"7px 14px",cursor:"pointer",fontSize:12,fontWeight:700}}>+ Message</button>
+                        </div>
+                        );
+                      })()}
                     </div>
                   )}
                 </div>
@@ -3816,22 +3831,29 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
         </div>
         {(d.inaturalist?.list||[]).map((obs,i)=>(
           <div key={obs.id||i} className="adm-card" style={{background:"var(--raise)",borderRadius:12,padding:14,border:"1px solid var(--line)",boxShadow:"0 2px 8px var(--line-soft)"}}>
-            <div style={{display:"flex",gap:8,marginBottom:8,flexWrap:"wrap",alignItems:"center"}}>
-              <input value={obs.emoji||""} onChange={e=>{const l=[...(d.inaturalist?.list||[])];l[i]={...l[i],emoji:e.target.value};upd("inaturalist",{...d.inaturalist,list:l});}}
-                className="adm-input" style={{width:44,background:"var(--raise)",border:"1px solid var(--line)",color:"var(--ink)",padding:"6px 8px",fontSize:16,borderRadius:7,textAlign:"center"}} placeholder="🔬"/>
-              <Field label="Nom commun" value={obs.common||""} onChange={v=>{const l=[...(d.inaturalist?.list||[])];l[i]={...l[i],common:v};upd("inaturalist",{...d.inaturalist,list:l});}}/>
-              <Field label="Nom latin" value={obs.latin||""} onChange={v=>{const l=[...(d.inaturalist?.list||[])];l[i]={...l[i],latin:v};upd("inaturalist",{...d.inaturalist,list:l});}} width="180px"/>
-              <LoreDateTimeInput label="Date" showTime={false} value={obs.date||""} onChange={v=>{const l=[...(d.inaturalist?.list||[])];l[i]={...l[i],date:v};upd("inaturalist",{...d.inaturalist,list:l});}} width="150px"/>
-              <div style={{display:"flex",gap:4,alignItems:"center",marginTop:18}}>
+            <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:8}}>
+              <div style={{display:"flex",gap:8,alignItems:"flex-start"}}>
+                <div style={{display:"flex",flexDirection:"column",gap:5,flexShrink:0}}>
+                  <label style={{color:"var(--ink-faint)",fontSize:10,letterSpacing:0.8,textTransform:"uppercase",fontWeight:600}}>Emoji</label>
+                  <input value={obs.emoji||""} onChange={e=>{const l=[...(d.inaturalist?.list||[])];l[i]={...l[i],emoji:e.target.value};upd("inaturalist",{...d.inaturalist,list:l});}}
+                    className="adm-input" style={{width:52,background:"var(--raise)",border:"1px solid var(--line)",color:"var(--ink)",padding:"7px 8px",fontSize:16,borderRadius:8,textAlign:"center"}} placeholder="🔬"/>
+                </div>
+                <div style={{flex:1,minWidth:0}}><Field label="Nom commun" value={obs.common||""} onChange={v=>{const l=[...(d.inaturalist?.list||[])];l[i]={...l[i],common:v};upd("inaturalist",{...d.inaturalist,list:l});}}/></div>
+                <button onClick={()=>{const l=(d.inaturalist?.list||[]).filter((_,j)=>j!==i);upd("inaturalist",{...d.inaturalist,list:l});}}
+                  className="adm-del-btn" title="Supprimer" style={{background:"none",border:"none",color:"var(--ink-faint)",cursor:"pointer",fontSize:17,padding:"2px 4px",marginTop:16,borderRadius:5,flexShrink:0}}>×</button>
+              </div>
+              <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+                <div style={{flex:"1 1 160px",minWidth:0}}><Field label="Nom latin" value={obs.latin||""} onChange={v=>{const l=[...(d.inaturalist?.list||[])];l[i]={...l[i],latin:v};upd("inaturalist",{...d.inaturalist,list:l});}}/></div>
+                <div style={{flex:"1 1 150px"}}><LoreDateTimeInput label="Date" showTime={false} value={obs.date||""} onChange={v=>{const l=[...(d.inaturalist?.list||[])];l[i]={...l[i],date:v};upd("inaturalist",{...d.inaturalist,list:l});}} width="100%"/></div>
+              </div>
+              <div style={{display:"flex",gap:5,flexWrap:"wrap"}}>
                 {[["Research Grade","✓ Research"],["Needs ID","? Needs ID"],["Casual","Casual"]].map(([val,lbl])=>(
                   <button key={val} onClick={()=>{const l=[...(d.inaturalist?.list||[])];l[i]={...l[i],grade:val};upd("inaturalist",{...d.inaturalist,list:l});}}
-                    style={{fontSize:9,padding:"3px 7px",border:`1px solid ${obs.grade===val?"#74AC00":"var(--line)"}`,background:obs.grade===val?"#74AC0018":"transparent",color:obs.grade===val?"#74AC00":"var(--ink-soft)",borderRadius:5,cursor:"pointer",fontWeight:obs.grade===val?700:400}}>
+                    style={{flex:"1 1 90px",fontSize:11,padding:"7px 8px",border:`1px solid ${obs.grade===val?"var(--accent)":"var(--line)"}`,background:obs.grade===val?"var(--accent-wash)":"transparent",color:obs.grade===val?"var(--accent)":"var(--ink-soft)",borderRadius:7,cursor:"pointer",fontWeight:obs.grade===val?700:500}}>
                     {lbl}
                   </button>
                 ))}
               </div>
-              <button onClick={()=>{const l=(d.inaturalist?.list||[]).filter((_,j)=>j!==i);upd("inaturalist",{...d.inaturalist,list:l});}}
-                className="adm-del-btn" style={{background:"rgba(239,68,68,0.06)",border:"1px solid rgba(239,68,68,0.2)",color:"var(--danger)",borderRadius:6,padding:"4px 8px",cursor:"pointer",fontSize:11,marginTop:18}}>✕</button>
             </div>
             <Field label="Lieu" value={obs.place||""} onChange={v=>{const l=[...(d.inaturalist?.list||[])];l[i]={...l[i],place:v};upd("inaturalist",{...d.inaturalist,list:l});}}/>
             <Field label="Note" value={obs.note||""} onChange={v=>{const l=[...(d.inaturalist?.list||[])];l[i]={...l[i],note:v};upd("inaturalist",{...d.inaturalist,list:l});}} textarea style={{marginTop:6}}/>
