@@ -1400,39 +1400,40 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
               <InsertMsgBtn onClick={()=>insertAt(0)}/>
               {sortedDisplay.map((msg2,si)=>(
               <React.Fragment key={msg2.id ?? si}>
-              <div style={{display:"flex",flexDirection:"column",gap:4,background:"var(--line-soft)",borderRadius:8,padding:"8px 10px",border:"1px solid var(--line-soft)"}}>
-                {/* Row 1: image, sender, time, move, delete */}
-                <div style={{display:"flex",gap:6,alignItems:"center",flexWrap:"wrap"}}>
-                <div style={{display:"flex",flexDirection:"column",gap:2,flexShrink:0}}>
-                  <MsgMoveBtn dir="up" disabled={si===0} onClick={()=>{const t=[...sortedDisplay];[t[si-1],t[si]]=[t[si],t[si-1]];t[si]={...t[si],time:shiftLoreTime(t[si].time,-1)};writeThread(t);}}/>
-                  <MsgMoveBtn dir="down" disabled={si===sortedDisplay.length-1} onClick={()=>{const t=[...sortedDisplay];[t[si+1],t[si]]=[t[si],t[si+1]];t[si]={...t[si],time:shiftLoreTime(t[si].time,+1)};writeThread(t);}}/>
+              <div style={{display:"flex",flexDirection:"column",gap:8,background:"var(--card)",borderRadius:10,padding:"10px 11px",border:"1px solid var(--line)"}}>
+                {/* Ligne 1 : expéditeur (segmenté) · heure · contrôles */}
+                <div style={{display:"flex",gap:8,alignItems:"center",flexWrap:"wrap"}}>
+                  <div style={{display:"inline-flex",background:"var(--paper)",border:"1px solid var(--line)",borderRadius:8,padding:2,flexShrink:0}}>
+                    {["me","them"].map(v=>(
+                      <button key={v} onClick={()=>{const t=[...sortedDisplay];t[si]={...t[si],from:v};writeThread(t);}}
+                        style={{border:0,background:msg2.from===v?"var(--accent)":"transparent",color:msg2.from===v?"#fff":"var(--ink-soft)",padding:"5px 13px",borderRadius:6,cursor:"pointer",fontSize:12,fontWeight:600}}>
+                        {v==="me"?"moi":"eux"}</button>
+                    ))}
+                  </div>
+                  <div style={{flex:1,minWidth:130}}><LoreDateTimeInput value={msg2.time} onChange={v=>{const t=[...sortedDisplay];t[si]={...t[si],time:v};writeThread(t);}} width="100%" showLabel={false}/></div>
+                  <div style={{display:"flex",alignItems:"center",gap:3,flexShrink:0}}>
+                    <label title="Image jointe" style={{width:32,height:32,borderRadius:7,overflow:"hidden",flexShrink:0,background:msg2.img?"transparent":"var(--accent-wash)",border:"1px dashed var(--accent-line)",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer"}}>
+                      {msg2.img ? <img src={msg2.img} style={{width:"100%",height:"100%",objectFit:"cover"}}/> : <span style={{fontSize:14,color:"var(--accent)"}}>📷</span>}
+                      <input type="file" accept="image/*" style={{display:"none"}} onChange={e=>{
+                        const f=e.target.files?.[0]; if(!f) return;
+                        const r=new UploadReader(); r.onload=ev=>{const t=[...sortedDisplay]; t[si]={...t[si],img:ev.target.result}; writeThread(t);};
+                        r.readAsDataURL(f); e.target.value="";
+                      }}/>
+                    </label>
+                    {msg2.img && <button onClick={()=>{const t=[...sortedDisplay];t[si]={...t[si],img:null};writeThread(t);}}
+                      title="Retirer l'image" style={{background:"none",border:"none",color:"var(--danger)",cursor:"pointer",fontSize:13,padding:"0 2px",flexShrink:0}}>✕</button>}
+                    <div style={{display:"flex",flexDirection:"column",gap:1,flexShrink:0}}>
+                      <MsgMoveBtn dir="up" disabled={si===0} onClick={()=>{const t=[...sortedDisplay];[t[si-1],t[si]]=[t[si],t[si-1]];t[si]={...t[si],time:shiftLoreTime(t[si].time,-1)};writeThread(t);}}/>
+                      <MsgMoveBtn dir="down" disabled={si===sortedDisplay.length-1} onClick={()=>{const t=[...sortedDisplay];[t[si+1],t[si]]=[t[si],t[si+1]];t[si]={...t[si],time:shiftLoreTime(t[si].time,+1)};writeThread(t);}}/>
+                    </div>
+                    <button onClick={()=>{const t=[...sortedDisplay];t.splice(si,1);writeThread(t);}}
+                      className="adm-del-btn" title="Supprimer" style={{background:"none",border:"none",color:"var(--ink-faint)",cursor:"pointer",fontSize:17,padding:"2px 6px",flexShrink:0,borderRadius:5}}>×</button>
+                  </div>
                 </div>
-                <label style={{width:34,height:34,borderRadius:7,overflow:"hidden",flexShrink:0,background:"var(--accent-wash)",border:"1px dashed var(--accent-line)",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",position:"relative"}}>
-                  {msg2.img
-                    ? <img src={msg2.img} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
-                    : <span style={{fontSize:14,color:"var(--accent)"}}>📷</span>}
-                  <input type="file" accept="image/*" style={{display:"none"}} onChange={e=>{
-                    const f=e.target.files?.[0]; if(!f) return;
-                    const r=new UploadReader(); r.onload=ev=>{
-                      const t=[...sortedDisplay]; t[si]={...t[si],img:ev.target.result}; writeThread(t);
-                    };
-                    r.readAsDataURL(f); e.target.value="";
-                  }}/>
-                </label>
-                {msg2.img && <button onClick={()=>{const t=[...sortedDisplay];t[si]={...t[si],img:null};writeThread(t);}}
-                  title="Retirer l'image" style={{background:"none",border:"none",color:"var(--danger)",cursor:"pointer",fontSize:13,padding:"0 2px",flexShrink:0}}>✕</button>}
-                <select value={msg2.from} onChange={e=>{const t=[...sortedDisplay];t[si]={...t[si],from:e.target.value};writeThread(t);}}
-                  className="adm-input" style={{background:"var(--raise)",border:"1px solid var(--line)",color:"var(--ink-soft)",padding:"5px 6px",fontSize:11,borderRadius:7,flexShrink:0,minWidth:70}}>
-                  <option value="me">moi</option><option value="them">eux</option>
-                </select>
-                <div style={{flex:1,minWidth:120}}><LoreDateTimeInput value={msg2.time} onChange={v=>{const t=[...sortedDisplay];t[si]={...t[si],time:v};writeThread(t);}} width="100%" showLabel={false}/></div>
-                <button onClick={()=>{const t=[...sortedDisplay];t.splice(si,1);writeThread(t);}}
-                  className="adm-del-btn" style={{background:"none",border:"none",color:"var(--ink-faint)",cursor:"pointer",fontSize:16,padding:"2px 6px",flexShrink:0,borderRadius:5}}>×</button>
-                </div>
-                {/* Row 2: message text */}
+                {/* Ligne 2 : texte du message */}
                 <textarea value={msg2.text||""} onChange={e=>{const t=[...sortedDisplay];t[si]={...t[si],text:e.target.value};writeThread(t);}}
-                  rows={Math.max(1,Math.ceil((msg2.text||"").length/40))}
-                  className="adm-input" style={{width:"100%",resize:"vertical",background:"var(--raise)",border:"1px solid var(--line)",color:"var(--ink)",padding:"6px 10px",fontSize:12,borderRadius:7,lineHeight:1.4,minHeight:36,boxSizing:"border-box"}}/>
+                  rows={Math.max(1,Math.ceil((msg2.text||"").length/40))} placeholder={msg2.from==="me"?"Message envoyé…":"Message reçu…"}
+                  className="adm-input" style={{width:"100%",resize:"vertical",background:"var(--raise)",border:"1px solid var(--line)",color:"var(--ink)",padding:"8px 11px",fontSize:13,borderRadius:8,lineHeight:1.45,minHeight:38,boxSizing:"border-box"}}/>
               </div>
               <InsertMsgBtn onClick={()=>insertAt(si+1)}/>
               </React.Fragment>
