@@ -1393,7 +1393,8 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                 writeThread(t);
               };
               const patch = (si, p) => { const t=[...sortedDisplay]; t[si]={...t[si],...p}; writeThread(t); };
-              return (<>
+              const otherLabel = (msg.contact||"").trim() || "reçu";
+              return (<div style={{maxWidth:600,margin:"0 auto",width:"100%",display:"flex",flexDirection:"column"}}>
               <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:8,flexWrap:"wrap",marginBottom:6}}>
                 <span style={{fontSize:11,color:"var(--ink-faint)"}}>💬 Aperçu conversation — clique une bulle pour l'éditer.</span>
                 <button onClick={()=>writeThread([...sortedDisplay].sort((a,b)=>loreSortKey(a.time)-loreSortKey(b.time)))}
@@ -1429,7 +1430,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                     {focused ? (
                       <div style={{display:"flex",alignItems:"center",gap:6,flexWrap:"wrap",flexDirection:isMe?"row-reverse":"row",padding:"3px 2px 2px",maxWidth:"100%"}}>
                         <button onClick={()=>patch(si,{from:isMe?"them":"me"})} title="Changer d'expéditeur"
-                          style={{background:"var(--accent-wash)",border:"1px solid var(--accent-line)",color:"var(--accent)",borderRadius:7,padding:"4px 9px",cursor:"pointer",fontSize:11,fontWeight:600,whiteSpace:"nowrap"}}>⇄ {isMe?"moi":"eux"}</button>
+                          style={{background:"var(--accent-wash)",border:"1px solid var(--accent-line)",color:"var(--accent)",borderRadius:7,padding:"4px 9px",cursor:"pointer",fontSize:11,fontWeight:600,whiteSpace:"nowrap",maxWidth:160,overflow:"hidden",textOverflow:"ellipsis"}}>⇄ {isMe?"moi":otherLabel}</button>
                         <div style={{width:172}}><LoreDateTimeInput value={msg2.time} onChange={v=>patch(si,{time:v})} width="100%" showLabel={false}/></div>
                         <label title="Ajouter une image" style={{width:30,height:30,borderRadius:7,flexShrink:0,background:"var(--accent-wash)",border:"1px dashed var(--accent-line)",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer"}}>
                           <span style={{fontSize:13,color:"var(--accent)"}}>📷</span>
@@ -1443,7 +1444,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                           className="adm-del-btn" title="Supprimer le message" style={{background:"none",border:"1px solid var(--line)",color:"var(--ink-faint)",cursor:"pointer",fontSize:15,padding:"3px 8px",flexShrink:0,borderRadius:7}}>🗑</button>
                       </div>
                     ) : (
-                      <div style={{fontSize:10,color:"var(--ink-faint)",padding:"0 6px",fontFamily:"monospace"}}>{msg2.time||"—"} · {isMe?"moi":"eux"}</div>
+                      <div style={{fontSize:10,color:"var(--ink-faint)",padding:"0 6px",fontFamily:"monospace",maxWidth:220,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{msg2.time||"—"} · {isMe?"moi":otherLabel}</div>
                     )}
                   </div>
                   );
@@ -1455,7 +1456,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                   style={{background:"var(--accent)",border:"none",color:"#fff",borderRadius:9,padding:"9px 15px",cursor:"pointer",fontSize:12.5,fontWeight:700,boxShadow:"var(--shadow)"}}>+ Message</button>
                 <span style={{fontSize:10.5,color:"var(--ink-faint)"}}>Le nouveau message reprend l'heure du dernier — ajuste-la ensuite.</span>
               </div>
-              </>);
+              </div>);
             })()}
             <ThreadComposer isGroup={false} tab={tab} onApply={(parsed,mode)=>{
               if(msg.sharedThreadId){
