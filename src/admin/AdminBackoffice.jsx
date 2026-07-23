@@ -288,6 +288,24 @@ const expandAppSections = (id) => {
   return APP_SECTIONS[key] ? [{key, ...APP_SECTIONS[key]}] : [];
 };
 
+// Où le contenu édité apparaît sur le téléphone — affiché sous le titre de chaque section pour
+// lever l'ambiguïté « je modifie un truc qui apparaît où ? ».
+const SECTION_WHERE = {
+  messages:"l'app Messages", phone:"l'app Téléphone (appels, contacts, messagerie)",
+  notes:"l'app Notes", gallery:"la Galerie photo", music:"l'app Musique",
+  twitter:"l'app Twitter", pinterest:"l'app Pinterest", browser:"le navigateur web",
+  snapchat:"l'app Snapchat", grindr:"l'app Grindr", tumblr:"l'app Tumblr",
+  reddit:"l'app Reddit", calendar:"l'app Calendrier", weather:"l'app Météo",
+  settings:"les Réglages + le widget de l'accueil", wikipedia:"l'app Wikipedia",
+  kindle:"l'app Kindle", vpn:"l'app VPN", inaturalist:"l'app iNaturalist",
+  soundcloud:"l'app SoundCloud", nikeplus:"l'app Nike+", groupme:"l'app GroupMe",
+  mail:"l'app Mails", facebook:"l'app Facebook", files:"l'app Fichiers",
+  insta:"l'app Instagram", youtube:"l'app YouTube",
+  apparence:"le fond d'écran et l'accent du téléphone",
+  photos_profil:"les avatars du perso dans les apps sociales",
+  icons:"les icônes de l'écran d'accueil",
+};
+
 // Calcule la première section admin disponible (triée alphabétiquement) pour un perso donné.
 // Utilisée pour ouvrir l'admin directement sur la bonne section, sans flash sur une valeur fixe.
 const firstAppSectionKey = (charData) => {
@@ -4157,6 +4175,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
           --line:#e4e0d8; --line-soft:#ece9e2;
           --ok:#2e8f60; --danger:#cf4a45; --accent-ink:#ffffff;
           --accent:#7d7f8c;
+          --serif:"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua",Georgia,serif;
           --accent-wash:color-mix(in srgb, var(--accent) 11%, var(--card));
           --accent-line:color-mix(in srgb, var(--accent) 40%, var(--line));
           --shadow:0 1px 2px rgba(30,25,40,.05), 0 6px 20px rgba(30,25,40,.05);
@@ -4366,47 +4385,47 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
       </div>
 
       {/* ── BODY (sidebar + content) ─────────────────────────────────────────── */}
-      <div className="adm-shell" style={{flex:1,display:"flex",overflow:"hidden",minHeight:0,flexDirection:"column"}}
+      <div className="adm-shell" style={{flex:1,display:"flex",overflow:"hidden",minHeight:0,flexDirection:isMobile?"column":"row"}}
         // CSS variable for active char color used by nav-item.active
       >
         <style>{`:root{--accent:${charColor};--char-color:${charColor};--char-color-light:${charColor}18;}`}</style>
 
-        {/* ── LEFT SIDEBAR ─────────────────────────────────────────────────── */}
-        <div className="adm-sidebar" style={{width:"100%",background:"var(--card)",borderRight:"none",borderBottom:"1px solid var(--line)",display:"flex",flexDirection:"row",flexShrink:0,overflowX:"auto",overflowY:"hidden"}}>
-          <div className="adm-sidebar-inner" style={{display:"flex",flexDirection:"row",padding:"6px 8px",gap:2,minWidth:"max-content"}}>
+        {/* ── LEFT SIDEBAR (desktop) / top scroller (mobile) ───────────────── */}
+        <div className="adm-sidebar" style={{width:isMobile?"100%":232,background:"var(--card)",borderRight:isMobile?"none":"1px solid var(--line)",borderBottom:isMobile?"1px solid var(--line)":"none",display:"flex",flexDirection:isMobile?"row":"column",flexShrink:0,overflowX:isMobile?"auto":"hidden",overflowY:isMobile?"hidden":"auto"}}>
+          <div className="adm-sidebar-inner" style={{display:"flex",flexDirection:isMobile?"row":"column",padding:isMobile?"6px 8px":"12px 10px",gap:isMobile?2:3,minWidth:isMobile?"max-content":0,width:"100%"}}>
 
-            {/* Character header pill */}
-            {false && <div style={{display:"flex",alignItems:"center",gap:8,padding:"8px 10px 12px",borderBottom:"1px solid var(--line-soft)",marginBottom:6}}>
-              <div style={{width:10,height:10,borderRadius:"50%",background:charColor,boxShadow:`0 0 0 3px ${charColor}22`,flexShrink:0}}/>
-              <div>
-                <div style={{fontSize:12,fontWeight:700,color:charColor}}>{char?.label}</div>
-  
+            {/* En-tête « dossier » du perso — masqué sur mobile (adm-sidebar-charhead) */}
+            <div className="adm-sidebar-charhead" style={{display:isMobile?"none":"flex",alignItems:"center",gap:11,padding:"6px 8px 14px",marginBottom:6,borderBottom:"1px solid var(--line)"}}>
+              <div style={{width:5,height:34,borderRadius:3,background:charColor,flexShrink:0}}/>
+              <div style={{minWidth:0}}>
+                <div style={{fontFamily:"var(--serif)",fontSize:19,fontWeight:600,color:"var(--ink)",lineHeight:1.1}}>{char?.label}</div>
+                <div style={{fontSize:10.5,color:"var(--ink-faint)",letterSpacing:0.2,marginTop:1}}>Édition du téléphone</div>
               </div>
-            </div>}
+            </div>
 
             {SECTION_GROUPS.map(group=>(
-              <div key={group.label} style={{display:"flex",flexDirection:"row",alignItems:"center"}}>
-                {false && <div style={{fontSize:9,fontWeight:700,letterSpacing:1,color:"var(--ink-faint)",textTransform:"uppercase",padding:"8px 10px 4px"}}>
+              <div key={group.label} className="adm-nav-group" style={{display:"flex",flexDirection:isMobile?"row":"column",alignItems:isMobile?"center":"stretch",gap:isMobile?2:2}}>
+                <div className="nav-group-label" style={{display:isMobile?"none":"block",fontSize:9.5,fontWeight:700,letterSpacing:1.4,color:"var(--ink-faint)",textTransform:"uppercase",padding:"12px 10px 5px"}}>
                   {group.label}
-                </div>}
+                </div>
                 {group.items.map(item=>{
                   const active = section===item.key;
                   return (
                     <button key={item.key} className={`nav-item${active?" active":""}`}
                       onClick={()=>setSection(item.key)}
                       style={{
-                        display:"flex",alignItems:"center",gap:4,
-                        width:"auto",textAlign:"left",
-                        padding:"6px 10px",border:"none",
-                        borderLeft:"none",
-                        borderBottom:`2px solid ${active?charColor:"transparent"}`,
+                        display:"flex",alignItems:"center",gap:9,
+                        width:isMobile?"auto":"100%",textAlign:"left",
+                        padding:isMobile?"6px 10px":"9px 11px",border:"none",
+                        borderLeft:isMobile?"none":`2.5px solid ${active?charColor:"transparent"}`,
+                        borderBottom:isMobile?`2px solid ${active?charColor:"transparent"}`:"none",
                         background:active?charColor+"18":"transparent",
                         color:active?charColor:"var(--ink-soft)",
-                        fontSize:12,fontWeight:active?700:400,
-                        cursor:"pointer",borderRadius:6,
+                        fontSize:isMobile?12:13.5,fontWeight:active?700:500,
+                        cursor:"pointer",borderRadius:isMobile?6:9,
                         transition:"all 0.12s",whiteSpace:"nowrap",flexShrink:0,
                       }}>
-                      <span style={{fontSize:14,width:18,textAlign:"center",flexShrink:0}}>{item.icon}</span>
+                      <span style={{fontSize:15,width:20,textAlign:"center",flexShrink:0}}>{item.icon}</span>
                       <span>{item.label}</span>
                     </button>
                   );
@@ -4420,17 +4439,28 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
         <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden",minHeight:0,background:"var(--paper)"}}>
 
           {/* Content header breadcrumb */}
-          <div className="adm-breadcrumb" style={{background:"var(--card)",borderBottom:"1px solid var(--line)",padding:isMobile?"8px 12px":"12px 24px",display:"flex",alignItems:"center",justifyContent:"space-between",flexShrink:0}}>
-            <div style={{display:"flex",alignItems:"center",gap:6}}>
-              <span style={{fontSize:11,color:"var(--ink-faint)"}}>{char?.label}</span>
-              <span style={{fontSize:11,color:"var(--ink-faint)"}}>›</span>
-              <span style={{fontSize:12,fontWeight:600,color:"var(--ink-soft)"}}>
-                {[...SECTION_GROUPS.flatMap(g=>g.items)].find(i=>i.key===section)?.icon}{" "}
-                {[...SECTION_GROUPS.flatMap(g=>g.items)].find(i=>i.key===section)?.label || section}
-              </span>
-            </div>
+          <div className="adm-breadcrumb" style={{background:"var(--card)",borderBottom:"1px solid var(--line)",padding:isMobile?"12px 14px":"16px 24px",display:"flex",alignItems:"flex-start",justifyContent:"space-between",gap:12,flexShrink:0}}>
+            {(()=>{
+              const curItem = [...SECTION_GROUPS.flatMap(g=>g.items)].find(i=>i.key===section);
+              const whereText = SECTION_WHERE[section];
+              return (
+              <div style={{display:"flex",gap:12,alignItems:"stretch",minWidth:0,flex:1}}>
+                <div style={{width:4,borderRadius:3,background:"var(--accent)",flexShrink:0}}/>
+                <div style={{minWidth:0}}>
+                  <div style={{fontFamily:"var(--serif)",fontWeight:600,fontSize:isMobile?18:22,color:"var(--ink)",lineHeight:1.15,letterSpacing:0.2}}>
+                    {curItem?.label || section}
+                  </div>
+                  {whereText && (
+                    <div style={{fontSize:11.5,color:"var(--ink-soft)",marginTop:3}}>
+                      <span style={{color:"var(--accent)"}}>↳</span> Visible dans&nbsp;: <b style={{color:"var(--ink)",fontWeight:600}}>{whereText}</b>{char?.label?` de ${char.label}`:""}
+                    </div>
+                  )}
+                </div>
+              </div>
+              );
+            })()}
             <button onClick={save}
-              style={{background:saved?"var(--ok)":"linear-gradient(135deg,var(--accent),var(--accent))",border:"none",color:"#fff",padding:"6px 16px",borderRadius:7,fontWeight:600,fontSize:12,cursor:"pointer",transition:"background 0.2s"}}>
+              style={{background:saved?"var(--ok)":"var(--accent)",border:"none",color:"#fff",padding:"9px 18px",borderRadius:9,fontWeight:700,fontSize:12.5,cursor:"pointer",transition:"background 0.2s",flexShrink:0,boxShadow:"var(--shadow)"}}>
               {saved?"✓ Enregistré":"Enregistrer"}
             </button>
           </div>
