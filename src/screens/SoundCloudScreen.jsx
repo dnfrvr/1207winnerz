@@ -1,9 +1,33 @@
 import React, { useState, useEffect } from "react";
 import { UploadReader } from "../lib/storage.js";
+import { loreSortKey } from "../shared/lore-date.js";
+
+// Génère une forme d'onde déterministe (marche aléatoire douce + accents) à partir d'une graine
+// (id/titre du track) : les tracks créés en admin n'ont pas de champ `wave`, on leur en fabrique
+// un stable pour qu'ils affichent les mêmes barres que les tracks par défaut. Purement visuel.
+const makeWave = (seed) => {
+  const str = String(seed || "track");
+  let s = 0;
+  for (let i = 0; i < str.length; i++) s = (Math.imul(s, 31) + str.charCodeAt(i)) >>> 0;
+  const rand = () => { s = (Math.imul(s, 1103515245) + 12345) >>> 0; return s / 0xffffffff; };
+  const N = 34;
+  const bars = [];
+  let prev = 8 + rand() * 6;
+  for (let i = 0; i < N; i++) {
+    prev = Math.max(3, Math.min(20, prev + (rand() - 0.5) * 8));
+    const spike = rand() > 0.82 ? rand() * 6 : 0;
+    bars.push(Math.round(prev + spike));
+  }
+  return bars;
+};
 
 const SoundCloudScreen = ({data, isIos, accent, admin=false, update=null}) => {
   const sc = data.soundcloud || {};
   const tracks = sc.tracks || [];
+  // Affichage du plus récent au plus ancien (par date de publication). Les valeurs non datables
+  // (loreSortKey → 0) retombent en fin de liste. Le tri est purement à l'affichage : l'ordre
+  // stocké/édité en admin n'est pas modifié.
+  const sortedTracks = [...tracks].sort((a, b) => loreSortKey(b.posted) - loreSortKey(a.posted));
   const [playing, setPlaying] = useState(null); // track id
   const [progress, setProgress] = useState(0);   // 0..1 of bars revealed
   const ORANGE = "#FF5500";
@@ -63,8 +87,9 @@ const SoundCloudScreen = ({data, isIos, accent, admin=false, update=null}) => {
         </div>
 
         
-        {tracks.map(tr=>{
+        {sortedTracks.map(tr=>{
           const isOn = playing===tr.id;
+          const bars = (tr.wave && tr.wave.length) ? tr.wave : makeWave(tr.id ?? tr.title);
           return (
             <div key={tr.id} style={{background:isIos?"#fff":"#1c1c1c",borderBottom:`1px solid ${isIos?"#e3ddd4":"#2a2a2a"}`,padding:"11px 12px"}}>
               <div style={{display:"flex",gap:10,alignItems:"center"}}>
@@ -82,7 +107,7 @@ const SoundCloudScreen = ({data, isIos, accent, admin=false, update=null}) => {
               </div>
               
               <div style={{display:"flex",alignItems:"center",gap:8,marginTop:8}}>
-                <Wave bars={tr.wave||[]} active={isOn}/>
+                <Wave bars={bars} active={isOn}/>
               </div>
               
               {tr.desc&&<div style={{color:isIos?"#666":"#aaa",fontSize:10.5,lineHeight:1.45,marginTop:7,fontStyle:"italic"}}>{tr.desc}</div>}
