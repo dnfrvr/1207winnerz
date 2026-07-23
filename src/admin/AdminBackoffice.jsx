@@ -805,7 +805,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                   <Field label="▶ Plays" value={String(tr.plays||0)} onChange={v=>{const t=[...tracks];t[i]={...t[i],plays:parseInt(v)||0};updSC("tracks",t);}} width="80px"/>
                   <Field label="❤ Likes" value={String(tr.likes||0)} onChange={v=>{const t=[...tracks];t[i]={...t[i],likes:parseInt(v)||0};updSC("tracks",t);}} width="80px"/>
                   <Field label="🔁 Reposts" value={String(tr.reposts||0)} onChange={v=>{const t=[...tracks];t[i]={...t[i],reposts:parseInt(v)||0};updSC("tracks",t);}} width="80px"/>
-                  <Field label="Date" value={tr.posted||""} onChange={v=>{const t=[...tracks];t[i]={...t[i],posted:v};updSC("tracks",t);}} width="100px"/>
+                  <LoreDateTimeInput label="Date" showTime={false} value={tr.posted||""} onChange={v=>{const t=[...tracks];t[i]={...t[i],posted:v};updSC("tracks",t);}} width="150px"/>
                 </div>
               </div>
             ))}
@@ -834,7 +834,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
               <div key={run.id??i} className="adm-card" style={{background:"rgba(255,255,255,0.85)",borderRadius:10,padding:"10px 12px",border:"1px solid rgba(0,0,0,0.07)",display:"flex",flexDirection:"column",gap:6}}>
                 <div style={{display:"flex",gap:6,flexWrap:"wrap",alignItems:"center"}}>
                   <Field label="Distance" value={run.distance||""} onChange={v=>{const r=[...runs];r[i]={...r[i],distance:v};upNK("runs",r);}} width="90px"/>
-                  <Field label="Date" value={run.date||""} onChange={v=>{const r=[...runs];r[i]={...r[i],date:v};upNK("runs",r);}} width="90px"/>
+                  <LoreDateTimeInput label="Date" showTime={false} value={run.date||""} onChange={v=>{const r=[...runs];r[i]={...r[i],date:v};upNK("runs",r);}} width="150px"/>
                   <Field label="Durée" value={run.time||""} onChange={v=>{const r=[...runs];r[i]={...r[i],time:v};upNK("runs",r);}} width="80px"/>
                   <Field label="Allure" value={run.pace||""} onChange={v=>{const r=[...runs];r[i]={...r[i],pace:v};upNK("runs",r);}} width="90px"/>
                   <Field label="Cal" value={String(run.cal||0)} onChange={v=>{const r=[...runs];r[i]={...r[i],cal:parseInt(v)||0};upNK("runs",r);}} width="60px"/>
@@ -857,7 +857,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
           <div key={i} className="adm-card" style={{display:"flex",gap:8,alignItems:"center",background:"rgba(255,255,255,0.85)",padding:"8px 10px",borderRadius:10,border:"1px solid rgba(0,0,0,0.07)",flexWrap:"wrap"}}>
             <Field label="Titre" value={s.title||""} onChange={v=>{const sh=[...d.shazam];sh[i]={...sh[i],title:v};upd("shazam",sh);}}/>
             <Field label="Artiste" value={s.artist||""} onChange={v=>{const sh=[...d.shazam];sh[i]={...sh[i],artist:v};upd("shazam",sh);}} width="140px"/>
-            <Field label="Date" value={s.date||""} onChange={v=>{const sh=[...d.shazam];sh[i]={...sh[i],date:v};upd("shazam",sh);}} width="90px"/>
+            <LoreDateTimeInput label="Date" showTime={false} value={s.date||""} onChange={v=>{const sh=[...d.shazam];sh[i]={...sh[i],date:v};upd("shazam",sh);}} width="150px"/>
             <button onClick={()=>upd("shazam",(d.shazam||[]).filter((_,j)=>j!==i))} style={{background:"none",border:"none",color:"#d1d5db",cursor:"pointer",fontSize:16,padding:"0 4px"}}>×</button>
           </div>
         ))}
@@ -1678,19 +1678,9 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
           <div key={note.id} className="adm-card" style={{background:"rgba(255,255,255,0.85)",borderRadius:12,padding:14,border:"1px solid rgba(0,0,0,0.07)",boxShadow:"0 2px 8px rgba(0,0,0,0.04)"}}>
             <div style={{display:"flex",gap:8,marginBottom:8}}>
               <Field label="Titre" value={note.title} onChange={v=>{const n=[...d.notes];n[i]={...n[i],title:v};upd("notes",n);}} width="60%"/>
-              <div style={{display:"flex",flexDirection:"column",gap:5,width:"30%"}}>
-                <label style={{color:"#9ca3af",fontSize:10,letterSpacing:0.8,textTransform:"uppercase",fontWeight:600}}>Date</label>
-                <input type="date"
-                  value={(()=>{const p=parseLoreTime(note.date); return p?.day?`2012-${String(p.month).padStart(2,'0')}-${String(p.day).padStart(2,'0')}`:LORE_DATE_DEFAULT;})()}
-                  onChange={e=>{
-                    const n=[...d.notes];
-                    if(!e.target.value){ n[i]={...n[i],date:""}; upd("notes",n); return; }
-                    const [,m,dd]=e.target.value.split('-').map(Number);
-                    n[i]={...n[i],date:`${dd} ${LORE_MONTHS[m]}`};
-                    upd("notes",n);
-                  }}
-                  className="adm-input" style={{background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#1a1a2e",padding:"7px 8px",fontSize:11,borderRadius:7}}/>
-              </div>
+              <LoreDateTimeInput label="Date" showTime={false} width="30%"
+                value={note.date||""}
+                onChange={v=>{const n=[...d.notes];n[i]={...n[i],date:v};upd("notes",n);}}/>
               <button onClick={()=>upd("notes",d.notes.filter((_,j)=>j!==i))}
                 className="adm-del-btn" style={{background:"rgba(239,68,68,0.06)",border:"1px solid rgba(239,68,68,0.2)",color:"#ef4444",borderRadius:6,padding:"5px 10px",cursor:"pointer",fontSize:11,marginTop:18,flexShrink:0,transition:"all 0.15s"}}>✕</button>
             </div>
@@ -3571,7 +3561,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
               <div key={i} style={{display:"flex",gap:8,alignItems:"center",background:"rgba(255,255,255,0.85)",padding:"8px 10px",borderRadius:10,border:"1px solid rgba(0,0,0,0.07)",opacity:isCustom?1:0.75}}>
                 <Field label="Titre" value={art[0]||""} onChange={v=>{const w=[...effective];w[i]=[v,art[1]||"",art[2]||""];updList(w);}}/>
                 <Field label="Extrait" value={art[1]||""} onChange={v=>{const w=[...effective];w[i]=[art[0]||"",v,art[2]||""];updList(w);}} width="200px"/>
-                <Field label="Date" value={art[2]||""} onChange={v=>{const w=[...effective];w[i]=[art[0]||"",art[1]||"",v];updList(w);}} width="90px"/>
+                <LoreDateTimeInput label="Date" showTime={false} value={art[2]||""} onChange={v=>{const w=[...effective];w[i]=[art[0]||"",art[1]||"",v];updList(w);}} width="150px"/>
                 <button onClick={()=>updList(effective.filter((_,j)=>j!==i))} className="adm-del-btn" style={{background:"none",border:"none",color:"#d1d5db",cursor:"pointer",fontSize:16,padding:"0 4px",borderRadius:5}}>×</button>
               </div>
             ))}
@@ -3590,11 +3580,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
           const updFiles = (patch) => upd("files", {...files, ...patch});
           const FILE_TYPES = [".pdf",".mp3",".mp4",".mov",".jpg",".png",".doc",".docx",".xls",".xlsx",".ppt",".zip",".txt",".other"];
           const FOLDER_COLOR = "#a07018";
-          // Helpers de date des fichiers — partagés entre dossiers et racine (formats identiques).
           const FILE_EXTS=["pdf","mp3","mp4","mov","jpg","png","doc","docx","xls","xlsx","ppt","zip","txt","other"];
-          const LORE_MONTHS_SHORT=["","jan","fév","mar","avr","mai","juin","juil","août","sep","oct","nov","déc"];
-          const buildDate=(v)=>{if(!v)return"";const[,mo,da]=v.split("-").map(Number);return`${da} ${LORE_MONTHS_SHORT[mo]}`;};
-          const parseDateVal=(dt)=>{const m=(dt||"").match(/(\d+)\s+(\w+)/);if(m){const mn={jan:1,fév:2,mar:3,avr:4,mai:5,juin:6,juil:7,ao:8,sep:9,oct:10,nov:11,déc:12}[m[2].toLowerCase().slice(0,3)]||1;return`2012-${String(mn).padStart(2,"0")}-${String(m[1]).padStart(2,"0")}`;}return"2012-10-01";};
 
           return (<>
             {/* Dossiers */}
@@ -3629,9 +3615,8 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                             className="adm-input" style={{width:72,background:"rgba(255,255,255,0.9)",border:"1px solid rgba(0,0,0,0.1)",color:"#374151",padding:"5px 4px",fontSize:11,borderRadius:6,cursor:"pointer"}}>
                             {FILE_EXTS.map(e=><option key={e} value={e}>{e.toUpperCase()}</option>)}
                           </select>
-                          <input type="date" value={parseDateVal(file.date)} 
-                            onChange={e=>updFile({date:buildDate(e.target.value)})}
-                            className="adm-input" style={{flex:1,minWidth:110,background:"rgba(255,255,255,0.9)",border:"1px solid rgba(0,0,0,0.1)",color:"#1a1a2e",padding:"5px 6px",fontSize:11,borderRadius:6}}/>
+                          <LoreDateTimeInput showLabel={false} showTime={false} width="130px"
+                            value={file.date||""} onChange={v=>updFile({date:v})}/>
                           <input value={file.size||""} onChange={e=>updFile({size:e.target.value})}
                             placeholder="4,7 MB" className="adm-input"
                             style={{width:68,background:"rgba(255,255,255,0.9)",border:"1px solid rgba(0,0,0,0.1)",color:"#6b7280",padding:"5px 8px",fontSize:11,borderRadius:6}}/>
@@ -3668,9 +3653,8 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                       className="adm-input" style={{width:72,background:"rgba(255,255,255,0.9)",border:"1px solid rgba(0,0,0,0.1)",color:"#374151",padding:"6px 4px",fontSize:11,borderRadius:7,cursor:"pointer"}}>
                       {FILE_EXTS.map(e=><option key={e} value={e}>{e.toUpperCase()}</option>)}
                     </select>
-                    <input type="date" value={parseDateVal(file.date)} 
-                      onChange={e=>updFile({date:buildDate(e.target.value)})}
-                      className="adm-input" style={{flex:1,minWidth:110,background:"rgba(255,255,255,0.9)",border:"1px solid rgba(0,0,0,0.1)",color:"#1a1a2e",padding:"6px 6px",fontSize:11,borderRadius:7}}/>
+                    <LoreDateTimeInput showLabel={false} showTime={false} width="130px"
+                      value={file.date||""} onChange={v=>updFile({date:v})}/>
                     <input value={file.size||""} onChange={e=>updFile({size:e.target.value})}
                       placeholder="Taille" className="adm-input"
                       style={{width:68,background:"rgba(255,255,255,0.9)",border:"1px solid rgba(0,0,0,0.1)",color:"#6b7280",padding:"6px 8px",fontSize:11,borderRadius:7}}/>
@@ -3823,7 +3807,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                 className="adm-input" style={{width:44,background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#1a1a2e",padding:"6px 8px",fontSize:16,borderRadius:7,textAlign:"center"}} placeholder="🔬"/>
               <Field label="Nom commun" value={obs.common||""} onChange={v=>{const l=[...(d.inaturalist?.list||[])];l[i]={...l[i],common:v};upd("inaturalist",{...d.inaturalist,list:l});}}/>
               <Field label="Nom latin" value={obs.latin||""} onChange={v=>{const l=[...(d.inaturalist?.list||[])];l[i]={...l[i],latin:v};upd("inaturalist",{...d.inaturalist,list:l});}} width="180px"/>
-              <Field label="Date" value={obs.date||""} onChange={v=>{const l=[...(d.inaturalist?.list||[])];l[i]={...l[i],date:v};upd("inaturalist",{...d.inaturalist,list:l});}} width="110px"/>
+              <LoreDateTimeInput label="Date" showTime={false} value={obs.date||""} onChange={v=>{const l=[...(d.inaturalist?.list||[])];l[i]={...l[i],date:v};upd("inaturalist",{...d.inaturalist,list:l});}} width="150px"/>
               <div style={{display:"flex",gap:4,alignItems:"center",marginTop:18}}>
                 {[["Research Grade","✓ Research"],["Needs ID","? Needs ID"],["Casual","Casual"]].map(([val,lbl])=>(
                   <button key={val} onClick={()=>{const l=[...(d.inaturalist?.list||[])];l[i]={...l[i],grade:val};upd("inaturalist",{...d.inaturalist,list:l});}}

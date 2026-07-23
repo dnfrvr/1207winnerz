@@ -7,7 +7,12 @@ import { LORE_MONTHS } from "../data/seeds.js";
 // (WeatherCityCard, IgCommentEditor) mais sont montés par l'admin, donc ils ont
 // besoin de ces helpers sans créer de dépendance circulaire avec AdminBackoffice.
 
-const LoreDateTimeInput = ({value, onChange, width="100%", showLabel=true}) => {
+// Sélecteur date (calendrier natif) + heure optionnelle, unifié pour tout l'admin.
+// - Le calendrier s'ouvre toujours par défaut en octobre 2012 (date de lore) même si le
+//   champ est vide, via LORE_DATE_DEFAULT (voir note ci-dessous).
+// - showTime=false → champ date seul (pour les colonnes qui ne stockent qu'une date).
+// - label : intitulé affiché (défaut « Date / heure ») ; showLabel=false le masque.
+const LoreDateTimeInput = ({value, onChange, width="100%", showLabel=true, showTime=true, label="Date / heure"}) => {
   const parsed = parseLoreTime(value);
   // Si aucune date n'est encore posée, on pré-remplit avec la date de lore par défaut (oct. 2012)
   // plutôt que de laisser le champ vide : un <input type="date"> vide ouvre son calendrier sur la
@@ -19,7 +24,7 @@ const LoreDateTimeInput = ({value, onChange, width="100%", showLabel=true}) => {
     if(!d) return value||'';
     const [, m, day] = d.split('-').map(Number);
     let str = `${day} ${LORE_MONTHS[m]}`;
-    if(t) {
+    if(showTime && t) {
       const [hh, mm] = t.split(':').map(Number);
       const period = hh < 12 ? 'am' : 'pm';
       const h12 = hh % 12 === 0 ? 12 : hh % 12;
@@ -29,14 +34,14 @@ const LoreDateTimeInput = ({value, onChange, width="100%", showLabel=true}) => {
   };
   return (
     <div style={{display:"flex",flexDirection:"column",gap:5,width}}>
-      {showLabel && <label style={{color:"#9ca3af",fontSize:10,letterSpacing:0.8,textTransform:"uppercase",fontWeight:600}}>Date / heure</label>}
+      {showLabel && <label style={{color:"#9ca3af",fontSize:10,letterSpacing:0.8,textTransform:"uppercase",fontWeight:600}}>{label}</label>}
       <div style={{display:"flex",gap:4,flexWrap:"wrap"}}>
         <input type="date" value={dateVal}
           onChange={e=>onChange(build(e.target.value, timeVal))}
           className="adm-input" style={{flex:"1 1 120px",minWidth:0,background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#1a1a2e",padding:"7px 8px",fontSize:11,borderRadius:7}}/>
-        <input type="time" value={timeVal}
+        {showTime && <input type="time" value={timeVal}
           onChange={e=>onChange(build(dateVal, e.target.value))}
-          className="adm-input" style={{flex:"1 1 90px",minWidth:0,background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#1a1a2e",padding:"7px 8px",fontSize:11,borderRadius:7}}/>
+          className="adm-input" style={{flex:"1 1 90px",minWidth:0,background:"rgba(255,255,255,0.8)",border:"1px solid rgba(0,0,0,0.1)",color:"#1a1a2e",padding:"7px 8px",fontSize:11,borderRadius:7}}/>}
       </div>
     </div>
   );
