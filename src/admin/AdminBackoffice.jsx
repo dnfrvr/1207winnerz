@@ -716,8 +716,29 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
   const toggleGrindrDm = (id) => setGrindrOpenDms(prev => { const n=new Set(prev); n.has(id)?n.delete(id):n.add(id); return n; });
   const [msgAdminTab, setMsgAdminTab] = useState("inbox"); // "inbox" | "deleted"
   const [msgFocusId, setMsgFocusId] = useState(null); // bulle de message en cours d'édition (vue conversation)
-  const msgDragRef = useRef(null);                    // index source du message en cours de glisser-déposer
-  const [msgDropIdx, setMsgDropIdx] = useState(null); // index de la cible de dépôt (pour l'indicateur visuel)
+  const msgDragRef = useRef(null);                    // { scope, from } du message en cours de glisser-déposer
+  const [msgDropIdx, setMsgDropIdx] = useState(null); // "scope:index" de la cible de dépôt (indicateur visuel)
+  // Réordonne un tableau de messages et recalcule l'heure du message déplacé comme l'INSTANT MÉDIAN
+  // entre ses 2 nouveaux voisins (betweenLoreTimes). Partagé par les 3 éditeurs (1-à-1 / groupe / local).
+  const dragReorder = (arr, from, to) => {
+    const a=[...arr]; const [moved]=a.splice(from,1);
+    const insAt = from<to ? to-1 : to; a.splice(insAt,0,moved);
+    const t = betweenLoreTimes(a[insAt-1]?.time ?? null, a[insAt+1]?.time ?? null);
+    return t ? a.map((m,k)=>k===insAt?{...m,time:t}:m) : a;
+  };
+  // Props de glisser-déposer, SCOPÉES par conversation (`scope`) pour que deux éditeurs ouverts
+  // simultanément ne se surlignent pas et qu'on ne puisse pas glisser un message d'un fil à un autre.
+  const dropHandlers = (scope, si, arr, writeFn) => ({
+    onDragOver: e=>{ if(msgDragRef.current?.scope===scope){ e.preventDefault(); const k=scope+":"+si; if(msgDropIdx!==k) setMsgDropIdx(k); } },
+    onDrop: e=>{ e.preventDefault(); const dg=msgDragRef.current; msgDragRef.current=null; setMsgDropIdx(null); if(!dg||dg.scope!==scope||dg.from===si) return; writeFn(dragReorder(arr, dg.from, si)); },
+  });
+  const isDropTarget = (scope, si) => msgDropIdx===scope+":"+si;
+  const dragHandleProps = (scope, si) => ({
+    draggable:true,
+    onDragStart: e=>{ msgDragRef.current={scope, from:si}; e.dataTransfer.effectAllowed="move"; try{e.dataTransfer.setData("text/plain",String(si));}catch(_){} },
+    onDragEnd: ()=>{ msgDragRef.current=null; setMsgDropIdx(null); },
+  });
+  const DRAG_HANDLE_STYLE = {cursor:"grab",color:"var(--ink-faint)",fontSize:14,lineHeight:1,opacity:0.5,userSelect:"none",padding:"2px 4px",touchAction:"none",flexShrink:0};
   const [mailAdmTab, setMailAdmTab] = useState("inbox"); // "inbox" | "drafts" | "deleted"
   const [twTab, setTwTab] = useState("users"); // "users" | "shared" | "tweets"
   const [tbTab, setTbTab] = useState("users"); // "users" | "shared" | "feed"
@@ -1257,6 +1278,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                       // Firebase stocke donc toujours les messages dans l'ordre chronologique.
                       const sortedThread = thread; // ordre stocké stable (le téléphone trie par heure)
                       const writeThread = (t) => onUpdate(gid, t.map((m,k)=>m.id!=null?m:{...m,id:Date.now()+k}));
+                      const dragScopeG = "g_"+gid; // glisser-déposer scopé à ce groupe partagé
                       const senderOptions = allMembers.map(m=>({
                         key:m, label:CHAR_NAMES[m]||m, color:CHAR_COLORS[m]||"var(--accent)"
                       }));
@@ -1280,8 +1302,10 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                             };
                             return (
                             <React.Fragment key={m2.id ?? si}>
-                            <div style={{display:"flex",flexDirection:"column",gap:4,background:"var(--line-soft)",borderRadius:8,padding:"8px 10px",border:"1px solid var(--line-soft)"}}>
+                            <div {...dropHandlers(dragScopeG, si, sortedThread, writeThread)}
+                              style={{display:"flex",flexDirection:"column",gap:4,background:"var(--line-soft)",borderRadius:8,padding:"8px 10px",border:"1px solid var(--line-soft)",borderTop: isDropTarget(dragScopeG,si)?"2px solid var(--accent)":"1px solid var(--line-soft)"}}>
                               <div style={{display:"flex",gap:6,alignItems:"center"}}>
+                                <span {...dragHandleProps(dragScopeG, si)} title="Glisser pour déplacer (l'heure se recalcule entre les 2 voisins)" style={DRAG_HANDLE_STYLE}>⠿</span>
                                 <div style={{display:"flex",flexDirection:"column",gap:2,flexShrink:0}}>
                                   <MsgMoveBtn dir="up" disabled={si===0} onClick={()=>{const t=[...sortedThread];[t[si-1],t[si]]=[t[si],t[si-1]];t[si]={...t[si],time:shiftLoreTime(t[si].time,-1)};writeThread(t);}}/>
                                   <MsgMoveBtn dir="down" disabled={si===sortedThread.length-1} onClick={()=>{const t=[...sortedThread];[t[si+1],t[si]]=[t[si],t[si+1]];t[si]={...t[si],time:shiftLoreTime(t[si].time,+1)};writeThread(t);}}/>
@@ -1311,6 +1335,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                       const rawLocal = gMsg.thread||[];
                       const sortedLocal = rawLocal; // ordre stocké stable (le téléphone trie par heure)
                       const writeLocal = (t) => { const ti=t.map((m,k)=>m.id!=null?m:{...m,id:Date.now()+k}); upd("messages", d.messages.map(m=>m===gMsg ? {...m, thread:ti} : m)); };
+                      const dragScopeGL = "gl_"+(gMsg.id); // glisser-déposer scopé à ce groupe local
                       const insertAt = (si) => {
                         const prev=sortedLocal[si-1]; const next=sortedLocal[si];
                         const time=next?.time||prev?.time||"1 oct, 9:00am";
@@ -1326,8 +1351,10 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                             const updMsg = (patch) => { const t=[...sortedLocal]; t[si]={...t[si],...patch}; writeLocal(t); };
                             return (
                             <React.Fragment key={m2.id ?? si}>
-                            <div style={{display:"flex",flexDirection:"column",gap:4,background:"var(--line-soft)",borderRadius:8,padding:"8px 10px",border:"1px solid var(--line-soft)"}}>
+                            <div {...dropHandlers(dragScopeGL, si, sortedLocal, writeLocal)}
+                              style={{display:"flex",flexDirection:"column",gap:4,background:"var(--line-soft)",borderRadius:8,padding:"8px 10px",border:"1px solid var(--line-soft)",borderTop: isDropTarget(dragScopeGL,si)?"2px solid var(--accent)":"1px solid var(--line-soft)"}}>
                               <div style={{display:"flex",gap:6,alignItems:"center",flexWrap:"wrap"}}>
+                                <span {...dragHandleProps(dragScopeGL, si)} title="Glisser pour déplacer (l'heure se recalcule entre les 2 voisins)" style={DRAG_HANDLE_STYLE}>⠿</span>
                                 <div style={{display:"flex",flexDirection:"column",gap:2,flexShrink:0}}>
                                   <MsgMoveBtn dir="up" disabled={si===0} onClick={()=>{const t=[...sortedLocal];[t[si-1],t[si]]=[t[si],t[si-1]];t[si]={...t[si],time:shiftLoreTime(t[si].time,-1)};writeLocal(t);}}/>
                                   <MsgMoveBtn dir="down" disabled={si===sortedLocal.length-1} onClick={()=>{const t=[...sortedLocal];[t[si+1],t[si]]=[t[si],t[si+1]];t[si]={...t[si],time:shiftLoreTime(t[si].time,+1)};writeLocal(t);}}/>
@@ -1477,19 +1504,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                 writeThread(t);
               };
               const patch = (si, p) => { const t=[...sortedDisplay]; t[si]={...t[si],...p}; writeThread(t); };
-              // Glisser-déposer : déplace le message et recalcule son heure comme l'INSTANT MÉDIAN entre
-              // ses 2 nouveaux voisins (se situe naturellement dans le temps). Un seul voisin → ±5 min.
-              const doDrop = (to) => {
-                const from = msgDragRef.current;
-                msgDragRef.current = null; setMsgDropIdx(null);
-                if(from==null || from===to) return;
-                const arr=[...sortedDisplay];
-                const [moved]=arr.splice(from,1);
-                const insAt = from<to ? to-1 : to;
-                arr.splice(insAt,0,moved);
-                const t = betweenLoreTimes(arr[insAt-1]?.time ?? null, arr[insAt+1]?.time ?? null);
-                writeThread(t ? arr.map((m,k)=>k===insAt?{...m,time:t}:m) : arr);
-              };
+              const dragScope = "c_"+(msg.sharedThreadId||msg.id||tab); // glisser-déposer scopé à cette conv
               const otherLabel = (msg.contact||"").trim() || "reçu";
               return (<div style={{maxWidth:600,margin:"0 auto",width:"100%",display:"flex",flexDirection:"column"}}>
               <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:8,flexWrap:"wrap",marginBottom:6}}>
@@ -1506,16 +1521,11 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                   const focused = msgFocusId===mid;
                   return (
                   <div key={msg2.id ?? si}
-                    onDragOver={e=>{ if(msgDragRef.current!=null){ e.preventDefault(); if(msgDropIdx!==si) setMsgDropIdx(si); } }}
-                    onDrop={e=>{ e.preventDefault(); doDrop(si); }}
+                    {...dropHandlers(dragScope, si, sortedDisplay, writeThread)}
                     style={{display:"flex",flexDirection:"column",alignItems:isMe?"flex-end":"flex-start",gap:3,position:"relative",
-                      borderTop: msgDropIdx===si ? "2px solid var(--accent)" : "2px solid transparent", paddingTop:2}}>
-                    {/* Poignée de glisser-déposer : déplace le message ; son heure devient l'instant médian entre ses 2 voisins. */}
-                    <span draggable
-                      onDragStart={e=>{ msgDragRef.current=si; e.dataTransfer.effectAllowed="move"; try{e.dataTransfer.setData("text/plain",String(si));}catch(_){} }}
-                      onDragEnd={()=>{ msgDragRef.current=null; setMsgDropIdx(null); }}
-                      title="Glisser pour déplacer — l'heure se recalcule entre les 2 voisins"
-                      style={{position:"absolute",top:0,[isMe?"left":"right"]:-4,cursor:"grab",color:"var(--ink-faint)",fontSize:14,lineHeight:1,opacity:0.5,userSelect:"none",padding:"2px 4px",touchAction:"none"}}>⠿</span>
+                      borderTop: isDropTarget(dragScope,si) ? "2px solid var(--accent)" : "2px solid transparent", paddingTop:2}}>
+                    <span {...dragHandleProps(dragScope, si)} title="Glisser pour déplacer — l'heure se recalcule entre les 2 voisins"
+                      style={{...DRAG_HANDLE_STYLE, position:"absolute", top:0, [isMe?"left":"right"]:-4}}>⠿</span>
                     <div style={{maxWidth:"86%",minWidth:focused?"min(280px,86%)":140,display:"flex",flexDirection:"column",alignItems:isMe?"flex-end":"flex-start",gap:4,width:focused?"86%":"auto"}}>
                       {msg2.img && <div style={{position:"relative"}}>
                         <img src={msg2.img} style={{maxWidth:"100%",maxHeight:180,borderRadius:13,display:"block",border:"1px solid var(--line)"}}/>
