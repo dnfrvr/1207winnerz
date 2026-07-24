@@ -21,10 +21,6 @@ const KindleScreen = ({isIos, data}) => {
   ];
   return (
     <div style={{flex:1,display:"flex",flexDirection:"column",background:bg,minHeight:0}}>
-      {isIos && <div style={{background:"#232f3e",padding:"10px 14px",display:"flex",alignItems:"center",justifyContent:"space-between",flexShrink:0}}>
-        <span style={{color:AMZ,fontWeight:700,fontSize:18,letterSpacing:-0.5}}>kindle</span>
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="8" stroke="#fff" strokeWidth="1.8"/><path d="M21 21l-3-3" stroke="#fff" strokeWidth="1.8" strokeLinecap="round"/></svg>
-      </div>}
       <div style={{flex:1,overflowY:"auto",minHeight:0}}>
         {tab==="library"&&books.map((b,i)=>{
           const hue = (b.hue!==undefined) ? b.hue : (i*60)%360;

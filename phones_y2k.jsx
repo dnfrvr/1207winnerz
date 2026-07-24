@@ -517,7 +517,7 @@ const IOSPhone = ({data,admin,onUpdate,onUpdateShared=()=>{},loreDate:loreDatePr
     espn:       ["#c0392b","#a93226","#922b21"],
     shazam:     ["#0088ff","#006fd4","#0057aa"],
     wikipedia:  ["#5b91ce","#4076b8","#35649a"],
-    kindle:     ["#1a1a1a","#111","#000"],
+    kindle:     ["#232f3e","#1a2432","#131921"],
     inaturalist:["#74ac00","#5e8c00","#487000"],
     reddit:     ["#ff4500","#dd3c00","#bb3200"],
     twitter:    ["#1da1f2","#0d8dd4","#0077b6"],
