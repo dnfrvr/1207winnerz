@@ -105,4 +105,50 @@ const findBase64Images = (obj, path = []) => {
   return found;
 };
 
-export { supabaseClient, UploadReader, dataUriToBlob, uploadBlobToSupabase, findBase64Images };
+// ─── SNAPSHOTS (backups admin) HORS DE LA RACINE FIREBASE ────────────────────
+// Avant, chaque snapshot (copie complète de toute la base) était stocké dans Firebase
+// sous _snapshots/. Comme l'app écoute la racine entière, tout le monde re-téléchargeait
+// jusqu'à 10 copies complètes à chaque connexion ET à chaque modif → « Connexion… »
+// interminable. Désormais la donnée volumineuse du snapshot part sur Supabase Storage
+// (bucket "uploads", dossier snapshots/) ; Firebase ne garde qu'un index ultra-léger
+// (ts + label + chemin), qui ne pèse plus rien dans la synchro temps-réel.
+const SNAP_PREFIX = "snapshots/";
+
+// Upload la donnée JSON d'un snapshot vers Supabase. Retourne {path, url} ou null si échec.
+const saveSnapshotToSupabase = async (dataObj, ts) => {
+  if (!supabaseClient) return null;
+  try {
+    const path = `${SNAP_PREFIX}${ts}.json`;
+    const blob = new Blob([JSON.stringify(dataObj)], { type: "application/json" });
+    const { error } = await supabaseClient.storage
+      .from("uploads")
+      .upload(path, blob, { cacheControl: "3600", upsert: true });
+    if (error) throw error;
+    const { data: urlData } = supabaseClient.storage.from("uploads").getPublicUrl(path);
+    return { path, url: urlData.publicUrl };
+  } catch (err) {
+    console.error("[snapshot] Upload Supabase échoué :", err.message || err);
+    return null;
+  }
+};
+
+// Télécharge et parse la donnée JSON d'un snapshot depuis Supabase (via URL publique ou chemin).
+const loadSnapshotFromSupabase = async (urlOrPath) => {
+  let url = urlOrPath;
+  if (url && !url.startsWith("http") && supabaseClient) {
+    url = supabaseClient.storage.from("uploads").getPublicUrl(urlOrPath).data.publicUrl;
+  }
+  const res = await fetch(url);
+  if (!res.ok) throw new Error("Téléchargement du snapshot échoué (" + res.status + ")");
+  return await res.json();
+};
+
+// Supprime le fichier d'un snapshot élagué (best-effort — si la policy refuse, on ignore).
+const deleteSnapshotFromSupabase = async (path) => {
+  if (!supabaseClient || !path) return;
+  try { await supabaseClient.storage.from("uploads").remove([path]); }
+  catch (e) { /* best effort : un fichier orphelin ne casse rien */ }
+};
+
+export { supabaseClient, UploadReader, dataUriToBlob, uploadBlobToSupabase, findBase64Images,
+  saveSnapshotToSupabase, loadSnapshotFromSupabase, deleteSnapshotFromSupabase };

@@ -3,7 +3,7 @@ import { ref, onValue, set, update } from "firebase/database";
 import { FF_IOS } from "../shared/constants.js";
 import { APP_META } from "../shared/app-meta.js";
 import { loreSortKey, parseLoreTime, LORE_DATE_DEFAULT } from "../shared/lore-date.js";
-import { UploadReader, dataUriToBlob, findBase64Images, uploadBlobToSupabase, supabaseClient } from "../lib/storage.js";
+import { UploadReader, dataUriToBlob, findBase64Images, uploadBlobToSupabase, supabaseClient, loadSnapshotFromSupabase } from "../lib/storage.js";
 import { firebaseDb } from "../lib/firebase.js";
 import { CHAR_NAMES } from "../data/characters.js";
 import { LORE_MONTHS, CHARACTERS, TWITTER_HOME_BASE } from "../data/seeds.js";
@@ -543,8 +543,10 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
       unsub = onValue(ref(firebaseDb, "_snapshots"), s => {
         if (unsub) unsub();
         const val = s.val() || {};
+        // Index léger : data vit sur Supabase (url/path). On garde `data` en fallback pour
+        // d'éventuelles entrées héritées non encore purgées.
         const list = Object.entries(val)
-          .map(([ts, snap]) => ({ts, label: snap.label, data: snap.data}))
+          .map(([ts, snap]) => ({ts, label: snap.label, data: snap.data, url: snap.url, path: snap.path}))
           .sort((a,b) => b.ts - a.ts); // plus récent en premier
         setSnapshots(list);
         setRestoreStatus(list.length ? null : "empty");
@@ -552,11 +554,15 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
     } catch(e) { setRestoreStatus("error"); }
   };
   const doRestore = async (snap) => {
-    if (!firebaseDb || !snap.data) return;
+    if (!firebaseDb) return;
     if (!window.confirm(`Restaurer l'état du ${snap.label} ?\nToutes les données actuelles seront remplacées.`)) return;
     setRestoreStatus("loading");
     try {
-      await set(ref(firebaseDb), snap.data);
+      // Donnée héritée directement dans Firebase, sinon on la télécharge depuis Supabase.
+      let data = snap.data;
+      if (!data && (snap.url || snap.path)) data = await loadSnapshotFromSupabase(snap.url || snap.path);
+      if (!data) { setRestoreStatus("error"); return; }
+      await set(ref(firebaseDb), data);
       setRestoreOpen(false); setRestoreStatus(null);
     } catch(e) { setRestoreStatus("error"); }
   };
@@ -1103,10 +1109,12 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                         <input value={meta.name||""} onChange={e=>{
                           const newMeta={...(dataRef.current.groupMeta||{}),[gid]:{...meta,name:e.target.value}};
                           onUpdate("groupMeta",newMeta);
-                          // Sync le nom dans tous les messages de tous les persos
+                          // Sync le nom dans tous les messages de tous les persos.
+                          // Lire dataRef.current (pas le closure `data`, potentiellement périmé) : sinon
+                          // on renvoie un objet perso figé et on peut réécrire par-dessus des edits récents.
                           ['glinda','eoghan','drew','elias'].forEach(k=>{
-                            const kd=data[k];if(!kd)return;
-                            const updated=kd.messages.map(m=>m.sharedThreadId===gid?{...m,contact:e.target.value}:m);
+                            const kd=dataRef.current[k];if(!kd)return;
+                            const updated=(kd.messages||[]).map(m=>m.sharedThreadId===gid?{...m,contact:e.target.value}:m);
                             onUpdate(k,{...kd,messages:updated});
                           });
                         }} className="adm-input" placeholder="Nom du groupe"
@@ -1135,8 +1143,12 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                                 const next=isMember?cur.filter(m=>m!==k):[...cur,k];
                                 const newMeta={...(dataRef.current.groupMeta||{}),[gid]:{...meta,members:next}};
                                 onUpdate("groupMeta",newMeta);
-                                // Ajouter/retirer la conv groupe du perso
-                                const kd=data[k];if(!kd)return;
+                                // Ajouter/retirer la conv groupe du perso.
+                                // Lire dataRef.current (état le plus frais) et non le closure `data` :
+                                // sur un data périmé, le garde-fou `some(sharedThreadId===gid)` ne voyait
+                                // pas une conv ajoutée juste avant (toggle rapide / round-trip Firebase)
+                                // et on prépendait un 2e exemplaire → groupe dédoublé dans le tel.
+                                const kd=dataRef.current[k];if(!kd)return;
                                 if(!isMember){
                                   if(!(kd.messages||[]).some(m=>m.sharedThreadId===gid)){
                                     onUpdate(k,{...kd,messages:[{id:Date.now(),contact:meta.name||gMsg.contact,sharedThreadId:gid,isGroup:true,unread:false,thread:[]},...(kd.messages||[])]});

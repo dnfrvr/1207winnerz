@@ -2,7 +2,7 @@
 import React, { useState, useRef, useEffect, memo, useContext } from "react";
 import { ref, onValue, update, set } from "firebase/database";
 import { firebaseDb } from "./src/lib/firebase.js";
-import { supabaseClient, UploadReader, dataUriToBlob, uploadBlobToSupabase, findBase64Images } from "./src/lib/storage.js";
+import { supabaseClient, UploadReader, dataUriToBlob, uploadBlobToSupabase, findBase64Images, saveSnapshotToSupabase, deleteSnapshotFromSupabase } from "./src/lib/storage.js";
 import { shallowDiffPatch, deepDiffPatch, setDeepPath } from "./src/lib/deep.js";
 import { CHAR_NAMES, GROUP_THREAD_ID, GROUP_SEED, mkData } from "./src/data/characters.js";
 import { FORCED_ACCENTS, FORCED_PLAYLISTS, SEED_VERSION, SEED_SHARED_TWEETS, SEED_HOME_BASE_TWEETS, TUMBLR_PERSO_USERNAMES, SEED_SHARED_TUMBLR_POSTS, SEED_FEED_TUMBLR, FB_PERSO_NAMES, FB_NAME_TO_AUTHOR, NOTIF_SEED, CHARACTERS, LORE_MONTHS, TUMBLR_FEED_POSTS_DEFAULT, TWITTER_HOME_BASE, TWITTER_PROFILE_TWEETS } from "./src/data/seeds.js";
@@ -3376,7 +3376,12 @@ export default function App() {
     if (now - lastSnapshotTime.current < 30_000) return; // throttle 30s
     lastSnapshotTime.current = now;
     try {
-      // Lire la liste des snapshots existants pour en supprimer les plus anciens
+      // La donnée volumineuse du snapshot part sur Supabase Storage (hors de la racine Firebase
+      // écoutée) ; si Supabase est indispo on saute ce snapshot plutôt que de ré-alourdir Firebase.
+      const { _snapshots, ...dataWithoutSnapshots } = currentData || {};
+      const saved = await saveSnapshotToSupabase(dataWithoutSnapshots, now);
+      if (!saved) return;
+      // Lire l'index (léger) des snapshots existants pour élaguer les plus anciens.
       const snapRef = ref(firebaseDb, "_snapshots");
       const snap = await new Promise(resolve => {
         // Simple one-time read via onValue with immediate unsubscribe.
@@ -3389,13 +3394,16 @@ export default function App() {
       const existing = snap ? Object.keys(snap).sort() : [];
       const toDelete = existing.length >= MAX_SNAPSHOTS ? existing.slice(0, existing.length - MAX_SNAPSHOTS + 1) : [];
       const updates = {};
-      toDelete.forEach(ts => { updates[`_snapshots/${ts}`] = null; });
-      // Créer le nouveau snapshot — on exclut les snapshots eux-mêmes pour éviter la récursion
-      const { _snapshots, ...dataWithoutSnapshots } = currentData || {};
+      toDelete.forEach(ts => {
+        updates[`_snapshots/${ts}`] = null;
+        deleteSnapshotFromSupabase(snap[ts]?.path); // best-effort : purge le fichier Supabase élagué
+      });
+      // Nouvel index léger : uniquement ts/label/path/url — PAS la donnée (elle est sur Supabase).
       updates[`_snapshots/${now}`] = {
         ts: now,
         label: new Date(now).toLocaleString("fr-FR"),
-        data: dataWithoutSnapshots,
+        path: saved.path,
+        url: saved.url,
       };
       await update(ref(firebaseDb), updates);
     } catch(e) {
@@ -3501,6 +3509,20 @@ export default function App() {
 
             update(ref(firebaseDb), patches).catch(e => console.error("[seed] Erreur migration seeds :", e));
           }
+
+          // Purge unique des snapshots « lourds » hérités (ancien format : la donnée complète était
+          // stockée dans Firebase sous _snapshots/<ts>.data). Ce sont eux qui gonflaient la racine
+          // écoutée et rendaient la connexion interminable. On supprime toutes ces entrées d'un coup
+          // (relief immédiat) ; les nouveaux snapshots ne gardent qu'un index léger, la donnée vivant
+          // désormais sur Supabase Storage. Les backups déjà pris dans l'ancien format sont perdus —
+          // c'est le prix de la migration, assumé.
+          const legacySnaps = remote._snapshots || {};
+          const legacyKeys = Object.keys(legacySnaps).filter(ts => legacySnaps[ts] && legacySnaps[ts].data !== undefined);
+          if (legacyKeys.length) {
+            const purge = {};
+            legacyKeys.forEach(ts => { purge[`_snapshots/${ts}`] = null; });
+            update(ref(firebaseDb), purge).catch(e => console.warn("[snapshot] Purge héritée échouée :", e.message));
+          }
         }
         setData(() => {
           // Ré-applique par-dessus le snapshot reçu toute écriture locale pas encore envoyée à
@@ -3578,8 +3600,12 @@ export default function App() {
 
   const updateChar = (key, d, skipSync=false) => {
     setData(prev => {
-      // Shared thread update: key exists in sharedThreads, starts with "_shared" (sauf _sharedAndroidIcons, qui vit à la racine de data), ou est un pair/group key connu
-      const isSharedKey = key!=='_sharedAndroidIcons' && ((key in (prev.sharedThreads||{})) || key.startsWith('_shared') || key==='groupMeta');
+      // Shared thread update: key exists in sharedThreads, starts with "_shared" (sauf _sharedAndroidIcons, qui vit à la racine de data), ou est un pair/group key connu.
+      // /^group(_|$)/ : un groupe FRAÎCHEMENT créé porte l'id "group_<timestamp>" et n'existe pas
+      // encore dans prev.sharedThreads — sans cette détection, sa toute première écriture (et donc
+      // le bouton "+ message") atterrissait à la racine de data comme si c'était un perso, jamais
+      // dans sharedThreads/<gid>, si bien que l'éditeur relisait un thread vide. ("group" seedé matche déjà.)
+      const isSharedKey = key!=='_sharedAndroidIcons' && ((key in (prev.sharedThreads||{})) || key.startsWith('_shared') || key==='groupMeta' || /^group(_|$)/.test(key));
       if(isSharedKey) {
         if(key==='groupMeta') {
           const mergedMeta = {...(prev.groupMeta||{}), ...d};
