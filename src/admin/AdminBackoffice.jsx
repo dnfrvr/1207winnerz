@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { ref, onValue, set, update } from "firebase/database";
 import { FF_IOS } from "../shared/constants.js";
 import { APP_META } from "../shared/app-meta.js";
-import { loreSortKey, parseLoreTime, LORE_DATE_DEFAULT } from "../shared/lore-date.js";
+import { loreSortKey, parseLoreTime, LORE_DATE_DEFAULT, betweenLoreTimes } from "../shared/lore-date.js";
 import { perspectiveOf, isMainPairThread } from "../shared/messages.js";
 import { UploadReader, dataUriToBlob, findBase64Images, uploadBlobToSupabase, supabaseClient, loadSnapshotFromSupabase } from "../lib/storage.js";
 import { firebaseDb } from "../lib/firebase.js";
@@ -716,6 +716,8 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
   const toggleGrindrDm = (id) => setGrindrOpenDms(prev => { const n=new Set(prev); n.has(id)?n.delete(id):n.add(id); return n; });
   const [msgAdminTab, setMsgAdminTab] = useState("inbox"); // "inbox" | "deleted"
   const [msgFocusId, setMsgFocusId] = useState(null); // bulle de message en cours d'édition (vue conversation)
+  const msgDragRef = useRef(null);                    // index source du message en cours de glisser-déposer
+  const [msgDropIdx, setMsgDropIdx] = useState(null); // index de la cible de dépôt (pour l'indicateur visuel)
   const [mailAdmTab, setMailAdmTab] = useState("inbox"); // "inbox" | "drafts" | "deleted"
   const [twTab, setTwTab] = useState("users"); // "users" | "shared" | "tweets"
   const [tbTab, setTbTab] = useState("users"); // "users" | "shared" | "feed"
@@ -1475,6 +1477,19 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                 writeThread(t);
               };
               const patch = (si, p) => { const t=[...sortedDisplay]; t[si]={...t[si],...p}; writeThread(t); };
+              // Glisser-déposer : déplace le message et recalcule son heure comme l'INSTANT MÉDIAN entre
+              // ses 2 nouveaux voisins (se situe naturellement dans le temps). Un seul voisin → ±5 min.
+              const doDrop = (to) => {
+                const from = msgDragRef.current;
+                msgDragRef.current = null; setMsgDropIdx(null);
+                if(from==null || from===to) return;
+                const arr=[...sortedDisplay];
+                const [moved]=arr.splice(from,1);
+                const insAt = from<to ? to-1 : to;
+                arr.splice(insAt,0,moved);
+                const t = betweenLoreTimes(arr[insAt-1]?.time ?? null, arr[insAt+1]?.time ?? null);
+                writeThread(t ? arr.map((m,k)=>k===insAt?{...m,time:t}:m) : arr);
+              };
               const otherLabel = (msg.contact||"").trim() || "reçu";
               return (<div style={{maxWidth:600,margin:"0 auto",width:"100%",display:"flex",flexDirection:"column"}}>
               <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:8,flexWrap:"wrap",marginBottom:6}}>
@@ -1490,7 +1505,17 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                   const mid = msg2.id ?? ("i"+si);
                   const focused = msgFocusId===mid;
                   return (
-                  <div key={msg2.id ?? si} style={{display:"flex",flexDirection:"column",alignItems:isMe?"flex-end":"flex-start",gap:3}}>
+                  <div key={msg2.id ?? si}
+                    onDragOver={e=>{ if(msgDragRef.current!=null){ e.preventDefault(); if(msgDropIdx!==si) setMsgDropIdx(si); } }}
+                    onDrop={e=>{ e.preventDefault(); doDrop(si); }}
+                    style={{display:"flex",flexDirection:"column",alignItems:isMe?"flex-end":"flex-start",gap:3,position:"relative",
+                      borderTop: msgDropIdx===si ? "2px solid var(--accent)" : "2px solid transparent", paddingTop:2}}>
+                    {/* Poignée de glisser-déposer : déplace le message ; son heure devient l'instant médian entre ses 2 voisins. */}
+                    <span draggable
+                      onDragStart={e=>{ msgDragRef.current=si; e.dataTransfer.effectAllowed="move"; try{e.dataTransfer.setData("text/plain",String(si));}catch(_){} }}
+                      onDragEnd={()=>{ msgDragRef.current=null; setMsgDropIdx(null); }}
+                      title="Glisser pour déplacer — l'heure se recalcule entre les 2 voisins"
+                      style={{position:"absolute",top:0,[isMe?"left":"right"]:-4,cursor:"grab",color:"var(--ink-faint)",fontSize:14,lineHeight:1,opacity:0.5,userSelect:"none",padding:"2px 4px",touchAction:"none"}}>⠿</span>
                     <div style={{maxWidth:"86%",minWidth:focused?"min(280px,86%)":140,display:"flex",flexDirection:"column",alignItems:isMe?"flex-end":"flex-start",gap:4,width:focused?"86%":"auto"}}>
                       {msg2.img && <div style={{position:"relative"}}>
                         <img src={msg2.img} style={{maxWidth:"100%",maxHeight:180,borderRadius:13,display:"block",border:"1px solid var(--line)"}}/>
