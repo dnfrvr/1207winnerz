@@ -19,11 +19,33 @@ export const MessagesScreen = ({
   getThread, fmtTime,
   Shell, NavBar, statusBar,
 }) => {
+  // Filet anti-doublon (non destructif). La synchro Firebase des tableaux `messages` se fait par
+  // index ; à plusieurs appareils/onglets, la fusion peut laisser plusieurs entrées pour une même
+  // conversation partagée (même sharedThreadId), parfois avec une perspective incohérente (on voit
+  // alors le point de vue de l'autre perso). On n'affiche qu'UNE ligne par sharedThreadId — la
+  // première dans l'ordre d'origine (typiquement l'entrée du seed, la bonne). Les données Firebase
+  // ne sont PAS modifiées ; seul l'affichage est nettoyé. Les convs locales (sans sharedThreadId)
+  // ont un id unique et ne sont jamais fusionnées → gardées telles quelles.
+  // `pairs` = tableau de [msg, indexOriginal] (l'index sert à setThread → ouvrir la bonne conv).
+  const dedupeConvs = (pairs) => {
+    const seen = new Set();
+    return pairs.filter(([m]) => {
+      if (!m.sharedThreadId) return true;
+      if (seen.has(m.sharedThreadId)) return false;
+      seen.add(m.sharedThreadId);
+      return true;
+    });
+  };
+
   // ── iOS ────────────────────────────────────────────────────────────────────
   if (isIos) {
     if (thread === null) {
+      // key={i} (index d'origine, unique) et NON msg.id : le seed contient des conversations qui
+      // partagent le même id (ex: deux convs id:9). Des clés React dupliquées font que React
+      // « duplique et/ou omet » des éléments — une conv peut alors s'afficher sous l'identité d'une
+      // autre (ex: Nils qui devient Matthew). L'index de la conv dans data.messages est unique.
       const renderConvRow = (msg, i, dim=false) => (
-        <div key={msg.id} onClick={()=>setThread(i)} style={{background:"#fff",borderBottom:"0.5px solid #c8c7cc",display:"flex",cursor:"pointer",alignItems:"stretch",opacity:dim?0.55:1}}>
+        <div key={i} onClick={()=>setThread(i)} style={{background:"#fff",borderBottom:"0.5px solid #c8c7cc",display:"flex",cursor:"pointer",alignItems:"stretch",opacity:dim?0.55:1}}>
 
             <div style={{width:18,flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",paddingLeft:6}}>
               {msg.unread&&<div style={{width:10,height:10,borderRadius:"50%",background:"#007aff"}}/>}
@@ -43,7 +65,7 @@ export const MessagesScreen = ({
             </div>
         </div>
       );
-      const deletedConvs = data.messages.map((m,i)=>[m,i]).filter(([m])=>m.deleted);
+      const deletedConvs = dedupeConvs(data.messages.map((m,i)=>[m,i]).filter(([m])=>m.deleted));
       if(msgView==="deleted") return (
       <Shell>{statusBar}<NavBar title="Deleted Conversations" back={()=>setMsgView("inbox")}/>
         <div style={{flex:1,background:"#f2f2f7",overflowY:"auto",minHeight:0}}>
@@ -65,7 +87,7 @@ export const MessagesScreen = ({
               <span style={{color:"#c8c7cc",lineHeight:1}}><svg width="8" height="14" viewBox="0 0 8 14" fill="none"><path d="M1 1l6 6-6 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg></span>
             </div>
           )}
-          {(()=>{const sp=data.messages.map((m,i)=>[m,i]).filter(([m])=>!m.deleted).sort(([a],[b])=>{const ta=getThread(a),tb=getThread(b);return loreSortKey(tb[tb.length-1]?.time)-loreSortKey(ta[ta.length-1]?.time);});return sp.map(([msg,i])=>renderConvRow(msg,i,false));})()}
+          {(()=>{const sp=dedupeConvs(data.messages.map((m,i)=>[m,i]).filter(([m])=>!m.deleted)).sort(([a],[b])=>{const ta=getThread(a),tb=getThread(b);return loreSortKey(tb[tb.length-1]?.time)-loreSortKey(ta[ta.length-1]?.time);});return sp.map(([msg,i])=>renderConvRow(msg,i,false));})()}
         </div>
       </Shell>
       );
@@ -139,8 +161,7 @@ export const MessagesScreen = ({
     <Shell>
       {statusBar}<NavBar title="Messages" back={goHome} overflow/>
       <div style={{flex:1,background:"#f5f5f5",overflowY:"auto"}}>
-        {[...data.messages]
-          .map((m,i)=>[m,i])
+        {dedupeConvs([...data.messages].map((m,i)=>[m,i]))
           .sort(([a],[b])=>{const ta=getThread(a),tb=getThread(b);return loreSortKey(tb[tb.length-1]?.time)-loreSortKey(ta[ta.length-1]?.time);})
           .map(([msg,i])=>{
             const lastMsg=(()=>{const _t=getThread(msg);return _t[_t.length-1];})();
@@ -148,7 +169,7 @@ export const MessagesScreen = ({
             const initials=(msg.contact||"?").split(" ").map(w=>w[0]).join("").slice(0,2).toUpperCase();
             const avatarColor=["#e53935","#1e88e5","#43a047","#fb8c00","#8e24aa","#00897b"][msg.contact.charCodeAt(0)%6];
             return (
-            <div key={msg.id} onClick={()=>setThread(i)} style={{
+            <div key={i} onClick={()=>setThread(i)} style={{
               padding:"12px 16px",
               borderBottom:"1px solid #e0e0e0",
               display:"flex",gap:14,cursor:"pointer",alignItems:"center",

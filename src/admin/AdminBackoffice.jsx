@@ -1099,6 +1099,22 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                 const gKey = "g_" + (gid||gMsg.id);
                 const gOpen = openConvs.has(gKey);
                 const threadLen = gid ? (data.sharedThreads?.[gid]||[]).length : (gMsg.thread||[]).length;
+                // Supprimer un groupe : on retire la conv de TOUS les persos concernés (c'est ce qui
+                // le fait disparaître des téléphones) + les métadonnées. Le fil partagé lui-même est
+                // laissé orphelin dans sharedThreads (inoffensif : plus aucune conv n'y pointe).
+                const deleteGroup = () => {
+                  if(!window.confirm(`Supprimer le groupe « ${meta.name||gMsg.contact||"sans nom"} » ?\nLa conversation sera retirée de tous les téléphones concernés. (Cette action est définitive.)`)) return;
+                  if(isSharedGroup){
+                    ['glinda','eoghan','drew','elias'].forEach(k=>{
+                      const kd=dataRef.current[k]; if(!kd) return;
+                      if((kd.messages||[]).some(m=>m.sharedThreadId===gid))
+                        onUpdate(k,{...kd,messages:(kd.messages||[]).filter(m=>m.sharedThreadId!==gid)});
+                    });
+                    onUpdate("groupMeta",{...(dataRef.current.groupMeta||{}),[gid]:null});
+                  } else {
+                    upd("messages", d.messages.filter(m=>m!==gMsg));
+                  }
+                };
                 return (
                   <div key={gid||gMsg.id} style={{background:"var(--card)",borderRadius:8,border:"1px solid var(--line)",overflow:"hidden"}}>
                     {/* ── Header toggle ── */}
@@ -1128,6 +1144,9 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                           placeholder="Nom du groupe"/>
                       )}
                       <span style={{fontSize:10,color:"var(--ink-faint)",flexShrink:0,marginLeft:"auto"}}>{threadLen} msg</span>
+                      <button onClick={e=>{e.stopPropagation(); deleteGroup();}}
+                        className="adm-del-btn" title="Supprimer le groupe"
+                        style={{background:"none",border:"none",color:"var(--ink-faint)",cursor:"pointer",fontSize:16,padding:"0 4px",flexShrink:0,lineHeight:1}}>✕</button>
                     </div>
                     {gOpen && isSharedGroup && (
                       <div style={{padding:"0 12px 12px",display:"flex",flexDirection:"column",gap:8,borderTop:"1px solid var(--line-soft)"}}>
@@ -1319,7 +1338,9 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
 
         {/* ── Conversations 1-à-1 ───────────────────────────────── */}
         {visibleMsgs.map((msg,i)=>{
-          const cKey = "c_" + tab + "_" + msg.id;
+          // Inclure l'index : le seed contient des convs au même id (ex: deux id:9). Sans l'index,
+          // deux cartes partageraient la même clé React ET le même état plié/déplié (openConvs).
+          const cKey = "c_" + tab + "_" + i + "_" + (msg.id ?? "");
           const cOpen = openConvs.has(cKey);
           const threadLen = msg.sharedThreadId
             ? (data.sharedThreads?.[msg.sharedThreadId]||[]).length
