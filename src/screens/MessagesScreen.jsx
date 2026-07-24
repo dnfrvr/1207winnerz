@@ -239,7 +239,8 @@ export const MessagesScreen = ({
                 <span style={{background:"#d1c7bd",color:"#777",padding:"3px 10px",borderRadius:10,fontSize:10}}>{dateLabel}</span>
               </div>}
             <div style={{display:"flex",justifyContent:isMe?"flex-end":"flex-start",alignItems:"flex-end",gap:6}}>
-            {!isMe&&<div style={{width:28,height:28,background:avatarColor,borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontWeight:700,fontSize:11,flexShrink:0,alignSelf:"flex-end",fontFamily:FF_IOS}}>{isGroupConv?(msg.senderName?.[0]||"?"):conv.contact[0]}</div>}
+            {/* Avatar reçu : UNIQUEMENT en groupe (pour distinguer les expéditeurs). En 1-à-1, pas d'avatar. */}
+            {!isMe && isGroupConv && <div style={{width:28,height:28,background:avatarColor,borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontWeight:700,fontSize:11,flexShrink:0,alignSelf:"flex-end",fontFamily:FF_IOS}}>{msg.senderName?.[0]||"?"}</div>}
             <div style={{maxWidth:"72%"}}>
               {isGroupConv && !isMe && (mi===0 || resolvedThread[mi-1]?.senderKey!==msg.senderKey) &&
                 <div style={{fontSize:10,color:avatarColor,fontWeight:600,padding:"0 10px 2px",fontFamily:FF_IOS}}>{msg.senderName}</div>}

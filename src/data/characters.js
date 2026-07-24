@@ -497,24 +497,167 @@ export const mkData = () => ({
     ],
     "messages": [
       {
-        "id": 990,
-        "contact": "xX WiiNNERS Xx",
-        "sharedThreadId": "group",
-        "isGroup": true,
-        "unread": true,
-        "thread": []
-      },
-      {
-        "id": 1,
-        "contact": "Eoghan ☆",
-        "sharedThreadId": "glinda_eoghan",
+        "contact": "Elias 🖤",
+        "id": 1784882216268,
         "perspective": "a",
-        "thread": []
+        "sharedThreadId": "glinda_elias",
+        "unread": false
       },
       {
-        "id": 8,
+        "contact": "Losers + Winners",
+        "id": 1784841371868,
+        "isGroup": true,
+        "sharedThreadId": "group_1784841305036",
+        "unread": false
+      },
+      {
+        "contact": "xX WiiNNERS Xx",
+        "id": 990,
+        "isGroup": true,
+        "sharedThreadId": "group",
+        "thread": [
+          {
+            "from": "them",
+            "text": "j'ai eu mon relevé de notes en éco. B+. pas mal pour un cours que je détestais 🌟",
+            "time": "18 sep, 5:10pm"
+          },
+          {
+            "from": "me",
+            "text": "je SAVAIS que t'allais réussir 💛 fière de toi",
+            "time": "18 sep, 5:14pm"
+          },
+          {
+            "from": "them",
+            "text": "merci 🥹 on fête ça quand ?",
+            "time": "18 sep, 5:16pm"
+          },
+          {
+            "from": "me",
+            "text": "demain ?? je connais un café",
+            "time": "18 sep, 5:17pm"
+          },
+          {
+            "from": "them",
+            "text": "deal 🌟",
+            "time": "18 sep, 5:18pm"
+          },
+          {
+            "from": "them",
+            "text": "j'ai pensé à toi toute la journée aujourd'hui c'est bizarre",
+            "time": "23 sep, 8:40pm"
+          },
+          {
+            "from": "me",
+            "text": "pas bizarre du tout 💛 moi aussi en fait",
+            "time": "23 sep, 8:45pm"
+          },
+          {
+            "from": "them",
+            "text": "on devrait peut-être parler de ce qu'on fait genre vraiment",
+            "time": "23 sep, 8:48pm"
+          },
+          {
+            "from": "me",
+            "text": "vraiment vraiment ou juste parler 👀",
+            "time": "23 sep, 8:50pm"
+          },
+          {
+            "from": "them",
+            "text": "viens ce soir et on verra 😏",
+            "time": "23 sep, 8:52pm"
+          },
+          {
+            "from": "me",
+            "text": "j'arrive 🌸",
+            "time": "23 sep, 8:53pm"
+          },
+          {
+            "from": "them",
+            "text": "réveillée ? ☀️",
+            "time": "1 oct, 9:44am"
+          },
+          {
+            "from": "me",
+            "text": "à peine 😭�� je rentre me changer et starbucks avec les autres",
+            "time": "1 oct, 9:51am"
+          },
+          {
+            "from": "them",
+            "text": "lundi soir 20h ça marche ? 🌟",
+            "time": "1 oct, 9:53am"
+          },
+          {
+            "from": "me",
+            "text": "lundi 20h noté ✨🌟",
+            "time": "1 oct, 9:54am"
+          },
+          {
+            "from": "them",
+            "text": "j'ai pas dormi lol j'arrêtais de penser à toi btw 😳",
+            "time": "1 oct, 9:55am"
+          },
+          {
+            "from": "me",
+            "text": "😳😳😳 moi aussi ok 💛",
+            "time": "1 oct, 9:57am"
+          },
+          {
+            "from": "them",
+            "text": "à lundi ✨✨",
+            "time": "1 oct, 9:58am"
+          },
+          {
+            "from": "them",
+            "text": "hé t'as vu y'a échecs demain ? tu viens ?",
+            "time": "1 oct, 2:22pm"
+          },
+          {
+            "from": "me",
+            "text": "évidemment 🌸 j'amène Drew il est trop fort 😏",
+            "time": "1 oct, 2:25pm"
+          },
+          {
+            "from": "them",
+            "text": "ooh intéressant 👀👀 hâte de voir ça",
+            "time": "1 oct, 2:27pm"
+          },
+          {
+            "from": "me",
+            "text": "spoiler : il va vous écraser 😂",
+            "time": "1 oct, 2:28pm"
+          },
+          {
+            "from": "them",
+            "text": "challenge accepted 😤😤",
+            "time": "1 oct, 2:30pm"
+          },
+          {
+            "from": "them",
+            "text": "bonne chance pour le match 💛💛 tu vas être parfaite !!",
+            "time": "6 oct, 9:30am"
+          },
+          {
+            "from": "me",
+            "text": "MERCI 🥹🥹 j'ai tellement le trac pour la pyramide 😭",
+            "time": "6 oct, 9:35am"
+          },
+          {
+            "from": "them",
+            "text": "tu vas déchirer !! à tout à l'heure 🏈💛",
+            "time": "6 oct, 9:36am"
+          }
+        ],
+        "unread": true
+      },
+      {
+        "contact": "Eoghan ☆",
+        "id": 1,
+        "perspective": "a",
+        "sharedThreadId": "glinda_eoghan"
+      },
+      {
         "contact": "Cynthia 💛",
-        "unread": true,
+        "id": 8,
         "thread": [
           {
             "from": "them",
@@ -646,11 +789,12 @@ export const mkData = () => ({
             "text": "tu vas déchirer !! à tout à l'heure 🏈💛",
             "time": "6 oct, 9:36am"
           }
-        ]
+        ],
+        "unread": true
       },
       {
-        "id": 2,
         "contact": "Maman 🌹",
+        "id": 2,
         "thread": [
           {
             "from": "them",
@@ -700,16 +844,14 @@ export const mkData = () => ({
         ]
       },
       {
-        "id": 4,
         "contact": "Drew",
-        "sharedThreadId": "glinda_drew",
+        "id": 4,
         "perspective": "a",
-        "thread": []
+        "sharedThreadId": "glinda_drew"
       },
       {
-        "id": 20,
         "contact": "Morgane (police)",
-        "unread": true,
+        "id": 20,
         "thread": [
           {
             "from": "them",
@@ -746,12 +888,12 @@ export const mkData = () => ({
             "text": "Parfait. À mercredi.",
             "time": "1 oct, 3:51pm"
           }
-        ]
+        ],
+        "unread": true
       },
       {
-        "id": 13,
         "contact": "Vicky",
-        "unread": true,
+        "id": 13,
         "thread": [
           {
             "from": "them",
@@ -783,11 +925,12 @@ export const mkData = () => ({
             "text": "ok merci Vicky 🌸",
             "time": "1 oct, 1:52pm"
           }
-        ]
+        ],
+        "unread": true
       },
       {
-        "id": 12,
         "contact": "Harry",
+        "id": 12,
         "thread": [
           {
             "from": "them",
@@ -847,8 +990,8 @@ export const mkData = () => ({
         ]
       },
       {
-        "id": 11,
         "contact": "Sophie",
+        "id": 11,
         "thread": [
           {
             "from": "them",
@@ -893,8 +1036,8 @@ export const mkData = () => ({
         ]
       },
       {
-        "id": 14,
         "contact": "James",
+        "id": 14,
         "thread": [
           {
             "from": "them",
@@ -929,8 +1072,8 @@ export const mkData = () => ({
         ]
       },
       {
-        "id": 10,
         "contact": "Zoe",
+        "id": 10,
         "thread": [
           {
             "from": "them",
@@ -975,9 +1118,8 @@ export const mkData = () => ({
         ]
       },
       {
-        "id": 15,
         "contact": "Hector",
-        "unread": true,
+        "id": 15,
         "thread": [
           {
             "from": "them",
@@ -1019,12 +1161,12 @@ export const mkData = () => ({
             "text": "un gobelet ne te sauvera pas 😌🏆",
             "time": "3 oct, 7:45pm"
           }
-        ]
+        ],
+        "unread": true
       },
       {
-        "id": 9,
         "contact": "Taylor S. 🌟",
-        "unread": true,
+        "id": 9,
         "thread": [
           {
             "from": "them",
@@ -1071,11 +1213,13 @@ export const mkData = () => ({
             "text": "t'es la meilleure vraiment 💖💖",
             "time": "1 oct, 10:43am"
           }
-        ]
+        ],
+        "unread": true
       },
       {
-        "id": 3,
         "contact": "Richard R. 🏛️",
+        "deleted": true,
+        "id": 3,
         "thread": [
           {
             "from": "them",
@@ -1100,9 +1244,8 @@ export const mkData = () => ({
         ]
       },
       {
-        "id": 21,
         "contact": "Boq 🌹",
-        "unread": true,
+        "id": 9,
         "thread": [
           {
             "from": "them",
@@ -1164,11 +1307,12 @@ export const mkData = () => ({
             "text": "ok je vais me taire",
             "time": "1 oct, 9:48am"
           }
-        ]
+        ],
+        "unread": true
       },
       {
-        "id": 16,
         "contact": "Club Échecs UMA ♟",
+        "id": 16,
         "thread": [
           {
             "from": "them",
@@ -1189,13 +1333,60 @@ export const mkData = () => ({
             "from": "me",
             "text": "Oh je connais Drew !! parfait 😄",
             "time": "30 sep, 9:22am"
+          },
+          {
+            "from": "me",
+            "text": "Il faut que j’y aille, à plus ",
+            "time": "30 Sep, 11:05pm"
+          },
+          {
+            "from": "them",
+            "text": "C’est dommage que tu le prennes comme ça",
+            "time": "30 Sep, 11:11pm"
+          },
+          {
+            "from": "me",
+            "img": null,
+            "text": "",
+            "time": "6 Oct, 2:11am"
+          },
+          {
+            "from": "them",
+            "text": "Ça fait lgtmps que j’ai pas eu de nouvelles de toi",
+            "time": "6 oct, 2:22am"
+          },
+          {
+            "from": "them",
+            "text": "Très jolie photo",
+            "time": "6 Oct, 2:22am"
+          },
+          {
+            "from": "them",
+            "img": null,
+            "text": "",
+            "time": "6 Oct, 2:25am"
+          },
+          {
+            "from": "me",
+            "text": "Trop belle",
+            "time": "6 Oct, 2:26am"
+          },
+          {
+            "from": "me",
+            "text": "Bon allez à plus",
+            "time": "6 Oct, 2:26am"
+          },
+          {
+            "from": "them",
+            "text": "Tu t’enfuis déjà ? :/",
+            "time": "6 Oct, 2:31am"
           }
         ]
       },
       {
-        "id": 5,
         "contact": "Elphie 🌿",
         "deleted": true,
+        "id": 5,
         "thread": [
           {
             "from": "them",
@@ -1320,9 +1511,9 @@ export const mkData = () => ({
         ]
       },
       {
-        "id": 17,
         "contact": "Tyrone 🛹",
         "deleted": true,
+        "id": 17,
         "thread": [
           {
             "from": "them",
@@ -1357,15 +1548,15 @@ export const mkData = () => ({
         ]
       },
       {
-        "id": 18,
         "contact": "le trio 🔺",
         "deleted": true,
+        "id": 18,
         "isGroup": true,
         "thread": [
           {
             "from": "them",
-            "senderName": "Tyrone",
             "senderKey": "tyrone",
+            "senderName": "Tyrone",
             "text": "réunion trio ce soir chez Glinda ? j'ai une nouvelle sono 🔊",
             "time": "3 fév, 5:40pm"
           },
@@ -1376,8 +1567,8 @@ export const mkData = () => ({
           },
           {
             "from": "them",
-            "senderName": "Elphie",
             "senderKey": "elphie",
+            "senderName": "Elphie",
             "text": "et moi le vin 🍷 mes loves 🤍",
             "time": "3 fév, 5:45pm"
           },
@@ -1388,15 +1579,15 @@ export const mkData = () => ({
           },
           {
             "from": "them",
-            "senderName": "Tyrone",
             "senderKey": "tyrone",
+            "senderName": "Tyrone",
             "text": "on remet ça vendredi ? même équipe 🙌",
             "time": "24 fév, 7:02pm"
           },
           {
             "from": "them",
-            "senderName": "Elphie",
             "senderKey": "elphie",
+            "senderName": "Elphie",
             "text": "toujours partante avec toi 😌",
             "time": "24 fév, 7:04pm"
           },
@@ -2863,43 +3054,65 @@ export const mkData = () => ({
     ],
     "messages": [
       {
-        "id": 990,
-        "contact": "xX WiiNNERS Xx",
-        "sharedThreadId": "group",
+        "contact": "Losers + Winners",
+        "id": 1784841371496,
         "isGroup": true,
-        "unread": true,
-        "thread": []
+        "sharedThreadId": "group_1784841305036",
+        "unread": false
       },
       {
-        "id": 1,
-        "contact": "Glinglin 🌸",
-        "sharedThreadId": "glinda_eoghan",
-        "perspective": "b",
-        "thread": []
-      },
-      {
-        "id": 4,
-        "contact": "Elias",
-        "sharedThreadId": "eoghan_elias",
-        "perspective": "a",
-        "thread": []
-      },
-      {
-        "id": 9,
-        "contact": "Louis",
+        "contact": "Maman ❤️",
+        "id": 1784820210601,
+        "isGroup": false,
         "thread": [
           {
+            "from": "me",
+            "text": "Coucou maman ❤️ merci beaucoup, j’ai tout donné pendant mon match 😁 c’était sûrement ça oui, ou la fatigue 😊 \nBisous, je t’appelle en fin de semaine ❤️",
+            "time": "10 Oct, 8:12pm"
+          },
+          {
             "from": "them",
+            "text": "CC mon fils . ❤️\nJ’ai vu ta photo 📸avec le directeur de l’université 😮 sur Facebook.  Quelle fierté!!!!! Tu es beau, même s’il manque un petit sourire 😁 sûrement le trac…\nJe suis  fière de toi ! Et papa le serait aussi ❤️ tu l’as envoyé à Helen ? \nJe t’embrasse mon chéri 😘😘",
+            "time": "10 oct, 5:28pm"
+          }
+        ],
+        "unread": false
+      },
+      {
+        "contact": "xX WiiNNERS Xx",
+        "id": 990,
+        "isGroup": true,
+        "sharedThreadId": "group",
+        "unread": true
+      },
+      {
+        "contact": "Glinglin 🌸",
+        "id": 1,
+        "perspective": "b",
+        "sharedThreadId": "glinda_eoghan"
+      },
+      {
+        "contact": "Elias 🖤",
+        "id": 4,
+        "perspective": "a",
+        "sharedThreadId": "eoghan_elias",
+        "unread": true
+      },
+      {
+        "contact": "Louis",
+        "id": 9,
+        "isGroup": false,
+        "perspective": "a",
+        "thread": [
+          {
             "text": "t'as cours de maths demain matin ? je révise rien compris au dernier chapitre",
             "time": "24 sep, 8:10pm"
           },
           {
-            "from": "me",
             "text": "ouais 9h, on peut réviser 20 min avant si tu veux",
             "time": "24 sep, 8:15pm"
           },
           {
-            "from": "them",
             "text": "sauveur. à demain",
             "time": "24 sep, 8:16pm"
           },
@@ -2929,7 +3142,6 @@ export const mkData = () => ({
             "time": "1 oct, 10:10am"
           },
           {
-            "from": "them",
             "text": "liam va mieux au fait, juste pour que tu saches",
             "time": "2 oct, 6:30pm"
           },
@@ -2941,17 +3153,16 @@ export const mkData = () => ({
         ]
       },
       {
-        "id": 5,
         "contact": "James",
-        "unread": true,
+        "id": 5,
         "thread": [
           {
-            "from": "them",
+            "from": "me",
             "text": "hé t'as dormi ? tu vas bien ce matin ? 👀",
             "time": "1 oct, 9:22am"
           },
           {
-            "from": "me",
+            "from": "them",
             "text": "ouais ça va 😅 merci d'être resté hier soir",
             "time": "1 oct, 9:25am"
           },
@@ -2981,12 +3192,10 @@ export const mkData = () => ({
             "time": "1 oct, 9:50am"
           },
           {
-            "from": "me",
             "text": "JAMES 😭",
             "time": "1 oct, 9:51am"
           },
           {
-            "from": "them",
             "text": "je dis RIEN du tout 😇😇",
             "time": "1 oct, 9:52am"
           },
@@ -3013,9 +3222,8 @@ export const mkData = () => ({
         ]
       },
       {
-        "id": 6,
         "contact": "Asra",
-        "unread": true,
+        "id": 6,
         "thread": [
           {
             "from": "them",
@@ -3102,12 +3310,12 @@ export const mkData = () => ({
             "text": "oui. c'était bien 😌",
             "time": "1 oct, 9:49am"
           }
-        ]
+        ],
+        "unread": true
       },
       {
-        "id": 7,
         "contact": "Ilya",
-        "unread": true,
+        "id": 7,
         "thread": [
           {
             "from": "them",
@@ -3148,13 +3356,48 @@ export const mkData = () => ({
             "from": "me",
             "text": "toujours 😏",
             "time": "4 oct, 8:05pm"
+          },
+          {
+            "from": "them",
+            "text": "soooo 😏😏",
+            "time": "1 oct, 2:00am"
+          },
+          {
+            "from": "me",
+            "text": "😂😂😂",
+            "time": "1 oct, 9:40am"
+          },
+          {
+            "from": "them",
+            "text": "Eoghan 🙂",
+            "time": "1 oct, 9:41am"
+          },
+          {
+            "from": "me",
+            "text": "c'était une très bonne soirée 😂",
+            "time": "1 oct, 9:43am"
+          },
+          {
+            "from": "them",
+            "text": "t'es IMPOSSIBLE 😭😭😭",
+            "time": "1 oct, 9:46am"
+          },
+          {
+            "from": "them",
+            "text": "mais bon. c'était bien quand même 😏",
+            "time": "1 oct, 9:48am"
+          },
+          {
+            "from": "me",
+            "text": "oui. c'était bien 😌",
+            "time": "1 oct, 9:49am"
           }
-        ]
+        ],
+        "unread": true
       },
       {
-        "id": 8,
         "contact": "Jeongguk",
-        "unread": false,
+        "id": 8,
         "thread": [
           {
             "from": "me",
@@ -3195,6 +3438,98 @@ export const mkData = () => ({
             "from": "me",
             "text": "ah oui merci de me le rappeler je passe le chercher",
             "time": "3 oct, 2:05pm"
+          }
+        ],
+        "unread": false
+      },
+      {
+        "contact": "Ambre 🤍​",
+        "id": 1782409288230,
+        "thread": [
+          {
+            "from": "them",
+            "text": " C'est bon on peut ENFIN parler ici ! J'ai mon nouveau téléphone 🤣​🤣​",
+            "time": "May 12 2010, 6:04pm"
+          },
+          {
+            "from": "me",
+            "text": "C'est pas trop tôt !!! 🤣​",
+            "time": "May 12 2010, 6:07pm"
+          },
+          {
+            "from": "me",
+            "text": "Je suis au terrain, tu me rejoins pour courir un peu ? 😇​🙏​",
+            "time": "May 25 2010, 4:56pm"
+          },
+          {
+            "from": "them",
+            "text": "Je viens d'enfiler mes baskets, j'arrive :D",
+            "time": "May 25 2010, 5:02pm"
+          },
+          {
+            "from": "them",
+            "text": "Je m'ennuie trop sans toi !! Vivement cet été qu’on puisse se voir plus souvent 🤗",
+            "time": "Jun 7 2010, 9:18am"
+          },
+          {
+            "from": "me",
+            "text": "Non mais grave !! Mais t’utilises ton tel en cours ?? :O",
+            "time": "Jun 7 2010, 9:23am"
+          },
+          {
+            "from": "them",
+            "text": "Et tu me réponds comment, toi ?! xD",
+            "time": "Jun 7 2010, 9:55am"
+          },
+          {
+            "from": "them",
+            "text": "C’est sûr et certain pour SF ? 😢​😢",
+            "time": "Jul 17 2010, 10:33pm"
+          },
+          {
+            "from": "me",
+            "text": "Désolé Ambre, le boss m’a confirmé que je travaille encore le mois prochain… 😒​😿",
+            "time": "Jul 17 2010, 10:35pm"
+          },
+          {
+            "from": "me",
+            "text": "Profite au max de tes vacances 😘 Je suis avec vous par la pensée LOL",
+            "time": "Aug 2 2010, 5:46am"
+          },
+          {
+            "from": "them",
+            "text": "Bien arrivés !! :D :p je t’apl après",
+            "time": "Aug 2 2010, 3:29pm"
+          },
+          {
+            "from": "me",
+            "text": "Ambre je t’en supplie dis moi que czest une blague je t’en supplie",
+            "time": "Aug 6 2010, 11:11pm"
+          },
+          {
+            "from": "me",
+            "text": "J’ai pas quitté ma chambre depuis l’annonce je peux juste pas",
+            "time": "Aug 11 2010, 3:56am"
+          },
+          {
+            "from": "me",
+            "text": "Tu me manques tellement",
+            "time": "Mar 22 2011, 3:20pm"
+          },
+          {
+            "from": "me",
+            "text": "2 ans",
+            "time": "Aug 6, 8:04pm"
+          },
+          {
+            "from": "me",
+            "text": "Je viens d’emménager à Augusta, j’aimerais que tu sois là aussi. Je pense à toi tous les jours",
+            "time": "Aug 20, 4:59pm"
+          },
+          {
+            "from": "them",
+            "text": "C qui ? Mauvais num jcroi ",
+            "time": "Aug 20, 7:12pm"
           }
         ]
       }
@@ -7896,24 +8231,117 @@ export const mkData = () => ({
     ],
     "messages": [
       {
-        "id": 990,
-        "contact": "xX WiiNNERS Xx",
-        "sharedThreadId": "group",
+        "contact": "Losers + Winners",
+        "id": 1784841305036,
         "isGroup": true,
-        "unread": true,
-        "thread": []
+        "sharedThreadId": "group_1784841305036",
+        "unread": false
       },
       {
-        "id": 2,
+        "contact": "(Bloqué) ",
+        "id": 1784820176470,
+        "isGroup": false,
+        "thread": [
+          {
+            "from": "me",
+            "text": "tu me manques, on se fait une game ce soir ? <3",
+            "time": "4 Jan, 5:26pm"
+          },
+          {
+            "from": "them",
+            "text": "trop mignon ^^ par contre ce soir je suis pas dispo",
+            "time": "4 Jan, 5:51pm"
+          },
+          {
+            "from": "me",
+            "text": "ah mince, pas grave <3 je vais rejoindre river sur dofus alors! t'as prévu quoi ? :) ",
+            "time": "4 Jan, 6:02pm"
+          },
+          {
+            "from": "them",
+            "text": "pourquoi t'as quitté la partie ? ",
+            "time": "6 jan, 9:08pm"
+          },
+          {
+            "from": "them",
+            "text": "ah ok. bah on a perdu du coup ",
+            "time": "6 Jan"
+          },
+          {
+            "from": "me",
+            "text": "dsl ma mamie avait besoin d'aide pour un truc",
+            "time": "6 Jan, 9:38pm"
+          },
+          {
+            "from": "them",
+            "text": "appel skype ce soir ? ",
+            "time": "20 Jan, 4:40pm"
+          },
+          {
+            "from": "me",
+            "text": "yes j'ai hate <3",
+            "time": "20 Jan, 4:40pm"
+          },
+          {
+            "from": "me",
+            "text": "je t'aime <3",
+            "time": "20 Jan, 4:40pm"
+          },
+          {
+            "from": "them",
+            "text": "moi aussi :) <3",
+            "time": "20 Jan, 4:41pm"
+          },
+          {
+            "from": "them",
+            "text": "J'arrive plus à te contacter sur skype, tu m'as bloqué ?? ",
+            "time": "17 Feb, 11:48pm"
+          },
+          {
+            "from": "them",
+            "text": "Elias? ",
+            "time": "17 Feb, 11:49pm"
+          },
+          {
+            "from": "them",
+            "text": "T'es sérieux là ? Tu m'as vraiment bloqué ? ",
+            "time": "18 Feb, 1:55am"
+          },
+          {
+            "from": "them",
+            "text": "Tu fais pitié sérieux, tu peux pas juste accepter ça comme une personne normale ? C'était pas la peine de me bloquer. Le reste de la team me prend pour le méchant maintenant ",
+            "time": "18 Feb, 1:58am"
+          },
+          {
+            "from": "them",
+            "text": "Bon bah adieu je suppose. Continue d'être un lâche c'est bien.",
+            "time": "18 Feb, 1:59am"
+          },
+          {
+            "from": "them",
+            "text": "Tes histoires de taré manqueront à personne. On jouera mieux sans tes théories de merde dans nos oreilles. ",
+            "time": "18 Feb, 2:00am"
+          }
+        ],
+        "unread": false
+      },
+      {
+        "contact": "xX WiiNNERS Xx",
+        "id": 990,
+        "isGroup": true,
+        "sharedThreadId": "group",
+        "unread": true
+      },
+      {
         "contact": "Eoghan",
-        "sharedThreadId": "eoghan_elias",
+        "id": 2,
         "perspective": "b",
-        "thread": []
+        "sharedThreadId": "eoghan_elias"
       },
       {
-        "id": 3,
         "contact": "Grand-mère 👵",
-        "unread": true,
+        "id": 3,
+        "isGroup": false,
         "thread": [
           {
             "from": "them",
@@ -8000,83 +8428,20 @@ export const mkData = () => ({
             "text": "oui mamie, promis",
             "time": "4 oct, 6:45pm"
           }
-        ]
+        ],
+        "unread": true
       },
       {
-        "id": 4,
         "contact": "Glinglin 🌸",
-        "thread": [
-          {
-            "from": "them",
-            "text": "salut Elias ! c'est Glinda, on s'est rencontrés chez Jackson le 15 sep. ça te dérange pas que j'écrive ?",
-            "time": "1 oct, 12:00pm"
-          },
-          {
-            "from": "me",
-            "text": "non c'est bon",
-            "time": "1 oct, 2:22pm"
-          },
-          {
-            "from": "them",
-            "text": "on est quelques-uns à essayer de comprendre ce qui s'est passé cet été. t'aurais envie d'en parler ?",
-            "time": "1 oct, 2:25pm"
-          },
-          {
-            "from": "me",
-            "text": "vous cherchez quoi exactement",
-            "time": "1 oct, 2:30pm"
-          },
-          {
-            "from": "them",
-            "text": "probablement les mêmes choses que toi. on a trouvé des trucs à Derry le week-end dernier qui tiennent pas",
-            "time": "1 oct, 2:32pm"
-          },
-          {
-            "from": "me",
-            "text": "genre quoi",
-            "time": "1 oct, 2:40pm"
-          },
-          {
-            "from": "them",
-            "text": "des balises dans les égouts, des lumières, des symboles. on pourrait comparer ce qu'on a chacun ?",
-            "time": "1 oct, 2:41pm"
-          },
-          {
-            "from": "me",
-            "text": "ok. quand",
-            "time": "1 oct, 2:42pm"
-          },
-          {
-            "from": "them",
-            "text": "demain aprèm ? je connais un café tranquille",
-            "time": "1 oct, 2:43pm"
-          },
-          {
-            "from": "me",
-            "text": "ça marche",
-            "time": "1 oct, 2:44pm"
-          },
-          {
-            "from": "them",
-            "text": "top ! à demain 🌸",
-            "time": "1 oct, 2:45pm"
-          },
-          {
-            "from": "them",
-            "text": "merci d'être venu cet aprèm. ça aide d'avoir quelqu'un qui voit pareil",
-            "time": "2 oct, 5:30pm"
-          },
-          {
-            "from": "me",
-            "text": "merci à toi. je pensais être seul avec ça",
-            "time": "2 oct, 5:40pm"
-          }
-        ]
+        "id": 4,
+        "isGroup": false,
+        "perspective": "b",
+        "sharedThreadId": "glinda_elias",
+        "unread": false
       },
       {
-        "id": 8,
         "contact": "Prof. Hanlon",
-        "unread": false,
+        "id": 8,
         "thread": [
           {
             "from": "me",
@@ -8117,20 +8482,56 @@ export const mkData = () => ({
             "from": "them",
             "text": "14h. Bureau du fond.",
             "time": "3 oct, 9:20am"
+          },
+          {
+            "from": "me",
+            "text": "je t'écris ce soir, promis. beaucoup de boulot là",
+            "time": "1 oct, 6:35pm"
+          },
+          {
+            "from": "them",
+            "text": "t'as mangé aujourd'hui ?",
+            "time": "1 oct, 6:42pm"
+          },
+          {
+            "from": "me",
+            "text": "un croissant ce matin et la cantine à midi",
+            "time": "1 oct, 6:45pm"
+          },
+          {
+            "text": "mange quelque chose ce soir hein",
+            "time": "1 oct, 6:46pm"
+          },
+          {
+            "text": "promis mamie",
+            "time": "1 oct, 6:47pm"
+          },
+          {
+            "from": "them",
+            "text": "je t'aime mon petit.",
+            "time": "1 oct, 6:48pm"
+          },
+          {
+            "from": "me",
+            "text": "moi aussi mamie, bisous",
+            "time": "1 oct, 6:50pm"
+          },
+          {
+            "from": "them",
+            "text": "as-tu mangé aujourd'hui mon chéri",
+            "time": "4 oct, 6:40pm"
+          },
+          {
+            "from": "me",
+            "text": "oui mamie, promis",
+            "time": "4 oct, 6:45pm"
           }
-        ]
+        ],
+        "unread": false
       },
       {
-        "id": 1,
-        "contact": "Drew",
-        "sharedThreadId": "drew_elias",
-        "perspective": "b",
-        "thread": []
-      },
-      {
-        "id": 6,
         "contact": "Police — Bureau de Derry",
-        "unread": false,
+        "id": 6,
         "thread": [
           {
             "from": "me",
@@ -8152,7 +8553,14 @@ export const mkData = () => ({
             "text": "Nous comprenons votre inquiétude. L'enquête est en cours.",
             "time": "15 sep, 5:02pm"
           }
-        ]
+        ],
+        "unread": false
+      },
+      {
+        "contact": "Drew",
+        "id": 1,
+        "perspective": "b",
+        "sharedThreadId": "drew_elias"
       }
     ],
     "browser": {
