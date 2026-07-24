@@ -484,6 +484,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
   const [exportOpen, setExportOpen]     = useState(false);
   const [snapshots, setSnapshots]       = useState([]);
   const [restoreStatus, setRestoreStatus] = useState(null);
+  const [dlSnapTs, setDlSnapTs]         = useState(null); // ts du snapshot en cours de téléchargement
   // Options d'export : scope (all | perso), contenu (full | textOnly | imagesOnly), et perso ciblé
   const [exportScope, setExportScope]   = useState("all");     // "all" | "char"
   const [exportChar, setExportChar]     = useState("glinda");  // clé du perso si scope=char
@@ -566,6 +567,25 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
       await set(ref(firebaseDb), data);
       setRestoreOpen(false); setRestoreStatus(null);
     } catch(e) { setRestoreStatus("error"); }
+  };
+  // Télécharge un snapshot en .json SANS l'appliquer (sauvegarde locale hors-ligne). Même source que
+  // doRestore : donnée héritée dans Firebase, sinon récupérée sur Supabase. `dlSnapTs` = feedback par ligne.
+  const downloadSnapshot = async (snap) => {
+    setDlSnapTs(snap.ts);
+    try {
+      let data = snap.data;
+      if (!data && (snap.url || snap.path)) data = await loadSnapshotFromSupabase(snap.url || snap.path);
+      if (!data) { window.alert("Snapshot introuvable (donnée absente sur Supabase)."); return; }
+      const json = JSON.stringify(data, null, 2);
+      const blob = new Blob([json], {type:"application/json"});
+      const url  = URL.createObjectURL(blob);
+      const a    = document.createElement("a");
+      const dt   = new Date(parseInt(snap.ts));
+      const stamp = `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,"0")}-${String(dt.getDate()).padStart(2,"0")}_${String(dt.getHours()).padStart(2,"0")}h${String(dt.getMinutes()).padStart(2,"0")}`;
+      a.href = url; a.download = `it-welcome-to-uma_snapshot_${stamp}.json`; a.click();
+      URL.revokeObjectURL(url);
+    } catch(e) { window.alert("Échec du téléchargement du snapshot : " + (e?.message||e)); }
+    finally { setDlSnapTs(null); }
   };
 
   // ── Migration des images base64 restantes vers Supabase Storage ─────────────
@@ -4754,6 +4774,10 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                     <div style={{fontSize:13,fontWeight:i===0?700:500,color:i===0?"var(--accent)":"var(--ink-soft)"}}>{snap.label}{i===0?" — le plus récent":""}</div>
                     <div style={{fontSize:10,color:"var(--ink-faint)",marginTop:2}}>{new Date(parseInt(snap.ts)).toLocaleString("fr-FR")}</div>
                   </div>
+                  <button onClick={()=>downloadSnapshot(snap)} disabled={dlSnapTs===snap.ts} title="Télécharger ce snapshot en .json (sans l'appliquer)"
+                    style={{background:"transparent",border:"1px solid var(--line)",color:"var(--ink-soft)",padding:"7px 12px",borderRadius:7,fontWeight:600,fontSize:12,cursor:dlSnapTs===snap.ts?"default":"pointer",opacity:dlSnapTs===snap.ts?0.6:1,whiteSpace:"nowrap"}}>
+                    {dlSnapTs===snap.ts ? "…" : "⬇ Télécharger"}
+                  </button>
                   <button onClick={()=>doRestore(snap)}
                     style={{background:i===0?"linear-gradient(135deg,var(--accent),var(--accent))":"var(--line)",border:"none",color:i===0?"#fff":"var(--ink-soft)",padding:"7px 14px",borderRadius:7,fontWeight:600,fontSize:12,cursor:"pointer"}}>
                     Restaurer

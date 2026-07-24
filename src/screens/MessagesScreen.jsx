@@ -163,38 +163,62 @@ export const MessagesScreen = ({
   }
 
   // ── Android ──────────────────────────────────────────────────────────────────
-  if (thread === null) return (
-    <Shell>
-      {statusBar}<NavBar title="Messages" back={goHome} overflow/>
-      <div style={{flex:1,background:"#f5f5f5",overflowY:"auto"}}>
-        {dedupeConvs([...data.messages].map((m,i)=>[m,i]))
-          .sort(([a],[b])=>{const ta=getThread(a),tb=getThread(b);return loreSortKey(tb[tb.length-1]?.time)-loreSortKey(ta[ta.length-1]?.time);})
-          .map(([msg,i])=>{
-            const lastMsg=(()=>{const _t=getThread(msg);return _t[_t.length-1];})();
-            const lastTime=fmtTime(lastMsg?.time);
-            const initials=(msg.contact||"?").split(" ").map(w=>w[0]).join("").slice(0,2).toUpperCase();
-            const avatarColor=["#e53935","#1e88e5","#43a047","#fb8c00","#8e24aa","#00897b"][msg.contact.charCodeAt(0)%6];
-            return (
-            <div key={i} onClick={()=>setThread(i)} style={{
-              padding:"12px 16px",
-              borderBottom:"1px solid #e0e0e0",
-              display:"flex",gap:14,cursor:"pointer",alignItems:"center",
-              background:msg.unread?"#fff":"#fafafa",
-            }}>
-              <div style={{width:38,height:38,background:avatarColor,borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontWeight:700,fontSize:14,flexShrink:0,fontFamily:FF_IOS}}>{initials}</div>
-              <div style={{flex:1,minWidth:0}}>
-                <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",marginBottom:3}}>
-                  <div style={{color:msg.unread?"#212121":"#424242",fontWeight:msg.unread?700:400,fontSize:14,fontFamily:FF_IOS}}>{msg.contact}</div>
-                  <span style={{color:msg.unread?accent:"#bdbdbd",fontSize:11,fontFamily:FF_IOS,flexShrink:0}}>{lastTime}</span>
-                </div>
-                <div style={{color:msg.unread?"#616161":"#9e9e9e",fontSize:12,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",fontFamily:FF_IOS,fontWeight:msg.unread?500:400}}>{lastMsg?.text}</div>
-              </div>
-              {msg.unread&&<div style={{width:9,height:9,borderRadius:"50%",background:accent,flexShrink:0}}/>}
+  if (thread === null) {
+    // Ligne de conversation (réutilisée pour l'inbox ET la vue « supprimés »). `dim` grise
+    // les convs supprimées. key={i} = index d'origine (unique) → setThread(i) ouvre la bonne conv.
+    const renderAndroidRow = (msg, i, dim=false) => {
+      const lastMsg=(()=>{const _t=getThread(msg);return _t[_t.length-1];})();
+      const lastTime=fmtTime(lastMsg?.time);
+      const initials=(msg.contact||"?").split(" ").map(w=>w[0]).join("").slice(0,2).toUpperCase();
+      const avatarColor=["#e53935","#1e88e5","#43a047","#fb8c00","#8e24aa","#00897b"][msg.contact.charCodeAt(0)%6];
+      return (
+        <div key={i} onClick={()=>setThread(i)} style={{
+          padding:"12px 16px",borderBottom:"1px solid #e0e0e0",
+          display:"flex",gap:14,cursor:"pointer",alignItems:"center",
+          background:msg.unread?"#fff":"#fafafa",opacity:dim?0.6:1,
+        }}>
+          <div style={{width:38,height:38,background:avatarColor,borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontWeight:700,fontSize:14,flexShrink:0,fontFamily:FF_IOS}}>{initials}</div>
+          <div style={{flex:1,minWidth:0}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",marginBottom:3}}>
+              <div style={{color:msg.unread?"#212121":"#424242",fontWeight:msg.unread?700:400,fontSize:14,fontFamily:FF_IOS}}>{msg.contact}</div>
+              <span style={{color:msg.unread?accent:"#bdbdbd",fontSize:11,fontFamily:FF_IOS,flexShrink:0}}>{lastTime}</span>
             </div>
-          );})}
-      </div>
-    </Shell>
-  );
+            <div style={{color:msg.unread?"#616161":"#9e9e9e",fontSize:12,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",fontFamily:FF_IOS,fontWeight:msg.unread?500:400}}>{lastMsg?.text}</div>
+          </div>
+          {msg.unread&&<div style={{width:9,height:9,borderRadius:"50%",background:accent,flexShrink:0}}/>}
+        </div>
+      );
+    };
+    const sortPairs = (pairs) => pairs.sort(([a],[b])=>{const ta=getThread(a),tb=getThread(b);return loreSortKey(tb[tb.length-1]?.time)-loreSortKey(ta[ta.length-1]?.time);});
+    // Une conv supprimée (`deleted`) ne doit JAMAIS apparaître dans l'inbox — parité avec iOS.
+    const deletedConvs = dedupeConvs(data.messages.map((m,i)=>[m,i]).filter(([m])=>m.deleted));
+    if(msgView==="deleted") return (
+      <Shell>
+        {statusBar}<NavBar title="Messages supprimés" back={()=>setMsgView("inbox")} overflow/>
+        <div style={{flex:1,background:"#f5f5f5",overflowY:"auto"}}>
+          <div style={{padding:"10px 16px",fontSize:11,color:"#9e9e9e",background:"#eee",borderBottom:"1px solid #e0e0e0",fontFamily:FF_IOS}}>Ces conversations ont été retirées de la boîte de réception.</div>
+          {deletedConvs.length===0
+            ? <div style={{padding:24,textAlign:"center",color:"#9e9e9e",fontSize:13,fontFamily:FF_IOS}}>Aucune conversation supprimée.</div>
+            : sortPairs(deletedConvs).map(([m,i])=>renderAndroidRow(m,i,true))}
+        </div>
+      </Shell>
+    );
+    return (
+      <Shell>
+        {statusBar}<NavBar title="Messages" back={goHome} overflow/>
+        <div style={{flex:1,background:"#f5f5f5",overflowY:"auto"}}>
+          {deletedConvs.length>0 && (
+            <div onClick={()=>setMsgView("deleted")} style={{background:"#eee",borderBottom:"1px solid #e0e0e0",padding:"11px 16px",display:"flex",alignItems:"center",gap:10,cursor:"pointer"}}>
+              <span style={{fontSize:15}}>🗑️</span>
+              <span style={{flex:1,fontSize:13,fontWeight:600,color:"#616161",fontFamily:FF_IOS}}>Messages supprimés</span>
+              <span style={{fontSize:12,color:"#9e9e9e",fontFamily:FF_IOS}}>{deletedConvs.length}</span>
+            </div>
+          )}
+          {sortPairs(dedupeConvs(data.messages.map((m,i)=>[m,i]).filter(([m])=>!m.deleted))).map(([msg,i])=>renderAndroidRow(msg,i,false))}
+        </div>
+      </Shell>
+    );
+  }
 
   const conv=data.messages[thread]; if(!conv) return null;
   const resolvedThread=getThread(conv);
