@@ -451,6 +451,24 @@ const MsgMoveBtn = ({dir, onClick, disabled}) => (
   </button>
 );
 
+// Textarea d'édition de message avec ÉTAT LOCAL : le texte affiché est piloté par un state interne
+// (mis à jour de façon synchrone à la frappe), pas par la prop `value`. Ça découple le curseur des
+// re-renders du parent (setData → Firebase → re-render) : plus de curseur qui saute en fin de ligne
+// ni de lettres réordonnées quand on écrit au milieu d'une phrase. On ne resynchronise depuis la prop
+// que si elle change POUR UNE AUTRE RAISON que notre propre frappe (édition venue d'ailleurs).
+const MsgTextArea = ({ value, onChange, perRow = 40, minRows = 1, ...rest }) => {
+  const [val, setVal] = useState(value ?? "");
+  const last = useRef(value ?? "");
+  useEffect(() => {
+    if ((value ?? "") !== last.current) { last.current = value ?? ""; setVal(value ?? ""); }
+  }, [value]);
+  return (
+    <textarea {...rest} value={val}
+      rows={Math.max(minRows, Math.ceil((val.length || 1) / perRow))}
+      onChange={e => { const v = e.target.value; last.current = v; setVal(v); onChange(v); }} />
+  );
+};
+
 const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDate, onLoreDateChange}) => {
   const [tab, setTab]         = useState("glinda");
   const [openPlaylistAdmin, setOpenPlaylistAdmin] = useState(null);
@@ -1318,8 +1336,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                                 <button onClick={()=>{const t=[...sortedThread];t.splice(si,1);writeThread(t);}}
                                   className="adm-del-btn" style={{background:"none",border:"none",color:"var(--ink-faint)",cursor:"pointer",fontSize:16,padding:"0 4px",flexShrink:0}}>×</button>
                               </div>
-                              <textarea value={m2.text||""} onChange={e=>updMsg({text:e.target.value})}
-                                rows={Math.max(1,Math.ceil((m2.text||"").length/40))}
+                              <MsgTextArea value={m2.text||""} onChange={v=>updMsg({text:v})} perRow={40}
                                 className="adm-input" style={{width:"100%",resize:"vertical",background:"var(--raise)",border:"1px solid var(--line)",color:"var(--ink)",padding:"6px 10px",fontSize:12,borderRadius:6,lineHeight:1.4,minHeight:36,boxSizing:"border-box"}}/>
                             </div>
                             <InsertMsgBtn onClick={()=>insertAt(si+1)}/>
@@ -1372,8 +1389,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                                 <button onClick={()=>{const t=[...sortedLocal];t.splice(si,1);writeLocal(t);}}
                                   className="adm-del-btn" style={{background:"none",border:"none",color:"var(--ink-faint)",cursor:"pointer",fontSize:16,padding:"0 4px",flexShrink:0}}>×</button>
                               </div>
-                              <textarea value={m2.text||""} onChange={e=>updMsg({text:e.target.value})}
-                                rows={Math.max(1,Math.ceil((m2.text||"").length/40))}
+                              <MsgTextArea value={m2.text||""} onChange={v=>updMsg({text:v})} perRow={40}
                                 className="adm-input" style={{width:"100%",resize:"vertical",background:"var(--raise)",border:"1px solid var(--line)",color:"var(--ink)",padding:"6px 10px",fontSize:12,borderRadius:6,lineHeight:1.4,minHeight:36,boxSizing:"border-box"}}/>
                             </div>
                             <InsertMsgBtn onClick={()=>insertAt(si+1)}/>
@@ -1531,10 +1547,10 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                         <img src={msg2.img} style={{maxWidth:"100%",maxHeight:180,borderRadius:13,display:"block",border:"1px solid var(--line)"}}/>
                         {focused && <button onClick={()=>patch(si,{img:null})} title="Retirer l'image" style={{position:"absolute",top:4,right:4,background:"rgba(0,0,0,0.55)",border:"none",color:"#fff",borderRadius:"50%",width:22,height:22,cursor:"pointer",fontSize:12}}>✕</button>}
                       </div>}
-                      <textarea value={msg2.text||""}
+                      <MsgTextArea value={msg2.text||""}
                         onFocus={()=>setMsgFocusId(mid)}
-                        onChange={e=>patch(si,{text:e.target.value})}
-                        rows={Math.max(1,Math.ceil((msg2.text||"").length/34))}
+                        onChange={v=>patch(si,{text:v})}
+                        perRow={34}
                         placeholder={isMe?"Ton message…":"Leur message…"}
                         style={{width:"100%",resize:"none",fontFamily:"inherit",
                           background:isMe?"var(--accent)":"var(--raise)",
