@@ -1145,8 +1145,20 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                           placeholder="Nom du groupe"/>
                       )}
                       <span style={{fontSize:10,color:"var(--ink-faint)",flexShrink:0,marginLeft:"auto"}}>{threadLen} msg</span>
+                      {/* Suppression DOUCE, par téléphone (même comportement que les convs solo) :
+                          on bascule `deleted` sur l'entrée de CE perso → le groupe passe dans
+                          « Supprimés récemment » de ce seul téléphone, restaurable. À distinguer du
+                          ✕ ci-dessous qui, lui, retire le groupe de TOUS les tels (définitif). */}
+                      <button onClick={e=>{e.stopPropagation(); toggleDeleted(gMsg);}}
+                        title={gMsg.deleted ? "Restaurer dans la boîte de réception" : "Déplacer vers Supprimés récemment (ce téléphone)"}
+                        style={{
+                          background:gMsg.deleted?"rgba(16,185,129,0.1)":"rgba(239,68,68,0.08)",
+                          border:`1px solid ${gMsg.deleted?"rgba(16,185,129,0.3)":"rgba(239,68,68,0.2)"}`,
+                          color:gMsg.deleted?"var(--ok)":"var(--danger)",
+                          borderRadius:6,padding:"3px 7px",cursor:"pointer",fontSize:11,flexShrink:0,lineHeight:1,marginLeft:6,
+                        }}>{gMsg.deleted ? "↩ Inbox" : "🗑 Suppr."}</button>
                       <button onClick={e=>{e.stopPropagation(); deleteGroup();}}
-                        className="adm-del-btn" title="Supprimer le groupe"
+                        className="adm-del-btn" title="Supprimer le groupe de TOUS les téléphones (définitif)"
                         style={{background:"none",border:"none",color:"var(--ink-faint)",cursor:"pointer",fontSize:16,padding:"0 4px",flexShrink:0,lineHeight:1}}>✕</button>
                     </div>
                     {gOpen && isSharedGroup && (
