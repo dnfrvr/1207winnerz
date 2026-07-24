@@ -30,3 +30,6 @@ Thumbs.db
 
 # Claude Code local
 .claude/
+
+# Dumps de sauvegarde live (contenu de l'histoire, généré par les scripts)
+scripts/_backups/
