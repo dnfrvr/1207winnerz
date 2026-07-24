@@ -36,11 +36,15 @@ const LoreDateTimeInput = ({value, onChange, width="100%", showLabel=true, showT
     <div style={{display:"flex",flexDirection:"column",gap:5,width}}>
       {showLabel && <label style={{color:"var(--ink-faint, #9ca3af)",fontSize:10,letterSpacing:0.8,textTransform:"uppercase",fontWeight:600}}>{label}</label>}
       <div style={{display:"flex",gap:4,flexWrap:"wrap"}}>
+        {/* NON-DESTRUCTIF : un input date/heure natif peut émettre une valeur VIDE de façon transitoire
+            (Brave/Chromium pendant la saisie, ou champ effacé). On ignore alors l'émission plutôt que
+            de reconstruire la string en perdant l'autre champ (bug : heure supprimée / date remise à
+            oct. 2012). L'heure ne change que si une heure valide est saisie ; idem pour la date. */}
         <input type="date" value={dateVal}
-          onChange={e=>onChange(build(e.target.value, timeVal))}
+          onChange={e=>{ if(e.target.value) onChange(build(e.target.value, timeVal)); }}
           className="adm-input" style={{flex:"1 1 120px",minWidth:0,background:"var(--raise, rgba(255,255,255,0.8))",border:"1px solid var(--line, rgba(0,0,0,0.1))",color:"var(--ink, #1a1a2e)",padding:"7px 8px",fontSize:11,borderRadius:7}}/>
         {showTime && <input type="time" value={timeVal}
-          onChange={e=>onChange(build(dateVal, e.target.value))}
+          onChange={e=>onChange(build(dateVal, e.target.value || timeVal))}
           className="adm-input" style={{flex:"1 1 90px",minWidth:0,background:"var(--raise, rgba(255,255,255,0.8))",border:"1px solid var(--line, rgba(0,0,0,0.1))",color:"var(--ink, #1a1a2e)",padding:"7px 8px",fontSize:11,borderRadius:7}}/>}
       </div>
     </div>

@@ -38,7 +38,8 @@ const parseLoreTime = (str) => {
           hour=parseInt(mT24[1]); min=mT24[2]?parseInt(mT24[2]):0;
         }
       }
-      return {day, month, hour, min};
+      let year = parseInt(mSlash[3]); if(year < 100) year += 2000;
+      return {day, month, hour, min, year};
     }
   }
 
@@ -66,6 +67,7 @@ const parseLoreTime = (str) => {
     month: MONTHS[mDay[2]] || 10,
     hour,
     min,
+    year:  2012, // les dates « lore » sans année explicite sont en 2012
   };
 };
 
@@ -109,11 +111,38 @@ const formatMsgTime = (timeStr, loreDateStr) => {
   return `${day} ${MONTH_SHORT[month]}`;
 };
 
-// Clé numérique triable depuis une heure lore ("1 oct, 10h05") — pour l'ordre anti-chronologique.
+// Clé numérique triable depuis une heure lore ("1 oct, 10h05") — tri par DATE COMPLÈTE puis heure
+// (année incluse : les fils qui mélangent des dates avec/sans année explicite se trient correctement).
 const loreSortKey = (timeStr) => {
   const p = parseLoreTime(timeStr);
   if(!p) return 0;
-  return (p.month||0)*1e6 + (p.day||0)*1e4 + (p.hour||0)*100 + (p.min||0);
+  return (p.year||2012)*1e8 + (p.month||0)*1e6 + (p.day||0)*1e4 + (p.hour||0)*100 + (p.min||0);
+};
+
+// ── Interpolation temporelle (pour le drag & drop de messages) ───────────────
+// Convertit une heure lore ↔ timestamp, et calcule une heure « entre » deux voisins : quand on
+// déplace un message entre le précédent et le suivant, on lui donne l'instant médian → il se situe
+// naturellement dans le temps sans avoir à retaper la date.
+const loreTimeToMs = (str) => {
+  const p = parseLoreTime(str);
+  if(!p || !p.day) return null;
+  return new Date(p.year||2012, (p.month||1)-1, p.day, p.hour||0, p.min||0).getTime();
+};
+const msToLoreTime = (ms) => {
+  const d = new Date(ms);
+  const hh = d.getHours(), mm = d.getMinutes();
+  const period = hh < 12 ? 'am' : 'pm';
+  const h12 = hh % 12 === 0 ? 12 : hh % 12;
+  return `${d.getDate()} ${LORE_MONTHS[d.getMonth()+1]}, ${h12}:${String(mm).padStart(2,'0')}${period}`;
+};
+// Heure médiane entre deux messages voisins. Un seul voisin → ±5 min de ce voisin. Aucun → fallback.
+const betweenLoreTimes = (prev, next) => {
+  const a = prev!=null ? loreTimeToMs(prev) : null;
+  const b = next!=null ? loreTimeToMs(next) : null;
+  if(a!=null && b!=null) return msToLoreTime(a + Math.round((b-a)/2));
+  if(a!=null) return msToLoreTime(a + 5*60000);
+  if(b!=null) return msToLoreTime(b - 5*60000);
+  return prev || next || null;
 };
 
 // Tri/regroupement de la galerie photo — partagé entre iOS et Android pour que la grille et la vue
@@ -212,4 +241,5 @@ export {
   sortGalleryPhotos, GALLERY_MONTHS_FR, groupGalleryByMonth, groupGalleryByYear,
   sortCallsByDate, FULL_MONTHS_EN, loreDayKey, loreDateLabel, loreRelativeLabel,
   loreClock, loreDateOnly, LoreDateCtx, useLoreRelative,
+  loreTimeToMs, msToLoreTime, betweenLoreTimes,
 };

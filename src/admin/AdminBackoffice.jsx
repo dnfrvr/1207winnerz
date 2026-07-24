@@ -137,7 +137,7 @@ const parseComposerLines = (text, group, tab) => {
     if(!m) continue;
     const who = m[1].trim().toLowerCase();
     let rest = m[2];
-    let time = "maintenant";
+    let time = "1 oct, 9:00am"; // défaut PARSEABLE (jamais "maintenant" : non triable, casse l'éditeur date/heure)
     const tm = rest.match(/\|\s*(.+)$/);
     if(tm) {
       const rawTime = tm[1].trim();
@@ -205,7 +205,7 @@ const ThreadComposer = ({isGroup, tab, onApply}) => {
             &nbsp;• <code>17 fév, 9:00am</code> — format complet (jour mois, heure)<br/>
             &nbsp;• <code>9:01am</code> — heure seule → hérite du jour du message précédent<br/>
             &nbsp;• <code>17/02/12</code> — format DD/MM/YY (anciens échanges)<br/>
-            &nbsp;• Si omis, le message reçoit l'horodatage "maintenant"
+            &nbsp;• Si omis, le message est daté du <code>1 oct, 9:00am</code> (ajuste-le ensuite)
           </div>
         </div>
       )}
@@ -1262,7 +1262,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                       const insertAt = (si) => {
                         const prev = sortedThread[si-1];
                         const next = sortedThread[si];
-                        const time = next?.time || prev?.time || "maintenant";
+                        const time = next?.time || prev?.time || "1 oct, 9:00am";
                         const t=[...sortedThread];
                         t.splice(si,0,{from:defaultSender,senderKey:defaultSender,senderName:CHAR_NAMES[defaultSender]||defaultSender,text:"",time});
                         writeThread(t);
@@ -1299,7 +1299,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                             <InsertMsgBtn onClick={()=>insertAt(si+1)}/>
                             </React.Fragment>
                           )})}
-                          <button onClick={()=>writeThread([...sortedThread,{from:defaultSender,senderKey:defaultSender,senderName:CHAR_NAMES[defaultSender]||defaultSender,text:"",time:"maintenant"}])}
+                          <button onClick={()=>writeThread([...sortedThread,{from:defaultSender,senderKey:defaultSender,senderName:CHAR_NAMES[defaultSender]||defaultSender,text:"",time:sortedThread[sortedThread.length-1]?.time||"1 oct, 9:00am"}])}
                             style={{background:"var(--line-soft)",border:"1px dashed var(--line)",color:"var(--ink-faint)",borderRadius:6,padding:"4px 10px",cursor:"pointer",fontSize:10,alignSelf:"flex-start",marginTop:4}}>+ message</button>
                         </div>
                       );
@@ -1311,7 +1311,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                       const writeLocal = (t) => { const ti=t.map((m,k)=>m.id!=null?m:{...m,id:Date.now()+k}); upd("messages", d.messages.map(m=>m===gMsg ? {...m, thread:ti} : m)); };
                       const insertAt = (si) => {
                         const prev=sortedLocal[si-1]; const next=sortedLocal[si];
-                        const time=next?.time||prev?.time||"maintenant";
+                        const time=next?.time||prev?.time||"1 oct, 9:00am";
                         const t=[...sortedLocal]; t.splice(si,0,{from:"them",senderName:"",senderKey:"",text:"",time}); writeLocal(t);
                       };
                       return (
@@ -1350,7 +1350,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                             <InsertMsgBtn onClick={()=>insertAt(si+1)}/>
                             </React.Fragment>
                           )})}
-                          <button onClick={()=>writeLocal([...sortedLocal,{from:"them",senderName:"",senderKey:"",text:"",time:"maintenant"}])}
+                          <button onClick={()=>writeLocal([...sortedLocal,{from:"them",senderName:"",senderKey:"",text:"",time:sortedLocal[sortedLocal.length-1]?.time||"1 oct, 9:00am"}])}
                             style={{background:"var(--line-soft)",border:"1px dashed var(--line)",color:"var(--ink-faint)",borderRadius:6,padding:"4px 10px",cursor:"pointer",fontSize:10,alignSelf:"flex-start",marginTop:4}}>+ message</button>
                         </div>
                       );
@@ -1469,7 +1469,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
               };
               const insertAt = (si) => {
                 const prev=sortedDisplay[si-1]; const next=sortedDisplay[si];
-                const time=next?.time||prev?.time||"maintenant";
+                const time=next?.time||prev?.time||"1 oct, 9:00am";
                 const t=[...sortedDisplay];
                 t.splice(si,0,{from:"them",text:"",time});
                 writeThread(t);
@@ -1480,7 +1480,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
               <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:8,flexWrap:"wrap",marginBottom:6}}>
                 <span style={{fontSize:11,color:"var(--ink-faint)"}}>💬 Aperçu conversation — clique une bulle pour l'éditer.</span>
                 <button onClick={()=>writeThread([...sortedDisplay].sort((a,b)=>loreSortKey(a.time)-loreSortKey(b.time)))}
-                  style={{background:"var(--accent-wash)",border:"1px solid var(--accent-line)",color:"var(--accent)",borderRadius:7,padding:"4px 10px",cursor:"pointer",fontSize:11,fontWeight:600}}>↕ Trier par heure</button>
+                  style={{background:"var(--accent-wash)",border:"1px solid var(--accent-line)",color:"var(--accent)",borderRadius:7,padding:"4px 10px",cursor:"pointer",fontSize:11,fontWeight:600}}>↕ Trier par date et heure</button>
               </div>
               {/* ── Vue conversation (bulles WYSIWYG) ── */}
               <div style={{display:"flex",flexDirection:"column",gap:9,background:"var(--paper)",border:"1px solid var(--line)",borderRadius:12,padding:"12px 12px 8px"}}>
@@ -1555,7 +1555,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
           );
         })}
         {msgAdminTab==="inbox" && (
-        <button onClick={()=>upd("messages",[{id:Date.now(),contact:"Nouveau contact",thread:[{from:"them",text:"",time:"maintenant"}]},...(d.messages||[])])}
+        <button onClick={()=>upd("messages",[{id:Date.now(),contact:"Nouveau contact",thread:[{from:"them",text:"",time:"1 oct, 9:00am"}]},...(d.messages||[])])}
           style={{background:"var(--accent)",border:"none",color:"#fff",borderRadius:9,boxShadow:"var(--shadow)",padding:"10px 18px",cursor:"pointer",fontSize:12,fontWeight:600}}>+ Nouvelle conversation</button>
         )}
         {msgAdminTab==="deleted" && deletedMsgs.length===0 && (
