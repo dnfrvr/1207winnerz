@@ -1301,7 +1301,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                               const t=[...sortedThread]; t[si]={...t[si],...patch}; writeThread(t);
                             };
                             return (
-                            <React.Fragment key={m2.id ?? si}>
+                            <React.Fragment key={si}>
                             <div {...dropHandlers(dragScopeG, si, sortedThread, writeThread)}
                               style={{display:"flex",flexDirection:"column",gap:4,background:"var(--line-soft)",borderRadius:8,padding:"8px 10px",border:"1px solid var(--line-soft)",borderTop: isDropTarget(dragScopeG,si)?"2px solid var(--accent)":"1px solid var(--line-soft)"}}>
                               <div style={{display:"flex",gap:6,alignItems:"center"}}>
@@ -1350,7 +1350,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                             const mc = isMe ? charColor : "var(--ink-soft)";
                             const updMsg = (patch) => { const t=[...sortedLocal]; t[si]={...t[si],...patch}; writeLocal(t); };
                             return (
-                            <React.Fragment key={m2.id ?? si}>
+                            <React.Fragment key={si}>
                             <div {...dropHandlers(dragScopeGL, si, sortedLocal, writeLocal)}
                               style={{display:"flex",flexDirection:"column",gap:4,background:"var(--line-soft)",borderRadius:8,padding:"8px 10px",border:"1px solid var(--line-soft)",borderTop: isDropTarget(dragScopeGL,si)?"2px solid var(--accent)":"1px solid var(--line-soft)"}}>
                               <div style={{display:"flex",gap:6,alignItems:"center",flexWrap:"wrap"}}>
@@ -1517,10 +1517,10 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
                 {sortedDisplay.length===0 && <div style={{textAlign:"center",color:"var(--ink-faint)",fontSize:12,padding:"14px 0"}}>Conversation vide — écris le premier message ci-dessous.</div>}
                 {sortedDisplay.map((msg2,si)=>{
                   const isMe = msg2.from==="me";
-                  const mid = msg2.id ?? ("i"+si);
+                  const mid = "m"+si; // stable (index) — ne dépend pas de l'id volatil réassigné à l'écriture
                   const focused = msgFocusId===mid;
                   return (
-                  <div key={msg2.id ?? si}
+                  <div key={si}
                     {...dropHandlers(dragScope, si, sortedDisplay, writeThread)}
                     style={{display:"flex",flexDirection:"column",alignItems:isMe?"flex-end":"flex-start",gap:3,position:"relative",
                       borderTop: isDropTarget(dragScope,si) ? "2px solid var(--accent)" : "2px solid transparent", paddingTop:2}}>
