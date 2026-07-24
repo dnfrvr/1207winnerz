@@ -6,6 +6,21 @@
 import { CHAR_NAMES } from "../data/characters.js";
 import { loreSortKey } from "./lore-date.js";
 
+// Perspective d'un perso dans un fil partagé 1-à-1, DÉRIVÉE de l'identité plutôt que lue depuis
+// l'entrée (`msg.perspective`). Un sharedThreadId 1-à-1 est toujours "charA_charB" par ordre alpha
+// (ex: "drew_elias") : le 1er participant est le côté 'a', le 2nd le côté 'b'. Ainsi, même si la
+// synchro Firebase a laissé un pointeur en double avec une perspective incohérente, le tel affiche
+// TOUJOURS le bon côté — plus de « je vois la conversation du point de vue de l'autre joueur ».
+// Repli sur la valeur stockée si le format est inattendu (jamais destructif).
+export const perspectiveOf = (charKey, sharedThreadId, stored) => {
+  const parts = (sharedThreadId || "").split("_");
+  if (parts.length === 2) {
+    if (parts[0] === charKey) return "a";
+    if (parts[1] === charKey) return "b";
+  }
+  return stored || "a";
+};
+
 // Résout le fil d'une conversation avec la bonne perspective (me/them), en tenant compte des
 // fils partagés — 1-à-1 (champ `perspective` a/b) ou groupes (`sharedThreadId` → sharedThreads) —
 // puis trie chronologiquement par heure lore (cohérent avec l'admin).
@@ -20,7 +35,7 @@ export const resolveThread = (msg, data, charKey) => {
     }
   } else if (msg.sharedThreadId) {
     const raw = data.sharedThreads?.[msg.sharedThreadId] || msg.thread || [];
-    const myLetter = msg.perspective || 'a';
+    const myLetter = perspectiveOf(charKey, msg.sharedThreadId, msg.perspective);
     thread = raw.map(m => ({ ...m, from: m.from === myLetter ? 'me' : 'them' }));
   } else {
     thread = msg.thread || [];

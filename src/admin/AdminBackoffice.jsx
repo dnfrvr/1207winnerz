@@ -3,6 +3,7 @@ import { ref, onValue, set, update } from "firebase/database";
 import { FF_IOS } from "../shared/constants.js";
 import { APP_META } from "../shared/app-meta.js";
 import { loreSortKey, parseLoreTime, LORE_DATE_DEFAULT } from "../shared/lore-date.js";
+import { perspectiveOf } from "../shared/messages.js";
 import { UploadReader, dataUriToBlob, findBase64Images, uploadBlobToSupabase, supabaseClient, loadSnapshotFromSupabase } from "../lib/storage.js";
 import { firebaseDb } from "../lib/firebase.js";
 import { CHAR_NAMES } from "../data/characters.js";
@@ -1406,7 +1407,8 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
               </div>
             {(()=>{
               const isShared = !!msg.sharedThreadId;
-              const myL = msg.perspective||'a';
+              // Perspective dérivée de l'identité (voir src/shared/messages.js) — cohérent avec le tel.
+              const myL = perspectiveOf(tab, msg.sharedThreadId, msg.perspective);
               const otherL = myL==='a'?'b':'a';
               // Tri chronologique — les messages périmés (temps non reconnu) restent en fin.
               // Pour les convs partagées, on travaille directement sur l'array a/b (pas de
@@ -1505,7 +1507,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
             <ThreadComposer isGroup={false} tab={tab} onApply={(parsed,mode)=>{
               if(msg.sharedThreadId){
                 const cur=dataRef.current.sharedThreads?.[msg.sharedThreadId]||[];
-                const myL=msg.perspective||'a';const otherL=myL==='a'?'b':'a';
+                const myL=perspectiveOf(tab, msg.sharedThreadId, msg.perspective);const otherL=myL==='a'?'b':'a';
                 const raw=parsed.map(p=>({from:p.from==='me'?myL:otherL,text:p.text,time:p.time}));
                 onUpdate(msg.sharedThreadId,mode==="append"?[...cur,...raw]:raw);
               }else{
