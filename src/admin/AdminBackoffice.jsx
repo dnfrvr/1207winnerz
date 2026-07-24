@@ -3,7 +3,7 @@ import { ref, onValue, set, update } from "firebase/database";
 import { FF_IOS } from "../shared/constants.js";
 import { APP_META } from "../shared/app-meta.js";
 import { loreSortKey, parseLoreTime, LORE_DATE_DEFAULT } from "../shared/lore-date.js";
-import { perspectiveOf } from "../shared/messages.js";
+import { perspectiveOf, isMainPairThread } from "../shared/messages.js";
 import { UploadReader, dataUriToBlob, findBase64Images, uploadBlobToSupabase, supabaseClient, loadSnapshotFromSupabase } from "../lib/storage.js";
 import { firebaseDb } from "../lib/firebase.js";
 import { CHAR_NAMES } from "../data/characters.js";
@@ -1054,8 +1054,12 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
         onUpdate(targetKey, {...targetData, messages:[newConv, ...(targetData.messages||[])]});
       };
 
-      const inboxMsgs  = (d.messages||[]).filter(m=>!m.isGroup && !m.deleted);
-      const deletedMsgs = (d.messages||[]).filter(m=>!m.isGroup && m.deleted);
+      // Invariant : une conv entre 2 persos principaux (sharedThreadId "charA_charB") est TOUJOURS
+      // une conv 1-à-1, jamais un groupe — même si un flag isGroup parasite traîne. On la classe donc
+      // dans la liste 1-à-1 (pas dans les groupes), pour qu'elle reste éditable comme un fil partagé.
+      const isSolo = (m) => !m.isGroup || isMainPairThread(m.sharedThreadId);
+      const inboxMsgs  = (d.messages||[]).filter(m=>isSolo(m) && !m.deleted);
+      const deletedMsgs = (d.messages||[]).filter(m=>isSolo(m) && m.deleted);
       const visibleMsgs = msgAdminTab==="inbox" ? inboxMsgs : deletedMsgs;
 
       const toggleDeleted = (msg) => {
@@ -1088,7 +1092,7 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
 
         {/* ── Groupes de ce perso ───────────────────────────────── */}
         {(()=>{
-          const myGroups = (d.messages||[]).filter(m=>m.isGroup && (msgAdminTab==="inbox" ? !m.deleted : !!m.deleted));
+          const myGroups = (d.messages||[]).filter(m=>m.isGroup && !isMainPairThread(m.sharedThreadId) && (msgAdminTab==="inbox" ? !m.deleted : !!m.deleted));
           if(myGroups.length===0) return null;
           return (
             <div style={{background:"rgba(99,102,241,0.04)",border:"1px solid rgba(99,102,241,0.12)",borderRadius:10,padding:"12px 14px",display:"flex",flexDirection:"column",gap:8}}>

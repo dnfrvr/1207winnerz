@@ -6,6 +6,20 @@
 import { CHAR_NAMES } from "../data/characters.js";
 import { loreSortKey } from "./lore-date.js";
 
+// ─── INVARIANT : convs entre les 4 persos principaux ─────────────────────────
+// Toute conversation 1-à-1 entre deux persos principaux DOIT être un fil partagé (jamais un
+// groupe, jamais un fil local divergent). On le garantit à l'affichage (et côté admin) via
+// l'id du fil : un id 1-à-1 est "charA_charB" (positionnel) où les deux côtés sont des persos
+// principaux — ex: "drew_elias", "eoghan_elias", "glinda_elias". Si un `isGroup` parasite a été
+// posé sur une telle conv (bug de synchro / manip admin), on l'IGNORE au rendu → plus de conv
+// 1-à-1 qui s'affiche en mode groupe. C'est un garde-fou robuste : il ne dépend pas de la donnée
+// étant propre, il corrige l'affichage quoi qu'il arrive.
+export const MAIN_CHARS = ["glinda", "eoghan", "drew", "elias"];
+export const isMainPairThread = (sharedThreadId) => {
+  const parts = (sharedThreadId || "").split("_");
+  return parts.length === 2 && MAIN_CHARS.includes(parts[0]) && MAIN_CHARS.includes(parts[1]);
+};
+
 // Perspective d'un perso dans un fil partagé 1-à-1, DÉRIVÉE de l'identité plutôt que lue depuis
 // l'entrée (`msg.perspective`). Un sharedThreadId 1-à-1 est toujours "charA_charB" par ordre alpha
 // (ex: "drew_elias") : le 1er participant est le côté 'a', le 2nd le côté 'b'. Ainsi, même si la
@@ -27,7 +41,11 @@ export const perspectiveOf = (charKey, sharedThreadId, stored) => {
 export const resolveThread = (msg, data, charKey) => {
   if (!msg) return [];
   let thread;
-  if (msg.isGroup) {
+  // Invariant : une conv entre 2 persos principaux est TOUJOURS traitée comme un fil partagé
+  // 1-à-1, même si `isGroup` a été posé par erreur (sinon la branche groupe compare `from` — qui
+  // vaut "a"/"b" — à charKey, jamais égal → tout passe en « them » et l'affichage casse).
+  const treatAsGroup = msg.isGroup && !isMainPairThread(msg.sharedThreadId);
+  if (treatAsGroup) {
     if (!msg.sharedThreadId) thread = msg.thread || [];
     else {
       const raw = data.sharedThreads?.[msg.sharedThreadId] || [];

@@ -9,12 +9,13 @@
 // Idem pour `getThread`/`fmtTime`, déjà calculés côté shell.
 import React from "react";
 import { FF_IOS } from "../shared/constants.js";
-import { loreSortKey, loreDayKey, loreDateLabel, loreRelativeLabel } from "../shared/lore-date.js";
+import { loreSortKey, loreDayKey, loreDateLabel, loreClock } from "../shared/lore-date.js";
+import { isMainPairThread } from "../shared/messages.js";
 
 const AND_CONTACTS = ['drew','elias','gwen','nils','abby','hector','matthew','louis','vicky','james','harry','asra','nayati','sophie'];
 
 export const MessagesScreen = ({
-  isIos, data, accent, loreDate,
+  isIos, data, accent,
   thread, setThread, msgView, setMsgView, goHome,
   getThread, fmtTime,
   Shell, NavBar, statusBar,
@@ -95,6 +96,9 @@ export const MessagesScreen = ({
 
     const conv=data.messages[thread]; if(!conv) return null;
     const resolvedThread=getThread(conv);
+    // isGroup effectif : une conv 1-à-1 entre persos principaux n'est JAMAIS un groupe, même si un
+    // flag isGroup parasite traîne (cf. isMainPairThread). Évite l'affichage group-style + « them ».
+    const isGroupConv = conv.isGroup && !isMainPairThread(conv.sharedThreadId);
     const contactLower = (conv.contact||'').toLowerCase();
     const isAndroidContact = AND_CONTACTS.some(n=>contactLower.includes(n));
     const meBg    = isAndroidContact ? "linear-gradient(180deg,#5AD265,#3DBF56)" : "linear-gradient(180deg,#1D85FB,#0A6EE8)";
@@ -113,7 +117,9 @@ export const MessagesScreen = ({
             // dès que deux messages reçus avaient des heures différentes, donc chaque message "them"
             // avait sa propre heure même au milieu d'une série. Maintenant uniquement au changement
             // d'expéditeur ou en fin de fil.
-            const showTime = !nextMsg || nextMsg.from!==msg.from || (conv.isGroup && nextMsg.senderKey!==msg.senderKey);
+            // Heure affichée sous CHAQUE message (discrète mais visible). loreClock donne l'heure
+            // horloge du message ("2:22pm"), indépendante de la date lore courante.
+            const clock = loreClock(msg.time);
             const dayChanged = loreDayKey(msg.time)!==null && (mi===0 || loreDayKey(resolvedThread[mi-1]?.time)!==loreDayKey(msg.time));
             const dateLabel = loreDateLabel(msg.time);
             return (
@@ -121,7 +127,7 @@ export const MessagesScreen = ({
               {dayChanged && dateLabel &&
                 <div style={{textAlign:"center",fontSize:10.5,color:"#8e8e93",fontWeight:400,padding:"12px 0 6px",letterSpacing:0.2}}>{dateLabel}</div>}
               <div style={{display:"flex",flexDirection:"column",alignItems:isMe?"flex-end":"flex-start",padding:"1px 10px",gap:0}}>
-                {conv.isGroup && !isMe && (mi===0 || resolvedThread[mi-1]?.senderKey!==msg.senderKey) &&
+                {isGroupConv && !isMe && (mi===0 || resolvedThread[mi-1]?.senderKey!==msg.senderKey) &&
                   <span style={{fontSize:10,color:"#5b6b7a",fontWeight:600,padding:"3px 6px 1px"}}>{msg.senderName}</span>}
                 <div style={{
                   maxWidth:"75%",
@@ -142,7 +148,7 @@ export const MessagesScreen = ({
                   {msg.img && <img src={msg.img} style={{maxWidth:"100%",display:"block",borderRadius:msg.text?"18px 18px 0 0":(isMe?"18px 18px 3px 18px":"18px 18px 18px 3px")}}/>}
                   {msg.text && <div style={{padding:msg.img?"6px 12px":0}}>{msg.text}</div>}
                 </div>
-                {showTime&&<span style={{fontSize:10,color:"#555e6b",padding:"2px 4px",fontFamily:FF_IOS}}>{loreRelativeLabel(msg.time,loreDate)}</span>}
+                {clock&&<span style={{fontSize:9,color:"#5f6b78",opacity:0.75,padding:"1px 5px 2px",fontFamily:FF_IOS}}>{clock}</span>}
               </div>
               </React.Fragment>
             );
@@ -192,6 +198,7 @@ export const MessagesScreen = ({
 
   const conv=data.messages[thread]; if(!conv) return null;
   const resolvedThread=getThread(conv);
+  const isGroupConv = conv.isGroup && !isMainPairThread(conv.sharedThreadId); // cf. iOS : invariant persos principaux
   const avatarColor=["#e53935","#1e88e5","#43a047","#fb8c00","#8e24aa","#00897b"][conv.contact.charCodeAt(0)%6];
   return (
     <Shell onBack={()=>setThread(null)}>
@@ -199,8 +206,7 @@ export const MessagesScreen = ({
       <div ref={el=>{if(el)setTimeout(()=>{el.scrollTop=el.scrollHeight;},0)}} style={{flex:1,background:"#ece5dd",overflowY:"auto",padding:"8px 10px",display:"flex",flexDirection:"column",gap:3,minHeight:0,WebkitOverflowScrolling:"touch"}}>
         {resolvedThread.map((msg,mi)=>{
           const isMe=msg.from==="me";
-          const nextMsg = resolvedThread[mi+1];
-          const showTime = !nextMsg || nextMsg.from!==msg.from || (conv.isGroup && nextMsg.senderKey!==msg.senderKey);
+          const clock = loreClock(msg.time); // heure horloge, sous chaque message
           const dayChanged = loreDayKey(msg.time)!==null && (mi===0 || loreDayKey(resolvedThread[mi-1]?.time)!==loreDayKey(msg.time));
           const dateLabel = loreDateLabel(msg.time);
           return <React.Fragment key={mi}>
@@ -209,23 +215,23 @@ export const MessagesScreen = ({
                 <span style={{background:"#d1c7bd",color:"#777",padding:"3px 10px",borderRadius:10,fontSize:10}}>{dateLabel}</span>
               </div>}
             <div style={{display:"flex",justifyContent:isMe?"flex-end":"flex-start",alignItems:"flex-end",gap:6}}>
-            {!isMe&&<div style={{width:28,height:28,background:conv.isGroup?avatarColor:avatarColor,borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontWeight:700,fontSize:11,flexShrink:0,alignSelf:"flex-end",fontFamily:FF_IOS}}>{conv.isGroup?(msg.senderName?.[0]||"?"):conv.contact[0]}</div>}
+            {!isMe&&<div style={{width:28,height:28,background:avatarColor,borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontWeight:700,fontSize:11,flexShrink:0,alignSelf:"flex-end",fontFamily:FF_IOS}}>{isGroupConv?(msg.senderName?.[0]||"?"):conv.contact[0]}</div>}
             <div style={{maxWidth:"72%"}}>
-              {conv.isGroup && !isMe && (mi===0 || resolvedThread[mi-1]?.senderKey!==msg.senderKey) &&
+              {isGroupConv && !isMe && (mi===0 || resolvedThread[mi-1]?.senderKey!==msg.senderKey) &&
                 <div style={{fontSize:10,color:avatarColor,fontWeight:600,padding:"0 10px 2px",fontFamily:FF_IOS}}>{msg.senderName}</div>}
               <div style={{
                 background:msg.img?"transparent":(isMe?accent:"#fff"),
                 color:isMe?"#fff":"#212121",
-                borderRadius:isMe?"18px 4px 18px 18px":"4px 18px 18px 18px",
+                borderRadius:isMe?"18px 18px 4px 18px":"18px 18px 18px 4px",
                 padding:msg.img?0:"8px 12px",fontSize:13,lineHeight:1.45,
                 boxShadow:msg.img?"none":"0 1px 1px rgba(0,0,0,0.13)",
                 fontFamily:FF_IOS,
                 overflow:msg.img?"hidden":"visible",
               }}>
-                {msg.img && <img src={msg.img} style={{maxWidth:"100%",display:"block",borderRadius:msg.text?"18px 18px 0 0":(isMe?"18px 4px 18px 18px":"4px 18px 18px 18px")}}/>}
+                {msg.img && <img src={msg.img} style={{maxWidth:"100%",display:"block",borderRadius:msg.text?"18px 18px 0 0":(isMe?"18px 18px 4px 18px":"18px 18px 18px 4px")}}/>}
                 {msg.text && <div style={{padding:msg.img?"6px 12px":0}}>{msg.text}</div>}
               </div>
-              <div style={{fontSize:10,color:"#aaa",marginTop:2,textAlign:isMe?"right":"left",padding:"0 4px",fontFamily:FF_IOS}}>{showTime&&loreRelativeLabel(msg.time,loreDate)}</div>
+              <div style={{fontSize:9,color:"#999",opacity:0.85,marginTop:1,textAlign:isMe?"right":"left",padding:"0 5px",fontFamily:FF_IOS}}>{clock}</div>
             </div>
           </div>
           </React.Fragment>;

@@ -184,6 +184,17 @@ const loreRelativeLabel = (timeStr, loreDateStr) => {
   return timeStr;
 };
 
+// Heure « horloge » seule d'un message ("1 oct, 2:22pm" → "2:22pm"), indépendamment de la date
+// lore courante — pour afficher discrètement l'heure sous CHAQUE message d'une conversation.
+// Renvoie "" si le message n'a pas d'heure exploitable (on n'affiche alors rien).
+const loreClock = (timeStr) => {
+  const p = parseLoreTime(timeStr);
+  if(!p || p.hour === null || p.hour === undefined) return "";
+  const period = p.hour < 12 ? 'am' : 'pm';
+  const h12 = p.hour % 12 === 0 ? 12 : p.hour % 12;
+  return `${h12}:${String(p.min || 0).padStart(2,'0')}${period}`;
+};
+
 // Normalise l'affichage d'une date brute (ex: ancien stockage "6 oct" en français) en "6 Oct"
 // anglais, sans toucher à la donnée stockée — juste l'affichage, pour un format uniforme partout.
 const loreDateOnly = (dateStr) => {
@@ -200,5 +211,5 @@ export {
   LORE_DATE_DEFAULT, getLoreDate, parseLoreTime, formatMsgTime, loreSortKey,
   sortGalleryPhotos, GALLERY_MONTHS_FR, groupGalleryByMonth, groupGalleryByYear,
   sortCallsByDate, FULL_MONTHS_EN, loreDayKey, loreDateLabel, loreRelativeLabel,
-  loreDateOnly, LoreDateCtx, useLoreRelative,
+  loreClock, loreDateOnly, LoreDateCtx, useLoreRelative,
 };
