@@ -1491,7 +1491,7 @@ const IOSPhone = ({data,admin,onUpdate,onUpdateShared=()=>{},loreDate:loreDatePr
       <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden",position:"relative",...homeBg,fontFamily:FF_IOS}}>
         <IOSStatusBar mode="home"/>
         <DraggableHomescreen data={data} update={update} appIcon={appIcon} badge={badge} goApp={id=>{
-          const IOS_APPS=['calendar','facebook','gmail','groupme','insta','messages','music','nikeplus','notes','phone','photos','gallery','pinterest','safari','settings','snapchat','soundcloud','starbucks','tumblr','twitter','weather','wikipedia','grindr','reddit','vpn','youtube','contacts','files'];
+          const IOS_APPS=['calendar','facebook','gmail','groupme','insta','messages','music','nikeplus','notes','phone','photos','gallery','pinterest','safari','settings','snapchat','soundcloud','starbucks','tumblr','twitter','weather','wikipedia','grindr','reddit','vpn','youtube','contacts','files','kindle'];
           if(IOS_APPS.includes(id)){setThread(null);if(id==="contacts")setPhonePanel("contacts");setApp(id==="gallery"?"photos":id==="contacts"?"phone":id);if(id==="safari"||id==="browser"){setBrowserTab("search");}}
         }} os="ios" accent={accent} admin={admin} charKey={charKey} noWallpaper/>
       </div>
@@ -1745,6 +1745,7 @@ const IOSPhone = ({data,admin,onUpdate,onUpdateShared=()=>{},loreDate:loreDatePr
   if(app==="contacts")  return <Shell><IOSStatusBar/><NavBar title="Contacts" back={goHome}/><ContactsScreen data={data} isIos={true} accent={accent}/></Shell>;
   if(app==="clock")     return <Shell><IOSStatusBar/><NavBar title="Clock" back={goHome}/><ClockScreen isIos={true} accent={accent}/></Shell>;
   if(app==="maps")      return <Shell><IOSStatusBar/><NavBar title="Maps" back={goHome}/><MapsScreen isIos={true} accent={accent}/></Shell>;
+  if(app==="kindle")    return <Shell><IOSStatusBar/><NavBar title="Kindle" back={goHome}/><KindleScreen isIos={true} accent={accent} data={data}/></Shell>;
   // Shazam est purement décoratif : l'icône s'affiche mais n'est pas ouvrable (exclue de IOS_APPS/AND_APPS).
 
   return null;
@@ -3218,10 +3219,15 @@ export default function App() {
               const username = USERNAME_MAP[k];
               // Toujours remplacer feedPosts pour éliminer les posts de joueurs mal placés
               patches[`${k}/tumblr`] = {...(remote[k]?.tumblr||{}), feedPosts: SEED_FEED_TUMBLR[username]||[]};
-              // Ajouter "files" dans les apps si absent
+              // Compléter la liste des apps si des entrées attendues manquent (jamais de suppression).
+              // - "files" pour tous (v9)
+              // - "kindle" pour Elias (v10 : Kindle rendue ouvrable pour Elias, futur Stephen King)
               const existingApps = remote[k]?.apps || [];
-              if(!existingApps.includes("files")) {
-                patches[`${k}/apps`] = [...existingApps, "files"];
+              const appsToAdd = [];
+              if(!existingApps.includes("files")) appsToAdd.push("files");
+              if(k==="elias" && !existingApps.includes("kindle")) appsToAdd.push("kindle");
+              if(appsToAdd.length) {
+                patches[`${k}/apps`] = [...existingApps, ...appsToAdd];
               }
               // Seed "playlist n°1" (nouvelle fonctionnalité v8) : regroupe tous les morceaux déjà
               // présents dans music au moment de la migration. Nom/cover personnalisables ensuite

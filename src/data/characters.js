@@ -7929,6 +7929,7 @@ export const mkData = () => ({
       "weather",
       "settings",
       "wikipedia",
+      "kindle",
       "vpn",
       "camera",
       "facetime",
