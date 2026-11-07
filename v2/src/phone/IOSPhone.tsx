@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Route, Routes, useNavigate, useParams } from "react-router-dom";
 import { useCanEdit, useValue } from "../data/hooks";
 import { AppFrame, BackButton, SlideToUnlock, StatusBar, useClock, useLoreDate } from "./IOSChrome";
@@ -14,10 +14,13 @@ export function IOSPhone() {
   const { pid = "" } = useParams();
   const profile = useValue<Profile>(`phones/${pid}/profile`) ?? {};
   const canEdit = useCanEdit(pid);
+  const fit = useFullscreenFit();
   return (
+    <div className={`stage-root ${fit ? "fullscreen" : ""}`}>
     <div className="stage">
       <div className={`device ${profile.phoneColor === "black" ? "dark" : ""}`}>
-        <div className="screen">
+        <div className="screen-fit" style={fit ? { width: SCREEN_W * fit, height: SCREEN_H * fit } : { width: SCREEN_W, height: SCREEN_H }}>
+        <div className="screen" style={fit ? { transform: `scale(${fit})` } : undefined}>
           <Routes>
             <Route index element={<Lock pid={pid} profile={profile} />} />
             <Route path="home" element={<Springboard pid={pid} profile={profile} />} />
@@ -25,10 +28,34 @@ export function IOSPhone() {
           </Routes>
           {!canEdit && <div className="readonly-tag">Lecture seule · téléphone de {profile.name ?? pid}</div>}
         </div>
+        </div>
         <HomeButton pid={pid} />
       </div>
     </div>
+    </div>
   );
+}
+
+// Taille logique de l'écran (iPhone 5) — identique sur ordinateur et en plein écran.
+const SCREEN_W = 320, SCREEN_H = 568;
+const FULLSCREEN_QUERY = "(max-width: 520px), (pointer: coarse) and (max-width: 900px)";
+
+/** En plein écran : facteur d'échelle qui fait tenir 320×568 dans la fenêtre sans déformer. */
+function useFullscreenFit(): number | null {
+  const compute = () => {
+    if (!window.matchMedia(FULLSCREEN_QUERY).matches) return null;
+    const vv = window.visualViewport;
+    const w = vv?.width ?? window.innerWidth, h = vv?.height ?? window.innerHeight;
+    return Math.min(w / SCREEN_W, h / SCREEN_H);
+  };
+  const [fit, setFit] = useState(compute);
+  useEffect(() => {
+    const on = () => setFit(compute());
+    window.addEventListener("resize", on);
+    window.visualViewport?.addEventListener("resize", on);
+    return () => { window.removeEventListener("resize", on); window.visualViewport?.removeEventListener("resize", on); };
+  }, []);
+  return fit;
 }
 
 function HomeButton({ pid }: { pid: string }) {
