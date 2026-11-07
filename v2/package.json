@@ -9,7 +9,8 @@
     "dev": "vite",
     "prebuild": "npm run dev-seed",
     "build": "tsc --noEmit && vite build",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "dev:demo": "npm run dev-seed && vite --mode demo"
   },
   "dependencies": {
     "firebase": "10.12.5",

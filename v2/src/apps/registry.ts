@@ -3,4 +3,5 @@ import { lazy, type ComponentType } from "react";
 
 export const APPS: Record<string, ComponentType<{ pid: string }>> = {
   notes: lazy(() => import("./Notes")),
+  messages: lazy(() => import("./Messages")),
 };

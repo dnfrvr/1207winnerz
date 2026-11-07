@@ -148,7 +148,12 @@ export function migrate(v1) {
     const phone = { profile: {}, home: {}, inbox: {}, data: {} };
     for (const [field, val] of Object.entries(c)) {
       if (val === null || val === undefined) continue;
-      if (DROPPED_CHAR_FIELDS.has(field)) { report.dropped.push(`${pid}/${field}`); continue; }
+      if (DROPPED_CHAR_FIELDS.has(field)) {
+        // Jamais jeté : rangé dans legacy/charCopies pour vérification (peut contenir d'anciens messages).
+        report.dropped.push(`${pid}/${field}`);
+        v2.legacy ??= {}; (v2.legacy.charCopies ??= {})[`${pid}_${safeKey(field)}`] = convert(val, report, `legacy/${pid}/${field}`);
+        continue;
+      }
       if (field === "apps" || field === "dock") { phone.home[field] = asArray(val) || []; continue; }
       if (field === "messages") continue;
       if (PROFILE_FIELDS.has(field)) phone.profile[field] = convert(val, report, `${pid}/${field}`);
@@ -234,6 +239,34 @@ export function verify(v1, v2) {
   return { textsV1: before.size, missing };
 }
 
+// ── extraction des images base64 ────────────────────────────────────────────
+// Les images stockées en texte (data:image/...) pèsent ~16 Mo dans la base et ralentissent tout.
+// On les écrit en fichiers (nom = empreinte du contenu, donc dédupliqués) et on remplace la chaîne
+// par l'URL du fichier. Modifie `v2` en place ; renvoie {count, bytes}.
+export async function extractImages(v2, dir, urlPrefix) {
+  const { createHash } = await import("node:crypto");
+  fs.mkdirSync(dir, { recursive: true });
+  let count = 0, bytes = 0;
+  const walk = (o) => {
+    for (const k of Object.keys(o)) {
+      const v = o[k];
+      if (typeof v === "string" && v.startsWith("data:image/")) {
+        const m = v.match(/^data:image\/([a-z0-9+.-]+);base64,(.*)$/i);
+        if (!m) continue;
+        const ext = { jpeg: "jpg", "svg+xml": "svg" }[m[1].toLowerCase()] ?? m[1].toLowerCase();
+        const buf = Buffer.from(m[2], "base64");
+        const name = `${createHash("sha1").update(buf).digest("hex").slice(0, 20)}.${ext}`;
+        const file = path.join(dir, name);
+        if (!fs.existsSync(file)) { fs.writeFileSync(file, buf); bytes += buf.length; }
+        o[k] = `${urlPrefix}${name}`;
+        count++;
+      } else if (v && typeof v === "object") walk(v);
+    }
+  };
+  walk(v2);
+  return { count, bytes };
+}
+
 // ── CLI ──────────────────────────────────────────────────────────────────────
 if (import.meta.url === pathToFileURL(process.argv[1]).href) {
   // `--seed <sortie>` : migre les seeds (mkData) et écrit le résultat (jeu de données de dev de la v2).
@@ -249,13 +282,20 @@ if (import.meta.url === pathToFileURL(process.argv[1]).href) {
   const { v2, report } = migrate(v1);
   const check = verify(v1, v2);
   console.log("\n== Comptes =="); for (const [k, n] of Object.entries(report.counts)) console.log(`  ${k.padEnd(28)} ${n}`);
-  console.log(`\n== Ignoré (copies parasites) == ${report.dropped.join(", ") || "rien"}`);
+  console.log(`\n== Copies parasites (rangées dans legacy/charCopies) == ${report.dropped.join(", ") || "rien"}`);
   console.log(`== Conservé en legacy == ${report.legacy.join(", ") || "rien"}`);
   console.log(`\n== Avertissements (${report.warnings.length}) ==`); report.warnings.forEach((w) => console.log("  - " + w));
   console.log(`\n== Conservation == ${check.textsV1} textes distincts en v1, ${check.missing.length} manquant(s)`);
   check.missing.slice(0, 30).forEach((m) => console.log(`  ✗ « ${m.text} » (attendu ${m.expected}, trouvé ${m.found})`));
   const kb = (o) => Math.round(JSON.stringify(o).length / 1024);
   console.log(`\nTaille : v1 ${kb(v1)} Ko → v2 ${kb(v2)} Ko`);
+  // `--images <dossier> <préfixe-url>` (après les 2 chemins) : extrait les images base64 en fichiers.
+  const ii = process.argv.indexOf("--images");
+  if (ii > 0 && !check.missing.length) {
+    const r = await extractImages(v2, process.argv[ii + 1], process.argv[ii + 2] ?? "/assets/live/");
+    console.log(`Images extraites : ${r.count} références, ${(r.bytes / 1e6).toFixed(1)} Mo écrits → ${process.argv[ii + 1]}`);
+    console.log(`Taille v2 après extraction : ${kb(v2)} Ko`);
+  }
   if (output) { fs.writeFileSync(output, JSON.stringify(v2, null, 2)); console.log(`Écrit : ${output}`); }
   process.exitCode = check.missing.length ? 1 : 0;
 }

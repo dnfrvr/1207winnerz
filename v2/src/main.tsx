@@ -1,50 +1,92 @@
-import { StrictMode, Suspense, useMemo, useState } from "react";
+import { StrictMode, Suspense, useEffect, useMemo, useState, type ReactNode } from "react";
 import { createRoot } from "react-dom/client";
 import { BrowserRouter, Link, Route, Routes, useParams } from "react-router-dom";
 import { DataProvider, useValue } from "./data/hooks";
 import { createMemoryStore, resetMemoryStore } from "./data/memoryStore";
 import { createFirebaseStore } from "./data/firebaseStore";
+import { LoginScreen, logout, useFirebaseSession, type Session } from "./data/auth";
 import type { Json, Store } from "./data/store";
 import { IOSPhone } from "./phone/IOSPhone";
-import seed from "./dev/seed-v2.json";
 import "./styles.css";
 
 const PIDS = ["glinda", "eoghan", "drew", "elias"] as const;
 const LS_ME = "uma-v2-me";
 
-// Firebase si configuré (VITE_FIREBASE_DATABASE_URL), sinon store mémoire seedé (dev / démo).
-function makeStore(): Store {
-  const url = import.meta.env.VITE_FIREBASE_DATABASE_URL as string | undefined;
-  if (url) return createFirebaseStore({
-    apiKey: import.meta.env.VITE_FIREBASE_API_KEY, authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-    databaseURL: url, projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  });
-  return createMemoryStore(seed as unknown as Json);
-}
+// Firebase si configuré (VITE_FIREBASE_DATABASE_URL), sinon mode démo : store mémoire seedé.
+const FIREBASE_CONFIG: Record<string, string> | null = import.meta.env.VITE_FIREBASE_DATABASE_URL
+  ? {
+      apiKey: import.meta.env.VITE_FIREBASE_API_KEY, authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+      databaseURL: import.meta.env.VITE_FIREBASE_DATABASE_URL, projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+    }
+  : null;
 
-const readMe = () => { try { return localStorage.getItem(LS_ME); } catch { return null; } };
-
-function Root() {
-  const store = useMemo(makeStore, []);
-  // TODO phase 2b : Firebase Auth. En attendant, le joueur choisit son perso (stocké localement).
-  const [me, setMe] = useState<string | null>(readMe);
-  const session = useMemo(() => ({ uid: me ?? "anon", phone: me, role: "player" as const }), [me]);
-  const choose = (p: string | null) => {
-    setMe(p);
-    try { if (p) localStorage.setItem(LS_ME, p); else localStorage.removeItem(LS_ME); } catch { /* rien */ }
-  };
+function Shell({ store, session, account, children }: { store: Store; session: Session; account: ReactNode; children?: ReactNode }) {
   return (
     <DataProvider store={store} session={session}>
       <BrowserRouter>
         <Suspense fallback={null}>
           <Routes>
-            <Route path="/" element={<Lobby me={me} onChoose={choose} memory={store.kind === "memory"} />} />
+            <Route path="/" element={<Lobby me={session.phone} account={account} />} />
             <Route path="/:pid/*" element={<PhoneRoute />} />
           </Routes>
         </Suspense>
       </BrowserRouter>
+      {children}
     </DataProvider>
   );
+}
+
+// ── Production : Firebase + comptes joueurs ─────────────────────────────────
+function FirebaseRoot({ config }: { config: Record<string, string> }) {
+  const state = useFirebaseSession(config);
+  const store = useMemo(() => createFirebaseStore(config), [config]);
+  if (state.status === "loading") return <div className="lobby"><p>Chargement…</p></div>;
+  if (state.status === "out") return <LoginScreen config={config} />;
+  if (!state.linked) return (
+    <div className="lobby">
+      <p>Ton compte n'est pas encore relié à un téléphone.</p>
+      <p className="devnote">Identifiant à transmettre : <code>{state.user.uid}</code></p>
+      <button className="linkish" onClick={() => logout(config)}>Se déconnecter</button>
+    </div>
+  );
+  const account = (
+    <p className="whoami">
+      Connecté·e : {state.user.email} · {state.session.role === "mj" ? "MJ" : `téléphone de ${state.session.phone}`}{" "}
+      <button className="linkish" onClick={() => logout(config)}>Se déconnecter</button>
+    </p>
+  );
+  return <Shell store={store} session={state.session} account={account} />;
+}
+
+// ── Démo / dev : store mémoire, perso choisi localement ─────────────────────
+const readMe = () => { try { return localStorage.getItem(LS_ME); } catch { return null; } };
+
+function DemoRoot() {
+  const [store, setStore] = useState<Store | null>(null);
+  const [me, setMe] = useState<string | null>(readMe);
+  useEffect(() => { import("./dev/seed-v2.json").then((m) => setStore(createMemoryStore(m.default as unknown as Json))); }, []);
+  const session = useMemo<Session>(() => ({ uid: me ?? "anon", phone: me, role: "player" }), [me]);
+  if (!store) return <div className="lobby"><p>Chargement…</p></div>;
+  const choose = (p: string | null) => {
+    setMe(p);
+    try { if (p) localStorage.setItem(LS_ME, p); else localStorage.removeItem(LS_ME); } catch { /* rien */ }
+  };
+  const account = (
+    <>
+      <div className="whoami">
+        Je joue :{" "}
+        <select value={me ?? ""} onChange={(e) => choose(e.target.value || null)}>
+          <option value="">— personne (lecture seule) —</option>
+          {PIDS.map((p) => <option key={p} value={p}>{p}</option>)}
+        </select>
+      </div>
+      <p className="devnote">
+        Mode démo : données locales à ce navigateur.{" "}
+        <button onClick={() => { if (confirm("Effacer les modifications locales ?")) { resetMemoryStore(); location.reload(); } }}>Réinitialiser</button>
+      </p>
+    </>
+  );
+  return <Shell store={store} session={session} account={account} />;
 }
 
 function PhoneRoute() {
@@ -54,32 +96,20 @@ function PhoneRoute() {
   return <IOSPhone />;
 }
 
-function Lobby({ me, onChoose, memory }: { me: string | null; onChoose: (p: string | null) => void; memory: boolean }) {
+function Lobby({ me, account }: { me: string | null; account: ReactNode }) {
   return (
     <div className="lobby">
       <h1>#WhatsInOurPhones</h1>
       <p className="sub">University of Maine at Augusta · Fall 2012</p>
       <div className="phones">{PIDS.map((p) => <LobbyPhone key={p} pid={p} mine={me === p} />)}</div>
-      <div className="whoami">
-        Je joue :{" "}
-        <select value={me ?? ""} onChange={(e) => onChoose(e.target.value || null)}>
-          <option value="">— personne (lecture seule) —</option>
-          {PIDS.map((p) => <option key={p} value={p}>{p}</option>)}
-        </select>
-      </div>
-      {memory && (
-        <p className="devnote">
-          Mode démo : données locales à ce navigateur.{" "}
-          <button onClick={() => { if (confirm("Effacer les modifications locales ?")) { resetMemoryStore(); location.reload(); } }}>Réinitialiser</button>
-        </p>
-      )}
+      {account}
     </div>
   );
 }
 
 function LobbyPhone({ pid, mine }: { pid: string; mine: boolean }) {
-  const p = useValue<{ name?: string; avatar?: string; accentColor?: string }>(`phones/${pid}/profile`);
-  const avatar = typeof p?.avatar === "string" ? p.avatar : undefined;
+  const p = useValue<{ name?: string; avatar?: string | { src?: string }; accentColor?: string }>(`phones/${pid}/profile`);
+  const avatar = typeof p?.avatar === "string" ? p.avatar : p?.avatar?.src;
   return (
     <Link to={`/${pid}`} className={`lobby-phone ${mine ? "mine" : ""}`} style={{ borderColor: p?.accentColor }}>
       {avatar ? <img src={avatar} alt="" /> : <span className="ph">📱</span>}
@@ -89,4 +119,6 @@ function LobbyPhone({ pid, mine }: { pid: string; mine: boolean }) {
   );
 }
 
-createRoot(document.getElementById("root")!).render(<StrictMode><Root /></StrictMode>);
+createRoot(document.getElementById("root")!).render(
+  <StrictMode>{FIREBASE_CONFIG ? <FirebaseRoot config={FIREBASE_CONFIG} /> : <DemoRoot />}</StrictMode>,
+);
