@@ -236,7 +236,9 @@ export function verify(v1, v2) {
 
 // ── CLI ──────────────────────────────────────────────────────────────────────
 if (import.meta.url === pathToFileURL(process.argv[1]).href) {
-  const [input, output] = process.argv.slice(2);
+  // `--seed <sortie>` : migre les seeds (mkData) et écrit le résultat (jeu de données de dev de la v2).
+  let [input, output] = process.argv.slice(2);
+  if (input === "--seed") { output = process.argv[3]; input = undefined; }
   let v1;
   if (input) v1 = JSON.parse(fs.readFileSync(input, "utf8"));
   else {

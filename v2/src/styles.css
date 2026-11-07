@@ -1,0 +1,174 @@
+/* ─── Base ──────────────────────────────────────────────────────────────────
+   DA : iOS 6 / Android de 2012 (skeuomorphisme). Seule l'ERGONOMIE d'édition est moderne. */
+:root {
+  --ios-font: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --ios-nav-top: #b2bfd0;
+  --ios-nav-bottom: #6d83a1;
+  --ios-nav-border: #2d3642;
+  --ios-blue-btn-top: #7c97c4;
+  --ios-blue-btn-bottom: #3d64a7;
+  --ios-pinstripe: #c5ccd4;
+  --page-bg: #1a1a2e;
+  --page-ink: #c6d9f0;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+html, body, #root { height: 100%; }
+body { background: var(--page-bg); color: var(--page-ink); font-family: var(--ios-font); overscroll-behavior: none; }
+button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
+textarea, input { font: inherit; color: inherit; }
+
+/* ─── Cadre : plein écran sur mobile, téléphone dessiné sur ordinateur ───── */
+.stage { min-height: 100dvh; display: flex; align-items: center; justify-content: center; padding: 24px 16px; }
+.device {
+  position: relative; width: 360px; padding: 92px 20px; border-radius: 54px;
+  background: linear-gradient(145deg, #fdfdfd, #d9dade 60%, #bfc1c6);
+  box-shadow: 0 0 0 2px #9a9ca1, 0 30px 60px rgba(0, 0, 0, .55), inset 0 2px 3px #fff;
+}
+.device.dark { background: linear-gradient(145deg, #3a3b3f, #121214 60%, #000); box-shadow: 0 0 0 2px #555, 0 30px 60px rgba(0,0,0,.6), inset 0 1px 2px #666; }
+.device::before { /* écouteur */
+  content: ""; position: absolute; top: 44px; left: 50%; width: 60px; height: 7px; margin-left: -30px;
+  border-radius: 4px; background: #2a2a2a; box-shadow: inset 0 1px 2px #000;
+}
+.device-home {
+  position: absolute; bottom: 20px; left: 50%; width: 56px; height: 56px; margin-left: -28px; border-radius: 50%;
+  background: linear-gradient(180deg, #e9e9ec, #cfd0d4); box-shadow: inset 0 1px 3px rgba(0,0,0,.35), 0 1px 0 #fff;
+}
+.device-home::after { content: ""; position: absolute; inset: 18px; border: 2px solid #9fa1a6; border-radius: 4px; }
+.device.dark .device-home { background: linear-gradient(180deg, #2b2b2e, #0e0e10); }
+.screen { position: relative; width: 320px; height: 568px; overflow: hidden; background: #000; box-shadow: 0 0 0 2px #000; }
+
+@media (max-width: 520px), (pointer: coarse) and (max-width: 900px) {
+  .stage { padding: 0; align-items: stretch; }
+  .device { width: 100%; padding: 0; border-radius: 0; background: #000; box-shadow: none; }
+  .device::before, .device-home { display: none; }
+  .screen { width: 100%; height: 100dvh; box-shadow: none; padding-top: env(safe-area-inset-top); }
+}
+
+/* ─── Barre d'état iOS 6 ─────────────────────────────────────────────────── */
+.ios-status {
+  position: relative; z-index: 20; height: 20px; display: flex; align-items: center; justify-content: space-between;
+  padding: 0 6px; font: bold 12px/20px var(--ios-font); color: #fff; text-shadow: 0 -1px 0 rgba(0,0,0,.6);
+}
+.ios-status.opaque { background: linear-gradient(#3b3b3b, #000); }
+.ios-status.translucent { background: rgba(0, 0, 0, .45); }
+.ios-status .time { position: absolute; left: 0; right: 0; text-align: center; pointer-events: none; }
+.ios-status .left, .ios-status .right { display: flex; align-items: center; gap: 4px; }
+.bars { display: flex; align-items: flex-end; gap: 1px; height: 10px; }
+.bars i { width: 3px; background: #fff; border-radius: .5px; }
+.battery { width: 22px; height: 10px; border: 1px solid #fff; border-radius: 2px; padding: 1px; position: relative; }
+.battery::after { content: ""; position: absolute; right: -3px; top: 2px; width: 2px; height: 4px; background: #fff; border-radius: 0 1px 1px 0; }
+.battery b { display: block; height: 100%; background: linear-gradient(#fff, #dfe9d4); border-radius: 1px; }
+/* indicateur d'activité réseau d'iOS 6 = « en cours d'enregistrement » */
+.spinner { width: 11px; height: 11px; border-radius: 50%; border: 2px solid rgba(255,255,255,.3); border-top-color: #fff; animation: spin .8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ─── Écran verrouillé ───────────────────────────────────────────────────── */
+.lock { position: absolute; inset: 0; display: flex; flex-direction: column; background-size: cover; background-position: center; }
+.lock-clock {
+  padding: 6px 0 10px; text-align: center; color: #fff; text-shadow: 0 -1px 0 rgba(0,0,0,.7);
+  background: linear-gradient(rgba(30,30,30,.55), rgba(0,0,0,.75)); border-bottom: 1px solid rgba(255,255,255,.12);
+}
+.lock-clock .t { font: 200 64px/1 var(--ios-font); letter-spacing: -1px; }
+.lock-clock .d { font: bold 15px var(--ios-font); margin-top: 2px; }
+.lock-bottom { margin-top: auto; padding: 22px 20px 26px; background: linear-gradient(rgba(0,0,0,.5), rgba(0,0,0,.85)); border-top: 1px solid rgba(255,255,255,.12); }
+.slider {
+  position: relative; height: 48px; border-radius: 12px; overflow: hidden;
+  background: linear-gradient(#1a1a1a, #2e2e2e); box-shadow: inset 0 1px 4px #000, 0 1px 0 rgba(255,255,255,.15);
+  touch-action: none; user-select: none;
+}
+.slider .label {
+  position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; padding-left: 50px;
+  font: 22px var(--ios-font); color: transparent;
+  background: linear-gradient(90deg, #555 0%, #555 40%, #fff 50%, #555 60%, #555 100%) 0 0 / 300% 100%;
+  -webkit-background-clip: text; background-clip: text; animation: shimmer 2.6s linear infinite;
+}
+@keyframes shimmer { from { background-position: 100% 0; } to { background-position: -100% 0; } }
+.slider .knob {
+  position: absolute; top: 3px; left: 3px; width: 62px; height: 42px; border-radius: 9px;
+  background: linear-gradient(#fefefe, #c9c9c9); box-shadow: 0 1px 2px rgba(0,0,0,.6);
+  display: flex; align-items: center; justify-content: center; color: #8a8a8a; font-size: 24px; font-weight: bold;
+}
+
+/* ─── Springboard ────────────────────────────────────────────────────────── */
+.springboard { position: absolute; inset: 0; display: flex; flex-direction: column; background-size: cover; background-position: center; }
+.pages { flex: 1; min-height: 0; display: flex; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; }
+.pages::-webkit-scrollbar { display: none; }
+.page { flex: 0 0 100%; scroll-snap-align: start; overflow: hidden; display: grid; grid-template-columns: repeat(4, 1fr); grid-auto-rows: minmax(78px, 88px); padding: 10px 8px 0; align-content: start; }
+.dots { display: flex; justify-content: center; gap: 8px; padding: 6px 0 8px; }
+.dots i { width: 6px; height: 6px; border-radius: 50%; background: rgba(255,255,255,.35); }
+.dots i.on { background: #fff; }
+.icon { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.icon .tile {
+  position: relative; width: 57px; height: 57px; border-radius: 12px; overflow: hidden;
+  background: linear-gradient(#7d8b9b, #3c4756); box-shadow: 0 2px 3px rgba(0,0,0,.55);
+  display: flex; align-items: center; justify-content: center; font-size: 30px;
+}
+.icon .tile img { width: 100%; height: 100%; object-fit: cover; }
+.icon .tile::after { /* reflet glossy d'iOS 6 */
+  content: ""; position: absolute; left: -10%; right: -10%; top: -45%; height: 95%; border-radius: 0 0 50% 50% / 0 0 30% 30%;
+  background: linear-gradient(rgba(255,255,255,.55), rgba(255,255,255,.08)); pointer-events: none;
+}
+.icon .tile.flat::after { display: none; }
+.icon .name { font: bold 11px var(--ios-font); color: #fff; text-shadow: 0 1px 2px #000; max-width: 74px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.badge {
+  position: absolute; top: -6px; right: -8px; z-index: 2; min-width: 22px; height: 22px; padding: 0 6px; border-radius: 11px;
+  background: linear-gradient(#ff7b7b, #d10000 60%); border: 2px solid #fff; box-shadow: 0 2px 3px rgba(0,0,0,.5);
+  font: bold 13px/18px var(--ios-font); color: #fff; text-align: center;
+}
+.icon-wrap { position: relative; }
+.dock {
+  position: relative; height: 92px; margin-top: auto; display: grid; grid-template-columns: repeat(4, 1fr); align-items: center; padding: 0 8px 6px;
+}
+.dock::before { /* étagère en verre */
+  content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 64px;
+  background: linear-gradient(rgba(255,255,255,.42), rgba(255,255,255,.12) 40%, rgba(0,0,0,.25));
+  border-top: 1px solid rgba(255,255,255,.7); transform: perspective(300px) rotateX(28deg); transform-origin: bottom;
+}
+.dock .icon { position: relative; }
+
+/* ─── App : barre de navigation iOS 6 ────────────────────────────────────── */
+.app { position: absolute; inset: 0; display: flex; flex-direction: column; background: #fff; animation: zoomIn .28s ease-out; }
+@keyframes zoomIn { from { transform: scale(.2); opacity: 0; } to { transform: none; opacity: 1; } }
+.navbar {
+  position: relative; height: 44px; flex: 0 0 44px; display: flex; align-items: center; justify-content: center; padding: 0 6px;
+  background: linear-gradient(var(--ios-nav-top), var(--ios-nav-bottom)); border-bottom: 1px solid var(--ios-nav-border);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.45);
+}
+.navbar h1 { font: bold 20px var(--ios-font); color: #fff; text-shadow: 0 -1px 0 rgba(0,0,0,.45); max-width: 60%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.navbar .side { position: absolute; top: 7px; display: flex; gap: 6px; }
+.navbar .side.l { left: 6px; } .navbar .side.r { right: 6px; }
+.barbtn {
+  height: 30px; min-width: 34px; padding: 0 10px; border-radius: 5px; display: flex; align-items: center; justify-content: center;
+  font: bold 12px var(--ios-font); color: #fff; text-shadow: 0 -1px 0 rgba(0,0,0,.45);
+  background: linear-gradient(rgba(255,255,255,.25), rgba(255,255,255,0) 50%, rgba(0,0,0,.08) 51%), linear-gradient(var(--btn-top, #8fa2bd), var(--btn-bottom, #5b7393));
+  border: 1px solid rgba(0,0,0,.45); box-shadow: inset 0 1px 0 rgba(255,255,255,.3), 0 1px 0 rgba(255,255,255,.3);
+}
+.barbtn.blue { --btn-top: var(--ios-blue-btn-top); --btn-bottom: var(--ios-blue-btn-bottom); }
+.barbtn.plus { font-size: 22px; font-weight: normal; padding: 0 9px; }
+.barbtn.back { padding-left: 14px; clip-path: polygon(12px 0, 100% 0, 100% 100%, 12px 100%, 0 50%); border-left: 0; }
+.app-body { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+.pinstripe { background: repeating-linear-gradient(90deg, var(--ios-pinstripe) 0 5px, #cbd2d8 5px 9px); }
+
+/* Placeholder d'app pas encore portée */
+.soon { height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; color: #4c566c; text-shadow: 0 1px 0 #fff; font: bold 15px var(--ios-font); text-align: center; padding: 24px; }
+.soon small { font-weight: normal; font-size: 13px; }
+
+/* Petit bandeau « Lecture seule » quand on regarde le tel d'un autre joueur */
+.readonly-tag { position: absolute; left: 50%; bottom: 8px; transform: translateX(-50%); z-index: 30; padding: 3px 10px; border-radius: 10px; background: rgba(0,0,0,.6); color: #fff; font: bold 10px var(--ios-font); pointer-events: none; }
+
+/* ─── Accueil (page web façon 2012) ──────────────────────────────────────── */
+.lobby { min-height: 100dvh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; padding: 32px 16px;
+  font-family: Verdana, Tahoma, sans-serif; color: #0f4499; text-align: center;
+  background: linear-gradient(160deg, #c6d9f0 0%, #b0ccee 30%, #d8e8f8 60%, #c0d5ec 100%); }
+.lobby h1 { font: 34px Impact, "Arial Black", sans-serif; letter-spacing: 1px; text-shadow: 2px 2px 0 #fff; }
+.lobby .sub { font-size: 11px; letter-spacing: 3px; text-transform: uppercase; color: #557; }
+.lobby .phones { display: grid; grid-template-columns: repeat(2, 140px); gap: 14px; }
+@media (min-width: 700px) { .lobby .phones { grid-template-columns: repeat(4, 140px); } }
+.lobby-phone { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 12px; border-radius: 12px; border: 3px solid #0f4499;
+  background: linear-gradient(#fff, #eef3ff); box-shadow: 4px 4px 0 #0a2f77; color: #0f4499; text-decoration: none; font-weight: bold; text-transform: capitalize; }
+.lobby-phone img, .lobby-phone .ph { width: 72px; height: 72px; border-radius: 10px; object-fit: cover; font-size: 48px; }
+.lobby-phone.mine { background: linear-gradient(#fffbe0, #ffe98a); }
+.lobby-phone small { font-size: 10px; font-weight: normal; text-transform: none; }
+.whoami { font-size: 13px; } .whoami select { font: inherit; padding: 2px 4px; }
+.devnote { font-size: 11px; color: #557; } .devnote button { text-decoration: underline; color: #0f4499; }

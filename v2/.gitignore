@@ -1,0 +1,4 @@
+node_modules
+dist
+src/dev/seed-v2.json
+.claude

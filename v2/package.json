@@ -1,0 +1,27 @@
+{
+  "name": "uma-phones-v2",
+  "version": "2.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev-seed": "node ../migration/migrate-v1-to-v2.mjs --seed src/dev/seed-v2.json",
+    "predev": "npm run dev-seed",
+    "dev": "vite",
+    "prebuild": "npm run dev-seed",
+    "build": "tsc --noEmit && vite build",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "firebase": "10.12.5",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "react-router-dom": "6.26.2"
+  },
+  "devDependencies": {
+    "@types/react": "18.3.11",
+    "@types/react-dom": "18.3.0",
+    "@vitejs/plugin-react": "4.3.2",
+    "typescript": "5.6.3",
+    "vite": "5.4.21"
+  }
+}
