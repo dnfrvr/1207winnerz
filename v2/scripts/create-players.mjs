@@ -37,6 +37,7 @@ const word = () => { const w = syll() + syll(); return w[0].toUpperCase() + w.sl
 const tempPassword = () => `${word()}-${word()}-${word()}-${crypto.randomInt(10, 100)}`;
 
 const users = {};
+const created = [];
 console.log("\nComptes créés (mots de passe temporaires — à transmettre puis à oublier) :\n");
 for (const [phone, email] of args) {
   const password = tempPassword();
@@ -51,8 +52,16 @@ for (const [phone, email] of args) {
     continue;
   }
   users[body.localId] = phone === "mj" ? { role: "mj" } : { phone, role: "player" };
+  created.push({ phone, email, password });
   console.log(`  ✓ ${phone.padEnd(7)} ${email.padEnd(32)} ${password}`);
 }
+
+// Récapitulatif lisible (avec les mots de passe) pour les retrouver plus tard. Dossier ignoré par git.
+const recap = path.join(ROOT, "migration/_out/comptes-joueurs.txt");
+fs.mkdirSync(path.dirname(recap), { recursive: true });
+fs.appendFileSync(recap, `\n── ${new Date().toLocaleString("fr-FR")} ──\n` + created.map((c) => `${c.phone.padEnd(7)} ${c.email.padEnd(32)} ${c.password}`).join("\n") + "\n");
+console.log(`\nMots de passe aussi enregistrés dans ${path.relative(ROOT, recap)} (fichier local, jamais envoyé sur GitHub).`);
+console.log("Pense à le supprimer une fois les mots de passe transmis.");
 
 const out = path.join(ROOT, "migration/_out/users.json");
 fs.mkdirSync(path.dirname(out), { recursive: true });
