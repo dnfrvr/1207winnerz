@@ -423,7 +423,10 @@ const IOSPhone = ({data,admin,onUpdate,onUpdateShared=()=>{},loreDate:loreDatePr
   const wake = () => { setAsleep(false); };
   const sleep = () => { setAsleep(true); };
 
-  const update = (key,val) => { onUpdate({...data,[key]:val}); };
+  // Mise à jour CHAMP PAR CHAMP : on passe une fonction appliquée sur l'état le plus récent
+  // (dans App.updateChar), et non plus `{...data,[key]:val}` construit depuis le rendu courant —
+  // ce qui annulait silencieusement les changements faits entre-temps par un autre appareil.
+  const update = (key,val) => { onUpdate(prev => ({...prev,[key]:val})); };
   // Résolution du fil partagée (src/shared/messages.js). `charKey` est défini plus bas mais
   // getThread n'est appelé qu'au rendu, donc capturé correctement par fermeture.
   const getThread = (msg) => resolveThread(msg, data, charKey);
@@ -1740,7 +1743,7 @@ const IOSPhone = ({data,admin,onUpdate,onUpdateShared=()=>{},loreDate:loreDatePr
   if(app==="pinterest") return <Shell><IOSStatusBar/><PinterestScreen isIos={true} data={data} admin={admin} update={update}/></Shell>;
   if(app==="groupme")   return <Shell><IOSStatusBar/><NavBar title="GroupMe" back={goHome}/><GroupMeScreen data={data} isIos={true} accent={accent}/></Shell>;
   if(app==="starbucks") return <Shell><IOSStatusBar/><NavBar title="Starbucks" back={goHome}/><StarbucksScreen isIos={true} charKey={charKey}/></Shell>;
-  if(app==="soundcloud")return <Shell><IOSStatusBar/><NavBar title="SoundCloud" back={goHome}/><SoundCloudScreen data={data} isIos={true} accent={accent} admin={admin} update={(k,v)=>onUpdate(k,v)}/></Shell>;
+  if(app==="soundcloud")return <Shell><IOSStatusBar/><NavBar title="SoundCloud" back={goHome}/><SoundCloudScreen data={data} isIos={true} accent={accent} admin={admin} update={update}/></Shell>;
   if(app==="espn")      return <Shell><IOSStatusBar/><NavBar title="ESPN" back={goHome}/><div style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",background:"#f2f2f7",gap:12}}><span style={{fontSize:48}}>🏈</span><span style={{fontSize:15,fontWeight:600,color:"#1a1a1a"}}>ESPN</span><span style={{fontSize:12,color:"#8e8e93",textAlign:"center",padding:"0 32px"}}>This app is temporarily unavailable.</span></div></Shell>;
   if(app==="contacts")  return <Shell><IOSStatusBar/><NavBar title="Contacts" back={goHome}/><ContactsScreen data={data} isIos={true} accent={accent}/></Shell>;
   if(app==="clock")     return <Shell><IOSStatusBar/><NavBar title="Clock" back={goHome}/><ClockScreen isIos={true} accent={accent}/></Shell>;
@@ -1762,7 +1765,8 @@ const AndroidPhone = ({data,admin,onUpdate,sharedAndroidIcons={},onUpdateShared=
   const [photoDetail,setPhotoDetail] = useState(null);
   const [phonePanel,setPhonePanel] = useState("keypad");
   const [galleryView,setGalleryView] = useState("albums");
-  const update = (key,val) => onUpdate({...data,[key]:val});
+  // Mise à jour champ par champ (voir IOSPhone) : évite d'écraser les changements des autres appareils.
+  const update = (key,val) => onUpdate(prev => ({...prev,[key]:val}));
   // Résolution du fil partagée (src/shared/messages.js). `charKey` défini plus bas mais capturé
   // par fermeture (getThread n'est appelé qu'au rendu). saveThread/updateMsg = code mort supprimé.
   const getThread = (msg) => resolveThread(msg, data, charKey);
@@ -3108,7 +3112,7 @@ export default function App() {
   const pendingFirebaseUpdate = useRef({});
   const firebaseTimer = useRef(null);
   const lastSnapshotTime = useRef(0); // pour ne pas spammer les snapshots (1 max toutes les 30s)
-  const MAX_SNAPSHOTS = 10;
+  const MAX_SNAPSHOTS = 20;
 
   // ── Snapshots automatiques ────────────────────────────────────────────────────
   // Avant chaque envoi vers Firebase, on sauvegarde une copie de l'état complet dans
@@ -3120,7 +3124,7 @@ export default function App() {
   const takeSnapshot = async (currentData) => {
     if (!firebaseDb) return;
     const now = Date.now();
-    if (now - lastSnapshotTime.current < 30_000) return; // throttle 30s
+    if (now - lastSnapshotTime.current < 10 * 60_000) return; // throttle 10 min (20 × 10 min ≈ 3 h de couverture)
     lastSnapshotTime.current = now;
     try {
       // La donnée volumineuse du snapshot part sur Supabase Storage (hors de la racine Firebase
@@ -3158,6 +3162,10 @@ export default function App() {
     }
   };
   const hasReceivedFirstSnapshot = useRef(false);
+  // Tant que la base n'a pas répondu, l'état local n'est que le seed par défaut : on n'affiche
+  // pas les téléphones (et on refuse toute écriture), sinon une édition faite pendant
+  // « Connexion… » serait calculée sur de fausses données et écraserait le contenu réel.
+  const [ready, setReady] = useState(!firebaseDb);
 
   // Synchro temps réel : écoute la base Firebase et reflète tout changement (fait par n'importe qui,
   // sur n'importe quel appareil) dans l'état local. Si la base est vide (premier lancement jamais fait),
@@ -3180,9 +3188,22 @@ export default function App() {
             const ALL_CHARS = ["glinda","eoghan","drew","elias"];
             const mutualFollows = Object.fromEntries(ALL_CHARS.map(k=>[k, ALL_CHARS.filter(c=>c!==k)]));
 
-            // Toujours remplacer _sharedTweets et _sharedTumblrPosts (séparation joueurs/déco)
-            patches['sharedThreads/_sharedTweets'] = SEED_SHARED_TWEETS;
-            patches['sharedThreads/_sharedTumblrPosts'] = SEED_SHARED_TUMBLR_POSTS;
+            // Fusion ADDITIVE uniquement : on ajoute les éléments du seed absents, on ne supprime ni
+            // ne remplace jamais ce qui existe. (Avant, ces listes étaient REMPLACÉES par le seed à
+            // chaque hausse de SEED_VERSION, ce qui effaçait tout ce que les joueurs y avaient ajouté.)
+            const itemKey = (p) => p?.id ?? `${p?.author||p?.username||p?.h||""}|${p?.time||""}|${p?.text||p?.body||""}`;
+            const mergeMissing = (current, defaults) => {
+              const cur = Array.isArray(current) ? current : [];
+              const have = new Set(cur.map(itemKey));
+              const missing = (defaults||[]).filter(p => !have.has(itemKey(p)));
+              return missing.length ? [...cur, ...missing] : null;
+            };
+            {
+              const tw = mergeMissing(st._sharedTweets, SEED_SHARED_TWEETS);
+              if(tw) patches['sharedThreads/_sharedTweets'] = tw;
+              const tb = mergeMissing(st._sharedTumblrPosts, SEED_SHARED_TUMBLR_POSTS);
+              if(tb) patches['sharedThreads/_sharedTumblrPosts'] = tb;
+            }
 
             // Follows mutuels par défaut si absents
             if(!st._twitterFollows) patches['sharedThreads/_twitterFollows'] = mutualFollows;
@@ -3215,10 +3236,11 @@ export default function App() {
             const USERNAME_MAP = {glinda:"glindatheverygood",eoghan:"eoghan_masuda",drew:"dreww_orms",elias:"noteliasgreen"};
             const seedChars = mkData(); // source des seeds par perso (wifiNetworks/btDevices…)
             ["glinda","eoghan","drew","elias"].forEach(k => {
-              patches[`${k}/homeBaseTweets`] = SEED_HOME_BASE_TWEETS[k] || [];
+              // Seedé seulement si absent (avant : remplacé à chaque migration → pertes de données).
+              if(!remote[k]?.homeBaseTweets) patches[`${k}/homeBaseTweets`] = SEED_HOME_BASE_TWEETS[k] || [];
               const username = USERNAME_MAP[k];
-              // Toujours remplacer feedPosts pour éliminer les posts de joueurs mal placés
-              patches[`${k}/tumblr`] = {...(remote[k]?.tumblr||{}), feedPosts: SEED_FEED_TUMBLR[username]||[]};
+              // Idem : feedPosts Tumblr seedés seulement si absents, écriture ciblée sur le seul champ.
+              if(!remote[k]?.tumblr?.feedPosts) patches[`${k}/tumblr/feedPosts`] = SEED_FEED_TUMBLR[username]||[];
               // Compléter la liste des apps si des entrées attendues manquent (jamais de suppression).
               // - "files" pour tous (v9)
               // - "kindle" pour Elias (v10 : Kindle rendue ouvrable pour Elias, futur Stephen King)
@@ -3293,6 +3315,7 @@ export default function App() {
         set(rootRef, data).then(() => setSyncStatus("synced")).catch(() => setSyncStatus("error"));
       }
       hasReceivedFirstSnapshot.current = true;
+      setReady(true);
     }, (err) => {
       console.error("[sync] Erreur de connexion Firebase :", err);
       setSyncStatus("error");
@@ -3305,6 +3328,10 @@ export default function App() {
   // perso à chaque frappe de clavier, et pour fusionner plusieurs changements rapprochés en un seul envoi.
   const queueFirebaseUpdate = (patch) => {
     if (!firebaseDb) return;
+    if (!hasReceivedFirstSnapshot.current) {
+      console.warn("[sync] Écriture ignorée : données distantes pas encore reçues.", Object.keys(patch));
+      return;
+    }
     Object.assign(pendingFirebaseUpdate.current, patch);
     clearTimeout(firebaseTimer.current);
     firebaseTimer.current = setTimeout(() => {
@@ -3352,6 +3379,13 @@ export default function App() {
 
   const updateChar = (key, d, skipSync=false) => {
     setData(prev => {
+      // `d` peut être une fonction (prevValue => nextValue) : elle est appliquée sur l'état le plus
+      // récent, ce qui évite d'écraser les modifications reçues d'un autre appareil depuis le rendu.
+      if(typeof d === 'function') {
+        const isShared0 = key!=='_sharedAndroidIcons' && ((key in (prev.sharedThreads||{})) || key.startsWith('_shared') || /^group(_|$)/.test(key));
+        const cur = key==='groupMeta' ? prev.groupMeta : key==='_sharedAndroidIcons' ? prev._sharedAndroidIcons : isShared0 ? prev.sharedThreads?.[key] : prev[key];
+        d = d(cur || {});
+      }
       // Shared thread update: key exists in sharedThreads, starts with "_shared" (sauf _sharedAndroidIcons, qui vit à la racine de data), ou est un pair/group key connu.
       // /^group(_|$)/ : un groupe FRAÎCHEMENT créé porte l'id "group_<timestamp>" et n'existe pas
       // encore dans prev.sharedThreads — sans cette détection, sa toute première écriture (et donc
@@ -3391,7 +3425,13 @@ export default function App() {
       // tout autre edit musical qui venaient d'être enregistrés. FORCED_PLAYLISTS reste utilisée
       // une seule fois, à l'initialisation des données par défaut (forcePlaylists() dans mkData()),
       // ce qui suffit à fournir la playlist de lore de base sans plus jamais l'imposer ensuite.
-      const merged = d;
+      // Clés « enrichies » à l'affichage (copie des fils partagés, posts co-tagués) : elles ne
+      // doivent JAMAIS être réécrites dans le perso. On garde la valeur déjà présente (sans la
+      // supprimer, au cas où d'anciennes copies existent) pour qu'aucun diff ne parte vers Firebase.
+      const merged = {...d};
+      ["sharedThreads","_coTaggedInstaPosts"].forEach(k => {
+        if(prev[key] && k in prev[key]) merged[k] = prev[key][k]; else delete merged[k];
+      });
       let next = {...prev, [key]:merged};
       // Ne renvoyer à Firebase que les champs qui ont réellement changé (jusqu'au niveau feuille,
       // y compris dans les tableaux comme la galerie) — au lieu de tout l'objet du perso à chaque
@@ -3430,6 +3470,16 @@ export default function App() {
   };
 
   const charData = selected && data[selected.key];
+
+  if(!ready) return (
+    <div style={{minHeight:"100vh",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:12,
+      background:"#1a1a2e",color:"#c6d9f0",fontFamily:"Verdana, sans-serif",fontSize:13,textAlign:"center",padding:24}}>
+      <div style={{fontSize:28}}>📱</div>
+      {syncStatus==="error"
+        ? <div>Impossible de joindre la base de données.<br/>Vérifie ta connexion puis recharge la page.</div>
+        : <div>Chargement des téléphones…</div>}
+    </div>
+  );
 
   if(adminMode) return (
     <LoreDateCtx.Provider value={loreDate}>

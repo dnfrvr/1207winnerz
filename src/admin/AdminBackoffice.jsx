@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { ref, onValue, set, update } from "firebase/database";
+import { ref, onValue, update } from "firebase/database";
 import { FF_IOS } from "../shared/constants.js";
 import { APP_META } from "../shared/app-meta.js";
 import { loreSortKey, parseLoreTime, LORE_DATE_DEFAULT, betweenLoreTimes } from "../shared/lore-date.js";
@@ -582,7 +582,13 @@ const AdminBackoffice = ({data, onUpdate, onUpdateShared=()=>{}, onExit, loreDat
       let data = snap.data;
       if (!data && (snap.url || snap.path)) data = await loadSnapshotFromSupabase(snap.url || snap.path);
       if (!data) { setRestoreStatus("error"); return; }
-      await set(ref(firebaseDb), data);
+      // Restauration clé par clé (et plus `set` de la racine) : n'efface pas l'index _snapshots
+      // (on garde donc la possibilité de revenir en arrière) et reste compatible avec les règles
+      // Firebase qui interdisent d'écraser la racine d'un coup (database.rules.json).
+      const { _snapshots, ...restorable } = data;
+      const patch = {};
+      Object.entries(restorable).forEach(([k, v]) => { if (v !== null && v !== undefined) patch[k] = v; });
+      await update(ref(firebaseDb), patch);
       setRestoreOpen(false); setRestoreStatus(null);
     } catch(e) { setRestoreStatus("error"); }
   };

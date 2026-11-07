@@ -1,0 +1,13 @@
+{
+  "rules": {
+    ".read": true,
+    ".write": false,
+    "_snapshots": {
+      ".write": true
+    },
+    "$key": {
+      ".write": true,
+      ".validate": "newData.exists()"
+    }
+  }
+}

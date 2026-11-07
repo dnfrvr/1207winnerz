@@ -1,0 +1,55 @@
+name: Backup Firebase
+
+# Sauvegarde complète quotidienne de la Realtime Database (export JSON), conservée 90 jours
+# comme artefact du workflow : Actions → Backup Firebase → un run → « Artifacts ».
+#
+# Secrets à définir (GitHub → Settings → Secrets and variables → Actions) :
+#   FIREBASE_DATABASE_URL  = https://<projet>-default-rtdb.europe-west1.firebasedatabase.app  (obligatoire)
+#   BACKUP_PASSPHRASE      = une phrase secrète (recommandé : le dépôt est public, l'artefact est
+#                            alors chiffré en AES-256 ; déchiffrer avec
+#                            gpg --decrypt backup-XXXX.json.gz.gpg > backup.json.gz)
+
+on:
+  schedule:
+    - cron: '0 4 * * *'   # tous les jours à 4h UTC
+  workflow_dispatch:
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Export de la base
+        env:
+          DB_URL: ${{ secrets.FIREBASE_DATABASE_URL }}
+        run: |
+          set -euo pipefail
+          if [ -z "${DB_URL}" ]; then echo "Secret FIREBASE_DATABASE_URL manquant"; exit 1; fi
+          STAMP=$(date -u +%Y-%m-%dT%H-%M)
+          echo "STAMP=${STAMP}" >> "$GITHUB_ENV"
+          curl -sf "${DB_URL%/}/.json" -o backup.json
+          SIZE=$(stat -c %s backup.json)
+          echo "Taille de l'export : ${SIZE} octets"
+          # Garde-fou : une base vide ou « null » n'est pas une sauvegarde valable.
+          if [ "${SIZE}" -lt 1000 ]; then echo "Export anormalement petit, abandon"; cat backup.json; exit 1; fi
+          gzip -9 backup.json
+          mv backup.json.gz "backup-${STAMP}.json.gz"
+
+      - name: Chiffrement (si BACKUP_PASSPHRASE est défini)
+        env:
+          PASS: ${{ secrets.BACKUP_PASSPHRASE }}
+        run: |
+          set -euo pipefail
+          if [ -n "${PASS}" ]; then
+            gpg --batch --yes --pinentry-mode loopback --passphrase "${PASS}" \
+                --symmetric --cipher-algo AES256 "backup-${STAMP}.json.gz"
+            rm "backup-${STAMP}.json.gz"
+          else
+            echo "::warning::BACKUP_PASSPHRASE non défini : sauvegarde NON chiffrée (dépôt public)."
+          fi
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: firebase-backup-${{ env.STAMP }}
+          path: backup-*
+          retention-days: 90
+          if-no-files-found: error
