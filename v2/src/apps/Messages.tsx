@@ -7,7 +7,9 @@ import { Route, Routes, useNavigate, useParams } from "react-router-dom";
 import { useCanEdit, useData, useValue, useWriter } from "../data/hooks";
 import { orderBetween } from "../data/order";
 import type { Json, Patches } from "../data/store";
-import { inboxLabel, loreBetween, loreNowMs, loreToMs, msToLore, parseLore, stampLabel } from "../lib/loreTime";
+import { clockLabel, dayLabel, inboxLabel, loreBetween, loreNowMs, loreToMs, msToLore, parseLore, stampLabel } from "../lib/loreTime";
+import { useOS } from "../phone/common";
+import { img } from "../lib/img";
 import { AppFrame, BackButton, LORE_DATE_DEFAULT } from "../phone/IOSChrome";
 import { ActionSheet, Callout, PromptAlert, useLongPress, type SheetAction } from "../phone/Sheets";
 import "./messages.css";
@@ -151,14 +153,21 @@ function Inbox({ pid, trash }: { pid: string; trash: boolean }) {
   );
 }
 
+const AVATAR_COLORS = ["#e53935", "#1e88e5", "#43a047", "#fb8c00", "#8e24aa", "#00897b"];
+const avatarColor = (name: string) => AVATAR_COLORS[(name.codePointAt(0) ?? 0) % AVATAR_COLORS.length];
+const initials = (name: string) => name.replace(/[^\p{L}\p{N} ]/gu, "").trim().split(/\s+/).map((w) => w[0]).join("").slice(0, 2).toUpperCase() || "?";
+
 function InboxRow({ contact, unread, dim, when, preview, onOpen, onLong }: {
   contact: string; unread: boolean; dim: boolean; when: string; preview: string; onOpen: () => void; onLong?: () => void;
 }) {
   const lp = useLongPress(() => onLong?.());
+  const os = useOS();
   return (
     <li>
-      <button className={`msg-row ${dim ? "dim" : ""}`} {...(onLong ? lp.handlers : {})} onClick={() => { if (!lp.fired.current) onOpen(); }}>
-        <span className="dot">{unread && <i />}</span>
+      <button className={`msg-row ${dim ? "dim" : ""} ${unread ? "unread" : ""}`} {...(onLong ? lp.handlers : {})} onClick={() => { if (!lp.fired.current) onOpen(); }}>
+        {os === "android"
+          ? <span className="avatar" style={{ background: avatarColor(contact) }}>{initials(contact)}</span>
+          : <span className="dot">{unread && <i />}</span>}
         <span className="body">
           <span className="top"><span className="who">{contact}</span><span className="when">{when}</span></span>
           <span className="prev">{preview}</span>
@@ -180,6 +189,7 @@ function Conversation({ pid }: { pid: string }) {
   const { write } = useWriter(pid);
   const lore = useValue<string>("meta/loreDate") || LORE_DATE_DEFAULT;
   const msgs = useMemo(() => sortMsgs(raw), [raw]);
+  const os = useOS();
 
   const contact = contactOf(pid, entry ?? { threadId: tid }, thread, names);
   const isLocal = thread?.kind === "local";
@@ -224,18 +234,22 @@ function Conversation({ pid }: { pid: string }) {
   ].filter((a) => canEditMsg(m) || a.label === "Insérer après");
 
   let prevTs = 0;
+  const android = os === "android";
   return (
     <AppFrame title={contact} left={<BackButton to={`/${pid}/messages`} label="Messages" />} bodyClass="conv-wrap">
       <div className="conv" ref={scroller}>
         {msgs.map(([id, m], i) => {
-          const showStamp = i === 0 || m.ts - prevTs > 60 * 60_000;
+          // iOS : en-tête horodaté après 1 h de silence. Android : pastille à chaque changement de jour.
+          const showStamp = android ? (i === 0 || dayLabel(m.ts) !== dayLabel(prevTs)) : (i === 0 || m.ts - prevTs > 60 * 60_000);
           prevTs = m.ts;
           const mine = m.from === pid;
           const prevM = msgs[i - 1]?.[1];
           const showSender = isGroup && !mine && (!prevM || prevM.from !== m.from || prevM.npcName !== m.npcName);
           return (
             <div key={id}>
-              {showStamp && m.ts > 0 && <div className="stamp">{stampLabel(m.ts)}</div>}
+              {showStamp && m.ts > 0 && (android
+                ? <div className="day-pill"><span>{dayLabel(m.ts)}</span></div>
+                : <div className="stamp">{stampLabel(m.ts)}</div>)}
               <div className={`line ${mine ? "me" : "them"}`}>
                 {showSender && <span className="sender">{senderOf(m)}</span>}
                 {editing === id
@@ -243,6 +257,7 @@ function Conversation({ pid }: { pid: string }) {
                       onSave={(t) => { setEditing(null); if (t !== (m.text ?? "")) write({ [`${base}/${id}/text`]: t }); }} />
                   : <Bubble m={m} mine={mine} sms={sms} selected={callout?.id === id || insertAfter === id}
                       onLong={canSend ? (x, y) => setCallout({ id, x, y }) : undefined} />}
+                {android && m.ts > 0 && editing !== id && <span className="clock">{clockLabel(m.ts)}</span>}
               </div>
             </div>
           );
@@ -279,7 +294,7 @@ function Bubble({ m, mine, sms, selected, onLong }: { m: Msg; mine: boolean; sms
   const lp = useLongPress((x, y) => onLong?.(x, y));
   return (
     <div className={`bubble ${mine ? `me ${sms ? "sms" : "imsg"}` : "them"} ${selected ? "selected" : ""}`} {...(onLong ? lp.handlers : {})}>
-      {m.img && <img src={m.img} alt="" />}
+      {m.img && <img src={img(m.img)} alt="" loading="lazy" />}
       {m.text}
     </div>
   );
@@ -302,6 +317,18 @@ function Composer({ sms, onSend, who, onToggleWho }: { sms: boolean; onSend: (t:
   const ref = useRef<HTMLTextAreaElement>(null);
   const submit = () => { const t = text.trim(); if (!t) return; onSend(t); setText(""); ref.current?.focus(); };
   useEffect(() => { const el = ref.current; if (el) { el.style.height = "auto"; el.style.height = `${Math.min(el.scrollHeight, 96)}px`; } }, [text]);
+  const os = useOS();
+  if (os === "android") return (
+    <div className="composer">
+      {who !== null && <button className="who-btn" onClick={onToggleWho} title="Changer l'expéditeur">{who} ⇄</button>}
+      <textarea ref={ref} rows={1} value={text} placeholder="Text message"
+        onChange={(e) => setText(e.target.value)}
+        onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); submit(); } }} />
+      <button className="send-round" disabled={!text.trim()} onClick={submit} aria-label="Envoyer">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M22 2L11 13M22 2L15 22L11 13L2 9L22 2Z" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+      </button>
+    </div>
+  );
   return (
     <div className="composer">
       {who !== null && <button className="who-btn" onClick={onToggleWho} title="Changer l'expéditeur">{who} ⇄</button>}

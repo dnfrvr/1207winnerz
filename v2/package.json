@@ -10,7 +10,8 @@
     "prebuild": "npm run dev-seed",
     "build": "tsc --noEmit && vite build",
     "typecheck": "tsc --noEmit",
-    "dev:demo": "npm run dev-seed && vite --mode demo"
+    "dev:demo": "npm run dev-seed && vite --mode demo",
+    "optimize-images": "node scripts/optimize-images.mjs"
   },
   "dependencies": {
     "firebase": "10.12.5",
@@ -22,6 +23,7 @@
     "@types/react": "18.3.11",
     "@types/react-dom": "18.3.0",
     "@vitejs/plugin-react": "4.3.2",
+    "sharp": "^0.33.5",
     "typescript": "5.6.3",
     "vite": "5.4.21"
   }

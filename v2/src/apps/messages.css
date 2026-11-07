@@ -66,3 +66,40 @@
 .suggest li button small { display: block; font-weight: normal; font-size: 12px; color: #8e8e93; }
 
 .app-body.conv-wrap { display: flex; flex-direction: column; overflow: hidden; }
+
+/* ─── Messages Android (DA de l'app d'origine) ───────────────────────────── */
+.os-android .msg-list { background: #fff; }
+.os-android .msg-row { min-height: 64px; align-items: center; border-bottom: 1px solid #e0e0e0; background: #fafafa; }
+.os-android .msg-row.unread { background: #fff; }
+.os-android .msg-row:active { background: rgba(51,181,229,.25); color: inherit; }
+.os-android .msg-row:active .who, .os-android .msg-row:active .when, .os-android .msg-row:active .prev { color: inherit; }
+.os-android .msg-row .avatar { flex: 0 0 38px; height: 38px; margin: 0 12px 0 14px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff; font: 700 14px var(--and-font); }
+.os-android .msg-row .body { padding: 10px 14px 10px 0; }
+.os-android .msg-row .who { font: 400 15px var(--and-font); color: #424242; }
+.os-android .msg-row.unread .who { font-weight: 700; color: #212121; }
+.os-android .msg-row .when { font: 11px var(--and-font); color: #bdbdbd; }
+.os-android .msg-row.unread .when { color: var(--accent); }
+.os-android .msg-row .prev { font: 12px/16px var(--and-font); color: #9e9e9e; -webkit-line-clamp: 1; }
+.os-android .msg-row.unread .prev { color: #616161; font-weight: 500; }
+.os-android .msg-row .chev { display: none; }
+.os-android .msg-trash-row { background: #eee; font: 600 13px var(--and-font); color: #616161; }
+.os-android .conv { background: #ece5dd; padding: 8px 0; }
+.os-android .day-pill { text-align: center; padding: 10px 0 6px; }
+.os-android .day-pill span { background: #d1c7bd; color: #777; padding: 3px 10px; border-radius: 10px; font: 500 10px var(--and-font); }
+.os-android .line { padding: 2px 10px; }
+.os-android .sender { color: #8e24aa; font: 600 10px var(--and-font); text-shadow: none; padding: 0 10px 2px; }
+.os-android .bubble { max-width: 72%; padding: 8px 12px; font: 13px/1.45 var(--and-font); border: 0; text-shadow: none; box-shadow: 0 1px 1px rgba(0,0,0,.13); }
+.os-android .bubble::before { display: none; }
+.os-android .bubble.them { background: #fff; color: #212121; border-radius: 18px 18px 18px 4px; }
+.os-android .bubble.me, .os-android .bubble.me.imsg, .os-android .bubble.me.sms { background: var(--accent); color: #fff; border: 0; text-shadow: none; box-shadow: 0 1px 1px rgba(0,0,0,.13); border-radius: 18px 18px 4px 18px; }
+.os-android .bubble.editing { background: #fff; border: 2px solid var(--accent); }
+.os-android .clock { font: 9px var(--and-font); color: #999; padding: 1px 5px 0; }
+.os-android .composer { background: #f0f0f0; border-top: 1px solid #ddd; box-shadow: none; padding: 6px 10px; align-items: center; gap: 8px; }
+.os-android .composer textarea { border-radius: 20px; border: 1px solid #e0e0e0; background: #fff; box-shadow: none; padding: 8px 14px; font: 13px/18px var(--and-font); }
+.os-android .composer .who-btn { background: #e0e0e0; color: #424242; text-shadow: none; border: 0; border-radius: 14px; box-shadow: none; font: 500 11px var(--and-font); }
+.send-round { flex: 0 0 38px; height: 38px; border-radius: 50%; background: var(--accent); display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 4px rgba(0,0,0,.2); }
+.send-round:disabled { opacity: .5; }
+.os-android .insert-banner { font-family: var(--and-font); }
+.os-android .to-field, .os-android .suggest li button { font-family: var(--and-font); }
+.os-android .edit-actions button { border-radius: 2px; background: #e0e0e0; border: 0; font: 500 12px var(--and-font); text-transform: uppercase; }
+.os-android .edit-actions button.ok { background: var(--accent); }

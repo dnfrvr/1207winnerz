@@ -79,6 +79,13 @@ export const inboxLabel = (ms: number | null, todayMs: number) => {
   return `${d.getMonth() + 1}/${d.getDate()}/${String(d.getFullYear()).slice(2)}`;
 };
 
+/** Libellé de jour (pastille Android) : "October 6". */
+export const dayLabel = (ms: number) => {
+  if (!ms) return "";
+  const d = new Date(ms);
+  return `${FULL_EN[d.getMonth() + 1]} ${d.getDate()}`;
+};
+
 /** En-tête horodaté au-dessus des bulles, comme iOS 6 : "Oct 6, 2012 2:30 PM". */
 export const stampLabel = (ms: number) => {
   const d = new Date(ms);

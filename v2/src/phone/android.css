@@ -1,0 +1,93 @@
+/* ─── Android 4 (ICS / Jelly Bean, Samsung 2012) ─────────────────────────────
+   DA reprise de l'app d'origine : holo sombre, Roboto, barres d'action colorées par app. */
+.os-android { --and-font: Roboto, "Droid Sans", "Helvetica Neue", Arial, sans-serif; --holo: #33b5e5; font-family: var(--and-font); }
+
+/* Cadre sans image (téléphone Android générique) */
+.device.android { padding: 64px 14px 0; border-radius: 26px; }
+.device.android::before { top: 30px; width: 54px; margin-left: -27px; height: 6px; }
+.softkeys { height: 52px; display: flex; align-items: center; justify-content: space-around; }
+.softkeys button { padding: 10px 18px; }
+
+/* Coque image (Samsung de Drew) */
+.chassis { position: relative; flex-shrink: 0; }
+.chassis-img { position: absolute; inset: 0; z-index: 2; pointer-events: none; user-select: none; box-sizing: border-box;
+  background: no-repeat 0 0 / 100% 100%;
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0); }
+.chassis-screen { position: absolute; z-index: 1; overflow: hidden; border-radius: 3px; background: #000; }
+.hotspot { position: absolute; z-index: 3; background: transparent; }
+
+/* Plein écran : écran + barre de boutons physiques dans les bandes noires */
+.fs-wrap { display: flex; flex-direction: column; align-items: center; }
+.fs-keys { height: 52px; display: flex; align-items: center; justify-content: center; }
+.fs-home { width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(#2b2b2e, #0e0e10); box-shadow: inset 0 1px 2px rgba(255,255,255,.15), 0 0 0 1px #333; position: relative; }
+.fs-home::after { content: ""; position: absolute; inset: 13px; border: 1.5px solid #777; border-radius: 3px; }
+.fs-keys.and { width: 100%; justify-content: space-around; max-width: 360px; }
+.fs-keys.and button { padding: 10px 22px; }
+
+/* Barre d'état */
+.and-status { position: relative; z-index: 20; height: 24px; flex: 0 0 24px; display: flex; align-items: center; justify-content: space-between; padding: 0 6px; color: #fff; font: 500 12px var(--and-font); }
+.and-status.opaque { background: #000; }
+.and-status.translucent { background: rgba(0,0,0,.35); }
+.and-status .left, .and-status .right { display: flex; align-items: center; gap: 5px; }
+.and-status .t { margin-left: 2px; }
+.and-sync { width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--holo); border-right-color: transparent; animation: spin .9s linear infinite; }
+
+/* Verrouillage */
+.and-lock { position: absolute; inset: 0; display: flex; flex-direction: column; background-size: cover; background-position: center; }
+.and-lock-clock { padding: 18px 0 0 16px; color: #fff; text-shadow: 0 1px 8px rgba(0,0,0,.6); }
+.and-lock-clock .t { font: 300 72px/1 var(--and-font); letter-spacing: -3px; }
+.and-lock-clock .d { font: 400 14px var(--and-font); margin-top: 4px; color: rgba(255,255,255,.85); text-shadow: 0 1px 4px rgba(0,0,0,.5); }
+.ring-wrap { position: absolute; top: 68%; left: 50%; width: 0; height: 0; display: flex; align-items: center; justify-content: center; }
+.ring { position: absolute; border-radius: 50%; pointer-events: none; transition: transform .2s, opacity .2s; }
+.ring.outer { width: 140px; height: 140px; border: 1.5px dashed rgba(255,255,255,.35); }
+.ring.inner { width: 110px; height: 110px; border: 1px solid rgba(255,255,255,.12); background: radial-gradient(circle, rgba(255,255,255,.06), transparent 70%); }
+.ring-handle { position: absolute; width: 64px; height: 64px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: grab; touch-action: none;
+  border: 2px solid rgba(255,255,255,.7); background: rgba(0,0,0,.3); box-shadow: 0 0 20px rgba(255,255,255,.15), inset 0 1px 0 rgba(255,255,255,.2); }
+.ring-handle:active { cursor: grabbing; border-color: var(--holo); box-shadow: 0 0 24px rgba(51,181,229,.6); }
+.carrier { position: absolute; bottom: 4px; left: 0; right: 0; text-align: center; font: 10px var(--and-font); letter-spacing: 1px; color: rgba(255,255,255,.45); }
+
+/* Accueil */
+.and-home { position: absolute; inset: 0; display: flex; flex-direction: column; background-size: cover; background-position: center; }
+.os-android .page { grid-auto-rows: minmax(76px, 84px); padding-top: 12px; }
+.os-android .icon .tile { width: 54px; height: 54px; border-radius: 0; background: transparent; box-shadow: none; overflow: visible; font-size: 34px; }
+.os-android .icon .tile::after { display: none; }
+.os-android .icon .tile img { object-fit: contain; filter: drop-shadow(0 2px 3px rgba(0,0,0,.6)); border-radius: 10px; }
+.os-android .icon .name { font: 400 11px var(--and-font); text-shadow: 0 1px 2px #000, 0 0 4px rgba(0,0,0,.8); }
+.os-android .badge { top: -4px; right: -6px; min-width: 20px; height: 20px; border: 0; border-radius: 10px; background: #e53935; box-shadow: 0 1px 2px rgba(0,0,0,.5); font: 700 11px/20px var(--and-font); }
+.os-android .dots i { width: 7px; height: 7px; border-radius: 0; background: rgba(255,255,255,.35); }
+.os-android .dots i.on { background: var(--holo); }
+.and-dock { margin-top: auto; height: 84px; display: grid; grid-template-columns: repeat(4, 1fr); align-items: center; padding: 0 6px;
+  background: linear-gradient(rgba(0,0,0,0), rgba(0,0,0,.45)); border-top: 1px solid rgba(255,255,255,.14); }
+.and-dock .name { display: none; }
+
+/* Apps : barre d'action holo */
+.app.and { background: #f2f2f2; }
+.actionbar { position: relative; z-index: 2; height: 48px; flex: 0 0 48px; display: flex; align-items: center; padding: 0 4px; box-shadow: 0 2px 6px rgba(0,0,0,.5); }
+.actionbar h1 { flex: 1; min-width: 0; padding: 0 12px; font: 400 17px var(--and-font); color: rgba(255,255,255,.87); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ab-up + h1 { padding-left: 2px; }
+.ab-up { height: 48px; width: 40px; display: flex; align-items: center; justify-content: center; }
+.ab-up:active, .ab-actions button:active { background: rgba(51,181,229,.35); }
+.ab-actions { display: flex; align-items: center; }
+.ab-actions .barbtn { all: unset; height: 48px; min-width: 44px; display: flex; align-items: center; justify-content: center; color: #fff; font: 300 26px var(--and-font); cursor: pointer; }
+.ab-actions .barbtn.icon-btn { font-size: 20px; }
+.os-android .pinstripe { background: #1a1a1a; }
+.os-android .soon { color: #aaa; text-shadow: none; font-family: var(--and-font); }
+
+/* Feuilles « système » en version holo */
+.os-android .action-sheet { background: #282828; border-top: 2px solid var(--holo); padding: 8px 0 0; gap: 0; }
+.os-android .sheet-title { color: var(--holo); font: 500 15px var(--and-font); text-align: left; padding: 10px 16px; border-bottom: 1px solid #3a3a3a; text-shadow: none; }
+.os-android .sheet-btn { height: 48px; border-radius: 0; border: 0; border-bottom: 1px solid #333; background: transparent; color: #eee; text-shadow: none; text-align: left; padding: 0 16px; font: 400 16px var(--and-font); }
+.os-android .sheet-btn.red { color: #ff6b6b; background: transparent; }
+.os-android .sheet-btn.cancel { margin: 0; color: #aaa; background: #1f1f1f; }
+.os-android .callout { background: #282828; border: 1px solid #111; border-radius: 2px; box-shadow: 0 2px 8px rgba(0,0,0,.6); }
+.os-android .callout::after { border-top-color: #282828; }
+.os-android .callout button { font: 500 13px var(--and-font); text-transform: uppercase; text-shadow: none; }
+.os-android .callout button.sep { border-left: 1px solid #3a3a3a; box-shadow: none; }
+.os-android .alert { background: #282828; border: 0; border-radius: 2px; border-top: 2px solid var(--holo); text-align: left; padding: 14px 16px 0; text-shadow: none; }
+.os-android .alert-title { color: var(--holo); font: 500 17px var(--and-font); }
+.os-android .alert-msg { color: #bbb; }
+.os-android .alert input { border: 0; border-bottom: 2px solid var(--holo); border-radius: 0; background: transparent; color: #fff; box-shadow: none; }
+.os-android .alert-btns { margin: 14px -16px 0; gap: 0; border-top: 1px solid #3a3a3a; }
+.os-android .alert-btns button { height: 48px; border: 0; border-radius: 0; background: transparent; font: 400 15px var(--and-font); color: #eee; }
+.os-android .alert-btns button + button { border-left: 1px solid #3a3a3a; }

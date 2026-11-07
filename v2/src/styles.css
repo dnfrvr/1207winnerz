@@ -172,7 +172,7 @@ textarea, input { font: inherit; color: inherit; }
 .soon small { font-weight: normal; font-size: 13px; }
 
 /* Petit bandeau « Lecture seule » quand on regarde le tel d'un autre joueur */
-.readonly-tag { position: absolute; left: 50%; bottom: 8px; transform: translateX(-50%); z-index: 30; padding: 3px 10px; border-radius: 10px; background: rgba(0,0,0,.6); color: #fff; font: bold 10px var(--ios-font); pointer-events: none; }
+.readonly-tag { animation: tagFade 4s ease-in forwards; position: absolute; left: 50%; top: 26px; transform: translateX(-50%); z-index: 30; padding: 3px 10px; border-radius: 10px; background: rgba(0,0,0,.6); color: #fff; font: bold 10px var(--ios-font); pointer-events: none; }
 
 /* ─── Accueil (page web façon 2012) ──────────────────────────────────────── */
 .lobby { min-height: 100dvh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; padding: 32px 16px;
@@ -229,3 +229,4 @@ textarea, input { font: inherit; color: inherit; }
 .y2k-btn:disabled { opacity: .6; }
 .linkish { text-decoration: underline; color: #0f4499; font-size: 11px; }
 .lobby code { user-select: all; background: #fff; padding: 1px 4px; }
+@keyframes tagFade { 0%, 70% { opacity: 1; } 100% { opacity: 0; } }

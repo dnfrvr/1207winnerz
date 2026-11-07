@@ -6,7 +6,8 @@ import { createMemoryStore, resetMemoryStore } from "./data/memoryStore";
 import { createFirebaseStore } from "./data/firebaseStore";
 import { LoginScreen, logout, useFirebaseSession, type Session } from "./data/auth";
 import type { Json, Store } from "./data/store";
-import { IOSPhone } from "./phone/IOSPhone";
+import { Phone } from "./phone/Phone";
+import { img } from "./lib/img";
 import "./styles.css";
 
 const PIDS = ["glinda", "eoghan", "drew", "elias"] as const;
@@ -91,9 +92,8 @@ function DemoRoot() {
 
 function PhoneRoute() {
   const { pid = "" } = useParams();
-  const os = useValue<string>(`phones/${pid}/profile/os`);
-  if (os === "android") return <div className="lobby"><p>Le téléphone Android arrive bientôt dans la v2.</p><Link to="/">← Retour</Link></div>;
-  return <IOSPhone />;
+  if (!PIDS.includes(pid as (typeof PIDS)[number])) return <div className="lobby"><p>Téléphone inconnu.</p><Link to="/">← Retour</Link></div>;
+  return <Phone />;
 }
 
 function Lobby({ me, account }: { me: string | null; account: ReactNode }) {
@@ -112,7 +112,7 @@ function LobbyPhone({ pid, mine }: { pid: string; mine: boolean }) {
   const avatar = typeof p?.avatar === "string" ? p.avatar : p?.avatar?.src;
   return (
     <Link to={`/${pid}`} className={`lobby-phone ${mine ? "mine" : ""}`} style={{ borderColor: p?.accentColor }}>
-      {avatar ? <img src={avatar} alt="" /> : <span className="ph">📱</span>}
+      {avatar ? <img src={img(avatar)} alt="" /> : <span className="ph">📱</span>}
       <span>{p?.name ?? pid}</span>
       {mine && <small>mon téléphone</small>}
     </Link>
