@@ -1,0 +1,59 @@
+{
+  "rules": {
+    ".read": "auth != null",
+    ".write": false,
+
+    "meta": {
+      ".write": "root.child('users/' + auth.uid + '/role').val() === 'mj'",
+      "loreDate": { ".write": "auth != null && root.child('users/' + auth.uid).exists()" }
+    },
+
+    "users": {
+      "$uid": { ".write": "root.child('users/' + auth.uid + '/role').val() === 'mj'" }
+    },
+
+    "phones": {
+      "$pid": {
+        ".write": "root.child('users/' + auth.uid + '/phone').val() === $pid || root.child('users/' + auth.uid + '/role').val() === 'mj'",
+        ".validate": "newData.exists() || root.child('users/' + auth.uid + '/role').val() === 'mj'"
+      }
+    },
+
+    "threads": {
+      "$tid": {
+        ".write": "root.child('users/' + auth.uid + '/role').val() === 'mj' || (data.exists() ? data.child('members/' + root.child('users/' + auth.uid + '/phone').val()).val() === true : newData.child('members/' + root.child('users/' + auth.uid + '/phone').val()).val() === true)",
+        ".validate": "newData.exists() || root.child('users/' + auth.uid + '/role').val() === 'mj'"
+      }
+    },
+
+    "threadMessages": {
+      "$tid": {
+        "$mid": {
+          ".write": "root.child('users/' + auth.uid + '/role').val() === 'mj' || root.child('threads/' + $tid + '/members/' + root.child('users/' + auth.uid + '/phone').val()).val() === true",
+          ".validate": "newData.exists() || root.child('users/' + auth.uid + '/role').val() === 'mj'"
+        }
+      }
+    },
+
+    "feeds": {
+      "$feed": {
+        "$id": {
+          ".write": "root.child('users/' + auth.uid + '/role').val() === 'mj' || (!data.exists() && root.child('users/' + auth.uid).exists()) || data.child('author').val() === root.child('users/' + auth.uid + '/phone').val()",
+          ".validate": "newData.exists() || root.child('users/' + auth.uid + '/role').val() === 'mj'"
+        }
+      }
+    },
+
+    "shared": {
+      "$name": { ".write": "auth != null && root.child('users/' + auth.uid).exists()" }
+    },
+
+    "history": {
+      "$pid": {
+        "$hid": {
+          ".write": "!data.exists() && newData.child('uid').val() === auth.uid"
+        }
+      }
+    }
+  }
+}
