@@ -131,8 +131,22 @@ textarea, input { font: inherit; color: inherit; }
 .dock .icon { position: relative; }
 
 /* ─── App : barre de navigation iOS 6 ────────────────────────────────────── */
-.app { position: absolute; inset: 0; display: flex; flex-direction: column; background: #fff; animation: zoomIn .28s ease-out; }
-@keyframes zoomIn { from { transform: scale(.2); opacity: 0; } to { transform: none; opacity: 1; } }
+.app { position: absolute; inset: 0; display: flex; flex-direction: column; background: #fff; }
+/* Couches : springboard dessous, app dessus. Uniquement transform/opacity (GPU). */
+.home-layer { position: absolute; inset: 0; transition: transform .38s cubic-bezier(.22,.8,.26,1), opacity .38s cubic-bezier(.22,.8,.26,1); animation: homeIn .45s cubic-bezier(.22,.8,.26,1) backwards; will-change: transform, opacity; }
+.home-layer.behind { transform: scale(1.22); opacity: 0; pointer-events: none; }
+@keyframes homeIn { from { transform: scale(1.25); opacity: 0; } }
+.app-layer { position: absolute; inset: 0; overflow: hidden; will-change: transform, opacity; backface-visibility: hidden; }
+.app-layer.open { animation: appOpen .38s cubic-bezier(.22,.8,.26,1) both; }
+.app-layer.exit { animation: appClose .34s cubic-bezier(.4,0,.7,.2) both; pointer-events: none; z-index: 2; }
+@keyframes appOpen { 0% { transform: scale(.14); opacity: 0; } 25% { opacity: 1; } 100% { transform: none; opacity: 1; } }
+@keyframes appClose { 0% { transform: none; opacity: 1; } 75% { opacity: 1; } 100% { transform: scale(.14); opacity: 0; } }
+/* Navigation dans une app (liste → détail) : glissement horizontal d'iOS 6. */
+.app.push { animation: pushIn .34s cubic-bezier(.22,.8,.26,1) both; box-shadow: -4px 0 12px rgba(0,0,0,.25); }
+.app.pop { animation: popIn .34s cubic-bezier(.22,.8,.26,1) both; }
+@keyframes pushIn { from { transform: translateX(100%); } }
+@keyframes popIn { from { transform: translateX(-30%); filter: brightness(.85); } }
+@media (prefers-reduced-motion: reduce) { .home-layer, .app-layer, .app { animation-duration: .01s !important; transition-duration: .01s !important; } }
 .navbar {
   position: relative; height: 44px; flex: 0 0 44px; display: flex; align-items: center; justify-content: center; padding: 0 6px;
   background: linear-gradient(var(--ios-nav-top), var(--ios-nav-bottom)); border-bottom: 1px solid var(--ios-nav-border);

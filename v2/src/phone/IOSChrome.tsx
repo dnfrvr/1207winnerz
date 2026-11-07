@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import { useData, useValue } from "../data/hooks";
 
@@ -34,12 +34,19 @@ export function StatusBar({ variant = "opaque" }: { variant?: "opaque" | "transl
   );
 }
 
+export type NavDir = "push" | "pop" | "none";
+/** Sens de la dernière navigation dans l'app (pour l'animation de glissement). */
+export const NavDirCtx = createContext<NavDir>("none");
+
 /** Coquille d'une app iOS 6 : barre d'état + barre de navigation + contenu défilant. */
 export function AppFrame({ title, left, right, children, navStyle, bodyClass = "" }: {
   title: ReactNode; left?: ReactNode; right?: ReactNode; children: ReactNode; navStyle?: React.CSSProperties; bodyClass?: string;
 }) {
+  const dir = useContext(NavDirCtx);
+  // Le sens est figé au montage : un re-rendu ultérieur ne relance pas l'animation.
+  const [mountDir] = useState(dir);
   return (
-    <div className="app">
+    <div className={`app ${mountDir}`}>
       <StatusBar />
       <div className="navbar" style={navStyle}>
         {left && <div className="side l">{left}</div>}

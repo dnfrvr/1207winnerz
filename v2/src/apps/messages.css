@@ -16,9 +16,9 @@
 .msg-empty { padding: 30px 20px; text-align: center; color: #8e8e93; font: 15px var(--ios-font); }
 
 /* Conversation */
-.conv { flex: 1; min-height: 0; overflow-y: auto; padding: 6px 0 10px; background: #dbe2ed; }
+.conv { flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden; padding: 6px 0 10px; background: #dbe2ed; }
 .stamp { padding: 10px 0 4px; text-align: center; font: bold 12px var(--ios-font); color: #8b98ab; text-shadow: 0 1px 0 #fff; }
-.line { display: flex; flex-direction: column; padding: 2px 8px; }
+.line { position: relative; z-index: 0; display: flex; flex-direction: column; padding: 2px 12px; }
 .line.me { align-items: flex-end; }
 .line.them { align-items: flex-start; }
 .sender { font: bold 11px var(--ios-font); color: #7486a0; padding: 4px 14px 1px; text-shadow: 0 1px 0 #fff; }
@@ -29,15 +29,20 @@
 .bubble.them { color: #000; background: linear-gradient(#fdfdfd, #e6e6e6); border: 1px solid #b9b9b9; box-shadow: 0 1px 1px rgba(0,0,0,.18), inset 0 1px 0 #fff; }
 .bubble.me.imsg { color: #fff; background: linear-gradient(#65b7ff 0%, #2f8df6 48%, #1774ea 52%, #0d64d6 100%); border: 1px solid #1158b8; box-shadow: 0 1px 1px rgba(0,0,0,.25), inset 0 1px 0 rgba(255,255,255,.45); text-shadow: 0 -1px 0 rgba(0,0,0,.25); }
 .bubble.me.sms { color: #fff; background: linear-gradient(#b6ec7a 0%, #78cc38 48%, #5fbb22 52%, #4fa818 100%); border: 1px solid #3e8f12; box-shadow: 0 1px 1px rgba(0,0,0,.25), inset 0 1px 0 rgba(255,255,255,.45); text-shadow: 0 -1px 0 rgba(0,0,0,.2); }
-.bubble::after { /* petite queue */
-  content: ""; position: absolute; bottom: -1px; width: 12px; height: 14px; background: inherit; border: inherit; border-top: 0;
-}
-.bubble.them::after { left: -5px; border-right: 0; border-radius: 0 0 0 12px; clip-path: polygon(0 100%, 100% 0, 100% 100%); }
-.bubble.me::after { right: -5px; border-left: 0; border-radius: 0 0 12px 0; clip-path: polygon(0 0, 100% 100%, 0 100%); }
+/* Queue de bulle iOS : une « corne » courbe dessinée derrière la bulle (z-index -1 dans le
+   contexte de .line), dont seule la pointe dépasse du coin inférieur. Pas de cache : le texte
+   n'est jamais recouvert. */
+.bubble::before { content: ""; position: absolute; bottom: -1px; width: 16px; height: 18px; z-index: -1; background: var(--tail); pointer-events: none; }
+.bubble.me::before { right: -6px; clip-path: path("M0 0 L7 0 C7 8 9.5 13.5 16 18 C9 18 3.5 16.5 0 13.5 Z"); }
+.bubble.them::before { left: -6px; clip-path: path("M16 0 L9 0 C9 8 6.5 13.5 0 18 C7 18 12.5 16.5 16 13.5 Z"); }
+.bubble.me.imsg { --tail: #0d64d6; }
+.bubble.me.sms { --tail: #4fa818; }
+.bubble.them { --tail: #e4e4e4; }
+.bubble.them::before { filter: drop-shadow(-0.5px 0.5px 0 #b9b9b9); }
+.bubble.editing::before { display: none; }
 .bubble.selected { filter: brightness(.82); }
 .bubble img { display: block; max-width: 100%; border-radius: 12px; }
 .bubble.editing { padding: 0; background: #fff; border: 2px solid #4f8fe0; color: #000; text-shadow: none; }
-.bubble.editing::after { display: none; }
 .bubble textarea { display: block; width: 210px; min-height: 60px; padding: 6px 12px; border: 0; outline: none; resize: none; background: transparent; font: 16px/20px var(--ios-font); border-radius: 15px; }
 .edit-actions { display: flex; gap: 6px; padding: 4px 2px; }
 .edit-actions button { font: bold 12px var(--ios-font); padding: 4px 10px; border-radius: 12px; background: linear-gradient(#fefefe, #dcdcdc); border: 1px solid #9b9b9b; color: #333; }
