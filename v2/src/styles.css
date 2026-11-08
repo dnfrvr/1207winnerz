@@ -131,7 +131,7 @@ textarea, input { font: inherit; color: inherit; }
 .dock .icon { position: relative; }
 
 /* ─── App : barre de navigation iOS 6 ────────────────────────────────────── */
-.app { position: absolute; inset: 0; display: flex; flex-direction: column; background: #fff; }
+.app { position: absolute; inset: 0; display: flex; flex-direction: column; background: #fff; color: #000; }
 /* Couches : springboard dessous, app dessus. Uniquement transform/opacity (GPU). */
 .home-layer { position: absolute; inset: 0; transition: transform .38s cubic-bezier(.22,.8,.26,1), opacity .38s cubic-bezier(.22,.8,.26,1); animation: homeIn .45s cubic-bezier(.22,.8,.26,1) backwards; will-change: transform, opacity; }
 .home-layer.behind { transform: scale(1.22); opacity: 0; pointer-events: none; }

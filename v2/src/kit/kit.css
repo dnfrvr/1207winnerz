@@ -1,0 +1,144 @@
+/* ─── Kit iOS 6 / Android 4.1 ──────────────────────────────────────────────── */
+
+/* Tables groupées iOS 6 : fond rayé, groupes blancs arrondis, libellés gris-bleu en relief */
+.k-grouped { min-height: 100%; padding: 1px 0 16px; background: repeating-linear-gradient(90deg, #c5ccd4 0 5px, #cbd2d8 5px 9px); }
+.k-section { margin: 10px 9px 0; }
+.k-section-title { padding: 8px 10px 6px; font: bold 17px var(--ios-font); color: #4c566c; text-shadow: 0 1px 0 #fff; }
+.k-section-footer { padding: 6px 12px 0; font: 15px var(--ios-font); color: #4c566c; text-align: center; text-shadow: 0 1px 0 #fff; }
+.k-group { background: #fff; border: 1px solid #a9b1ba; border-radius: 10px; overflow: hidden; box-shadow: 0 1px 0 rgba(255,255,255,.7); }
+.k-group > .k-cell:last-child, .k-group > *:last-child .k-cell { border-bottom: 0; }
+
+.k-cell { position: relative; width: 100%; min-height: 44px; display: flex; align-items: center; gap: 9px; padding: 0 10px; text-align: left;
+  border-bottom: 1px solid #e0e0e0; background: #fff; color: #000; font: 17px var(--ios-font); user-select: none; -webkit-user-select: none; }
+.k-cell.tall { min-height: 54px; padding-top: 5px; padding-bottom: 5px; }
+.k-cell.tap:active { background: linear-gradient(#058cf5, #015ee6); color: #fff; }
+.k-cell.tap:active .k-sub, .k-cell.tap:active .k-detail, .k-cell.tap:active .k-chev { color: #fff; }
+.k-cell.dim { opacity: .5; }
+.k-text { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.k-title { font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.k-sub { font: 14px/17px var(--ios-font); color: #7f7f7f; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.k-detail { flex-shrink: 0; max-width: 55%; font: 17px var(--ios-font); color: #385487; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.k-chev { flex-shrink: 0; font-size: 24px; color: #8e8e93; line-height: 1; margin-top: -2px; }
+.k-icon { flex-shrink: 0; display: flex; align-items: center; justify-content: center; width: 29px; height: 29px; font-size: 20px; }
+.k-thumb { flex-shrink: 0; width: 44px; height: 44px; background: #ddd; overflow: hidden; border-radius: 3px; }
+.k-thumb.round { border-radius: 50%; }
+.k-thumb img { width: 100%; height: 100%; object-fit: cover; }
+
+/* Liste « plain » iOS 6 : en-têtes de section en dégradé gris-bleu */
+.k-plain { background: #fff; min-height: 100%; }
+.k-plain .k-cell { padding-left: 10px; }
+.k-plain-header { position: sticky; top: 0; z-index: 2; height: 23px; padding: 0 12px; font: bold 17px/23px var(--ios-font); color: #fff;
+  text-shadow: 0 1px 0 rgba(0,0,0,.4); background: linear-gradient(#a5b1ba, #b8c1c8); border-top: 1px solid #98a4ad; border-bottom: 1px solid #959fa7; }
+
+.k-empty { padding: 40px 24px; text-align: center; font: bold 17px var(--ios-font); color: #8e95a0; text-shadow: 0 1px 0 #fff; }
+
+/* Barre d'onglets iOS 6 */
+.k-tabbar.ios { flex: 0 0 49px; display: flex; padding: 2px 2px 1px; gap: 2px;
+  background: linear-gradient(#3b3b3b, #1d1d1d 50%, #000 51%, #050505); border-top: 1px solid #000; box-shadow: inset 0 1px 0 rgba(255,255,255,.18); }
+.k-tabbar.ios button { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; border-radius: 3px; color: #8a8a8a; font: bold 10px var(--ios-font); }
+.k-tabbar.ios button svg { filter: drop-shadow(0 -1px 0 #000); }
+.k-tabbar.ios button.on { background: rgba(255,255,255,.12); color: #fff; }
+.k-tabbar.ios button.on svg { color: #36a5ff; filter: drop-shadow(0 0 3px rgba(54,165,255,.8)); }
+
+/* Onglets holo Android (en haut, sous la barre d'action) */
+.k-tabbar.android { order: -1; flex: 0 0 44px; display: flex; background: #222; box-shadow: 0 2px 4px rgba(0,0,0,.4); position: relative; z-index: 1; }
+.k-tabbar.android button { flex: 1; font: 500 12px var(--and-font); text-transform: uppercase; color: #aaa; border-bottom: 3px solid transparent; }
+.k-tabbar.android button.on { color: #fff; border-bottom-color: var(--holo); }
+
+/* Contrôle segmenté iOS 6 */
+.k-seg.ios { display: flex; margin: 8px 9px; border-radius: 6px; border: 1px solid #5b6f89; overflow: hidden; box-shadow: 0 1px 0 rgba(255,255,255,.6); }
+.k-seg.ios button { flex: 1; height: 30px; font: bold 13px var(--ios-font); color: #5b6f89; text-shadow: 0 1px 0 #fff; background: linear-gradient(#fdfdfd, #d9dde3); }
+.k-seg.ios button + button { border-left: 1px solid #8a99ac; }
+.k-seg.ios button.on { color: #fff; text-shadow: 0 -1px 0 rgba(0,0,0,.4); background: linear-gradient(#7b96c3, #4a6aa6 50%, #3b5c99 51%, #5079b6); box-shadow: inset 0 1px 3px rgba(0,0,0,.4); }
+.k-seg.ios.dark { border-color: #111; }
+.k-seg.ios.dark button { color: #ddd; text-shadow: 0 -1px 0 #000; background: linear-gradient(#5d5d5d, #2e2e2e); }
+.k-seg.ios.dark button.on { background: linear-gradient(#2e2e2e, #121212); }
+.k-seg.android { display: flex; background: #222; }
+.k-seg.android button { flex: 1; height: 40px; font: 500 12px var(--and-font); text-transform: uppercase; color: #aaa; border-bottom: 3px solid transparent; }
+.k-seg.android button.on { color: #fff; border-bottom-color: var(--holo); }
+
+/* Barre d'outils iOS 6 (bleu-gris) / noire */
+.k-toolbar { flex: 0 0 44px; display: flex; align-items: center; justify-content: space-around; padding: 0 6px;
+  background: linear-gradient(#b2bfd0, #6d83a1); border-top: 1px solid #2d3642; box-shadow: inset 0 1px 0 rgba(255,255,255,.45); color: #fff; }
+.k-toolbar.dark { background: linear-gradient(#3b3b3b, #000); border-top-color: #000; }
+.k-toolbar button { color: #fff; filter: drop-shadow(0 -1px 0 rgba(0,0,0,.5)); padding: 6px 10px; display: flex; }
+.k-toolbar button:disabled { opacity: .4; }
+.os-android .k-toolbar { background: #222; border-top: 1px solid #333; box-shadow: none; }
+
+/* Interrupteur iOS 6 */
+.k-switch.ios { position: relative; flex-shrink: 0; width: 79px; height: 27px; border-radius: 14px; overflow: hidden; border: 1px solid #9a9a9a;
+  background: linear-gradient(#e8e8e8, #fafafa); box-shadow: inset 0 2px 3px rgba(0,0,0,.25); font: bold 16px/27px var(--ios-font); }
+.k-switch.ios .lbl { position: absolute; top: 0; width: 52px; text-align: center; transition: left .2s; }
+.k-switch.ios .lbl.on { left: -52px; color: #fff; text-shadow: 0 -1px 0 rgba(0,0,0,.3); background: linear-gradient(#0068d9, #3d97ff); box-shadow: inset 0 2px 3px rgba(0,0,0,.3); }
+.k-switch.ios .lbl.off { left: 27px; color: #7f7f7f; }
+.k-switch.ios .knob { position: absolute; top: -1px; left: -1px; width: 27px; height: 27px; border-radius: 50%; transition: left .2s;
+  background: linear-gradient(#cfcfcf, #fefefe); border: 1px solid #9a9a9a; box-shadow: 0 1px 2px rgba(0,0,0,.3); }
+.k-switch.ios.on .lbl.on { left: 0; width: 66px; padding-right: 14px; }
+.k-switch.ios.on .knob { left: 51px; }
+.k-switch.ios.on .lbl.off { left: 79px; }
+.k-switch.android { flex-shrink: 0; width: 76px; height: 26px; background: #444; border-radius: 2px; position: relative; }
+.k-switch.android .thumb { position: absolute; top: 1px; left: 1px; width: 37px; height: 24px; font: 500 11px/24px var(--and-font); color: #ddd; background: #666; transition: left .15s; }
+.k-switch.android.on .thumb { left: 38px; background: var(--holo); color: #fff; }
+
+/* Recherche iOS 6 */
+.k-search { display: flex; align-items: center; gap: 6px; margin: 6px; padding: 0 10px; height: 30px; border-radius: 15px; background: #fff; border: 1px solid #a3a3a3;
+  box-shadow: inset 0 1px 2px rgba(0,0,0,.3); color: #8e8e93; }
+.k-search input { flex: 1; border: 0; outline: none; font: 15px var(--ios-font); background: transparent; color: #000; }
+.k-searchbar-wrap { background: linear-gradient(#cdd5df, #b2bcc8); border-bottom: 1px solid #8e99a6; }
+
+.k-avatar { flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; overflow: hidden; color: #fff; font-weight: bold; border-radius: 4px; }
+.k-avatar.round { border-radius: 50%; }
+.k-avatar img { width: 100%; height: 100%; object-fit: cover; }
+
+/* Écran de lancement des jeux */
+.k-splash { position: absolute; inset: 0; z-index: 5; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; text-align: center; padding: 30px; cursor: pointer; }
+.k-splash-logo { font-size: 72px; filter: drop-shadow(0 6px 10px rgba(0,0,0,.4)); animation: bob 2.4s ease-in-out infinite; }
+@keyframes bob { 50% { transform: translateY(-6px) rotate(-2deg); } }
+.k-splash-title { font: 900 30px/1.05 "Arial Black", Impact, var(--ios-font); text-shadow: 0 3px 0 rgba(0,0,0,.35), 0 0 12px rgba(0,0,0,.25); letter-spacing: .5px; }
+.k-splash-sub { font: bold 13px var(--ios-font); opacity: .85; }
+.k-splash-foot { position: absolute; bottom: 40px; left: 0; right: 0; display: flex; justify-content: center; font: bold 14px var(--ios-font); }
+.k-splash-foot .bar { width: 150px; height: 10px; border-radius: 5px; background: rgba(0,0,0,.35); overflow: hidden; box-shadow: inset 0 1px 2px rgba(0,0,0,.4); }
+.k-splash-foot .bar i { display: block; height: 100%; width: 0; background: linear-gradient(#fff, #ddd); border-radius: 5px; animation: load 1.5s ease-out forwards; }
+@keyframes load { to { width: 100%; } }
+.blink { animation: blink 1.2s steps(2, start) infinite; }
+@keyframes blink { to { visibility: hidden; } }
+
+/* Formulaire d'édition (au-dessus de l'app) */
+.k-form { position: absolute; inset: 0; z-index: 60; display: flex; flex-direction: column; background: #c5ccd4; animation: up .3s ease-out; }
+.k-form-bar { flex: 0 0 44px; display: flex; align-items: center; justify-content: space-between; padding: 0 6px;
+  background: linear-gradient(var(--ios-nav-top), var(--ios-nav-bottom)); border-bottom: 1px solid var(--ios-nav-border); }
+.k-form-bar h1 { font: bold 18px var(--ios-font); color: #fff; text-shadow: 0 -1px 0 rgba(0,0,0,.45); }
+.k-form-bar button { height: 30px; padding: 0 10px; border-radius: 5px; font: bold 12px var(--ios-font); color: #fff; border: 1px solid rgba(0,0,0,.45);
+  background: linear-gradient(rgba(255,255,255,.25), rgba(255,255,255,0) 50%), linear-gradient(#8fa2bd, #5b7393); text-shadow: 0 -1px 0 rgba(0,0,0,.45); }
+.k-form-bar button.ok { background: linear-gradient(rgba(255,255,255,.25), rgba(255,255,255,0) 50%), linear-gradient(var(--ios-blue-btn-top), var(--ios-blue-btn-bottom)); }
+.k-form-body { flex: 1; overflow-y: auto; }
+.k-field { display: flex; flex-direction: column; gap: 3px; padding: 7px 10px; border-bottom: 1px solid #e0e0e0; background: #fff; }
+.k-field.bool { flex-direction: row; align-items: center; justify-content: space-between; }
+.k-field-label { font: bold 13px var(--ios-font); color: #385487; }
+.k-field input, .k-field textarea { width: 100%; border: 0; outline: none; font: 16px var(--ios-font); color: #000; background: transparent; resize: vertical; }
+.k-field-img { max-width: 100px; max-height: 100px; border-radius: 4px; margin-top: 4px; object-fit: cover; }
+.k-form.android { background: #f2f2f2; }
+.k-form.android .k-form-bar { background: #222; border: 0; box-shadow: 0 2px 6px rgba(0,0,0,.5); }
+.k-form.android .k-form-bar h1 { font: 400 17px var(--and-font); text-shadow: none; }
+.k-form.android .k-form-bar button { border: 0; background: none; font: 500 13px var(--and-font); text-transform: uppercase; text-shadow: none; }
+
+/* ─── Android 4.1 : listes holo claires ───────────────────────────────────── */
+.os-android .k-grouped { background: #f2f2f2; padding-top: 0; }
+.os-android .k-section { margin: 0; }
+.os-android .k-section-title { margin: 14px 12px 0; padding: 0 4px 4px; font: 700 13px var(--and-font); text-transform: uppercase; color: var(--holo); text-shadow: none; border-bottom: 2px solid var(--holo); }
+.os-android .k-group { border: 0; border-radius: 0; box-shadow: none; background: transparent; }
+.os-android .k-cell { background: transparent; font-family: var(--and-font); border-bottom: 1px solid #dcdcdc; min-height: 48px; padding: 0 14px; }
+.os-android .k-cell.tap:active { background: rgba(51,181,229,.3); color: inherit; }
+.os-android .k-title { font: 400 16px var(--and-font); color: #222; }
+.os-android .k-sub { font: 13px/17px var(--and-font); color: #808080; }
+.os-android .k-detail { font: 14px var(--and-font); color: #808080; }
+.os-android .k-chev { display: none; }
+.os-android .k-plain { background: #fafafa; }
+.os-android .k-plain-header { background: #f2f2f2; color: var(--holo); text-shadow: none; border: 0; border-bottom: 2px solid var(--holo); font: 700 12px/23px var(--and-font); text-transform: uppercase; height: 26px; }
+.os-android .k-empty { font-family: var(--and-font); font-weight: 400; color: #999; text-shadow: none; }
+.os-android .k-section-footer { font-family: var(--and-font); color: #999; text-shadow: none; text-align: left; }
+.os-android .k-search { border-radius: 2px; border: 0; border-bottom: 2px solid var(--holo); box-shadow: none; background: transparent; }
+.os-android .k-searchbar-wrap { background: #fafafa; border: 0; }
+.k-tabbar.ios { order: 2; }
+.k-body-tabbed { display: flex; flex-direction: column; overflow: hidden; }
+.k-tab-scroll { flex: 1; min-height: 0; overflow-y: auto; }

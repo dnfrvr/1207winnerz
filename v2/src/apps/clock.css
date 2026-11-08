@@ -1,0 +1,54 @@
+.clk-row { display: flex; align-items: center; gap: 12px; height: 72px; padding: 0 12px; border-bottom: 1px solid #d8d8d8; background: linear-gradient(#fff, #f2f2f2); }
+.clk-face .rim { fill: url(#none); fill: #fbfbfb; stroke: #333; stroke-width: 3; }
+.clk-face .tick { stroke: #555; stroke-width: 2.5; }
+.clk-face .hand { stroke: #111; stroke-linecap: round; }
+.clk-face .pin { fill: #c00; }
+.clk-face.night .rim { fill: #1a1a1a; stroke: #000; }
+.clk-face.night .tick, .clk-face.night .hand { stroke: #fff; }
+.clk-face { filter: drop-shadow(0 2px 2px rgba(0,0,0,.35)); }
+.clk-city { flex: 1; display: flex; flex-direction: column; }
+.clk-city b { font: bold 20px var(--ios-font); }
+.clk-city span { font: 14px var(--ios-font); color: #7f7f7f; }
+.clk-time { font: 300 24px var(--ios-font); color: #222; }
+.clk-al-time { font: 300 32px/1 var(--ios-font); }
+.clk-alarms .k-cell { min-height: 66px; }
+
+/* Chronomètre / minuteur : afficheur LCD en relief + gros boutons vert / rouge iOS 6 */
+.clk-sw, .clk-timer { display: flex; flex-direction: column; min-height: 100%; background: repeating-linear-gradient(90deg, #c5ccd4 0 5px, #cbd2d8 5px 9px); }
+.clk-lcd { margin: 16px 12px 0; padding: 14px 10px; border-radius: 10px; text-align: center; color: #222; text-shadow: 0 1px 0 #fff;
+  background: linear-gradient(#f8f8f8, #d9dde2); border: 1px solid #8e96a0; box-shadow: inset 0 1px 0 #fff, 0 1px 2px rgba(0,0,0,.2); display: flex; flex-direction: column; }
+.clk-lcd small { font: 16px var(--ios-font); color: #666; min-height: 19px; }
+.clk-lcd b { font: 200 52px/1.1 var(--ios-font); letter-spacing: -1px; }
+.clk-lcd.big b { font-size: 70px; }
+.clk-lcd.done b { color: #c00; animation: blink 1s steps(2, start) infinite; }
+.clk-btns { display: flex; gap: 10px; margin: 14px 12px; }
+.clk-btns button { flex: 1; height: 50px; border-radius: 10px; font: bold 20px var(--ios-font); color: #333; text-shadow: 0 1px 0 #fff;
+  background: linear-gradient(#fefefe, #d6d6d6); border: 1px solid #8e8e8e; box-shadow: 0 1px 0 rgba(255,255,255,.6); }
+.clk-btns .green { color: #fff; text-shadow: 0 -1px 0 rgba(0,0,0,.35); background: linear-gradient(#8ed97f, #3fae31 50%, #2f9d22 51%, #4bb83c); border-color: #1f6f15; }
+.clk-btns .red { color: #fff; text-shadow: 0 -1px 0 rgba(0,0,0,.35); background: linear-gradient(#f59b9b, #d43030 50%, #c41a1a 51%, #d84343); border-color: #6a0000; }
+.clk-picker { margin: 18px 12px 0; height: 190px; display: flex; align-items: center; justify-content: center; gap: 10px; border-radius: 10px;
+  background: linear-gradient(#3a3d45, #15171b); border: 1px solid #000; box-shadow: inset 0 0 0 1px rgba(255,255,255,.1); }
+.clk-wheel { width: 90px; height: 170px; display: flex; flex-direction: column; justify-content: center; border-radius: 4px; overflow: hidden;
+  background: linear-gradient(#999, #fff 30%, #fff 70%, #999); box-shadow: inset 0 0 6px #000; }
+.clk-wheel span { height: 34px; display: flex; align-items: center; justify-content: center; font: bold 22px var(--ios-font); color: #333; }
+.clk-wheel span.sel { background: linear-gradient(rgba(170,180,210,.55), rgba(110,125,170,.55)); border-top: 1px solid #7381a6; border-bottom: 1px solid #7381a6; color: #000; }
+.clk-unit { font: bold 20px var(--ios-font); color: #fff; text-shadow: 0 -1px 0 #000; }
+.clk-step { display: flex; flex-direction: column; gap: 6px; }
+.clk-step button { width: 36px; height: 36px; border-radius: 6px; font: bold 22px var(--ios-font); background: linear-gradient(#fefefe, #ccc); }
+.clk-btns.one { margin-top: 18px; }
+
+/* Android 4.1 : fond noir, chiffres fins holo */
+.clk.android .clk-row { background: #111; border-bottom-color: #222; }
+.clk.android .clk-city b { font: 400 18px var(--and-font); color: #eee; }
+.clk.android .clk-city span { font-family: var(--and-font); color: #888; }
+.clk.android .clk-time { color: var(--holo); font-family: var(--and-font); font-weight: 300; }
+.clk.android .k-plain { background: #111; }
+.clk.android .k-cell { border-bottom-color: #222; }
+.clk.android .k-title, .clk.android .clk-al-time { color: #eee; font-family: var(--and-font); }
+.clk.android .clk-sw, .clk.android .clk-timer { background: #000; }
+.clk.android .clk-lcd { background: #000; border: 0; box-shadow: none; color: var(--holo); text-shadow: none; }
+.clk.android .clk-lcd b { font-family: var(--and-font); font-weight: 200; }
+.clk.android .clk-btns button { border-radius: 2px; border: 0; background: #2a2a2a; color: #fff; text-shadow: none; font: 500 15px var(--and-font); text-transform: uppercase; }
+.clk.android .clk-btns .green { background: #2e7d32; }
+.clk.android .clk-btns .red { background: #c62828; }
+.clk.android .clk-picker { background: #111; }

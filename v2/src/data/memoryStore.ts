@@ -2,11 +2,19 @@
 // gardées dans le navigateur (localStorage) pour survivre à un rechargement.
 import { getIn, makeId, related, setIn, split, type Json, type Patches, type Store } from "./store";
 
-const LS_KEY = "uma-v2-dev-tree";
+const LS_PREFIX = "uma-v2-dev-tree";
+let LS_KEY = LS_PREFIX;
 
 export function createMemoryStore(seed: Json): Store {
+  // Une clé par jeu de données : changer de seed (ex. nouvel export) repart sur des données fraîches.
+  const stamp = (getIn(seed, "meta/migratedAt") as string | undefined) ?? "seed";
+  LS_KEY = `${LS_PREFIX}:${stamp}`;
   let tree: Json | undefined = seed;
   try {
+    for (let i = localStorage.length - 1; i >= 0; i--) {
+      const k = localStorage.key(i);
+      if (k?.startsWith(LS_PREFIX) && k !== LS_KEY) localStorage.removeItem(k);
+    }
     const saved = localStorage.getItem(LS_KEY);
     if (saved) tree = JSON.parse(saved);
   } catch { /* stockage indisponible : on part du seed */ }

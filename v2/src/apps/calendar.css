@@ -1,0 +1,32 @@
+.cal-body { display: flex; flex-direction: column; overflow: hidden; background: #fff; }
+.cal-head { flex: 0 0 34px; display: flex; align-items: center; justify-content: space-between; padding: 0 14px; font: bold 20px var(--ios-font); color: #4d5761;
+  background: linear-gradient(#f6f7f9, #cfd3d9); text-shadow: 0 1px 0 #fff; }
+.cal-head button { font-size: 14px; color: #4d5761; padding: 6px; }
+.cal-dow { flex: 0 0 16px; display: grid; grid-template-columns: repeat(7, 1fr); background: #cfd3d9; border-bottom: 1px solid #9ba3ad; }
+.cal-dow span { text-align: center; font: bold 10px var(--ios-font); color: #4d5761; text-shadow: 0 1px 0 #fff; }
+.cal-grid { flex: 0 0 auto; display: grid; grid-template-columns: repeat(7, 1fr); background: #a5adb6; gap: 1px; border-bottom: 1px solid #7f8790; }
+.cal-grid button { position: relative; height: 44px; display: flex; align-items: flex-start; justify-content: center; padding-top: 7px;
+  background: linear-gradient(#e2e4e7, #cdd1d7); box-shadow: inset 0 1px 0 rgba(255,255,255,.7); font: bold 22px var(--ios-font); color: #2a2f35; text-shadow: 0 1px 0 #fff; }
+.cal-grid button.out { color: #8e949b; }
+.cal-grid button i { position: absolute; bottom: 5px; left: 50%; width: 6px; height: 6px; margin-left: -3px; border-radius: 50%; background: #3c4552; box-shadow: 0 1px 0 #fff; }
+.cal-grid button.today { background: linear-gradient(#7a91b0, #6a83a5); color: #fff; text-shadow: 0 -1px 0 rgba(0,0,0,.4); box-shadow: inset 0 1px 3px rgba(0,0,0,.4); }
+.cal-grid button.sel { background: linear-gradient(#2a8bf7, #0b5bd9); color: #fff; text-shadow: 0 -1px 0 rgba(0,0,0,.4); box-shadow: inset 0 2px 4px rgba(0,0,0,.5); }
+.cal-grid button.sel i, .cal-grid button.today i { background: #fff; box-shadow: none; }
+.cal-list { flex: 1; min-height: 0; overflow-y: auto; }
+.cal-none { padding: 18px; text-align: center; font: bold 15px var(--ios-font); color: #999; }
+.cal-today { font: bold 12px var(--ios-font) !important; border-radius: 5px; border: 1px solid rgba(0,0,0,.45) !important;
+  background: linear-gradient(rgba(255,255,255,.25), rgba(255,255,255,0) 50%), linear-gradient(#8fa2bd, #5b7393) !important; padding: 6px 10px !important; }
+.cal-body .k-toolbar .k-seg { margin: 0; width: 140px; }
+
+/* Android 4.1 : grille plate, aujourd'hui en bleu holo */
+.cal-body.android .cal-head { background: #fafafa; color: #222; text-shadow: none; font: 400 18px var(--and-font); border-bottom: 1px solid #ddd; }
+.cal-body.android .cal-head button { color: #666; }
+.cal-body.android .cal-dow { background: #fafafa; border-bottom: 1px solid #ddd; }
+.cal-body.android .cal-dow span { font: 500 10px var(--and-font); color: #888; text-shadow: none; text-transform: uppercase; }
+.cal-body.android .cal-grid { background: #e5e5e5; border-bottom: 0; }
+.cal-body.android .cal-grid button { background: #fff; box-shadow: none; text-shadow: none; font: 400 16px var(--and-font); color: #333; justify-content: flex-start; padding-left: 5px; }
+.cal-body.android .cal-grid button.out { background: #f4f4f4; color: #aaa; }
+.cal-body.android .cal-grid button.today { background: #fff; color: var(--holo); font-weight: 700; box-shadow: inset 0 -3px 0 var(--holo); }
+.cal-body.android .cal-grid button.sel { background: rgba(51,181,229,.2); color: #222; box-shadow: none; }
+.cal-body.android .cal-grid button i { background: var(--holo); box-shadow: none; left: auto; right: 5px; bottom: auto; top: 7px; }
+.cal-body.android .cal-today { border: 0 !important; background: none !important; color: #fff; }

@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev-seed": "node ../migration/migrate-v1-to-v2.mjs --seed src/dev/seed-v2.json",
+    "dev-seed": "node scripts/dev-seed.mjs",
     "predev": "npm run dev-seed",
     "dev": "vite",
     "prebuild": "npm run dev-seed",

@@ -1,0 +1,298 @@
+// Kit d'interface des apps : composants « natifs » iOS 6 / Android 4.1 (Jelly Bean) qui se
+// dessinent selon le téléphone affiché, + l'édition universelle des contenus.
+import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { useCanEdit, useData, useWriter } from "../data/hooks";
+import { orderBetween, byOrder, type Ordered } from "../data/order";
+import type { Json } from "../data/store";
+import { img } from "../lib/img";
+import { useOS } from "../phone/common";
+import { StatusBar } from "../phone/IOSChrome";
+import { ActionSheet, useLongPress, type SheetAction } from "../phone/Sheets";
+import { Icon, type IconName } from "./icons";
+import "./kit.css";
+
+// ─── Tables ────────────────────────────────────────────────────────────────
+/** Liste groupée (iOS : fond rayé + groupes arrondis ; Android : sections holo). */
+export function Grouped({ children, className = "" }: { children: ReactNode; className?: string }) {
+  return <div className={`k-grouped ${className}`}>{children}</div>;
+}
+
+export function Section({ title, footer, children }: { title?: ReactNode; footer?: ReactNode; children: ReactNode }) {
+  return (
+    <div className="k-section">
+      {title && <div className="k-section-title">{title}</div>}
+      <div className="k-group">{children}</div>
+      {footer && <div className="k-section-footer">{footer}</div>}
+    </div>
+  );
+}
+
+/** Liste « plain » (rangées pleine largeur). */
+export function Plain({ children, className = "" }: { children: ReactNode; className?: string }) {
+  return <div className={`k-plain ${className}`}>{children}</div>;
+}
+
+export function PlainHeader({ children }: { children: ReactNode }) {
+  return <div className="k-plain-header">{children}</div>;
+}
+
+export type CellProps = {
+  title: ReactNode; subtitle?: ReactNode; detail?: ReactNode; icon?: ReactNode; image?: string | null;
+  chevron?: boolean; onClick?: () => void; onLong?: () => void; accessory?: ReactNode; className?: string;
+  style?: CSSProperties; dim?: boolean; tall?: boolean; round?: boolean;
+};
+
+export function Cell({ title, subtitle, detail, icon, image, chevron, onClick, onLong, accessory, className = "", style, dim, tall, round }: CellProps) {
+  const lp = useLongPress(() => onLong?.());
+  const Tag = onClick || onLong ? "button" : "div";
+  return (
+    <Tag
+      className={`k-cell ${onClick ? "tap" : ""} ${dim ? "dim" : ""} ${tall || subtitle ? "tall" : ""} ${className}`}
+      style={style}
+      {...(onLong ? lp.handlers : {})}
+      onClick={onClick ? () => { if (!lp.fired.current) onClick(); } : undefined}
+    >
+      {image !== undefined && <span className={`k-thumb ${round ? "round" : ""}`}>{image ? <img src={img(image)} alt="" loading="lazy" /> : null}</span>}
+      {icon && <span className="k-icon">{icon}</span>}
+      <span className="k-text">
+        <span className="k-title">{title}</span>
+        {subtitle && <span className="k-sub">{subtitle}</span>}
+      </span>
+      {detail !== undefined && <span className="k-detail">{detail}</span>}
+      {accessory}
+      {chevron && <span className="k-chev" aria-hidden>›</span>}
+    </Tag>
+  );
+}
+
+// ─── Barres ────────────────────────────────────────────────────────────────
+export type Tab = { id: string; label: string; icon: IconName };
+
+/** Barre d'onglets : en bas sur iOS 6 (noire brillante), en haut sur Android (onglets holo). */
+export function TabBar({ tabs, active, onChange }: { tabs: Tab[]; active: string; onChange: (id: string) => void }) {
+  const os = useOS();
+  return (
+    <div className={`k-tabbar ${os}`}>
+      {tabs.map((t) => (
+        <button key={t.id} className={t.id === active ? "on" : ""} onClick={() => onChange(t.id)}>
+          {os === "ios" && <Icon name={t.icon} size={26} />}
+          <span>{t.label}</span>
+        </button>
+      ))}
+    </div>
+  );
+}
+
+/** Contrôle segmenté iOS 6 / onglets holo. */
+export function Segmented({ items, value, onChange, dark = false }: { items: { id: string; label: string }[]; value: string; onChange: (id: string) => void; dark?: boolean }) {
+  const os = useOS();
+  return (
+    <div className={`k-seg ${os} ${dark ? "dark" : ""}`}>
+      {items.map((it) => <button key={it.id} className={it.id === value ? "on" : ""} onClick={() => onChange(it.id)}>{it.label}</button>)}
+    </div>
+  );
+}
+
+/** Barre d'outils du bas (iOS) / barre d'action scindée (Android). */
+export function Toolbar({ children, dark = false }: { children: ReactNode; dark?: boolean }) {
+  return <div className={`k-toolbar ${dark ? "dark" : ""}`}>{children}</div>;
+}
+
+/** Interrupteur iOS 6 (ON/OFF bleu) / Jelly Bean (rectangle holo). */
+export function Switch({ on, onChange, disabled }: { on: boolean; onChange?: (v: boolean) => void; disabled?: boolean }) {
+  const os = useOS();
+  return (
+    <button className={`k-switch ${os} ${on ? "on" : ""}`} disabled={disabled || !onChange} onClick={(e) => { e.stopPropagation(); onChange?.(!on); }} aria-pressed={on}>
+      {os === "ios" ? <><span className="lbl on">ON</span><span className="knob" /><span className="lbl off">OFF</span></> : <span className="thumb">{on ? "ON" : "OFF"}</span>}
+    </button>
+  );
+}
+
+export function SearchBar({ value, onChange, placeholder = "Search" }: { value: string; onChange: (v: string) => void; placeholder?: string }) {
+  return (
+    <div className="k-search">
+      <Icon name="search" size={14} />
+      <input value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} />
+    </div>
+  );
+}
+
+export function Avatar({ src, name, size = 40, color, round = true }: { src?: string | null; name?: string; size?: number; color?: string; round?: boolean }) {
+  const initials = (name ?? "?").replace(/[^\p{L}\p{N} ]/gu, "").trim().split(/\s+/).map((w) => w[0]).join("").slice(0, 2).toUpperCase() || "?";
+  const palette = ["#e53935", "#1e88e5", "#43a047", "#fb8c00", "#8e24aa", "#00897b"];
+  const bg = color ?? palette[((name ?? "?").codePointAt(0) ?? 0) % palette.length];
+  return (
+    <span className={`k-avatar ${round ? "round" : ""}`} style={{ width: size, height: size, background: src ? "#ccc" : bg, fontSize: size * 0.38 }}>
+      {src ? <img src={img(src)} alt="" loading="lazy" /> : initials}
+    </span>
+  );
+}
+
+export function Empty({ children }: { children: ReactNode }) {
+  return <div className="k-empty">{children}</div>;
+}
+
+/** Écran de lancement (jeux, apps tierces sans contenu) : image/dégradé + chargement + « Touchez ». */
+export function Splash({ title, subtitle, background, logo, color = "#fff", onTap, children }: {
+  title: ReactNode; subtitle?: ReactNode; background: string; logo?: ReactNode; color?: string; onTap?: () => void; children?: ReactNode;
+}) {
+  const [ready, setReady] = useState(false);
+  useEffect(() => { const t = setTimeout(() => setReady(true), 1600); return () => clearTimeout(t); }, []);
+  return (
+    <div className="k-splash" style={{ background, color }} onClick={ready ? onTap : undefined}>
+      {logo && <div className="k-splash-logo">{logo}</div>}
+      <div className="k-splash-title">{title}</div>
+      {subtitle && <div className="k-splash-sub">{subtitle}</div>}
+      {children}
+      <div className="k-splash-foot">
+        {ready ? <span className="blink">{onTap ? "Touchez pour jouer" : ""}</span> : <span className="bar"><i /></span>}
+      </div>
+    </div>
+  );
+}
+
+// ─── Édition universelle ───────────────────────────────────────────────────
+// Appui long (ou clic droit) sur un élément → Modifier | Ajouter après | Supprimer.
+// « Modifier » ouvre un formulaire natif listant les champs simples de l'élément.
+
+const LABELS: Record<string, string> = {
+  title: "Titre", name: "Nom", text: "Texte", body: "Contenu", time: "Heure", date: "Date", artist: "Artiste",
+  album: "Album", duration: "Durée", dur: "Durée", caption: "Légende", location: "Lieu", likes: "J'aime", comments: "Commentaires",
+  src: "Image (URL)", img: "Image (URL)", photo: "Photo (URL)", cover: "Pochette (URL)", thumbImg: "Miniature (URL)", avatar: "Avatar (URL)",
+  url: "Adresse", contact: "Contact", phone: "Téléphone", type: "Type", from: "De", subj: "Objet", preview: "Aperçu", unread: "Non lu",
+  author: "Auteur", desc: "Description", board: "Tableau", pinner: "Épinglé par", repins: "Repins", views: "Vues", ch: "Chaîne", age: "Âge",
+  distance: "Distance", online: "En ligne", connected: "Connecté", current: "Actuel", secured: "Sécurisé", day: "Jour", month: "Mois",
+  year: "Année", condition: "Conditions", hi: "Max", lo: "Min", pct: "Progression (%)", latin: "Nom latin", common: "Nom commun",
+  place: "Lieu", note: "Note", notes: "Notes", grade: "Qualité", members: "Membres", last: "Dernier message", handle: "Identifiant",
+  displayName: "Nom affiché", bio: "Bio", followers: "Abonnés", following: "Abonnements", size: "Taille", ext: "Extension",
+  opened: "Ouvert", sent: "Envoyé", rt: "Retweets", fav: "Favoris", rp: "Réponses", h: "Identifiant", av: "Avatar", route: "Parcours",
+  pace: "Allure", cal: "Calories", plays: "Écoutes", reposts: "Reposts", tag: "Tags", posted: "Publié", headline: "Accroche", about: "À propos",
+  current_temp: "Température", transcript: "Transcription", username: "Utilisateur", n: "Non lus", emoji: "Emoji", deleted: "Supprimé",
+  archived: "Archivé", pinned: "Épinglé", tall: "Grand format", label: "Libellé", subreddit: "Subreddit", score: "Score", points: "Points",
+};
+const IMAGE_KEYS = /^(src|img|photo|cover|thumbImg|avatar|av|image|bannerImg|chAvatarImg)$/;
+const HIDDEN = new Set(["order", "id", "deleted", "authorKey", "senderKey"]);
+
+type FieldSpec = { key: string; label: string; kind: "text" | "long" | "number" | "bool" | "image" };
+
+const fieldsOf = (item: Record<string, Json>, only?: string[]): FieldSpec[] => {
+  const keys = only ?? Object.keys(item).filter((k) => !HIDDEN.has(k) && (item[k] === null || typeof item[k] !== "object"));
+  return keys.map((key) => {
+    const v = item[key];
+    const kind: FieldSpec["kind"] = IMAGE_KEYS.test(key) ? "image" : typeof v === "boolean" ? "bool" : typeof v === "number" ? "number"
+      : typeof v === "string" && (v.length > 40 || v.includes("\n")) ? "long" : "text";
+    return { key, label: LABELS[key] ?? key, kind };
+  });
+};
+
+export type EditTarget = { path: string; title?: string; fields?: string[] };
+
+/** Formulaire plein écran « Modifier » au style du système. */
+function ItemForm({ pid, target, onClose }: { pid: string; target: EditTarget; onClose: () => void }) {
+  const { store } = useData();
+  const { write } = useWriter(pid);
+  const os = useOS();
+  const original = useMemo(() => (store.peek(target.path) ?? {}) as Record<string, Json>, [store, target.path]);
+  const [draft, setDraft] = useState<Record<string, Json>>(original);
+  const fields = fieldsOf(original, target.fields);
+  const save = () => {
+    const patches: Record<string, Json | undefined> = {};
+    for (const f of fields) {
+      let v = draft[f.key];
+      if (f.kind === "number" && typeof v === "string") v = v.trim() === "" ? null : Number(v);
+      if (v !== original[f.key]) patches[`${target.path}/${f.key}`] = v ?? null;
+    }
+    if (Object.keys(patches).length) write(patches);
+    onClose();
+  };
+  return (
+    <div className={`k-form ${os}`}>
+      <StatusBar />
+      <div className="k-form-bar">
+        <button onClick={onClose}>{os === "ios" ? "Annuler" : "✕"}</button>
+        <h1>{target.title ?? "Modifier"}</h1>
+        <button className="ok" onClick={save}>{os === "ios" ? "OK" : "✓ Enregistrer"}</button>
+      </div>
+      <div className="k-form-body">
+        <Grouped>
+          <Section>
+            {fields.map((f) => (
+              <label key={f.key} className={`k-field ${f.kind}`}>
+                <span className="k-field-label">{f.label}</span>
+                {f.kind === "bool" ? (
+                  <Switch on={!!draft[f.key]} onChange={(v) => setDraft((d) => ({ ...d, [f.key]: v }))} />
+                ) : f.kind === "long" ? (
+                  <textarea value={String(draft[f.key] ?? "")} rows={4} onChange={(e) => setDraft((d) => ({ ...d, [f.key]: e.target.value }))} />
+                ) : (
+                  <input type={f.kind === "number" ? "number" : "text"} value={draft[f.key] === null || draft[f.key] === undefined ? "" : String(draft[f.key])}
+                    onChange={(e) => setDraft((d) => ({ ...d, [f.key]: e.target.value }))} />
+                )}
+                {f.kind === "image" && typeof draft[f.key] === "string" && draft[f.key] && <img className="k-field-img" src={img(draft[f.key] as string)} alt="" />}
+              </label>
+            ))}
+            {fields.length === 0 && <div className="k-field"><span className="k-field-label">Rien à modifier ici.</span></div>}
+          </Section>
+        </Grouped>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Outils d'édition d'une app. Renvoie :
+ * - canEdit : le joueur connecté est propriétaire de ce téléphone
+ * - itemLong(listPath, id, opts) : handler d'appui long pour un élément de liste
+ * - edit(target) : ouvre le formulaire
+ * - add(listPath, template, opts) : ajoute un élément (puis ouvre son formulaire)
+ * - ui : les feuilles/formulaires à rendre dans l'app
+ */
+export function useEditor(pid: string) {
+  const canEdit = useCanEdit(pid);
+  const { store } = useData();
+  const { write } = useWriter(pid);
+  const [form, setForm] = useState<EditTarget | null>(null);
+  const [sheet, setSheet] = useState<{ title?: string; actions: SheetAction[] } | null>(null);
+  const latest = useRef({ store, write });
+  latest.current = { store, write };
+
+  const add = (listPath: string, template: Record<string, Json>, opts: { afterId?: string; atStart?: boolean; title?: string; fields?: string[] } = {}) => {
+    const { store: s, write: w } = latest.current;
+    const list = Object.entries((s.peek(listPath) as Record<string, Ordered> | undefined) ?? {}).filter(([, v]) => v).sort(byOrder);
+    let order: number;
+    if (opts.atStart) order = orderBetween(undefined, list[0]?.[1].order);
+    else {
+      const idx = opts.afterId ? list.findIndex(([k]) => k === opts.afterId) : list.length - 1;
+      order = orderBetween(list[idx]?.[1].order, list[idx + 1]?.[1].order);
+    }
+    const id = s.newId("i");
+    w({ [`${listPath}/${id}`]: { ...template, order } });
+    setForm({ path: `${listPath}/${id}`, title: opts.title ?? "Nouvel élément", fields: opts.fields });
+    return id;
+  };
+
+  const itemLong = (listPath: string, id: string, opts: { label?: string; template?: Record<string, Json>; fields?: string[]; extra?: SheetAction[] } = {}) =>
+    canEdit ? () => setSheet({
+      title: opts.label,
+      actions: [
+        ...(opts.extra ?? []),
+        { label: "Modifier", onPress: () => setForm({ path: `${listPath}/${id}`, fields: opts.fields }) },
+        ...(opts.template ? [{ label: "Ajouter après", onPress: () => add(listPath, opts.template!, { afterId: id, fields: opts.fields }) }] : []),
+        { label: "Supprimer", destructive: true, onPress: () => write({ [`${listPath}/${id}/deleted`]: true }) },
+      ],
+    }) : undefined;
+
+  const ui = (
+    <>
+      {sheet && <ActionSheet title={sheet.title} actions={sheet.actions} onClose={() => setSheet(null)} />}
+      {form && <ItemForm pid={pid} target={form} onClose={() => setForm(null)} />}
+    </>
+  );
+
+  return { canEdit, itemLong, edit: (t: EditTarget) => canEdit && setForm(t), add, ui, write, sheet: (s: { title?: string; actions: SheetAction[] }) => setSheet(s) };
+}
+
+/** Bouton « + » de barre de navigation (affiché seulement pour le propriétaire). */
+export function AddButton({ onClick, show = true }: { onClick: () => void; show?: boolean }) {
+  if (!show) return null;
+  return <button className="barbtn plus" onClick={onClick} aria-label="Ajouter">+</button>;
+}
