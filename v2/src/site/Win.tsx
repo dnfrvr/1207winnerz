@@ -13,3 +13,18 @@ export function Win({ title, icon = <Glyph i={mdiMessageText} size={15} />, chil
     </section>
   );
 }
+
+// Étoiles scintillantes du site v1 (mêmes positions, symboles et rythme), en blanc.
+const SPARKS: [number, number][] = [[8, 12], [18, 55], [92, 8], [73, 22], [5, 78], [85, 68], [55, 90], [40, 5], [62, 47], [30, 85],
+  [78, 40], [15, 40], [95, 85], [48, 72], [22, 18], [66, 15], [88, 30]];
+export function Sparkles() {
+  return (
+    <div className="w7-sparks" aria-hidden>
+      {SPARKS.map(([l, t], i) => (
+        <span key={i} className={`spk spk${(i % 4) + 1}`} style={{ left: `${l}%`, top: `${t}%`, fontSize: [18, 12, 16][i % 3] }}>
+          {["✦", "★", "✿", "❋", "✧", "⁕"][i % 6]}
+        </span>
+      ))}
+    </div>
+  );
+}

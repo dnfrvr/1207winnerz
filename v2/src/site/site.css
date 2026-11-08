@@ -212,3 +212,11 @@
 .w7-cal input { padding: 4px 6px; border: 1px solid #abadb3; border-radius: 2px; font: 14px var(--w7-font); }
 .w7-cal small { color: #6b7f97; }
 .w7-cal .y2k-btn { align-self: flex-end; padding: 4px 18px; }
+
+/* Étoiles de la v1, en blanc : scintillement décalé par groupes de 4 */
+.w7-sparks { position: absolute; inset: 0; z-index: 0; pointer-events: none; user-select: none; overflow: hidden; }
+.spk { position: absolute; color: #fff; font-family: "Segoe UI Symbol", "Apple Symbols", "DejaVu Sans", sans-serif; font-variant-emoji: text; text-shadow: 0 0 6px rgba(255, 255, 255, .9), 0 0 14px rgba(170, 220, 255, .6); line-height: 1; animation: spk 1.4s infinite; }
+.spk2 { animation-delay: .35s; } .spk3 { animation-delay: .7s; } .spk4 { animation-delay: 1.05s; }
+@keyframes spk { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: .4; transform: scale(.7); } }
+@media (prefers-reduced-motion: reduce) { .spk { animation: none; opacity: .8; } }
+.lobby > :not(.w7-sparks) { position: relative; z-index: 1; }

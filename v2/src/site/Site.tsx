@@ -10,7 +10,7 @@ import { img } from "../lib/img";
 import { LORE_DATE_DEFAULT } from "../phone/common";
 import { LockPreview } from "../phone/Phone";
 import "./site.css";
-import { Win } from "./Win";
+import { Sparkles, Win } from "./Win";
 
 export const PIDS = ["glinda", "eoghan", "drew", "elias"] as const;
 
@@ -31,6 +31,7 @@ export function Desktop({ children, taskbar }: { children: ReactNode; taskbar?: 
   return (
     <div className="w7-desk">
       <div className="w7-bloom" aria-hidden />
+      <Sparkles />
       <main className="w7-main">{children}</main>
       <footer className="w7-bar">
         <span className="w7-orb" aria-hidden>UMA</span>

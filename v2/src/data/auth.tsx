@@ -4,6 +4,7 @@ import { useEffect, useState, type FormEvent } from "react";
 import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut, sendPasswordResetEmail, updatePassword, type User } from "firebase/auth";
 import { getDatabase, onValue, ref } from "firebase/database";
 import { firebaseApp } from "./firebaseStore";
+import { Sparkles } from "../site/Win";
 
 export type Session = { uid: string; phone: string | null; role: "player" | "mdj" };
 type State = { status: "loading" } | { status: "out" } | { status: "in"; user: User; session: Session; linked: boolean };
@@ -71,6 +72,7 @@ export function LoginScreen({ config }: { config: Record<string, string> }) {
 
   return (
     <div className="lobby">
+      <Sparkles />
       <h1>#WhatsInOurPhones</h1>
       <p className="sub">University of Maine at Augusta · Fall 2012</p>
       <form className="login" onSubmit={submit}>
