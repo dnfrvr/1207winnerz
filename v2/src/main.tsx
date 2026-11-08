@@ -8,7 +8,10 @@ import { LoginScreen, logout, useFirebaseSession, type Session } from "./data/au
 import type { Json, Store } from "./data/store";
 import { Phone } from "./phone/Phone";
 import { img } from "./lib/img";
+import { installTouchContextMenu } from "./phone/touchContextMenu";
 import "./styles.css";
+
+installTouchContextMenu();
 
 const PIDS = ["glinda", "eoghan", "drew", "elias"] as const;
 const LS_ME = "uma-v2-me";

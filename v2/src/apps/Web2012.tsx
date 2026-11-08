@@ -8,11 +8,10 @@ import { useState, type ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import { mdiHeart, mdiHeartOutline, mdiPlus } from "@mdi/js";
 import { useList, useValue } from "../data/hooks";
-import type { Json } from "../data/store";
 import { img } from "../lib/img";
 import { BarBack, StatusBar } from "../phone/IOSChrome";
 import { useOS } from "../phone/common";
-import { Avatar, Empty, useEditor } from "../kit/kit";
+import { Avatar, Empty, useEditor, useSeeded } from "../kit/kit";
 import { Glyph } from "../kit/glyph";
 import { HoloBar, Press, compact, pickLocal, useChars } from "./social";
 import "./social.css";
@@ -37,17 +36,6 @@ function Bar({ pid, color, gradient, title, right, light = false }: { pid: strin
 
 const AddBtn = ({ ed, onClick, label }: { ed: Ed; onClick: () => void; label: string }) =>
   ed.canEdit ? <button className="w12-add" aria-label={label} onClick={onClick}><Glyph i={mdiPlus} size={22} /></button> : null;
-
-/** Liste avec valeurs par défaut : écrites dans la base (ids `d0`, `d1`…) au premier changement. */
-function useSeeded<T extends object>(path: string, defaults: T[], ed: Ed) {
-  const list = useList<T>(path);
-  const rows: [string, T][] = list.length ? list : defaults.map((d, i) => [`d${i}`, d]);
-  const long = (id: string, fields: string[], label?: string) => ed.canEdit ? () => {
-    if (!list.length) ed.write(Object.fromEntries(defaults.map((d, i) => [`${path}/d${i}`, { ...d, order: (i + 1) * 1000 } as Json])));
-    ed.itemLong(path, id, { fields, label })?.();
-  } : undefined;
-  return { rows, long };
-}
 
 // ═══ ask.fm ══════════════════════════════════════════════════════════════════
 type QA = { q?: string; a?: string; from?: string; time?: string; likes?: number; order?: number; deleted?: boolean };

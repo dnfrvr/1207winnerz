@@ -1,7 +1,7 @@
 // Kit d'interface des apps : composants « natifs » iOS 6 / Android 4.1 (Jelly Bean) qui se
 // dessinent selon le téléphone affiché, + l'édition universelle des contenus.
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
-import { useCanEdit, useData, useWriter } from "../data/hooks";
+import { useCanEdit, useData, useList, useWriter } from "../data/hooks";
 import { orderBetween, byOrder, type Ordered } from "../data/order";
 import type { Json } from "../data/store";
 import { img } from "../lib/img";
@@ -173,6 +173,8 @@ const LABELS: Record<string, string> = {
   opened: "Ouvert", sent: "Envoyé", rt: "Retweets", fav: "Favoris", rp: "Réponses", h: "Identifiant", av: "Avatar", route: "Parcours",
   pace: "Allure", cal: "Calories", plays: "Écoutes", reposts: "Reposts", tag: "Tags", posted: "Publié", headline: "Accroche", about: "À propos",
   current_temp: "Température", transcript: "Transcription", username: "Utilisateur", n: "Non lus", emoji: "Emoji", deleted: "Supprimé",
+  lines: "Lignes (une par info)", coords: "Coordonnées", q: "Question", a: "Réponse", league: "Ligue", home: "Domicile", away: "Extérieur",
+  hs: "Score domicile", as: "Score extérieur", status: "Statut", subtitle: "Sous-titre", detail: "Détail", color: "Couleur", logo: "Logo",
   archived: "Archivé", pinned: "Épinglé", tall: "Grand format", label: "Libellé", subreddit: "Subreddit", score: "Score", points: "Points",
 };
 const IMAGE_KEYS = /^(src|img|photo|cover|thumbImg|avatar|av|image|bannerImg|chAvatarImg)$/;
@@ -313,4 +315,16 @@ export function AddButton({ onClick, show = true }: { onClick: () => void; show?
   // Android : icône « nouveau » holo (pas de bouton en relief).
   if (os === "android") return <button className="barbtn" onClick={onClick} aria-label="Ajouter"><Glyph i={mdiPlus} size={26} /></button>;
   return <button className="barbtn plus" onClick={onClick} aria-label="Ajouter">+</button>;
+}
+
+/**
+ * Liste avec valeurs par défaut codées en dur, quand même éditables : au premier appui long, les
+ * valeurs par défaut sont écrites dans la base (ids `d0`, `d1`…) puis l'éditeur s'ouvre.
+ */
+export function useSeeded<T extends object>(path: string, defaults: T[], ed: ReturnType<typeof useEditor>) {
+  const list = useList<T>(path);
+  const rows: [string, T][] = list.length ? list : defaults.map((d, i) => [`d${i}`, d]);
+  const seed = () => { if (!list.length) ed.write(Object.fromEntries(defaults.map((d, i) => [`${path}/d${i}`, { ...d, order: (i + 1) * 1000 } as Json]))); };
+  const long = (id: string, fields: string[], label?: string) => ed.canEdit ? () => { seed(); ed.itemLong(path, id, { fields, label })?.(); } : undefined;
+  return { rows, long, seed };
 }

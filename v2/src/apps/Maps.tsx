@@ -2,10 +2,10 @@
 // / Google Maps Android. Carte d'Augusta (Maine) dessinée, épingles éditables.
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useList } from "../data/hooks";
 import { StatusBar, BarBack } from "../phone/IOSChrome";
 import { useOS } from "../phone/common";
-import { useEditor } from "../kit/kit";
+import { useEditor, useSeeded } from "../kit/kit";
+import { Press } from "./social";
 import { Icon } from "../kit/icons";
 import "./maps.css";
 
@@ -43,8 +43,7 @@ export default function MapsApp({ pid }: { pid: string }) {
   const nav = useNavigate();
   const ed = useEditor(pid);
   const path = `phones/${pid}/data/maps/pins`;
-  const pins = useList<Pin>(path);
-  const rows: [string, Pin][] = pins.length ? pins : DEFAULT_PINS.map((p, i) => [`d${i}`, p]);
+  const { rows, long } = useSeeded(path, DEFAULT_PINS, ed);
   const [sel, setSel] = useState<string | null>(rows[0]?.[0] ?? null);
   const [q, setQ] = useState("");
   return (
@@ -59,10 +58,9 @@ export default function MapsApp({ pid }: { pid: string }) {
         <MapArt android={os === "android"} />
         {rows.filter(([, p]) => !q || (p.title ?? "").toLowerCase().includes(q.toLowerCase())).map(([id, p]) => (
           <div key={id} className="mp-pin" style={{ left: `${((p.x ?? 160) / 320) * 100}%`, top: `${((p.y ?? 260) / 520) * 100}%` }}
-            onClick={(e) => { e.stopPropagation(); setSel(id); }}
-            onContextMenu={(e) => { if (ed.canEdit && !id.startsWith("d")) { e.preventDefault(); ed.itemLong(path, id, { fields: ["title", "subtitle", "x", "y"], label: p.title })?.(); } }}>
+            onClick={(e) => { e.stopPropagation(); setSel(id); }}>
             {sel === id && <div className="mp-callout"><b>{p.title}</b><span>{p.subtitle}</span><i>›</i></div>}
-            <span className="mp-head" /><span className="mp-needle" />
+            <Press onLong={long(id, ["title", "subtitle", "x", "y"], p.title)}><span className="mp-head" /><span className="mp-needle" /></Press>
           </div>
         ))}
         <div className="mp-me" style={{ left: "52%", top: "44%" }} />

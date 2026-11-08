@@ -2,10 +2,11 @@
 // Shazam reconnaît un morceau de la musique du téléphone. (ask.fm, ESPN, Polyvore : Web2012.tsx.)
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { useList } from "../data/hooks";
+import { useList, useValue } from "../data/hooks";
 import { img } from "../lib/img";
 import { StatusBar } from "../phone/IOSChrome";
-import { Splash } from "../kit/kit";
+import { Splash, useEditor } from "../kit/kit";
+import { Press } from "./social";
 import "./games.css";
 
 type GameCfg = { title: string; sub?: string; bg: string; logo: string; color?: string; menu: { title: string; lines: string[]; bg: string; color?: string } };
@@ -27,10 +28,19 @@ const GAMES: Record<string, GameCfg> = {
 
 export default function GameApp({ pid }: { pid: string }) {
   const { app = "" } = useParams();
-  const cfg = GAMES[app];
   const [stage, setStage] = useState<"splash" | "in">("splash");
   const nav = useNavigate();
-  if (!cfg) return null;
+  const ed = useEditor(pid);
+  const savePath = `phones/${pid}/data/games/${app}`;
+  const save = useValue<{ title?: string; lines?: string }>(savePath);
+  const base = GAMES[app];
+  if (!base) return null;
+  // Partie du joueur (niveau, scores…) : modifiable par appui long, une ligne par info.
+  const cfg = { ...base, menu: { ...base.menu, title: save?.title ?? base.menu.title, lines: save?.lines != null ? save.lines.split("\n").filter(Boolean) : base.menu.lines } };
+  const editSave = ed.canEdit ? () => {
+    if (!save) ed.write({ [savePath]: { title: cfg.menu.title, lines: cfg.menu.lines.join("\n") } });
+    ed.edit({ path: savePath, fields: ["title", "lines"], title: "Partie" });
+  } : undefined;
   return (
     <div className="app gm-app">
       <StatusBar variant="translucent" />
@@ -38,13 +48,14 @@ export default function GameApp({ pid }: { pid: string }) {
       {stage === "splash" && app !== "shazam" ? (
         <Splash title={cfg.title} subtitle={cfg.sub} background={cfg.bg} color={cfg.color} logo={cfg.logo} onTap={() => setStage("in")} />
       ) : app === "shazam" ? <Shazam pid={pid} /> : (
-        <div className="gm-menu" style={{ background: cfg.menu.bg, color: cfg.menu.color ?? "#fff" }}>
+        <Press className="gm-menu" style={{ background: cfg.menu.bg, color: cfg.menu.color ?? "#fff" }} onLong={editSave}>
           <div className="gm-logo">{cfg.logo}</div>
           <h2>{cfg.menu.title}</h2>
-          {cfg.menu.lines.map((l) => <p key={l}>{l}</p>)}
+          {cfg.menu.lines.map((l, i) => <p key={i}>{l}</p>)}
           <button className="gm-play" onClick={() => setStage("splash")}>▶ PLAY</button>
-        </div>
+        </Press>
       )}
+      {ed.ui}
     </div>
   );
 }

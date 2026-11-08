@@ -80,6 +80,7 @@ export function useLongPress(onLong: (x: number, y: number) => void, ms = 450) {
     handlers: {
       onPointerDown: (e: React.PointerEvent) => {
         fired.current = false;
+        (e.nativeEvent as PointerEvent & { __lp?: boolean }).__lp = true; // géré ici : touchContextMenu l'ignore
         const host = (e.currentTarget as HTMLElement).closest(".screen") as HTMLElement | null;
         const r = host?.getBoundingClientRect();
         const scale = r && host ? r.width / host.offsetWidth : 1;

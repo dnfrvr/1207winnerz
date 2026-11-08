@@ -3,12 +3,11 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useList, useValue } from "../data/hooks";
-import type { Json } from "../data/store";
 import { img } from "../lib/img";
 import { AppFrame, BackButton, BarBack, StatusBar } from "../phone/IOSChrome";
 import { Press } from "./social";
 import { useOS } from "../phone/common";
-import { AddButton, Avatar, Empty, useEditor } from "../kit/kit";
+import { AddButton, Avatar, Empty, useEditor, useSeeded } from "../kit/kit";
 import { Icon } from "../kit/icons";
 import "./system.css";
 
@@ -53,6 +52,9 @@ export function CameraApp({ pid }: { pid: string }) {
 // ── Boussole ─────────────────────────────────────────────────────────────────
 export function CompassApp({ pid }: { pid: string }) {
   const nav = useNavigate();
+  const ed = useEditor(pid);
+  const placePath = `phones/${pid}/data/compass`;
+  const place = useValue<{ coords?: string; place?: string }>(placePath) ?? {};
   const [heading, setHeading] = useState(212);
   useEffect(() => { const h = setInterval(() => setHeading((d) => (d + (Math.random() * 6 - 3) + 360) % 360), 700); return () => clearInterval(h); }, []);
   const dirs = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"];
@@ -67,8 +69,11 @@ export function CompassApp({ pid }: { pid: string }) {
       </div>
       <div className="cmp-needle" />
       <div className="cmp-read"><b>{Math.round(heading)}°</b> {label}</div>
-      <div className="cmp-coord">44°18′38″ N · 69°46′46″ W<br />Augusta, ME</div>
+      <Press className="cmp-coord" onLong={ed.canEdit ? () => ed.edit({ path: placePath, fields: ["coords", "place"], title: "Position" }) : undefined}>
+        {place.coords ?? "44°18′38″ N · 69°46′46″ W"}<br />{place.place ?? "Augusta, ME"}
+      </Press>
       <div className="cmp-bar"><button onClick={() => nav(`/${pid}/home`)}>Done</button><span>Magnetic North</span><span className="cmp-i">i</span></div>
+      {ed.ui}
     </div>
   );
 }
@@ -107,28 +112,21 @@ const DEFAULT_PASSES: Pass[] = [
 export function PassbookApp({ pid }: { pid: string }) {
   const nav = useNavigate();
   const path = `phones/${pid}/data/passbook`;
-  const list = useList<Pass>(path);
   const ed = useEditor(pid);
-  const rows: [string, Pass][] = list.length ? list : DEFAULT_PASSES.map((p, i) => [`d${i}`, p]);
+  const { rows, long, seed } = useSeeded(path, DEFAULT_PASSES, ed);
   const [open, setOpen] = useState<string | null>(null);
   const fields = ["title", "subtitle", "detail", "color", "logo"];
-  const materialize = () => {
-    if (list.length) return;
-    const patches: Record<string, Json> = {};
-    DEFAULT_PASSES.forEach((p, i) => { patches[`${path}/p${i}`] = { ...p, order: (i + 1) * 1000 } as Json; });
-    ed.write(patches);
-  };
   return (
     <div className="app pb">
       <StatusBar />
       <div className="pb-top"><BarBack onClick={() => nav(`/${pid}/home`)} label="Accueil" /><span>Passbook</span>
-        {ed.canEdit ? <button onClick={() => { materialize(); ed.add(path, { title: "", subtitle: "", detail: "", color: "#555", logo: "🎟" }, { title: "Pass", fields }); }}>+</button> : <span />}</div>
+        {ed.canEdit ? <button onClick={() => { seed(); ed.add(path, { title: "", subtitle: "", detail: "", color: "#555", logo: "🎟" }, { title: "Pass", fields }); }}>+</button> : <span />}</div>
       <div className="pb-stack">
         {rows.map(([id, p], i) => (
           // La carte qui suit une carte ouverte se décale sous elle, sinon elle cache son code-barres.
           <Press as="button" key={id} className={`pb-pass ${open === id ? "open" : ""}`} style={{ background: `linear-gradient(${p.color ?? "#555"}, color-mix(in srgb, ${p.color ?? "#555"} 70%, #000))`, zIndex: i, marginTop: i === 0 ? 0 : rows[i - 1][0] === open ? 10 : -86 }}
             onClick={() => setOpen(open === id ? null : id)}
-            onLong={ed.canEdit ? () => { materialize(); ed.itemLong(path, list.length ? id : `p${i}`, { fields, label: p.title })?.(); } : undefined}>
+            onLong={long(id, fields, p.title)}>
             <span className="pb-head"><span className="pb-logo">{p.logo}</span><b>{p.title}</b></span>
             <span className="pb-body"><small>{p.subtitle}</small><b>{p.detail}</b></span>
             <span className="pb-code" aria-hidden>{Array.from({ length: 30 }, (_, k) => <i key={k} style={{ width: (k * 5) % 3 + 1 }} />)}</span>
