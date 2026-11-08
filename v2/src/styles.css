@@ -19,6 +19,9 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
 textarea, input { font: inherit; color: inherit; }
 
 /* ─── Cadre : plein écran sur mobile, téléphone dessiné sur ordinateur ───── */
+/* Fond bureau (site.css) derrière le téléphone, sans changer la police ni l'encre du téléphone. */
+.stage-root.w7-desk { font-family: var(--ios-font); color: var(--page-ink); }
+.stage-root.w7-desk .stage { position: relative; z-index: 1; }
 .stage { min-height: 100dvh; display: flex; align-items: center; justify-content: center; padding: 24px 16px; }
 .device {
   position: relative; width: 360px; padding: 92px 20px; border-radius: 54px;

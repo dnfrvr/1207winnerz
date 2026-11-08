@@ -11,6 +11,7 @@ import { OSCtx, useNow, type OS } from "./common";
 import { APP_META } from "../../../src/shared/app-meta.js";
 import { APPS, preloadApps } from "../apps/registry";
 import { img } from "../lib/img";
+import { Sparkles } from "../site/Win";
 import "./android.css";
 
 type Profile = {
@@ -49,7 +50,9 @@ export function Phone() {
 
   return (
     <OSCtx.Provider value={os}>
-      <div className={`stage-root ${fit ? "fullscreen" : ""}`}>
+      {/* Sur ordinateur, le téléphone est posé sur le même bureau que l'accueil (dégradé, reflets, étoiles). */}
+      <div className={`stage-root ${fit ? "fullscreen" : "w7-desk"}`}>
+        {!fit && <><div className="w7-bloom" aria-hidden /><Sparkles /></>}
         <PhoneSwitcher pid={pid} compact={!!fit} />
         <div className="stage">
           {fit ? (
