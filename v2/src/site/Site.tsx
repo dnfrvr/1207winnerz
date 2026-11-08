@@ -78,11 +78,52 @@ function Contact({ pid, mine }: { pid: string; mine: boolean }) {
   );
 }
 
+// ── Visite guidée (première visite) : démos animées de ce qu'on peut faire ─────
+const TOUR_KEY = "uma-v2-tour-seen";
+const STEPS: { title: string; text: string; demo: ReactNode }[] = [
+  { title: "Bienvenue dans ton téléphone", text: "Chaque joueur·se a le téléphone de son perso, en 2012. Clique sur le tien pour l'allumer, glisse pour déverrouiller.",
+    demo: <span className="tour-phone"><span className="tour-slide"><i /></span></span> },
+  { title: "Appui long pour modifier", text: "Sur ton téléphone, garde le doigt appuyé (ou clic droit) sur n'importe quoi : un message, une photo, une chanson… puis « Modifier ».",
+    demo: <span className="tour-phone list"><b /><b className="hit" /><b /><span className="tour-finger" /><span className="tour-sheet"><i>Modifier</i><i className="red">Supprimer</i></span></span> },
+  { title: "« + » pour ajouter du contenu", text: "Le bouton + en haut des apps crée un post, une note, une chanson (avec sa pochette, trouvée toute seule)…",
+    demo: <span className="tour-phone list add"><span className="tour-plus">+</span><b className="new" /><b /><b /></span> },
+  { title: "Fouille les téléphones des autres", text: "Tu peux ouvrir les téléphones des autres persos en lecture seule. Ce qu'ils changent apparaît en direct.",
+    demo: <span className="tour-four"><i /><i /><i /><i /></span> },
+];
+
+function Tour({ onClose }: { onClose: () => void }) {
+  const [i, setI] = useState(0);
+  const s = STEPS[i];
+  const last = i === STEPS.length - 1;
+  return (
+    <div className="tour-backdrop" role="dialog" aria-modal="true" aria-label="Visite guidée">
+      <Win title="Visite guidée" icon="❔" className="tour">
+        <div className="tour-in" key={i}>
+          <div className="tour-demo" aria-hidden>{s.demo}</div>
+          <div className="tour-txt"><h3>{s.title}</h3><p>{s.text}</p>
+            <span className="tour-dots">{STEPS.map((_, k) => <i key={k} className={k === i ? "on" : ""} />)}</span></div>
+        </div>
+        <div className="tour-btns">
+          <button className="linkish" onClick={onClose}>Passer</button>
+          {i > 0 && <button className="y2k-btn" onClick={() => setI(i - 1)}>‹ Précédent</button>}
+          <button className="y2k-btn" autoFocus onClick={() => (last ? onClose() : setI(i + 1))}>{last ? "C'est parti !" : "Suivant ›"}</button>
+        </div>
+      </Win>
+    </div>
+  );
+}
+
+const seenTour = () => { try { return localStorage.getItem(TOUR_KEY) === "1"; } catch { return true; } };
+
 export function Lobby({ me, account, admin }: { me: string | null; account: ReactNode; admin: boolean }) {
   const [open, setOpen] = useState(true);
+  const [tour, setTour] = useState(() => !seenTour());
+  const closeTour = () => { setTour(false); try { localStorage.setItem(TOUR_KEY, "1"); } catch { /* rien */ } };
   const mine = useValue<Profile>(me ? `phones/${me}/profile` : null);
   return (
-    <Desktop taskbar={<><span className="w7-task on">💬 #WhatsInOurPhones</span>{admin && <Link className="w7-task" to="/admin">⚙ Panneau de configuration</Link>}</>}>
+    <Desktop taskbar={<><span className="w7-task on">💬 #WhatsInOurPhones</span>{admin && <Link className="w7-task" to="/admin">⚙ Panneau de configuration</Link>}
+      <button className="w7-task" onClick={() => setTour(true)}>❔ Visite guidée</button></>}>
+      {tour && <Tour onClose={closeTour} />}
       <Win title="#WhatsInOurPhones — University of Maine at Augusta" className="w7-msn">
         <div className="w7-me">
           <span className="dp big" style={{ ["--st" as string]: "#4ad94a" }}>{avatarOf(mine) ? <img src={img(avatarOf(mine)!)} alt="" /> : <span>{admin ? "MJ" : "?"}</span>}</span>

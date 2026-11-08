@@ -140,3 +140,51 @@
 .lobby .linkish { color: #cfe8ff; }
 .whoami { font-size: 12px; } .whoami select { font: inherit; padding: 2px 4px; }
 .devnote { font-size: 11px; color: #5a6f89; } .devnote button { text-decoration: underline; color: var(--w7-link); }
+
+/* Visite guidée */
+.tour-backdrop { position: fixed; inset: 0; z-index: 10; display: flex; align-items: center; justify-content: center; padding: 16px; background: rgba(0, 15, 40, .45); }
+.tour { width: min(560px, 100%); }
+.tour .w7-body { padding: 18px 18px 12px; }
+.tour-in { display: flex; gap: 18px; align-items: center; animation: w7-in .35s ease-out; }
+.tour-demo { flex: 0 0 120px; height: 170px; display: flex; align-items: center; justify-content: center; border-radius: 6px;
+  background: radial-gradient(circle at 50% 30%, #e8f4ff, #bcd8f2); box-shadow: inset 0 0 0 1px #a9c6e4; }
+.tour-txt h3 { font: 400 19px var(--w7-font); color: #1e5aa0; margin-bottom: 6px; }
+.tour-txt p { font: 13px/1.5 var(--w7-font); color: #333; }
+.tour-dots { display: flex; gap: 5px; margin-top: 12px; }
+.tour-dots i { width: 7px; height: 7px; border-radius: 50%; background: #c1d3e6; }
+.tour-dots i.on { background: #2a7ad0; }
+.tour-btns { display: flex; justify-content: flex-end; align-items: center; gap: 8px; margin-top: 14px; }
+.tour-btns .linkish { margin-right: auto; }
+.tour-btns .y2k-btn { padding: 5px 16px; }
+@media (max-width: 480px) { .tour-in { flex-direction: column; } .tour-demo { flex-basis: 150px; width: 100%; } }
+
+/* Démos animées */
+.tour-phone { position: relative; width: 70px; height: 130px; padding: 14px 4px 18px; box-sizing: border-box; border-radius: 12px; background: linear-gradient(145deg, #3a3b3f, #0d0d0f);
+  box-shadow: 0 4px 10px rgba(0,0,0,.35); display: flex; flex-direction: column; gap: 4px; overflow: hidden; }
+.tour-phone::before { content: ""; position: absolute; inset: 14px 4px 18px; background: linear-gradient(#6aa6e0, #2d5fa0); }
+.tour-phone.list::before { background: #fff; }
+.tour-slide { position: absolute; left: 8px; right: 8px; bottom: 24px; height: 14px; border-radius: 7px; background: rgba(0,0,0,.45); }
+.tour-slide i { position: absolute; left: 1px; top: 1px; width: 20px; height: 12px; border-radius: 6px; background: linear-gradient(#fff, #ccc); animation: tour-slide 2.4s ease-in-out infinite; }
+@keyframes tour-slide { 0%, 15% { transform: none; } 60%, 100% { transform: translateX(26px); } }
+.tour-phone b { position: relative; height: 16px; margin: 0 3px; border-radius: 2px; background: #e4ebf3; }
+.tour-phone b:first-of-type { margin-top: 3px; }
+.tour-phone b.hit { animation: tour-hit 3s infinite; }
+@keyframes tour-hit { 0%, 30% { background: #e4ebf3; } 40%, 100% { background: #9cc4f0; } }
+.tour-finger { position: absolute; left: 30px; top: 40px; width: 18px; height: 18px; border-radius: 50%; background: rgba(255, 190, 120, .85); box-shadow: 0 0 0 3px rgba(255,255,255,.6);
+  animation: tour-press 3s infinite; }
+@keyframes tour-press { 0% { transform: translate(14px, 40px) scale(1); opacity: 0; } 15% { opacity: 1; transform: none; } 20%, 45% { transform: scale(.8); } 55%, 100% { opacity: 0; transform: scale(.8); } }
+.tour-sheet { position: absolute; left: 4px; right: 4px; bottom: 18px; padding: 4px; display: flex; flex-direction: column; gap: 3px; background: rgba(30,40,55,.92);
+  transform: translateY(110%); animation: tour-sheet 3s infinite; }
+.tour-sheet i { height: 11px; border-radius: 3px; background: linear-gradient(#fff, #ddd); font: bold 6px/11px var(--w7-font); text-align: center; color: #000; font-style: normal; }
+.tour-sheet i.red { background: linear-gradient(#f59b9b, #c41a1a); color: #fff; }
+@keyframes tour-sheet { 0%, 45% { transform: translateY(110%); } 55%, 90% { transform: none; } 100% { transform: translateY(110%); } }
+.tour-plus { position: relative; align-self: flex-end; width: 16px; height: 13px; margin: 2px 3px 0 0; border-radius: 3px; display: flex; align-items: center; justify-content: center;
+  font: bold 11px/1 var(--w7-font); color: #fff; background: linear-gradient(#7fa6d8, #3d6ab0); animation: tour-tap 2.6s infinite; }
+@keyframes tour-tap { 0%, 20% { transform: none; } 25% { transform: scale(.8); } 30%, 100% { transform: none; } }
+.tour-phone b.new { animation: tour-new 2.6s infinite; transform-origin: top; }
+@keyframes tour-new { 0%, 28% { height: 0; opacity: 0; } 45%, 100% { height: 16px; opacity: 1; background: #fff3b8; } }
+.tour-four { display: grid; grid-template-columns: repeat(2, 36px); gap: 8px; }
+.tour-four i { height: 62px; border-radius: 7px; background: linear-gradient(145deg, #3a3b3f, #0d0d0f); box-shadow: inset 0 0 0 3px #222, inset 0 0 0 9px #4d82c4; animation: tour-peek 3.2s infinite; }
+.tour-four i:nth-child(2) { animation-delay: .8s; } .tour-four i:nth-child(3) { animation-delay: 1.6s; } .tour-four i:nth-child(4) { animation-delay: 2.4s; }
+@keyframes tour-peek { 0%, 20%, 100% { transform: none; } 10% { transform: translateY(-6px) rotate(-4deg); } }
+@media (prefers-reduced-motion: reduce) { .tour-demo * { animation: none !important; } .tour-sheet { transform: none; } }
