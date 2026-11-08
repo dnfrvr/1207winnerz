@@ -9,10 +9,10 @@ import { useCanEdit } from "../data/hooks";
 type Step = [string, ...string[]];
 const ADD = '[aria-label="Ajouter"]';
 const TIPS: Record<string, Step[] | null> = {
-  messages: [["Touche ce bouton pour démarrer une conversation.", '[aria-label="Nouveau message"]'], ["Maintiens une conversation pour la modifier ou la supprimer.", ".msg-row"], ["Ouvre une conversation pour la suite.", ".msg-row"],
+  messages: [["Touche ce bouton pour démarrer une conversation.", '[aria-label="Nouveau message"]'], ["Maintiens une conversation pour la modifier ou la supprimer.", ".msg-row"],
     ["Touche ce bouton pour changer qui envoie le message.", "@.who-btn"], ["Maintiens une bulle pour la modifier ou la supprimer.", "@.bubble"]],
   notes: [["Touche « + » pour créer une note.", '[aria-label="Nouvelle note"]', '[aria-label="Nouveau mémo"]'], ["Touche une note pour l'écrire.", ".nt-memo"], ["Touche la corbeille pour supprimer la note.", '@[aria-label="Mettre à la corbeille"]', '@[aria-label="Supprimer"]']],
-  photos: [["Touche « + » pour ajouter une photo.", ADD], ["Ouvre un album pour la suite."], ["Maintiens une photo pour la modifier ou la supprimer.", "@.ph-cell"]],
+  photos: [["Touche « + » pour ajouter une photo.", ADD], ["Maintiens une photo pour la modifier ou la supprimer.", "@.ph-cell"]],
   music: [["Dans l'onglet Songs, touche « + » pour ajouter un morceau.", ADD], ["Maintiens un morceau ou une playlist pour le modifier."]],
   phone: [["Touche « + » pour ajouter un appel ou un contact, selon l'onglet.", ADD], ["Maintiens un appel, un message vocal ou un contact pour le modifier."]],
   calendar: [["Touche « + » pour ajouter un événement.", ADD], ["Maintiens un événement pour le modifier ou le supprimer."]],
@@ -47,7 +47,7 @@ const TIPS: Record<string, Step[] | null> = {
   passbook: [["Touche « + » pour ajouter une carte, puis maintiens-la pour la modifier."]],
   reminders: [["Touche « + » pour ajouter un rappel.", ADD], ["Touche la case pour cocher un rappel.", ".rm-check"], ["Maintiens un rappel pour le modifier.", ".rm-row"]],
   messenger: [["Touche le bouton en haut pour créer une conversation, puis maintiens-la pour la modifier."]],
-  kik: [["Touche ce bouton pour démarrer une discussion.", '[aria-label="Nouvelle discussion"]'], ["Ouvre une discussion pour la suite."], ["Touche ce bouton pour changer qui envoie le message.", "@.kk-who"], ["Maintiens un message pour le modifier.", "@.kk-bubble"]],
+  kik: [["Touche ce bouton pour démarrer une discussion.", '[aria-label="Nouvelle discussion"]'], ["Touche ce bouton pour changer qui envoie le message.", "@.kk-who"], ["Maintiens un message pour le modifier.", "@.kk-bubble"]],
   vine: [["Touche ce bouton pour ajouter une vidéo.", '[aria-label="Filmer"]'], ["Maintiens une vidéo pour la modifier.", ".vn-post"]],
   askfm: [["Maintiens le profil pour le modifier.", ".af2-prof"], ["Maintiens une question pour la modifier.", ".af2-qa"]],
   espn: [["Maintiens un score pour le modifier.", ".es2-row"]],
