@@ -1,11 +1,16 @@
-// Crée les comptes joueurs (e-mail + mot de passe temporaire) dans Firebase Auth du projet v2.
+// Crée les comptes joueurs (identifiant + mot de passe temporaire) dans Firebase Auth du projet v2.
 //
 // Usage (depuis la racine du dépôt) :
-//   node v2/scripts/create-players.mjs glinda=moi@exemple.com eoghan=ami@exemple.com drew=... elias=...
-//   Ajoute « mj » pour un compte avec tous les droits :  mj=mj@exemple.com
+//   node v2/scripts/create-players.mjs glinda eoghan drew elias mj
+//     → identifiants « glinda », « eoghan »… (connexion sans e-mail)
+//   node v2/scripts/create-players.mjs glinda=pseudo eoghan=moi@exemple.com
+//     → identifiant au choix, ou une vraie adresse e-mail (réinitialisation par e-mail possible)
+//   « mj » = compte avec tous les droits.
 //
+// - Un identifiant sans « @ » devient l'adresse fictive <identifiant>@joueurs.invalid (même règle
+//   que loginToEmail dans src/data/auth.tsx).
 // - Les mots de passe temporaires sont générés ici et affichés UNIQUEMENT dans ce terminal.
-//   Transmets-les à chaque joueur ; il pourra le changer via « Mot de passe oublié ? ».
+//   Transmets-les à chaque joueur ; il pourra le changer une fois connecté (« Changer le mot de passe »).
 // - Le script écrit migration/_out/users.json (uid → téléphone, SANS mot de passe), à fusionner
 //   dans l'import de la base pour relier chaque compte à son téléphone.
 // - Un e-mail déjà inscrit est signalé et ignoré (pas d'écrasement).
@@ -25,9 +30,11 @@ const env = Object.fromEntries(
 const API_KEY = env.VITE_FIREBASE_API_KEY;
 if (!API_KEY) { console.error("VITE_FIREBASE_API_KEY introuvable dans v2/.env.local"); process.exit(1); }
 
-const args = process.argv.slice(2).map((a) => a.split("="));
-if (!args.length || args.some(([p, e]) => !PHONES.includes(p) || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e ?? ""))) {
-  console.error("Usage : node v2/scripts/create-players.mjs glinda=e-mail eoghan=e-mail drew=e-mail elias=e-mail [mj=e-mail]");
+const LOGIN_DOMAIN = "joueurs.invalid";
+const toEmail = (login) => { const l = login.trim().toLowerCase(); return l.includes("@") ? l : `${l}@${LOGIN_DOMAIN}`; };
+const args = process.argv.slice(2).map((a) => { const [p, login = p] = a.split("="); return [p, toEmail(login)]; });
+if (!args.length || args.some(([p, e]) => !PHONES.includes(p) || !/^[a-z0-9._-]+@[^@\s]+\.[^@\s]+$/.test(e))) {
+  console.error("Usage : node v2/scripts/create-players.mjs glinda eoghan drew elias [mj]   (ou glinda=identifiant / glinda=e-mail)");
   process.exit(1);
 }
 

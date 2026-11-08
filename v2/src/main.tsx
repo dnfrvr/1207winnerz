@@ -4,7 +4,7 @@ import { BrowserRouter, Link, Route, Routes, useParams } from "react-router-dom"
 import { DataProvider, useValue } from "./data/hooks";
 import { createMemoryStore, resetMemoryStore } from "./data/memoryStore";
 import { createFirebaseStore } from "./data/firebaseStore";
-import { LoginScreen, logout, useFirebaseSession, type Session } from "./data/auth";
+import { changePassword, emailToLogin, LoginScreen, logout, useFirebaseSession, type Session } from "./data/auth";
 import type { Json, Store } from "./data/store";
 import { Phone } from "./phone/Phone";
 import { img } from "./lib/img";
@@ -55,7 +55,8 @@ function FirebaseRoot({ config }: { config: Record<string, string> }) {
   );
   const account = (
     <p className="whoami">
-      Connecté·e : {state.user.email} · {state.session.role === "mj" ? "MJ" : `téléphone de ${state.session.phone}`}{" "}
+      Connecté·e : {emailToLogin(state.user.email)} · {state.session.role === "mj" ? "MJ" : `téléphone de ${state.session.phone}`}{" "}
+      <button className="linkish" onClick={async () => { const p = window.prompt("Nouveau mot de passe (6 caractères min.)"); if (p) alert(await changePassword(config, p)); }}>Changer le mot de passe</button>{" · "}
       <button className="linkish" onClick={() => logout(config)}>Se déconnecter</button>
     </p>
   );
