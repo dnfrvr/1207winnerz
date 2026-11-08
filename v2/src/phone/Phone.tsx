@@ -1,7 +1,7 @@
 // Téléphone complet (iOS 6 ou Android 4 selon le perso) : cadre, écran à proportions fixes,
 // couches accueil/app animées, boutons physiques.
 import { Suspense, useEffect, useRef, useState, type CSSProperties } from "react";
-import { Route, Routes, useLocation, useNavigate, useParams, type Location } from "react-router-dom";
+import { Link, Route, Routes, useLocation, useNavigate, useParams, type Location } from "react-router-dom";
 import { useCanEdit, useValue } from "../data/hooks";
 import { AppFrame, BackButton, NavDirCtx, RingUnlock, SlideToUnlock, StatusBar, useClock, useLoreDate, type NavDir } from "./IOSChrome";
 import { OSCtx, useNow, type OS } from "./common";
@@ -47,6 +47,7 @@ export function Phone() {
   return (
     <OSCtx.Provider value={os}>
       <div className={`stage-root ${fit ? "fullscreen" : ""}`}>
+        <PhoneSwitcher pid={pid} compact={!!fit} />
         <div className="stage">
           {fit ? (
             <div className="fs-wrap">
@@ -65,6 +66,40 @@ export function Phone() {
         </div>
       </div>
     </OSCtx.Provider>
+  );
+}
+
+// ─── Changer de téléphone (hors de l'écran) ─────────────────────────────────
+const ALL_PIDS = ["glinda", "eoghan", "drew", "elias"];
+
+function SwitchAvatar({ pid, current }: { pid: string; current: boolean }) {
+  const p = useValue<Profile & { avatar?: string | { src?: string } }>(`phones/${pid}/profile`);
+  const av = typeof p?.avatar === "string" ? p.avatar : p?.avatar?.src;
+  const name = (p?.name ?? pid).split(" ")[0];
+  return (
+    <Link to={`/${pid}`} className={`sw-av ${current ? "on" : ""}`} aria-current={current ? "page" : undefined} title={p?.name ?? pid}>
+      {av ? <img src={img(av)} alt="" /> : <span>{name[0]}</span>}<small>{name}</small>
+    </Link>
+  );
+}
+
+/** Ordinateur : barre flottante en haut à gauche. Plein écran : bouton ⇄ en bas à gauche qui ouvre la liste. */
+function PhoneSwitcher({ pid, compact }: { pid: string; compact: boolean }) {
+  const [open, setOpen] = useState(false);
+  const loc = useLocation();
+  useEffect(() => setOpen(false), [loc.pathname]);
+  const list = (
+    <nav className="sw-list" aria-label="Changer de téléphone">
+      <Link to="/" className="sw-home" title="Accueil du site">⌂<small>Accueil</small></Link>
+      {ALL_PIDS.map((p) => <SwitchAvatar key={p} pid={p} current={p === pid} />)}
+    </nav>
+  );
+  if (!compact) return <div className="sw sw-desk">{list}</div>;
+  return (
+    <div className={`sw sw-fs ${open ? "open" : ""}`}>
+      {open && <div className="sw-pop">{list}</div>}
+      <button className="sw-btn" aria-expanded={open} aria-label="Changer de téléphone" onClick={() => setOpen((o) => !o)}>⇄</button>
+    </div>
   );
 }
 
