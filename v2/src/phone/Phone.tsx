@@ -1,5 +1,7 @@
 // Téléphone complet (iOS 6 ou Android 4 selon le perso) : cadre, écran à proportions fixes,
 // couches accueil/app animées, boutons physiques.
+import { Glyph } from "../kit/glyph";
+import { mdiApplication, mdiHome, mdiSwapHorizontal } from "@mdi/js";
 import { Suspense, useEffect, useRef, useState, type CSSProperties } from "react";
 import { Link, Route, Routes, useLocation, useNavigate, useParams, type Location } from "react-router-dom";
 import { useCanEdit, useValue } from "../data/hooks";
@@ -90,7 +92,7 @@ function PhoneSwitcher({ pid, compact }: { pid: string; compact: boolean }) {
   useEffect(() => setOpen(false), [loc.pathname]);
   const list = (
     <nav className="sw-list" aria-label="Changer de téléphone">
-      <Link to="/" className="sw-home" title="Accueil du site">⌂<small>Accueil</small></Link>
+      <Link to="/" className="sw-home" title="Accueil du site"><Glyph i={mdiHome} size={26} /><small>Accueil</small></Link>
       {ALL_PIDS.map((p) => <SwitchAvatar key={p} pid={p} current={p === pid} />)}
     </nav>
   );
@@ -98,7 +100,7 @@ function PhoneSwitcher({ pid, compact }: { pid: string; compact: boolean }) {
   return (
     <div className={`sw sw-fs ${open ? "open" : ""}`}>
       {open && <div className="sw-pop">{list}</div>}
-      <button className="sw-btn" aria-expanded={open} aria-label="Changer de téléphone" onClick={() => setOpen((o) => !o)}>⇄</button>
+      <button className="sw-btn" aria-expanded={open} aria-label="Changer de téléphone" onClick={() => setOpen((o) => !o)}><Glyph i={mdiSwapHorizontal} size={20} /></button>
     </div>
   );
 }
@@ -302,11 +304,10 @@ const rememberOrigin = (id: string, el: HTMLElement) => {
 
 function AppIcon({ pid, id, src, label, badge }: { pid: string; id: string; src?: string; label: string; badge?: number }) {
   const nav = useNavigate();
-  const meta = META[id] ?? {};
   return (
     <button className="icon" onClick={(e) => { rememberOrigin(id, e.currentTarget); nav(`/${pid}/${id}`); }}>
       <span className="icon-wrap">
-        <span className={`tile ${src ? "flat" : ""}`}>{src ? <img src={img(src)} alt="" loading="lazy" draggable={false} /> : (meta.iosIcon ?? "📱")}</span>
+        <span className={`tile ${src ? "flat" : ""}`}>{src ? <img src={img(src)} alt="" loading="lazy" draggable={false} /> : <Glyph i={mdiApplication} size={34} />}</span>
         {!!badge && <span className="badge">{badge}</span>}
       </span>
       <span className="name">{label}</span>
@@ -410,7 +411,7 @@ function AppRoute({ pid }: { pid: string }) {
   const label = META[app]?.droidLabel ?? META[app]?.label ?? app;
   return (
     <AppFrame title={label} left={<BackButton to={`/${pid}/home`} label="Accueil" />} bodyClass="pinstripe">
-      <div className="soon">{META[app]?.iosIcon ?? "📱"}<br />{label}<small>Cette app n'est pas encore portée dans la v2.</small></div>
+      <div className="soon"><Glyph i={mdiApplication} size={48} /><br />{label}<small>Cette app n'est pas encore portée dans la v2.</small></div>
     </AppFrame>
   );
 }

@@ -7,12 +7,7 @@ import { useOS } from "../phone/common";
 import { AddButton, Cell, Grouped, Section, Switch, useEditor } from "../kit/kit";
 import { Glyph } from "../kit/glyph";
 import { img } from "../lib/img";
-import {
-  mdiAirplane, mdiAntenna, mdiCamera, mdiApps, mdiBattery, mdiBackupRestore, mdiBluetooth, mdiBrightness7, mdiChartPie, mdiCloud, mdiCog, mdiCompass,
-  mdiDatabase, mdiDotsHorizontal, mdiEmail, mdiFormatListBulleted, mdiHandBackRight, mdiInformationOutline, mdiLinkVariant, mdiLock,
-  mdiLockOutline, mdiMapMarker, mdiMessageText, mdiMusic, mdiNoteText, mdiPhone, mdiPhoneClassic, mdiClockOutline, mdiTranslate,
-  mdiVolumeHigh, mdiWifi, mdiWifiStrength3, mdiWifiStrength3Lock, mdiBrightness6,
-} from "@mdi/js";
+import { mdiAirplane, mdiAntenna, mdiApps, mdiBackupRestore, mdiBattery, mdiBluetooth, mdiBrightness6, mdiBrightness7, mdiCamera, mdiChartPie, mdiCheck, mdiClockOutline, mdiCloud, mdiCog, mdiCompass, mdiDatabase, mdiDotsHorizontal, mdiEmail, mdiFormatListBulleted, mdiHandBackRight, mdiInformationOutline, mdiLinkVariant, mdiLock, mdiLockOutline, mdiMapMarker, mdiMessageText, mdiMusic, mdiNoteText, mdiPhone, mdiPhoneClassic, mdiTranslate, mdiVolumeHigh, mdiWifi, mdiWifiStrength3, mdiWifiStrength3Lock } from "@mdi/js";
 import "./settings.css";
 
 type Net = { name?: string; secured?: boolean; current?: boolean; order?: number; deleted?: boolean };
@@ -173,7 +168,7 @@ function Wifi({ pid }: { pid: string }) {
           <Section title={os === "ios" ? "Choose a Network…" : "Réseaux"}>
             {nets.map(([id, n]) => (
               <Cell key={id} className={n.current ? "st-cur" : ""} title={n.name}
-                icon={os === "ios" ? <span className="st-check">{n.current ? "✓" : ""}</span> : ic(n.secured ? mdiWifiStrength3Lock : mdiWifiStrength3)}
+                icon={os === "ios" ? <span className="st-check">{n.current ? <Glyph i={mdiCheck} size={18} /> : ""}</span> : ic(n.secured ? mdiWifiStrength3Lock : mdiWifiStrength3)}
                 subtitle={os === "android" ? (n.current ? "Connecté" : n.secured ? "Sécurisé par WPA2" : "Ouvert") : undefined}
                 accessory={os === "ios" ? <span className="st-wifi">{n.secured && <Glyph i={mdiLockOutline} size={14} />}<Glyph i={mdiWifi} size={18} /><i className="st-disclose">›</i></span> : undefined}
                 onClick={ed.canEdit ? () => { const patches: Record<string, boolean> = {}; for (const [k, x] of nets) if (x.current !== (k === id)) patches[`${path}/${k}/current`] = k === id; ed.write(patches); } : undefined}

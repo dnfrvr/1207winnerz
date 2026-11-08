@@ -1,5 +1,7 @@
 // Jeux et apps tierces de 2012 : écran de lancement fidèle, puis un écran de jeu / de contenu.
 // Shazam reconnaît un morceau de la musique du téléphone. (ask.fm, ESPN, Polyvore : Web2012.tsx.)
+import { Glyph, Brand } from "../kit/glyph";
+import { mdiClose, mdiGamepadVariant, mdiMusicNote, mdiPlay } from "@mdi/js";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useList, useValue } from "../data/hooks";
@@ -33,8 +35,10 @@ export default function GameApp({ pid }: { pid: string }) {
   const ed = useEditor(pid);
   const savePath = `phones/${pid}/data/games/${app}`;
   const save = useValue<{ title?: string; lines?: string }>(savePath);
+  const icon = useValue<string>(`phones/${pid}/profile/appIcons/${app}`);
   const base = GAMES[app];
   if (!base) return null;
+  const logo = icon ? <img className="gm-logo-img" src={img(icon)} alt="" /> : <Glyph i={mdiGamepadVariant} size={72} />;
   // Partie du joueur (niveau, scores…) : modifiable par appui long, une ligne par info.
   const cfg = { ...base, menu: { ...base.menu, title: save?.title ?? base.menu.title, lines: save?.lines != null ? save.lines.split("\n").filter(Boolean) : base.menu.lines } };
   const editSave = ed.canEdit ? () => {
@@ -44,15 +48,15 @@ export default function GameApp({ pid }: { pid: string }) {
   return (
     <div className="app gm-app">
       <StatusBar variant="translucent" />
-      <button className="gm-x" onClick={() => nav(`/${pid}/home`)} aria-label="Quitter">✕</button>
+      <button className="gm-x" onClick={() => nav(`/${pid}/home`)} aria-label="Quitter"><Glyph i={mdiClose} size={18} /></button>
       {stage === "splash" && app !== "shazam" ? (
-        <Splash title={cfg.title} subtitle={cfg.sub} background={cfg.bg} color={cfg.color} logo={cfg.logo} onTap={() => setStage("in")} />
+        <Splash title={cfg.title} subtitle={cfg.sub} background={cfg.bg} color={cfg.color} logo={logo} onTap={() => setStage("in")} />
       ) : app === "shazam" ? <Shazam pid={pid} /> : (
         <Press className="gm-menu" style={{ background: cfg.menu.bg, color: cfg.menu.color ?? "#fff" }} onLong={editSave}>
-          <div className="gm-logo">{cfg.logo}</div>
+          <div className="gm-logo">{logo}</div>
           <h2>{cfg.menu.title}</h2>
           {cfg.menu.lines.map((l, i) => <p key={i}>{l}</p>)}
-          <button className="gm-play" onClick={() => setStage("splash")}>▶ PLAY</button>
+          <button className="gm-play" onClick={() => setStage("splash")}><Glyph i={mdiPlay} size={18} /> PLAY</button>
         </Press>
       )}
       {ed.ui}
@@ -67,14 +71,14 @@ function Shazam({ pid }: { pid: string }) {
   useEffect(() => { if (state !== "listening") return; const t = setTimeout(() => setState("found"), 3200); return () => clearTimeout(t); }, [state]);
   if (state === "found" && pick) return (
     <div className="sz-found">
-      {pick.cover ? <img src={img(pick.cover)} alt="" /> : <div className="sz-noart">♫</div>}
+      {pick.cover ? <img src={img(pick.cover)} alt="" /> : <div className="sz-noart"><Glyph i={mdiMusicNote} size={64} /></div>}
       <b>{pick.title}</b><span>{pick.artist}</span><small>{pick.album}</small>
       <button onClick={() => setState("idle")}>Tag Again</button>
     </div>
   );
   return (
     <div className="sz" onClick={() => setState("listening")}>
-      <div className={`sz-btn ${state}`}><span>𝑺</span></div>
+      <div className={`sz-btn ${state}`}><span><Brand name="shazam" size={64} color="#fff" /></span></div>
       <p>{state === "listening" ? "Listening…" : "Touch to Shazam"}</p>
     </div>
   );

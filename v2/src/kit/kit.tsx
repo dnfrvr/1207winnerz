@@ -9,7 +9,7 @@ import { canUpload, uploadImage, uploadVideo } from "../lib/upload";
 import { useOS } from "../phone/common";
 import { StatusBar } from "../phone/IOSChrome";
 import { ActionSheet, useLongPress, type SheetAction } from "../phone/Sheets";
-import { mdiCheck, mdiClose, mdiPlus } from "@mdi/js";
+import { mdiCamera, mdiCheck, mdiClose, mdiPlus, mdiVideo } from "@mdi/js";
 import { Glyph } from "./glyph";
 import { Icon, type IconName } from "./icons";
 import "./kit.css";
@@ -259,7 +259,7 @@ function ItemForm({ pid, target, onClose }: { pid: string; target: EditTarget; o
                             catch (err) { setUploadErr((err as Error).message); }
                             finally { setUploading(null); }
                           }} />
-                        {uploading === f.key ? "Envoi…" : f.kind === "video" ? "🎥 Choisir une vidéo" : "📷 Choisir une photo"}
+                        {uploading === f.key ? "Envoi…" : f.kind === "video" ? <><Glyph i={mdiVideo} size={15} /> Choisir une vidéo</> : <><Glyph i={mdiCamera} size={15} /> Choisir une photo</>}
                       </span>
                     ) : <span className="k-upload-err">Envoi de fichiers indisponible pour l'instant.</span>}
                     {typeof draft[f.key] === "string" && draft[f.key] && <button type="button" className="k-upload-del" onClick={() => setDraft((d) => ({ ...d, [f.key]: "" }))}>Retirer</button>}

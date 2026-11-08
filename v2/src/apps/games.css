@@ -23,3 +23,7 @@
 .sz-found small { font: 13px var(--ios-font); opacity: .7; }
 .sz-found button { margin-top: 18px; padding: 8px 18px; border-radius: 18px; background: #fff; color: #0a5bd6; font: bold 14px var(--ios-font); }
 
+/* Logo = l'icône réelle de l'app (comme l'écran de lancement d'un vrai jeu) */
+.gm-logo-img { width: 96px; height: 96px; border-radius: 20px; object-fit: cover; box-shadow: 0 4px 12px rgba(0,0,0,.35); }
+.gm-logo, .k-splash-logo { display: flex; justify-content: center; }
+.gm-play { display: inline-flex; align-items: center; gap: 4px; }

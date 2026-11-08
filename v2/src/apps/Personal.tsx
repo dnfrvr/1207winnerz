@@ -1,7 +1,7 @@
 // Apps propres à certains persos : Grindr, Nike+ Running, SoundCloud, iNaturalist, Kindle,
 // Wikipédia, Reddit (Alien Blue), VPN — chacune dans son look de 2012.
 import { useState } from "react";
-import { mdiAccount, mdiBinoculars, mdiCamera, mdiCommentOutline, mdiHeart, mdiMicrophone, mdiPause, mdiPlay, mdiPlus, mdiPlusCircle, mdiRepeat, mdiWaveform } from "@mdi/js";
+import { mdiAccount, mdiBinoculars, mdiCamera, mdiCommentOutline, mdiHeart, mdiLeaf, mdiMicrophone, mdiPause, mdiPencil, mdiPlay, mdiPlus, mdiPlusCircle, mdiRepeat, mdiShieldAlert, mdiShieldCheck, mdiStar, mdiStop, mdiSwapHorizontal, mdiWaveform } from "@mdi/js";
 import { Route, Routes, useNavigate, useParams } from "react-router-dom";
 import { useList, useValue } from "../data/hooks";
 import { img } from "../lib/img";
@@ -112,7 +112,7 @@ function GrindrChat({ pid }: { pid: string }) {
       </div>
       {ed.canEdit && (
         <div className="gr-compose">
-          <button onClick={() => setAsThem((v) => !v)}>{asThem ? dm.name : "Moi"} ⇄</button>
+          <button onClick={() => setAsThem((v) => !v)}>{asThem ? dm.name : "Moi"} <Glyph i={mdiSwapHorizontal} size={14} /></button>
           <input value={text} onChange={(e) => setText(e.target.value)} onKeyDown={(e) => e.key === "Enter" && send()} placeholder="Message" />
           <button className="send" onClick={send}>Send</button>
         </div>
@@ -140,14 +140,14 @@ export function NikeApp({ pid }: { pid: string }) {
     <div className="app nk">
       <StatusBar />
       <Bar cls="nk-bar" title={<span className="nk-logo">NIKE<b>+</b> RUNNING</span>} onBack={() => nav(`/${pid}/home`)}
-        right={ed.canEdit ? <button onClick={() => ed.edit({ path: base, fields: ["totalKm", "goalKm", "streak", "level"], title: "Totaux" })}>✎</button> : undefined} />
+        right={ed.canEdit ? <button onClick={() => ed.edit({ path: base, fields: ["totalKm", "goalKm", "streak", "level"], title: "Totaux" })}><Glyph i={mdiPencil} size={20} /></button> : undefined} />
       <div className="nk-scroll">
         <div className="nk-total" onClick={() => setRunning((r) => !r)}>
           <b>{n.totalKm ?? 0}</b><span>TOTAL KM</span>
           <div className="nk-goal"><i style={{ width: `${Math.min(100, ((n.totalKm ?? 0) / (n.goalKm || 1)) * 100)}%` }} /></div>
           <small>{n.level} LEVEL · {n.streak} DAY STREAK</small>
         </div>
-        <button className={`nk-start ${running ? "on" : ""}`} onClick={() => setRunning((r) => !r)}>{running ? "■ END RUN" : "▶ START RUN"}</button>
+        <button className={`nk-start ${running ? "on" : ""}`} onClick={() => setRunning((r) => !r)}>{running ? <><Glyph i={mdiStop} size={14} /> END RUN</> : <><Glyph i={mdiPlay} size={14} /> START RUN</>}</button>
         <div className="nk-week">{weekly.map(([id, w]) => <span key={id}><i style={{ height: `${((w.km ?? 0) / max) * 100}%` }} /><b>{w.d}</b></span>)}</div>
         <div className="nk-h">ACTIVITY</div>
         {runs.map(([id, r]) => (
@@ -285,7 +285,7 @@ export function INaturalistApp({ pid }: { pid: string }) {
   const [tab, setTab] = useState<"obs" | "me">("obs");
   const [open, setOpen] = useState<string | null>(null);
   const of = ["common", "latin", "date", "place", "emoji", "grade", "ids", "note", "photo"];
-  const add = () => ed.add(`${base}/list`, { common: "", latin: "", date: "", place: "", emoji: "🌿", grade: "Needs ID", ids: 0, note: "" }, { atStart: true, title: "Observation", fields: of });
+  const add = () => ed.add(`${base}/list`, { common: "", latin: "", date: "", place: "", emoji: "", grade: "Needs ID", ids: 0, note: "" }, { atStart: true, title: "Observation", fields: of });
   const cur = list.find(([id]) => id === open);
   return (
     <div className={`app inat ${os}`}>
@@ -294,7 +294,7 @@ export function INaturalistApp({ pid }: { pid: string }) {
         right={ed.canEdit && !cur ? <button aria-label="Nouvelle observation" onClick={add}><Glyph i={mdiCamera} size={22} /></button> : undefined} />
       {cur ? (
         <Press className="inat-scroll inat-detail" onLong={ed.itemLong(`${base}/list`, cur[0], { fields: of, label: cur[1].common })}>
-          <div className="inat-hero">{cur[1].photo ? <img src={img(cur[1].photo)} alt="" /> : <span>{cur[1].emoji}</span>}</div>
+          <div className="inat-hero">{cur[1].photo ? <img src={img(cur[1].photo)} alt="" /> : <span>{cur[1].emoji || <Glyph i={mdiLeaf} size={90} />}</span>}</div>
           <div className="inat-card">
             <b>{cur[1].common}</b><i>{cur[1].latin}</i>
             <span className={`inat-grade ${gradeCls(cur[1].grade)}`}>{cur[1].grade}</span>
@@ -318,7 +318,7 @@ export function INaturalistApp({ pid }: { pid: string }) {
         <div className="inat-scroll">
           {list.map(([id, o]) => (
             <Press as="button" key={id} className="inat-row" onClick={() => setOpen(id)} onLong={ed.itemLong(`${base}/list`, id, { fields: of, label: o.common })}>
-              <span className="inat-thumb">{o.photo ? <img src={img(o.photo)} alt="" /> : o.emoji}</span>
+              <span className="inat-thumb">{o.photo ? <img src={img(o.photo)} alt="" /> : (o.emoji || <Glyph i={mdiLeaf} size={28} />)}</span>
               <span className="inat-t"><b>{o.common}</b><i>{o.latin}</i><span>{o.place}</span><span>{o.date} · {o.ids ?? 0} IDs</span></span>
               <span className={`inat-grade ${gradeCls(o.grade)}`}>{o.grade}</span>
             </Press>
@@ -431,13 +431,13 @@ export function RedditApp({ pid }: { pid: string }) {
       <StatusBar />
       <Bar cls="rd-bar" title={sub === "front" ? "Front Page" : sub === "saved" ? "Saved" : sub} onBack={() => nav(`/${pid}/home`)}
         right={ed.canEdit ? <button onClick={() => ed.add(path, { title: "", sub: "r/AskReddit", domain: "self.AskReddit", pts: "1", comm: 0, age: "1h", saved: false }, { atStart: true, title: "Post", fields: rf })}>＋</button> : undefined} />
-      <div className="rd-subs">{["front", "saved", ...subs].map((s) => <button key={s} className={sub === s ? "on" : ""} onClick={() => setSub(s)}>{s === "front" ? "Front" : s === "saved" ? "★ Saved" : s}</button>)}</div>
+      <div className="rd-subs">{["front", "saved", ...subs].map((s) => <button key={s} className={sub === s ? "on" : ""} onClick={() => setSub(s)}>{s === "front" ? "Front" : s === "saved" ? <><Glyph i={mdiStar} size={12} /> Saved</> : s}</button>)}</div>
       <div className="rd-scroll">
         {shown.map(([id, p], i) => (
           <div key={id} className="rd-post" onContextMenu={(e) => { e.preventDefault(); ed.itemLong(path, id, { fields: rf, label: p.title })?.(); }}>
             <span className="rd-rank">{i + 1}</span>
             <span className="rd-vote">▲<b>{p.pts}</b>▼</span>
-            <span className="rd-body"><b>{p.title}</b><small>({p.domain})</small><span>{p.age} · {p.sub} · {p.comm} comments{p.saved ? " · ★" : ""}</span></span>
+            <span className="rd-body"><b>{p.title}</b><small>({p.domain})</small><span>{p.age} · {p.sub} · {p.comm} comments{p.saved && <> · <Glyph i={mdiStar} size={11} /></>}</span></span>
           </div>
         ))}
         {shown.length === 0 && <Empty>Nothing here</Empty>}
@@ -465,7 +465,7 @@ export function VpnApp({ pid }: { pid: string }) {
       <Bar cls="vp-bar" title="VPN" onBack={() => nav(`/${pid}/home`)} />
       <div className="vp-scroll">
         <div className={`vp-status ${state.on ? "on" : ""}`}>
-          <span className="vp-shield">{state.on ? "🛡" : "⚠"}</span>
+          <span className="vp-shield">{state.on ? <Glyph i={mdiShieldCheck} size={54} /> : <Glyph i={mdiShieldAlert} size={54} />}</span>
           <b>{state.on ? "Connected" : "Not Connected"}</b>
           <span>{cur ? `${cur[1].flag} ${cur[1].loc}` : "—"}</span>
           <Switch on={!!state.on} onChange={ed.canEdit ? (v) => set({ on: v }) : undefined} />

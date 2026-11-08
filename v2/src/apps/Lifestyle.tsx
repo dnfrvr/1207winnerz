@@ -1,4 +1,6 @@
 // Snapchat (2012), GroupMe (2012), Starbucks (2012), Fichiers (style Dropbox 2012).
+import { Glyph, Brand } from "../kit/glyph";
+import { mdiFolder, mdiMapMarker, mdiSend, mdiStar } from "@mdi/js";
 import { useState } from "react";
 import { Route, Routes, useNavigate, useParams } from "react-router-dom";
 import { useList, useValue } from "../data/hooks";
@@ -36,7 +38,7 @@ export function SnapchatApp({ pid }: { pid: string }) {
         {snaps.map(([id, s]) => (
           <button key={id} className="sc-row" onClick={() => open(id, s)}
             onContextMenu={(e) => { e.preventDefault(); ed.itemLong(path, id, { fields, label: s.contact, template: { contact: "", time: "", opened: false, sent: false } })?.(); }}>
-            <span className={`sc-ic ${s.sent ? "sent" : s.opened ? "opened" : "new"} ${s.video ? "video" : ""}`}>{s.sent ? "➤" : ""}</span>
+            <span className={`sc-ic ${s.sent ? "sent" : s.opened ? "opened" : "new"} ${s.video ? "video" : ""}`}>{s.sent ? <Glyph i={mdiSend} size={11} /> : ""}</span>
             <span className="sc-txt"><b>{s.contact}</b><span>{s.time}{!s.opened && !s.sent ? " · Press and hold to view" : s.sent ? (s.opened ? " · Opened" : " · Delivered") : ""}</span></span>
           </button>
         ))}
@@ -101,14 +103,14 @@ export function StarbucksApp({ pid }: { pid: string }) {
   const stars = sb.stars ?? 0;
   const level = stars >= 30 ? "Gold" : stars >= 5 ? "Green" : "Welcome";
   return (
-    <AppFrame title={<span className="sb-logo">☕ STARBUCKS</span>} left={<BackButton to={`/${pid}/home`} label="Accueil" />}
+    <AppFrame title={<span className="sb-logo"><Brand name="starbucks" size={22} color="#fff" /> STARBUCKS</span>} left={<BackButton to={`/${pid}/home`} label="Accueil" />}
       right={ed.canEdit ? <button className="barbtn" onClick={() => ed.edit({ path: base, fields: ["stars", "balance"], title: "Carte" })}>Edit</button> : undefined}
       navStyle={{ background: "linear-gradient(#2a8a61, #00704a 50%, #006241 51%, #05683f)", borderBottomColor: "#00341f" }} bodyClass="k-body-tabbed sb">
       <TabBar tabs={SB_TABS} active={tab} onChange={setTab} />
       <div className="k-tab-scroll">
         {tab === "pay" && (
           <div className="sb-pay">
-            <div className="sb-card"><span className="sb-siren">☕</span><b>STARBUCKS CARD</b><span className="sb-num">•••• •••• •••• 4821</span></div>
+            <div className="sb-card"><span className="sb-siren"><Brand name="starbucks" size={34} color="#fff" /></span><b>STARBUCKS CARD</b><span className="sb-num">•••• •••• •••• 4821</span></div>
             <div className="sb-bal"><span>Balance</span><b>{sb.balance ?? "$0.00"}</b><small>as of today</small></div>
             <div className="sb-barcode" aria-hidden>{Array.from({ length: 42 }, (_, i) => <i key={i} style={{ width: (i * 7) % 3 + 1 }} />)}</div>
             <div className="sb-hint">Touch to pay · {name}</div>
@@ -117,7 +119,7 @@ export function StarbucksApp({ pid }: { pid: string }) {
         {tab === "rewards" && (
           <div className="sb-rewards">
             <div className={`sb-level ${level.toLowerCase()}`}>{level} Level</div>
-            <div className="sb-stars">{Array.from({ length: 12 }, (_, i) => <span key={i} className={i < stars % 12 ? "on" : ""}>★</span>)}</div>
+            <div className="sb-stars">{Array.from({ length: 12 }, (_, i) => <span key={i} className={i < stars % 12 ? "on" : ""}><Glyph i={mdiStar} size={16} /></span>)}</div>
             <p><b>{stars}</b> stars earned · {12 - (stars % 12)} until your next free drink</p>
           </div>
         )}
@@ -134,7 +136,7 @@ export function StarbucksApp({ pid }: { pid: string }) {
           <Plain>
             <PlainHeader>Favorite Stores</PlainHeader>
             {stores.map(([id, s]) => (
-              <Cell key={id} icon={<span className="sb-pin">📍</span>} title={s.name} subtitle={`${s.addr ?? ""}\n${s.hours ?? ""}`}
+              <Cell key={id} icon={<span className="sb-pin"><Glyph i={mdiMapMarker} size={22} /></span>} title={s.name} subtitle={`${s.addr ?? ""}\n${s.hours ?? ""}`}
                 onLong={ed.itemLong(`${base}/favorites`, id, { fields: ["name", "addr", "hours"], label: s.name, template: { name: "", addr: "", hours: "" } })} />
             ))}
           </Plain>
@@ -180,7 +182,7 @@ function FilesList({ pid }: { pid: string }) {
       right={<AddButton show={ed.canEdit} onClick={() => ed.add(filesPath, { name: "Nouveau.pdf", ext: "pdf", size: "1 MB", date: "6 oct" }, { title: "Fichier", fields: FILE_FIELDS })} />}>
       <Plain>
         {!folder && folders.map(([id, f]) => (
-          <Cell key={id} icon={<span className="fl-folder">📁</span>} title={f.name} subtitle={`${Object.keys(f.files ?? {}).length} éléments`} chevron onClick={() => nav(id)}
+          <Cell key={id} icon={<span className="fl-folder"><Glyph i={mdiFolder} size={28} /></span>} title={f.name} subtitle={`${Object.keys(f.files ?? {}).length} éléments`} chevron onClick={() => nav(id)}
             onLong={ed.itemLong(`${root}/folders`, id, { fields: ["name"], label: f.name })} />
         ))}
         {files.map(([id, f]) => (

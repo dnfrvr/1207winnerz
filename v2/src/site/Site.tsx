@@ -1,6 +1,8 @@
 // Interface du site (hors téléphones) : bureau Aero de 2009, fenêtre façon messagerie instantanée
 // (les 4 persos en « contacts », avec leurs mini-téléphones), barre des tâches dont l'horloge
 // donne la date de lore (le MDJ la change d'un clic sur la date).
+import { Glyph } from "../kit/glyph";
+import { mdiChevronDown, mdiChevronRight, mdiHelpCircleOutline, mdiMessageText, mdiWindowClose, mdiWindowMaximize, mdiWindowMinimize } from "@mdi/js";
 import { useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { useData, useValue, useWriter } from "../data/hooks";
@@ -16,11 +18,11 @@ type Profile = { name?: string; os?: string; avatar?: string | { src?: string };
 const avatarOf = (p?: Profile) => (typeof p?.avatar === "string" ? p.avatar : p?.avatar?.src);
 
 /** Fenêtre au verre dépoli avec barre de titre et boutons ─ □ ✕ (décoratifs). */
-export function Win({ title, icon = "💬", children, className = "" }: { title: string; icon?: ReactNode; children: ReactNode; className?: string }) {
+export function Win({ title, icon = <Glyph i={mdiMessageText} size={15} />, children, className = "" }: { title: string; icon?: ReactNode; children: ReactNode; className?: string }) {
   return (
     <section className={`w7-win ${className}`}>
       <header className="w7-title"><span className="w7-ico" aria-hidden>{icon}</span><h2>{title}</h2>
-        <span className="w7-caps" aria-hidden><i>─</i><i>□</i><i className="x">✕</i></span></header>
+        <span className="w7-caps" aria-hidden><i><Glyph i={mdiWindowMinimize} size={12} /></i><i><Glyph i={mdiWindowMaximize} size={12} /></i><i className="x"><Glyph i={mdiWindowClose} size={13} /></i></span></header>
       <div className="w7-body">{children}</div>
     </section>
   );
@@ -96,7 +98,7 @@ function Tour({ onClose }: { onClose: () => void }) {
   const last = i === STEPS.length - 1;
   return (
     <div className="tour-backdrop" role="dialog" aria-modal="true" aria-label="Visite guidée">
-      <Win title="Visite guidée" icon="❔" className="tour">
+      <Win title="Visite guidée" icon={<Glyph i={mdiHelpCircleOutline} size={15} />} className="tour">
         <div className="tour-in" key={i}>
           <div className="tour-demo" aria-hidden>{s.demo}</div>
           <div className="tour-txt"><h3>{s.title}</h3><p>{s.text}</p>
@@ -120,8 +122,8 @@ export function Lobby({ me, account, admin }: { me: string | null; account: Reac
   const closeTour = () => { setTour(false); try { localStorage.setItem(TOUR_KEY, "1"); } catch { /* rien */ } };
   const mine = useValue<Profile>(me ? `phones/${me}/profile` : null);
   return (
-    <Desktop taskbar={<><span className="w7-task on">💬 #WhatsInOurPhones</span>
-      <button className="w7-task" onClick={() => setTour(true)}>❔ Visite guidée</button></>}>
+    <Desktop taskbar={<><span className="w7-task on"><Glyph i={mdiMessageText} size={16} /> #WhatsInOurPhones</span>
+      <button className="w7-task" onClick={() => setTour(true)}><Glyph i={mdiHelpCircleOutline} size={16} /> Visite guidée</button></>}>
       {tour && <Tour onClose={closeTour} />}
       <Win title="#WhatsInOurPhones — University of Maine at Augusta" className="w7-msn">
         <div className="w7-me">
@@ -131,7 +133,7 @@ export function Lobby({ me, account, admin }: { me: string | null; account: Reac
           </span>
         </div>
         <div className="w7-account">{account}</div>
-        <button className="w7-group" onClick={() => setOpen((o) => !o)} aria-expanded={open}>{open ? "▾" : "▸"} Téléphones ({PIDS.length})</button>
+        <button className="w7-group" onClick={() => setOpen((o) => !o)} aria-expanded={open}><Glyph i={open ? mdiChevronDown : mdiChevronRight} size={14} /> Téléphones ({PIDS.length})</button>
         {open && <div className="w7-grid">{PIDS.map((p, i) => <div key={p} style={{ animationDelay: `${i * 70}ms` }} className="w7-in"><PhoneCard pid={p} mine={me === p} /></div>)}</div>}
         <p className="w7-hint">Clique sur un téléphone pour l'ouvrir. Sur le tien, appui long (ou clic droit) sur n'importe quoi pour le modifier.</p>
       </Win>

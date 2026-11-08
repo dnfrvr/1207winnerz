@@ -227,3 +227,4 @@
 .inat-kv span { display: flex; flex-direction: column; }
 .inat-tabs button.on { color: #8cc63f; background: rgba(255,255,255,.08); }
 .inat-tabs button:disabled { opacity: .4; }
+.vp-shield { display: flex; justify-content: center; }
