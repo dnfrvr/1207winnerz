@@ -43,7 +43,7 @@
   12 messages absents du fil principal.
 - [ ] Fil Glinda ↔ Eoghan : 1er message « je sais plus ton prénoZZZm » → modification accidentelle ?
 - [x] Message vide d'Elias dans « Losers + Winners » masqué (`deleted: true`) le 2026-11-08.
-- [ ] Message vide de Glinda dans « xX WiiNNERS Xx » (`threadMessages/group/k1784841509817`, 15 sep) : à supprimer ?
+- [x] Message vide de Glinda dans « xX WiiNNERS Xx » (`threadMessages/group/k1784841509817`, 15 sep) masqué le 2026-11-08.
 - [ ] Conv « xX WiiNNERS Xx » de Glinda : 26 messages locaux en double (gardés dans `legacyLocalThread`).
 
 ## Dev
