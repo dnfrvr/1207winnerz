@@ -14,9 +14,10 @@
 - [ ] Phase 0 : secrets GitHub `FIREBASE_DATABASE_URL` + `BACKUP_PASSPHRASE`, lancer « Backup Firebase » une fois.
 - [ ] Plugins Claude Code (context-mode, i-have-adhd) à installer en portée utilisateur ; trouver le lien de « savemytokens ».
 
-- [ ] **Supabase injoignable** (le domaine ne se résout plus : projet en pause ou supprimé) → 49 images
-  de la base (surtout des avatars) ne s'affichent plus, y compris dans l'app actuelle. Réactiver le projet
-  dans le tableau de bord Supabase, puis relancer la migration avec `--fetch-remote` pour les copier en local.
+- [x] ~~Supabase injoignable~~ : de nouveau joignable le 2026-11-08 ; les 49 URL Supabase des données
+  migrées pointent maintenant vers les copies locales (`public/assets/live`).
+- [ ] **Clés Supabase pour l'envoi de photos** : ajouter `VITE_SUPABASE_URL` et `VITE_SUPABASE_ANON_KEY`
+  (les mêmes que l'ancienne app, dans Netlify) à `v2/.env.local` et au futur site Netlify v2.
 
 ## À vérifier dans les données
 
@@ -31,8 +32,8 @@
 - [x] Coquille Android (Drew)
 - [x] Portage des 51 apps (iOS 6 + Android 4.1), édition universelle (appui long / clic droit)
 - [x] Optimisation des images
-- [ ] Envoi de vraies photos depuis l'appareil (nécessite le stockage Supabase réactivé)
-- [ ] Déploiement Netlify de la v2 (2e site)
+- [x] Envoi de vraies photos depuis l'appareil (bouton « Choisir une photo » sur les champs image ; actif dès que les clés Supabase sont là)
+- [ ] Déploiement Netlify de la v2 : créer un 2e site, « Base directory » = `v2` (config prête dans `v2/netlify.toml`), y mettre les variables VITE_FIREBASE_* et VITE_SUPABASE_*
 
 ## Liste du 2026-11-08 (en cours — reprendre ici)
 
@@ -78,4 +79,3 @@ Personnalisation :
 - [ ] Widgets Android (horloge, météo, musique) sur l'écran d'accueil de Drew
 - [ ] Coques : couleur, étui, fissure d'écran, autocollants (comme les rayures d'Elias)
 - [ ] Historique des modifications (déjà enregistré dans `history/`) consultable et annulable par le joueur
-- [ ] Import de photos depuis l'appareil (nécessite le stockage Supabase réactivé)

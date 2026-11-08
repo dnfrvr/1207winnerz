@@ -1,0 +1,12 @@
+# 2e site Netlify pour la v2 : « Base directory » = v2 dans les réglages du site.
+# Variables à définir dans Netlify : VITE_FIREBASE_* (projet v2) et, pour l'envoi de photos,
+# VITE_SUPABASE_URL + VITE_SUPABASE_ANON_KEY (les mêmes que l'ancienne app).
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+# Application à une page : toutes les routes (/glinda/music, /admin…) servent index.html.
+[[redirects]]
+  from   = "/*"
+  to     = "/index.html"
+  status = 200

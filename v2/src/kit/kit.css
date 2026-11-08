@@ -147,3 +147,10 @@
 .k-tabbar.ios { order: 2; }
 .k-body-tabbed { display: flex; flex-direction: column; overflow: hidden; }
 .k-tab-scroll { flex: 1; min-height: 0; overflow-y: auto; }
+
+/* Envoi d'une photo depuis l'appareil (champ image du formulaire) */
+.k-upload { position: relative; align-self: flex-start; margin-top: 6px; padding: 5px 10px; border-radius: 5px; font: bold 13px var(--ios-font); color: #2a5ea8;
+  background: linear-gradient(#fff, #e9edf2); border: 1px solid #a3acb8; overflow: hidden; }
+.k-upload input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+.android .k-upload { border-radius: 2px; color: #33b5e5; font-family: var(--and-font); background: transparent; border-color: #33b5e5; }
+.k-upload-err { margin-top: 4px; font: 12px var(--ios-font); color: #c22; }

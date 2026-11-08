@@ -5,6 +5,7 @@ import { useCanEdit, useData, useList, useWriter } from "../data/hooks";
 import { orderBetween, byOrder, type Ordered } from "../data/order";
 import type { Json } from "../data/store";
 import { img } from "../lib/img";
+import { canUpload, uploadImage } from "../lib/upload";
 import { useOS } from "../phone/common";
 import { StatusBar } from "../phone/IOSChrome";
 import { ActionSheet, useLongPress, type SheetAction } from "../phone/Sheets";
@@ -201,6 +202,8 @@ function ItemForm({ pid, target, onClose }: { pid: string; target: EditTarget; o
   const os = useOS();
   const original = useMemo(() => (store.peek(target.path) ?? {}) as Record<string, Json>, [store, target.path]);
   const [draft, setDraft] = useState<Record<string, Json>>(original);
+  const [uploading, setUploading] = useState<string | null>(null);
+  const [uploadErr, setUploadErr] = useState<string | null>(null);
   const fields = fieldsOf(original, target.fields);
   const save = () => {
     const patches: Record<string, Json | undefined> = {};
@@ -245,6 +248,21 @@ function ItemForm({ pid, target, onClose }: { pid: string; target: EditTarget; o
                     onChange={(e) => setDraft((d) => ({ ...d, [f.key]: e.target.value }))} />
                 )}
                 {f.kind === "image" && typeof draft[f.key] === "string" && draft[f.key] && <img className="k-field-img" src={img(draft[f.key] as string)} alt="" />}
+                {f.kind === "image" && canUpload && (
+                  <span className="k-upload">
+                    <input type="file" accept="image/*" aria-label={`Choisir une photo pour ${f.label}`} disabled={uploading === f.key}
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0]; e.target.value = "";
+                        if (!file) return;
+                        setUploading(f.key); setUploadErr(null);
+                        try { const url = await uploadImage(file, pid); setDraft((d) => ({ ...d, [f.key]: url })); }
+                        catch (err) { setUploadErr((err as Error).message); }
+                        finally { setUploading(null); }
+                      }} />
+                    {uploading === f.key ? "Envoi…" : "📷 Choisir une photo"}
+                  </span>
+                )}
+                {uploadErr && f.kind === "image" && <span className="k-upload-err">{uploadErr}</span>}
               </label>
             ))}
             {fields.length === 0 && <div className="k-field"><span className="k-field-label">Rien à modifier ici.</span></div>}
