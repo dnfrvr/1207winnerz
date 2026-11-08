@@ -16,6 +16,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const { loreSortKey } = await import(pathToFileURL(path.join(ROOT, "src/shared/lore-date.js")).href);
+const { loadLegacyDefaults } = await import(pathToFileURL(path.join(ROOT, "migration/legacy-defaults.mjs")).href);
 
 export const PIDS = ["glinda", "eoghan", "drew", "elias"];
 const ORDER_STEP = 1000;
@@ -26,6 +27,8 @@ const PROFILE_FIELDS = new Set([
   "screenInset", "licence", "reputation", "pronouns", "bio", "appIcons", "appNames", "badges",
   "followers", "following", "playlistName", "devOverrides", "notepadWidget",
 ]);
+// Apps retirées des téléphones à la demande (2026-11-08 : Hipstamatic).
+const REMOVED_APPS = new Set(["hipstamatic"]);
 // Clés d'affichage « enrichies » écrites par erreur dans le perso par la v1 : ignorées.
 const DROPPED_CHAR_FIELDS = new Set(["sharedThreads", "_coTaggedInstaPosts"]);
 
@@ -154,7 +157,7 @@ export function migrate(v1) {
         v2.legacy ??= {}; (v2.legacy.charCopies ??= {})[`${pid}_${safeKey(field)}`] = convert(val, report, `legacy/${pid}/${field}`);
         continue;
       }
-      if (field === "apps" || field === "dock") { phone.home[field] = asArray(val) || []; continue; }
+      if (field === "apps" || field === "dock") { phone.home[field] = (asArray(val) || []).filter((a) => !REMOVED_APPS.has(a)); continue; }
       if (field === "messages") continue;
       if (PROFILE_FIELDS.has(field)) phone.profile[field] = convert(val, report, `${pid}/${field}`);
       else phone.data[safeKey(field)] = convert(val, report, `${pid}/${field}`);
@@ -194,6 +197,9 @@ export function migrate(v1) {
     v2.phones[pid] = phone;
   }
 
+  // 3 bis. Contenus « en dur » de l'ancienne app → données éditables (seulement si absents).
+  applyLegacyDefaults(v2, report);
+
   // 4. Fils orphelins (présents mais visibles par personne) → signalés, conservés
   for (const tid of Object.keys(v2.threads)) if (!usedThreads.has(tid)) report.warnings.push(`fil « ${tid} » n'apparaît dans aucune boîte de réception (conservé)`);
 
@@ -218,6 +224,51 @@ export function migrate(v1) {
   return { v2, report };
 }
 
+// ── contenus en dur de l'ancienne app ───────────────────────────────────────
+const USERNAMES = { glinda: "glindatheverygood", eoghan: "eoghan_masuda", drew: "dreww_orms", elias: "noteliasgreen" };
+function applyLegacyDefaults(v2, report) {
+  const L = loadLegacyDefaults();
+  const toMap = (arr, where) => (Array.isArray(arr) && arr.length ? listToMap(arr.map((x) => (isObj(x) ? x : { value: x })), "l", report, where) : {});
+  const injected = [];
+  for (const pid of PIDS) {
+    const ph = v2.phones[pid]; if (!ph) continue;
+    const u = USERNAMES[pid], has = (app) => (ph.home.apps ?? []).includes(app) || (ph.home.dock ?? []).includes(app);
+    const d = ph.data;
+    // Mail : boîte personnalisée (mail_override) sinon boîte d'origine ; brouillons et corbeille.
+    if (!d.mail) {
+      const override = d.mail_override?.[u];
+      d.mail = {
+        inbox: override && Object.keys(override).length ? override : toMap(L.EMAILS_BY_CHAR?.[u], `${pid}/mail/inbox`),
+        drafts: toMap(L.MAIL_DRAFTS_BY_CHAR?.[u], `${pid}/mail/drafts`),
+        trash: toMap(L.MAIL_DELETED_BY_CHAR?.[u], `${pid}/mail/trash`),
+      };
+      if (override) delete d.mail_override;
+      injected.push(`${pid}/mail`);
+    }
+    if (!d.snaps && L.SNAPCHAT_DEFAULTS?.[pid] && has("snapchat")) { d.snaps = toMap(L.SNAPCHAT_DEFAULTS[pid], `${pid}/snaps`); injected.push(`${pid}/snaps`); }
+    if (!d.groupmeGroups && has("groupme")) { d.groupmeGroups = toMap(L.GROUPME_DEFAULTS, `${pid}/groupme`); injected.push(`${pid}/groupmeGroups`); }
+    if (!d.reddit && has("reddit")) { d.reddit = toMap(L.REDDIT_ALL_POSTS, `${pid}/reddit`); injected.push(`${pid}/reddit`); }
+    if (!d.vpn && has("vpn")) { d.vpn = toMap(L.VPN_DEFAULTS, `${pid}/vpn`); injected.push(`${pid}/vpn`); }
+    if (!d.wikipedia && has("wikipedia") && L.WIKI_FEEDS?.[pid]) {
+      d.wikipedia = toMap(L.WIKI_FEEDS[pid].map(([title, extract, date]) => ({ title, extract, date })), `${pid}/wikipedia`); injected.push(`${pid}/wikipedia`);
+    }
+    if (!d.kindle && has("kindle")) { d.kindle = toMap((L.KINDLE_DEFAULT_BOOKS ?? []).map((b) => ({ title: b.t, author: b.a, pct: b.p, genre: b.genre, hue: b.hue })), `${pid}/kindle`); injected.push(`${pid}/kindle`); }
+    if (!d.starbucks && has("starbucks")) {
+      d.starbucks = { stars: L.STARBUCKS_STARS?.[pid] ?? 0, balance: L.STARBUCKS_BALANCE?.[pid] ?? "$0.00",
+        recents: toMap(L.STARBUCKS_RECENTS?.[pid], `${pid}/starbucks/recents`),
+        favorites: toMap(L.STARBUCKS_FAVORITES?.[pid] ?? [L.STARBUCKS_DEFAULT_FAVORITE].filter(Boolean), `${pid}/starbucks/favorites`) };
+      injected.push(`${pid}/starbucks`);
+    }
+    // Pastilles d'origine (Snapchat, Mail) si le profil n'en définit pas.
+    ph.profile.badges ??= {};
+    if (ph.profile.badges.snapchat === undefined && L.SNAP_BADGE_COUNTS?.[u] && has("snapchat")) ph.profile.badges.snapchat = L.SNAP_BADGE_COUNTS[u];
+    if (ph.profile.badges.gmail === undefined && L.GMAIL_BADGE_COUNTS?.[u]) ph.profile.badges.gmail = L.GMAIL_BADGE_COUNTS[u];
+  }
+  report.counts.legacyInjected = injected.length;
+  report.legacyInjected = injected;
+  for (const k of Object.keys(L)) if (k.startsWith("_error")) report.warnings.push(`contenu d'origine non extrait : ${k} (${L[k]})`);
+}
+
 // ── vérification de conservation ─────────────────────────────────────────────
 // Tous les textes (chaînes ≥ 2 caractères) de la v1, hors champs volontairement transformés
 // ou ignorés, doivent exister dans la v2.
@@ -235,7 +286,7 @@ export function verify(v1, v2) {
   collectStrings(v1Clean, before);
   collectStrings(v2, after);
   const missing = [];
-  for (const [s, n] of before) if ((after.get(s) || 0) < n) missing.push({ text: s.slice(0, 80), expected: n, found: after.get(s) || 0 });
+  for (const [s, n] of before) if (!REMOVED_APPS.has(s) && (after.get(s) || 0) < n) missing.push({ text: s.slice(0, 80), expected: n, found: after.get(s) || 0 });
   return { textsV1: before.size, missing };
 }
 
@@ -267,6 +318,34 @@ export async function extractImages(v2, dir, urlPrefix) {
   return { count, bytes };
 }
 
+// ── copie locale des images hébergées à l'extérieur (Supabase) ──────────────
+// Si le stockage externe est joignable, télécharge chaque image référencée par URL http(s)
+// vers `dir` et remplace l'URL. Les images injoignables sont laissées telles quelles et listées.
+export async function fetchRemoteImages(v2, dir, urlPrefix, hostPattern = /supabase\.co\//) {
+  const { createHash } = await import("node:crypto");
+  fs.mkdirSync(dir, { recursive: true });
+  const refs = [];
+  const walk = (o) => { for (const k of Object.keys(o)) { const v = o[k]; if (typeof v === "string" && /^https?:/.test(v) && hostPattern.test(v)) refs.push([o, k, v]); else if (v && typeof v === "object") walk(v); } };
+  walk(v2);
+  const done = new Map(), failed = new Set();
+  for (const [o, k, url] of refs) {
+    if (!done.has(url) && !failed.has(url)) {
+      try {
+        const res = await fetch(url);
+        if (!res.ok) throw new Error(String(res.status));
+        const buf = Buffer.from(await res.arrayBuffer());
+        const type = res.headers.get("content-type") ?? "";
+        const ext = /png/.test(type) ? "png" : /webp/.test(type) ? "webp" : /gif/.test(type) ? "gif" : "jpg";
+        const name = `${createHash("sha1").update(buf).digest("hex").slice(0, 20)}.${ext}`;
+        if (!fs.existsSync(path.join(dir, name))) fs.writeFileSync(path.join(dir, name), buf);
+        done.set(url, `${urlPrefix}${name}`);
+      } catch { failed.add(url); }
+    }
+    if (done.has(url)) o[k] = done.get(url);
+  }
+  return { found: new Set(refs.map((r) => r[2])).size, copied: done.size, failed: [...failed] };
+}
+
 // ── CLI ──────────────────────────────────────────────────────────────────────
 if (import.meta.url === pathToFileURL(process.argv[1]).href) {
   // `--seed <sortie>` : migre les seeds (mkData) et écrit le résultat (jeu de données de dev de la v2).
@@ -284,6 +363,7 @@ if (import.meta.url === pathToFileURL(process.argv[1]).href) {
   console.log("\n== Comptes =="); for (const [k, n] of Object.entries(report.counts)) console.log(`  ${k.padEnd(28)} ${n}`);
   console.log(`\n== Copies parasites (rangées dans legacy/charCopies) == ${report.dropped.join(", ") || "rien"}`);
   console.log(`== Conservé en legacy == ${report.legacy.join(", ") || "rien"}`);
+  console.log(`== Contenus d'origine injectés == ${(report.legacyInjected ?? []).join(", ") || "rien"}`);
   console.log(`\n== Avertissements (${report.warnings.length}) ==`); report.warnings.forEach((w) => console.log("  - " + w));
   console.log(`\n== Conservation == ${check.textsV1} textes distincts en v1, ${check.missing.length} manquant(s)`);
   check.missing.slice(0, 30).forEach((m) => console.log(`  ✗ « ${m.text} » (attendu ${m.expected}, trouvé ${m.found})`));
@@ -295,6 +375,14 @@ if (import.meta.url === pathToFileURL(process.argv[1]).href) {
     const r = await extractImages(v2, process.argv[ii + 1], process.argv[ii + 2] ?? "/assets/live/");
     console.log(`Images extraites : ${r.count} références, ${(r.bytes / 1e6).toFixed(1)} Mo écrits → ${process.argv[ii + 1]}`);
     console.log(`Taille v2 après extraction : ${kb(v2)} Ko`);
+  }
+  // `--fetch-remote` : copie aussi en local les images hébergées sur Supabase (si joignable).
+  if (process.argv.includes("--fetch-remote") && ii > 0) {
+    const r = await fetchRemoteImages(v2, process.argv[ii + 1], "/assets/live/");
+    console.log(`Images externes : ${r.found} trouvées, ${r.copied} copiées en local, ${r.failed.length} injoignables`);
+  } else {
+    const remote = new Set(JSON.stringify(v2).match(/https?:\/\/[^"]*supabase\.co[^"]*/g) ?? []);
+    if (remote.size) console.log(`⚠ ${remote.size} image(s) encore hébergée(s) sur Supabase (relancer avec --fetch-remote quand il est joignable)`);
   }
   if (output) { fs.writeFileSync(output, JSON.stringify(v2, null, 2)); console.log(`Écrit : ${output}`); }
   process.exitCode = check.missing.length ? 1 : 0;

@@ -1,0 +1,67 @@
+/* Snapchat 2012 */
+.sc { background: #fff; }
+.sc-bar { flex: 0 0 44px; display: flex; align-items: center; justify-content: space-between; padding: 0 8px; background: linear-gradient(#9b59b6, #7d3c98); border-bottom: 1px solid #5b2c6f; }
+.sc-bar h1 { font: bold 20px var(--ios-font); color: #fff; text-shadow: 0 -1px 0 rgba(0,0,0,.3); }
+.sc-bar button { color: #fff; display: flex; padding: 4px; }
+.sc-scroll { flex: 1; min-height: 0; overflow-y: auto; }
+.sc-row { width: 100%; display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-bottom: 1px solid #eee; text-align: left; }
+.sc-row:active { background: #f4ecf7; }
+.sc-ic { flex: 0 0 22px; height: 22px; border-radius: 3px; display: flex; align-items: center; justify-content: center; font-size: 12px; }
+.sc-ic.new { background: #e74c3c; box-shadow: inset 0 0 0 2px rgba(255,255,255,.4); }
+.sc-ic.new.video { background: #9b59b6; }
+.sc-ic.opened { border: 2px solid #e74c3c; }
+.sc-ic.sent { color: #e74c3c; }
+.sc-txt { display: flex; flex-direction: column; }
+.sc-txt b { font: bold 16px var(--ios-font); color: #222; }
+.sc-txt span { font: 12px var(--ios-font); color: #999; }
+.sc-foot { flex: 0 0 34px; display: flex; align-items: center; justify-content: center; font: 12px var(--ios-font); color: #999; border-top: 1px solid #eee; }
+.sc-foot button { color: #9b59b6; font: bold 13px var(--ios-font); }
+.sc-view { position: absolute; inset: 0; z-index: 30; background: #000; display: flex; align-items: center; justify-content: center; }
+.sc-photo { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font: bold 28px var(--ios-font); color: rgba(255,255,255,.25);
+  background: radial-gradient(circle at 40% 30%, #4a4a4a, #111); }
+.sc-timer { position: absolute; top: 30px; right: 14px; width: 30px; height: 30px; border-radius: 50%; border: 2px solid #fff; color: #fff; font: bold 15px/26px var(--ios-font); text-align: center; }
+
+/* GroupMe 2012 */
+.gm { background: #f3f6f8; }
+.gm-bar { flex: 0 0 44px; display: flex; align-items: center; justify-content: space-between; padding: 0 8px; background: linear-gradient(#25bdf5, #0092cf); border-bottom: 1px solid #006a96; }
+.gm-bar h1 { font: bold 20px var(--ios-font); color: #fff; text-shadow: 0 -1px 0 rgba(0,0,0,.2); }
+.gm-bar button { color: #fff; display: flex; padding: 4px; }
+.gm-bar button:disabled { opacity: .4; }
+.gm-scroll { flex: 1; min-height: 0; overflow-y: auto; }
+.gm-row { width: 100%; display: flex; align-items: center; gap: 10px; padding: 10px; background: #fff; border-bottom: 1px solid #e3e8ec; text-align: left; }
+.gm-row .k-avatar { border-radius: 8px; }
+.gm-txt { flex: 1; min-width: 0; display: flex; flex-direction: column; font: 13px var(--ios-font); color: #666; }
+.gm-txt span, .gm-txt small { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.gm-top { display: flex; justify-content: space-between; }
+.gm-top b { font: bold 15px var(--ios-font); color: #222; }
+.gm-top i { font-style: normal; font-size: 11px; color: #aaa; }
+.gm-txt small { font-size: 11px; color: #aaa; }
+.gm-n { min-width: 22px; height: 22px; padding: 0 6px; border-radius: 11px; background: #00aff0; color: #fff; font: bold 12px/22px var(--ios-font); text-align: center; }
+
+/* Starbucks 2012 */
+.sb-logo { font: bold 16px var(--ios-font); letter-spacing: 1px; }
+.sb .k-tab-scroll { background: #f2f0eb; }
+.sb-pay { display: flex; flex-direction: column; align-items: center; padding: 16px 14px; gap: 12px; }
+.sb-card { width: 100%; aspect-ratio: 1.58; border-radius: 12px; padding: 14px; display: flex; flex-direction: column; justify-content: space-between; color: #fff;
+  background: radial-gradient(circle at 70% 30%, #2f9a6a, #00704a 55%, #004d33); box-shadow: 0 4px 10px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.3); text-shadow: 0 1px 2px rgba(0,0,0,.4); }
+.sb-siren { width: 46px; height: 46px; border-radius: 50%; background: #fff; color: #00704a; display: flex; align-items: center; justify-content: center; font-size: 26px; text-shadow: none; }
+.sb-card b { font: bold 15px var(--ios-font); letter-spacing: 2px; }
+.sb-num { font: 13px "Courier New", monospace; letter-spacing: 1px; }
+.sb-bal { display: flex; flex-direction: column; align-items: center; color: #444; }
+.sb-bal span { font: bold 12px var(--ios-font); color: #888; text-transform: uppercase; }
+.sb-bal b { font: bold 36px var(--ios-font); color: #00704a; }
+.sb-bal small { font: 11px var(--ios-font); color: #aaa; }
+.sb-barcode { display: flex; gap: 2px; height: 50px; padding: 6px 12px; background: #fff; border-radius: 4px; box-shadow: 0 1px 2px rgba(0,0,0,.2); }
+.sb-barcode i { display: block; background: #111; }
+.sb-hint { font: 12px var(--ios-font); color: #888; }
+.sb-rewards { padding: 20px 14px; text-align: center; font: 14px var(--ios-font); color: #444; }
+.sb-level { display: inline-block; padding: 6px 16px; border-radius: 16px; font: bold 14px var(--ios-font); color: #fff; background: #00704a; }
+.sb-level.gold { background: linear-gradient(#e6c27a, #b8913f); }
+.sb-stars { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; margin: 18px 10px; font-size: 30px; color: #d6d2c8; }
+.sb-stars .on { color: #cba258; text-shadow: 0 1px 2px rgba(0,0,0,.3); }
+.sb-pin { font-size: 18px; }
+
+/* Fichiers (Dropbox 2012) */
+.fl-ic { flex-shrink: 0; width: 30px; height: 36px; border-radius: 2px 8px 2px 2px; display: flex; align-items: flex-end; justify-content: center; padding-bottom: 4px; color: #fff; font: bold 8px var(--ios-font); box-shadow: 0 1px 2px rgba(0,0,0,.3); }
+.fl-folder { font-size: 26px; }
+.fl-add { color: #2470d8; }

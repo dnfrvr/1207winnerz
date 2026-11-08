@@ -1,0 +1,55 @@
+.gm-app { background: #000; }
+.gm-app .ios-status, .gm-app .and-status { position: absolute; top: 0; left: 0; right: 0; z-index: 6; }
+.gm-x { position: absolute; top: 26px; right: 8px; z-index: 7; width: 26px; height: 26px; border-radius: 50%; color: #fff; background: rgba(0,0,0,.4); font-size: 13px; }
+.gm-menu { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; padding: 30px; text-align: center; }
+.gm-logo { font-size: 60px; filter: drop-shadow(0 4px 6px rgba(0,0,0,.3)); }
+.gm-menu h2 { font: 900 26px "Arial Black", var(--ios-font); text-shadow: 0 2px 0 rgba(0,0,0,.2); }
+.gm-menu p { font: bold 15px var(--ios-font); opacity: .9; }
+.gm-play { margin-top: 18px; padding: 12px 40px; border-radius: 26px; font: 900 20px "Arial Black", var(--ios-font); color: #fff;
+  background: linear-gradient(#8ed97f, #2f9d22); border: 3px solid #fff; box-shadow: 0 4px 0 #1f6f15, 0 6px 12px rgba(0,0,0,.4); text-shadow: 0 2px 0 rgba(0,0,0,.25); }
+
+/* Shazam 2012 */
+.sz { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 22px; background: radial-gradient(circle at 50% 40%, #3a9cff, #0a5bd6 60%, #052f73); color: #fff; cursor: pointer; }
+.sz-btn { width: 150px; height: 150px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font: italic bold 80px Georgia, serif;
+  background: radial-gradient(circle at 40% 35%, #fff, #e4efff 60%, #b6cff5); color: #0a5bd6; box-shadow: 0 0 0 10px rgba(255,255,255,.15), 0 8px 20px rgba(0,0,0,.4); }
+.sz-btn.listening { animation: pulse 1s ease-in-out infinite; }
+@keyframes pulse { 50% { transform: scale(1.08); box-shadow: 0 0 0 26px rgba(255,255,255,.08), 0 8px 20px rgba(0,0,0,.4); } }
+.sz p { font: bold 18px var(--ios-font); }
+.sz-found { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; padding: 30px; background: linear-gradient(#0a5bd6, #052f73); color: #fff; text-align: center; }
+.sz-found img, .sz-noart { width: 200px; height: 200px; object-fit: cover; box-shadow: 0 6px 16px rgba(0,0,0,.5); margin-bottom: 12px; }
+.sz-noart { display: flex; align-items: center; justify-content: center; font-size: 70px; background: #1a3f7a; }
+.sz-found b { font: bold 22px var(--ios-font); }
+.sz-found span { font: 16px var(--ios-font); }
+.sz-found small { font: 13px var(--ios-font); opacity: .7; }
+.sz-found button { margin-top: 18px; padding: 8px 18px; border-radius: 18px; background: #fff; color: #0a5bd6; font: bold 14px var(--ios-font); }
+
+/* ESPN ScoreCenter */
+.es { position: absolute; inset: 20px 0 0; display: flex; flex-direction: column; background: #f2f2f2; }
+.es-bar { flex: 0 0 44px; display: flex; align-items: center; gap: 6px; padding: 0 44px 0 10px; color: #fff; font: bold 15px var(--ios-font); background: linear-gradient(#e00, #9b0000); }
+.es-bar b { font: italic 900 22px "Arial Black", var(--ios-font); }
+.es-bar button, .af-bar button, .kk-bar button { margin-left: auto; color: #fff; font-size: 18px; }
+.es-list { flex: 1; overflow-y: auto; }
+.es-row { margin: 8px; padding: 8px 10px; background: #fff; border: 1px solid #ddd; border-radius: 3px; font: 14px var(--ios-font); }
+.es-row small { font: bold 10px var(--ios-font); color: #c00; text-transform: uppercase; }
+.es-row div { display: flex; justify-content: space-between; padding: 2px 0; }
+.es-row b { font-size: 16px; }
+.es-row i { font: italic 11px var(--ios-font); color: #888; }
+
+/* ask.fm 2012 */
+.af { position: absolute; inset: 20px 0 0; display: flex; flex-direction: column; background: #f4f4f4; }
+.af-bar { flex: 0 0 44px; display: flex; align-items: center; padding: 0 44px 0 12px; color: #fff; font: bold 22px var(--ios-font); background: linear-gradient(#ee4f6f, #c2244b); }
+.af-list { flex: 1; overflow-y: auto; }
+.af-qa { margin: 8px; padding: 10px; background: #fff; border-radius: 3px; border: 1px solid #e3e3e3; }
+.af-qa b { font: bold 14px var(--ios-font); color: #c2244b; }
+.af-qa p { margin: 6px 0; font: 14px/1.4 var(--ios-font); color: #333; white-space: pre-wrap; }
+.af-qa small { font: 11px var(--ios-font); color: #999; }
+
+/* Kik 2012 */
+.kk { position: absolute; inset: 20px 0 0; display: flex; flex-direction: column; background: #fff; }
+.kk-bar { flex: 0 0 44px; display: flex; align-items: center; padding: 0 44px 0 12px; color: #fff; font: bold 24px var(--ios-font); background: linear-gradient(#94cc35, #6da31a); }
+.kk-list { flex: 1; overflow-y: auto; }
+.kk-row { display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-bottom: 1px solid #eee; }
+.kk-row span { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.kk-row b { font: bold 15px var(--ios-font); }
+.kk-row small { font: 13px var(--ios-font); color: #888; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.kk-row i { font-style: normal; font: 11px var(--ios-font); color: #aaa; }

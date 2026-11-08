@@ -121,9 +121,12 @@ export function Avatar({ src, name, size = 40, color, round = true }: { src?: st
   const initials = (name ?? "?").replace(/[^\p{L}\p{N} ]/gu, "").trim().split(/\s+/).map((w) => w[0]).join("").slice(0, 2).toUpperCase() || "?";
   const palette = ["#e53935", "#1e88e5", "#43a047", "#fb8c00", "#8e24aa", "#00897b"];
   const bg = color ?? palette[((name ?? "?").codePointAt(0) ?? 0) % palette.length];
+  // Image injoignable (ex. stockage externe hors ligne) → initiales, comme un contact sans photo.
+  const [broken, setBroken] = useState(false);
+  const show = src && !broken;
   return (
-    <span className={`k-avatar ${round ? "round" : ""}`} style={{ width: size, height: size, background: src ? "#ccc" : bg, fontSize: size * 0.38 }}>
-      {src ? <img src={img(src)} alt="" loading="lazy" /> : initials}
+    <span className={`k-avatar ${round ? "round" : ""}`} style={{ width: size, height: size, background: show ? "#ccc" : bg, fontSize: size * 0.38 }}>
+      {show ? <img src={img(src)} alt="" loading="lazy" onError={() => setBroken(true)} /> : initials}
     </span>
   );
 }

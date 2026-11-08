@@ -14,6 +14,8 @@ import "./photos.css";
 type Photo = { src?: string; date?: string; album?: string | null; color?: string; deleted?: boolean; order?: number };
 
 const ROLL = "camera-roll", DELETED = "deleted";
+// Image injoignable (stockage externe hors ligne) : on la masque plutôt que d'afficher l'icône cassée.
+const hideBroken = (e: React.SyntheticEvent<HTMLImageElement>) => { e.currentTarget.style.visibility = "hidden"; };
 
 function usePhotos(pid: string) {
   const all = useList<Photo>(`phones/${pid}/data/gallery`, { withDeleted: true });
@@ -54,7 +56,7 @@ function Albums({ pid }: { pid: string }) {
         <ul className="ph-album-list">
           {rows.map((r) => (
             <li key={r.id}><button onClick={() => nav(encodeURIComponent(r.id))}>
-              <span className="thumb">{cover(r.id) ? <img src={img(cover(r.id))} alt="" loading="lazy" /> : null}</span>
+              <span className="thumb">{cover(r.id) ? <img src={img(cover(r.id))} alt="" loading="lazy" onError={hideBroken} /> : null}</span>
               <span className="name">{r.name}</span><span className="count">({r.n})</span><span className="chev">›</span>
             </button></li>
           ))}
@@ -63,7 +65,7 @@ function Albums({ pid }: { pid: string }) {
         <div className="ph-album-grid">
           {rows.map((r) => (
             <button key={r.id} onClick={() => nav(encodeURIComponent(r.id))}>
-              {cover(r.id) ? <img src={img(cover(r.id))} alt="" loading="lazy" /> : <span className="ph-none" />}
+              {cover(r.id) ? <img src={img(cover(r.id))} alt="" loading="lazy" onError={hideBroken} /> : <span className="ph-none" />}
               <span className="lbl"><b>{r.name}</b><i>{r.n}</i></span>
             </button>
           ))}
@@ -107,7 +109,7 @@ function PhotoThumb({ p, onClick, onLong }: { p: Photo; onClick: () => void; onL
       onPointerUp={() => lp.t && clearTimeout(lp.t)} onPointerLeave={() => lp.t && clearTimeout(lp.t)}
       onContextMenu={(e) => { e.preventDefault(); if (onLong) { lp.fired = true; onLong(); } }}
       onClick={() => { if (!lp.fired) onClick(); }}>
-      {p.src && <img src={img(p.src)} alt="" loading="lazy" draggable={false} />}
+      {p.src && <img src={img(p.src)} alt="" loading="lazy" draggable={false} onError={hideBroken} />}
     </button>
   );
 }

@@ -13,6 +13,10 @@
 - [ ] Phase 0 : secrets GitHub `FIREBASE_DATABASE_URL` + `BACKUP_PASSPHRASE`, lancer « Backup Firebase » une fois.
 - [ ] Plugins Claude Code (context-mode, i-have-adhd) à installer en portée utilisateur ; trouver le lien de « savemytokens ».
 
+- [ ] **Supabase injoignable** (le domaine ne se résout plus : projet en pause ou supprimé) → 49 images
+  de la base (surtout des avatars) ne s'affichent plus, y compris dans l'app actuelle. Réactiver le projet
+  dans le tableau de bord Supabase, puis relancer la migration avec `--fetch-remote` pour les copier en local.
+
 ## À vérifier dans les données
 
 - [ ] Copie ancienne du fil Glinda ↔ Eoghan (rangée dans `legacy/charCopies/drew_sharedThreads`) :
@@ -23,7 +27,8 @@
 ## Dev
 
 - [x] Socle v2, Notes, Messages, animations, connexion
-- [ ] Coquille Android (Drew)
-- [ ] Portage des autres apps
-- [ ] Optimisation des images (fonds d'écran de plusieurs Mo)
+- [x] Coquille Android (Drew)
+- [x] Portage des 51 apps (iOS 6 + Android 4.1), édition universelle (appui long / clic droit)
+- [x] Optimisation des images
+- [ ] Envoi de vraies photos depuis l'appareil (nécessite le stockage Supabase réactivé)
 - [ ] Déploiement Netlify de la v2 (2e site)

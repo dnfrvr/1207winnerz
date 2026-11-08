@@ -1,0 +1,64 @@
+/* Instagram 2012 */
+.ig { background: #f2f2f2; }
+.ig-bar { flex: 0 0 44px; display: flex; align-items: center; justify-content: space-between; padding: 0 6px;
+  background: linear-gradient(#5a87ad, #3f729b 50%, #2f5f88 51%, #3a6a93); border-bottom: 1px solid #1d3a55; box-shadow: inset 0 1px 0 rgba(255,255,255,.35); }
+.ig-bar .side { width: 64px; display: flex; }
+.ig-bar .side.r { justify-content: flex-end; }
+.ig-bar .logo { font: 400 28px/1 "Grand Hotel", "Billabong", "Brush Script MT", cursive; color: #fff; text-shadow: 0 -1px 0 rgba(0,0,0,.4); padding-top: 4px; }
+.ig-bar .txt { font: bold 18px var(--ios-font); color: #fff; text-shadow: 0 -1px 0 rgba(0,0,0,.4); max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ig-btn { min-width: 34px; height: 30px; padding: 0 8px; display: flex; align-items: center; justify-content: center; border-radius: 4px; color: #fff; font: bold 13px var(--ios-font);
+  background: linear-gradient(#4f7ea7, #2a587f); border: 1px solid #1d3a55; box-shadow: inset 0 1px 0 rgba(255,255,255,.3); text-shadow: 0 -1px 0 rgba(0,0,0,.4); }
+.ig-scroll { flex: 1; min-height: 0; overflow-y: auto; }
+.ig-tabs { flex: 0 0 46px; display: flex; align-items: center; justify-content: space-around; background: linear-gradient(#3b3b3b, #1a1a1a 50%, #0e0e0e 51%, #171717); border-top: 1px solid #000; }
+.ig-tabs button { color: #8f8f8f; padding: 8px 12px; display: flex; }
+.ig-tabs button.on { color: #fff; filter: drop-shadow(0 0 3px rgba(255,255,255,.4)); }
+.ig-tabs .cam { width: 58px; height: 38px; justify-content: center; align-items: center; border-radius: 4px; color: #fff; margin-top: -6px;
+  background: linear-gradient(#5f8fbf, #31679b 50%, #255a8e 51%, #2f6699); border: 1px solid #0f2c4a; box-shadow: 0 1px 3px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.35); }
+
+.ig-post { background: #fff; margin-bottom: 10px; border-bottom: 1px solid #ddd; }
+.ig-head { position: sticky; top: 0; z-index: 2; display: flex; align-items: center; gap: 8px; padding: 6px 8px; background: rgba(250,250,250,.96); border-bottom: 1px solid #e3e3e3; }
+.ig-head b { flex: 1; font: bold 14px var(--ios-font); color: #3f729b; }
+.ig-time { font: 12px var(--ios-font); color: #999; display: flex; align-items: center; gap: 3px; }
+.ig-loc { padding: 0 8px 4px 46px; margin-top: -2px; font: 11px var(--ios-font); color: #3f729b; display: flex; gap: 3px; align-items: center; background: rgba(250,250,250,.96); }
+.ig-photo { position: relative; aspect-ratio: 1; background: #ddd; cursor: pointer; }
+.ig-photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.ig-nophoto { width: 100%; height: 100%; background: linear-gradient(135deg, #ccc, #eee); }
+.ig-heart { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 90px; color: rgba(255,255,255,.9); text-shadow: 0 2px 10px rgba(0,0,0,.4); animation: pop .5s ease-out forwards; pointer-events: none; }
+.ig-actions { display: flex; gap: 8px; padding: 8px; }
+.ig-actions button { height: 28px; padding: 0 10px; border-radius: 3px; font: bold 12px var(--ios-font); color: #555; background: linear-gradient(#fdfdfd, #e5e5e5); border: 1px solid #c9c9c9; box-shadow: inset 0 1px 0 #fff; }
+.ig-actions button.liked { color: #c22; }
+.ig-more { margin-left: auto; color: #999; padding: 4px; }
+.ig-meta { padding: 0 10px 10px; font: 13px/1.35 var(--ios-font); color: #333; }
+.ig-meta b { color: #3f729b; }
+.ig-likes { color: #3f729b; font-weight: bold; margin-bottom: 4px; }
+.ig-meta p { margin: 3px 0; white-space: pre-wrap; word-wrap: break-word; }
+.ig-viewall { color: #999; font: 13px var(--ios-font); padding: 0; }
+
+.ig-prof { display: flex; gap: 12px; padding: 12px; background: #fff; }
+.ig-prof .k-avatar { border: 2px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,.4); }
+.ig-stats { flex: 1; display: flex; flex-direction: column; gap: 8px; }
+.ig-stats .nums { display: flex; border: 1px solid #d6d6d6; border-radius: 4px; overflow: hidden; background: linear-gradient(#fff, #f0f0f0); }
+.ig-stats .nums span { flex: 1; display: flex; flex-direction: column; align-items: center; padding: 4px 0; font: 11px var(--ios-font); color: #999; }
+.ig-stats .nums span + span { border-left: 1px solid #d6d6d6; }
+.ig-stats .nums b { font: bold 15px var(--ios-font); color: #333; }
+.ig-edit { height: 28px; border-radius: 4px; font: bold 12px var(--ios-font); color: #fff; text-shadow: 0 -1px 0 rgba(0,0,0,.3);
+  background: linear-gradient(#7cc96d, #45a637); border: 1px solid #2f7a24; }
+.ig-bio { padding: 0 12px 10px; background: #fff; font: 13px/1.35 var(--ios-font); border-bottom: 1px solid #ddd; }
+.ig-bio p { white-space: pre-wrap; margin-top: 2px; }
+.ig-bio a { color: #3f729b; font-weight: bold; }
+.ig-views { display: flex; background: linear-gradient(#fdfdfd, #e8e8e8); border-bottom: 1px solid #ccc; }
+.ig-views button { flex: 1; height: 38px; display: flex; align-items: center; justify-content: center; color: #aaa; }
+.ig-views button.on { color: #3f729b; background: linear-gradient(#e6e6e6, #f5f5f5); box-shadow: inset 0 1px 3px rgba(0,0,0,.15); }
+.ig-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px; padding: 2px; background: #fff; }
+.ig-grid button { aspect-ratio: 1; background: #ddd; overflow: hidden; }
+.ig-grid img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.ig-tabsub { display: flex; background: linear-gradient(#fdfdfd, #e8e8e8); border-bottom: 1px solid #ccc; }
+.ig-tabsub span { flex: 1; text-align: center; padding: 8px; font: bold 13px var(--ios-font); color: #999; }
+.ig-tabsub span.on { color: #3f729b; }
+.ig-news-row { position: relative; padding: 10px 56px 10px 12px; background: #fff; border-bottom: 1px solid #e3e3e3; font: 13px/1.35 var(--ios-font); color: #333; min-height: 54px; }
+.ig-news-row b { color: #3f729b; }
+.ig-news-row i { display: block; font-style: normal; font-size: 11px; color: #aaa; margin-top: 2px; }
+.ig-news-row img { position: absolute; right: 8px; top: 8px; width: 40px; height: 40px; object-fit: cover; }
+
+/* Instagram Android (2012) : même DA, police Roboto */
+.ig.android .ig-bar .txt, .ig.android .ig-meta, .ig.android .ig-head b { font-family: var(--and-font); }

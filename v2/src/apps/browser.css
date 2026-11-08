@@ -1,0 +1,38 @@
+.br-top { flex: 0 0 auto; background: linear-gradient(#cdd5df, #a3afbd); border-bottom: 1px solid #5d6b7c; padding: 2px 6px 6px; }
+.br-title { text-align: center; font: bold 13px var(--ios-font); color: #3c4a5a; text-shadow: 0 1px 0 rgba(255,255,255,.6); padding: 2px 0 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.br-fields { display: flex; gap: 6px; }
+.br-url { flex: 1; min-width: 0; display: flex; align-items: center; justify-content: space-between; gap: 4px; height: 30px; padding: 0 8px; border-radius: 6px; background: #fff;
+  border: 1px solid #7a8899; box-shadow: inset 0 1px 2px rgba(0,0,0,.3); font: 14px var(--ios-font); color: #333; }
+.br-url span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.br-q { flex: 0 0 90px; display: flex; align-items: center; gap: 4px; height: 30px; padding: 0 8px; border-radius: 15px; background: #fff; border: 1px solid #7a8899;
+  box-shadow: inset 0 1px 2px rgba(0,0,0,.3); font: 14px var(--ios-font); color: #999; }
+.br-page { flex: 1; min-height: 0; overflow-y: auto; background: #fff; }
+.br-tools { flex: 0 0 44px; display: flex; align-items: center; justify-content: space-around;
+  background: linear-gradient(#b2bfd0, #6d83a1); border-top: 1px solid #2d3642; box-shadow: inset 0 1px 0 rgba(255,255,255,.45); }
+.br-tools button { color: #fff; filter: drop-shadow(0 -1px 0 rgba(0,0,0,.5)); display: flex; padding: 6px 10px; }
+.br-tools button:disabled { opacity: .45; }
+.br-tabs-ic { width: 22px; height: 18px; border: 2px solid #fff; border-radius: 3px; font: bold 11px/14px var(--ios-font); text-align: center; }
+.br-google { padding: 10px 12px; font-family: Arial, sans-serif; }
+.br-glogo { font: bold 30px Arial, sans-serif; letter-spacing: -1px; text-align: center; }
+.br-gq { margin: 8px 0; padding: 6px 8px; border: 1px solid #ccc; box-shadow: inset 0 1px 2px rgba(0,0,0,.1); font-size: 15px; }
+.br-gtabs { display: flex; gap: 14px; padding: 4px 0 8px; border-bottom: 1px solid #ddd; font-size: 13px; color: #777; }
+.br-gtabs b { color: #dd4b39; }
+.br-res { padding: 10px 0; border-bottom: 1px solid #eee; }
+.br-res a { display: block; color: #1a0dab; font-size: 16px; text-decoration: underline; }
+.br-res cite { display: block; color: #006621; font-style: normal; font-size: 12px; margin: 2px 0; }
+.br-res p { font-size: 13px; color: #545454; }
+.br-site { padding: 0 0 20px; font-family: Georgia, serif; }
+.br-site-head { padding: 10px 12px; background: #2b4a66; color: #fff; font: bold 14px var(--ios-font); }
+.br-site h1 { padding: 14px 12px 4px; font-size: 22px; color: #222; }
+.br-lorem { padding: 0 12px; font: 12px var(--ios-font); color: #999; }
+.br-blocks { padding: 14px 12px; display: flex; flex-direction: column; gap: 8px; }
+.br-blocks i { display: block; height: 10px; width: 100%; background: #e8e8e8; border-radius: 2px; }
+.br-sheet { position: absolute; inset: 0; z-index: 30; display: flex; flex-direction: column; background: #fff; animation: up .28s ease-out; }
+.br-list { flex: 1; min-height: 0; overflow-y: auto; }
+.br-ic { font-size: 18px; }
+.br-add { color: #2470d8; }
+.br.android .br-top { background: #f2f2f2; border-bottom: 1px solid #ccc; padding: 6px; }
+.br-and { display: flex; align-items: center; gap: 6px; }
+.br-and .br-url { border-radius: 2px; box-shadow: none; border: 1px solid #ccc; font-family: var(--and-font); }
+.br-and button { font-size: 20px; color: #666; padding: 0 6px; }
+.br.android .br-tools { background: #222; border-top: 0; box-shadow: none; }
