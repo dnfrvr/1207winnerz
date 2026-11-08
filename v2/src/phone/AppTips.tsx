@@ -1,6 +1,6 @@
 // Visite guidée à la 1re ouverture d'une app (par navigateur, seulement pour qui peut modifier) :
 // l'écran s'assombrit sauf l'élément à toucher, un doigt fantôme y mime le geste, et une carte
-// pointe dessus. Étape sans cible visible (élément dans un sous-écran) : carte centrée, sans flèche.
+// pointe dessus. Étape sans cible visible (élément dans un sous-écran) : carte en bas, sans flèche.
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useCanEdit } from "../data/hooks";
 
@@ -108,8 +108,8 @@ export function AppTips({ pid, app }: { pid: string; app: string }) {
     const tick = () => {
       if (!ref.current) return;
       const b = locate(ref.current, step.slice(1));
-      // Étapes « @ » qui se suivent : si la cible de celle-ci manque (ex. fil sans bouton d'expéditeur), on saute à une suivante visible.
-      if (!b && waits && steps) for (let j = i + 1; steps[j]?.[1]?.startsWith("@"); j++) if (locate(ref.current, steps[j].slice(1))) { setI(j); return; }
+      // Cible absente (app ouverte dans un fil, fil sans bouton d'expéditeur…) : on saute à une étape suivante dont la cible est visible.
+      if (!b && step.length > 1 && steps) for (let j = i + 1; j < steps.length; j++) if (steps[j].length > 1 && locate(ref.current, steps[j].slice(1))) { setI(j); return; }
       setBox((o) => (JSON.stringify(o) === JSON.stringify(b) ? o : b));
     };
     tick(); const h = setInterval(tick, 250);
@@ -135,7 +135,7 @@ export function AppTips({ pid, app }: { pid: string; app: string }) {
       <svg className="at-shade" aria-hidden><path d={shade(ref.current, box, pad)} /></svg>
       {box && <div className="at-spot" style={{ left: box.x - pad, top: box.y - pad, width: box.w + pad * 2, height: box.h + pad * 2 }} />}
       {box && <span key={`f${i}`} className={`at-finger ${hold ? "hold" : "tap"}`} style={{ left: cx, top: box.y + box.h / 2 }} aria-hidden />}
-      <div key={i} className={`at-card ${box ? (below ? "below" : "above") : "middle"}`} style={cardStyle}>
+      <div key={i} className={`at-card ${box ? (below ? "below" : "above") : "free"}`} style={cardStyle}>
         {steps.length > 1 && <div className="at-progress" aria-hidden>{steps.map((_, k) => <i key={k} className={k <= i ? "on" : ""} />)}</div>}
         <p>{step[0]}</p>
         <div className="at-btns">

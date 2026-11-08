@@ -29,11 +29,12 @@
 - [x] **Vidéos de Glinda en double dans Supabase** : `s2dyy8` et `l7o0uj` supprimées le 2026-11-08 ;
   reste `1794159983692_vvfhws.mp4` (celle de `cameraVideo`, encore en HEVC — à renvoyer depuis l'iPhone
   pour qu'elle passe par la conversion, puis supprimer l'ancienne).
-- [x] **Guide de prise en main dans chaque app** : à la 1re ouverture d'une app (par navigateur,
-  seulement pour qui peut modifier), une bulle « Compris » en bas de l'écran (`v2/src/phone/AppTips.tsx`).
-  Texte propre à chaque app (relevé dans son code), pas de bulle là où rien ne se modifie (Appareil photo,
-  FaceTime, Shazam). Petites animations : carte qui monte, lignes en cascade, doigt animé (onde pour
-  « touche », anneau qui se remplit pour « appui long ») ; coupées si « réduire les animations ».
+- [x] **Guide de prise en main dans chaque app** (`v2/src/phone/AppTips.tsx`) : visite guidée à la
+  1re ouverture (par navigateur, seulement pour qui peut modifier), façon unlokmi.me/start : écran
+  assombri sauf l'élément à toucher, doigt fantôme qui mime le geste (toucher / maintenir), carte
+  fléchée avec progression, « Suivant » / « Passer ». Étapes propres à chaque app ; les étapes « @ »
+  attendent leur sous-écran (ex. fil de Messages) ; sans cible visible, carte en bas d'écran ;
+  aucune visite pour Appareil photo, FaceTime, Shazam.
 - [x] Pousser les commits locaux sur GitHub (`git push origin main`).
 
 ## À vérifier dans les données
@@ -41,6 +42,8 @@
 - [ ] Copie ancienne du fil Glinda ↔ Eoghan (rangée dans `legacy/charCopies/drew_sharedThreads`) :
   12 messages absents du fil principal.
 - [ ] Fil Glinda ↔ Eoghan : 1er message « je sais plus ton prénoZZZm » → modification accidentelle ?
+- [x] Message vide d'Elias dans « Losers + Winners » masqué (`deleted: true`) le 2026-11-08.
+- [ ] Message vide de Glinda dans « xX WiiNNERS Xx » (`threadMessages/group/k1784841509817`, 15 sep) : à supprimer ?
 - [ ] Conv « xX WiiNNERS Xx » de Glinda : 26 messages locaux en double (gardés dans `legacyLocalThread`).
 
 ## Dev
