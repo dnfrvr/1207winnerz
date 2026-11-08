@@ -41,3 +41,16 @@
 .os-android .mu-body .k-cell { border-bottom-color: #2a2a2a; }
 .os-android .mu-body .k-title { color: #eee; }
 .os-android .barbtn.now-btn { display: none; }
+
+/* Mini-lecteur (liste des chansons) */
+.mu-mini { position: relative; flex: 0 0 46px; display: flex; align-items: center; gap: 8px; padding: 0 6px; color: #fff; cursor: pointer;
+  background: linear-gradient(#4a4a4a, #1c1c1c); border-top: 1px solid #000; box-shadow: inset 0 1px 0 rgba(255,255,255,.18); }
+.mu-mini-bar { position: absolute; left: 0; top: 0; height: 2px; background: #3d9bff; }
+.android .mu-mini-bar { background: #33b5e5; }
+.mu-mini img, .mu-mini-noart { width: 36px; height: 36px; flex-shrink: 0; object-fit: cover; background: #333; display: flex; align-items: center; justify-content: center; }
+.mu-mini-txt { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.mu-mini-txt b, .mu-mini-txt small { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mu-mini-txt b { font: bold 13px var(--ios-font); }
+.mu-mini-txt small { font: 11px var(--ios-font); color: #aaa; }
+.android .mu-mini-txt b, .android .mu-mini-txt small { font-family: var(--and-font); }
+.mu-mini button { width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; color: #fff; }
