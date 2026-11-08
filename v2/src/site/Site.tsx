@@ -6,14 +6,13 @@ import { Link } from "react-router-dom";
 import { useData, useValue, useWriter } from "../data/hooks";
 import { img } from "../lib/img";
 import { LORE_DATE_DEFAULT } from "../phone/common";
-import { APP_META } from "../../../src/shared/app-meta.js";
+import { LockPreview } from "../phone/Phone";
 import "./site.css";
 
 export const PIDS = ["glinda", "eoghan", "drew", "elias"] as const;
-const META = APP_META as Record<string, { iosIcon?: string }>;
 
 type Profile = { name?: string; os?: string; avatar?: string | { src?: string }; accentColor?: string; phoneColor?: string; wallpaper?: string;
-  bio?: string; username?: string; appIcons?: Record<string, string> };
+  username?: string };
 const avatarOf = (p?: Profile) => (typeof p?.avatar === "string" ? p.avatar : p?.avatar?.src);
 
 /** Fenêtre au verre dépoli avec barre de titre et boutons ─ □ ✕ (décoratifs). */
@@ -45,35 +44,20 @@ export function Desktop({ children, taskbar }: { children: ReactNode; taskbar?: 
   );
 }
 
-/** Mini-téléphone : coque, fond d'écran, premières icônes de l'écran d'accueil. */
-function MiniPhone({ pid, p }: { pid: string; p?: Profile }) {
-  const home = useValue<{ apps?: string[]; dock?: string[] }>(`phones/${pid}/home`);
-  const ids = [...(home?.apps ?? []).filter((a) => !(home?.dock ?? []).includes(a)).slice(0, 16), ...(home?.dock ?? []).slice(0, 4)];
-  const android = p?.os === "android";
-  return (
-    <span className={`mini ${android ? "and" : "ios"} ${p?.phoneColor === "white" ? "white" : ""}`}>
-      <span className="mini-screen" style={{ backgroundImage: p?.wallpaper ? `url(${img(p.wallpaper)})` : undefined }}>
-        <span className="mini-status" />
-        <span className="mini-grid">
-          {ids.map((id, i) => (
-            <span key={id + i} className={`mini-ic ${i >= ids.length - Math.min(4, home?.dock?.length ?? 0) ? "dock" : ""}`}>
-              {p?.appIcons?.[id] ? <img src={img(p.appIcons[id])} alt="" loading="lazy" /> : <em>{META[id]?.iosIcon ?? "▪"}</em>}
-            </span>
-          ))}
-        </span>
-      </span>
-    </span>
-  );
-}
-
-function Contact({ pid, mine }: { pid: string; mine: boolean }) {
+/** Un téléphone de l'accueil : coque (couleur et système du perso) + son vrai écran de verrouillage. */
+function PhoneCard({ pid, mine }: { pid: string; mine: boolean }) {
   const p = useValue<Profile>(`phones/${pid}/profile`);
   const av = avatarOf(p);
+  const android = p?.os === "android";
   return (
-    <Link to={`/${pid}`} className={`w7-contact ${mine ? "mine" : ""}`}>
-      <span className="dp" style={{ ["--st" as string]: mine ? "#4ad94a" : "#f2b324" }}>{av ? <img src={img(av)} alt="" /> : <span>{(p?.name ?? pid)[0]}</span>}</span>
-      <span className="who"><b>{p?.name ?? pid}</b>{mine && <i>(moi)</i>}<small>{p?.bio || `@${p?.username ?? pid}`}</small></span>
-      <MiniPhone pid={pid} p={p} />
+    <Link to={`/${pid}`} className={`w7-phone ${mine ? "mine" : ""}`}>
+      <span className={`mini ${android ? "and" : "ios"} ${p?.phoneColor === "white" ? "white" : ""}`}>
+        <LockPreview pid={pid} width={android ? 112 : 104} />
+      </span>
+      <span className="w7-phone-name">
+        <span className="dp sm" style={{ ["--st" as string]: mine ? "#4ad94a" : "#f2b324" }}>{av ? <img src={img(av)} alt="" /> : <span>{(p?.name ?? pid)[0]}</span>}</span>
+        <b>{(p?.name ?? pid).split(" ")[0]}<span className="last">{(p?.name ?? "").split(" ").slice(1).map((w) => ` ${w}`).join("")}</span></b>
+      </span>
     </Link>
   );
 }
@@ -81,7 +65,7 @@ function Contact({ pid, mine }: { pid: string; mine: boolean }) {
 // ── Visite guidée (première visite) : démos animées de ce qu'on peut faire ─────
 const TOUR_KEY = "uma-v2-tour-seen";
 const STEPS: { title: string; text: string; demo: ReactNode }[] = [
-  { title: "Bienvenue dans ton téléphone", text: "Chaque joueur·se a le téléphone de son perso, en 2012. Clique sur le tien pour l'allumer, glisse pour déverrouiller.",
+  { title: "Bienvenue dans ton téléphone", text: "Chaque joueur·se a le téléphone de son perso. Clique sur le tien pour l'allumer, glisse pour déverrouiller.",
     demo: <span className="tour-phone"><span className="tour-slide"><i /></span></span> },
   { title: "Appui long pour modifier", text: "Sur ton téléphone, garde le doigt appuyé (ou clic droit) sur n'importe quoi : un message, une photo, une chanson… puis « Modifier ».",
     demo: <span className="tour-phone list"><b /><b className="hit" /><b /><span className="tour-finger" /><span className="tour-sheet"><i>Modifier</i><i className="red">Supprimer</i></span></span> },
@@ -129,12 +113,11 @@ export function Lobby({ me, account, admin }: { me: string | null; account: Reac
           <span className="dp big" style={{ ["--st" as string]: "#4ad94a" }}>{avatarOf(mine) ? <img src={img(avatarOf(mine)!)} alt="" /> : <span>{admin ? "MJ" : "?"}</span>}</span>
           <span className="who">
             <b>{mine?.name ?? (admin ? "Maître·sse du jeu" : "Invité·e")} <i className="st">(En ligne)</i></b>
-            <small>{mine?.bio || "Fall 2012 · quatre téléphones, quatre secrets"}</small>
           </span>
         </div>
         <div className="w7-account">{account}</div>
         <button className="w7-group" onClick={() => setOpen((o) => !o)} aria-expanded={open}>{open ? "▾" : "▸"} Téléphones ({PIDS.length})</button>
-        {open && <div className="w7-list">{PIDS.map((p, i) => <div key={p} style={{ animationDelay: `${i * 70}ms` }} className="w7-in"><Contact pid={p} mine={me === p} /></div>)}</div>}
+        {open && <div className="w7-grid">{PIDS.map((p, i) => <div key={p} style={{ animationDelay: `${i * 70}ms` }} className="w7-in"><PhoneCard pid={p} mine={me === p} /></div>)}</div>}
         <p className="w7-hint">Clique sur un téléphone pour l'ouvrir. Sur le tien, appui long (ou clic droit) sur n'importe quoi pour le modifier.</p>
       </Win>
     </Desktop>

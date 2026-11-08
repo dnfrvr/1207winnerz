@@ -9,7 +9,8 @@ import { ANDROID_APP_COLORS, ANDROID_LIGHT_BARS, NavDirCtx, useClock, useOS } fr
 
 export { LORE_DATE_DEFAULT, NavDirCtx, useClock, useLoreDate, type NavDir } from "./common";
 
-export function StatusBar({ variant = "opaque" }: { variant?: "opaque" | "translucent" | "clear" }) {
+/** `locked` : écran verrouillé d'iOS 6 — un cadenas remplace l'heure (déjà affichée en grand). */
+export function StatusBar({ variant = "opaque", locked = false }: { variant?: "opaque" | "translucent" | "clear"; locked?: boolean }) {
   const os = useOS();
   const time = useClock();
   const { saving } = useData();
@@ -21,7 +22,9 @@ export function StatusBar({ variant = "opaque" }: { variant?: "opaque" | "transl
         <span>AT&amp;T</span>
         {saving > 0 && <span className="spinner" title="Enregistrement…" />}
       </div>
-      <div className="time">{time}</div>
+      <div className="time">{locked
+        ? <svg width="9" height="12" viewBox="0 0 9 12" aria-label="Verrouillé"><path d="M2 5V3.5a2.5 2.5 0 0 1 5 0V5" fill="none" stroke="#fff" strokeWidth="1.4" /><rect x=".5" y="5" width="8" height="6.5" rx="1" fill="#fff" /></svg>
+        : time}</div>
       <div className="right"><span className="battery"><b style={{ width: "80%" }} /></span></div>
     </div>
   );

@@ -237,14 +237,19 @@ const bg = (wallpaper?: string): CSSProperties | undefined => {
 // ─── iOS 6 ─────────────────────────────────────────────────────────────────
 function Lock({ pid, profile }: { pid: string; profile: Profile }) {
   const nav = useNavigate();
-  const time = useClock();
+  const time = useClock(); // 24 h, comme le reste du téléphone
   const lore = useLoreDate();
   const day = lore.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
   return (
     <div className="lock" style={bg(profile.wallpaper)}>
-      <StatusBar variant="clear" />
+      <StatusBar variant="translucent" locked />
       <div className="lock-clock"><div className="t">{time}</div><div className="d">{day}</div></div>
-      <div className="lock-bottom"><SlideToUnlock onUnlock={() => nav(`/${pid}/home`)} /></div>
+      <div className="lock-bottom">
+        <SlideToUnlock onUnlock={() => nav(`/${pid}/home`)} />
+        <button className="lock-cam" aria-label="Appareil photo" onClick={() => nav(`/${pid}/camera`)}>
+          <svg width="22" height="17" viewBox="0 0 22 17" aria-hidden><path d="M7 1h8l1.6 2.4H20a1.5 1.5 0 0 1 1.5 1.5v9.6A1.5 1.5 0 0 1 20 16H2A1.5 1.5 0 0 1 .5 14.5V4.9A1.5 1.5 0 0 1 2 3.4h3.4z" fill="#d8d8d8" /><circle cx="11" cy="9.4" r="4" fill="#3a3a3a" /><circle cx="11" cy="9.4" r="2.6" fill="#777" /></svg>
+        </button>
+      </div>
     </div>
   );
 }
@@ -309,6 +314,23 @@ function Springboard({ pid, profile }: { pid: string; profile: Profile }) {
       <Pages ids={apps} per={PER_PAGE.ios} render={icon} />
       <div className="dock">{dock.map(icon)}</div>
     </div>
+  );
+}
+
+/** Aperçu (accueil du site) : le vrai écran de verrouillage du perso, réduit à `width` px de large. */
+export function LockPreview({ pid, width }: { pid: string; width: number }) {
+  const profile = useValue<Profile>(`phones/${pid}/profile`) ?? {};
+  const os: OS = profile.os === "android" ? "android" : "ios";
+  const scr = SCREENS[os];
+  const k = width / scr.w;
+  return (
+    <OSCtx.Provider value={os}>
+      <span className="lock-preview" style={{ width, height: Math.round(scr.h * k) }} aria-hidden>
+        <div className={`screen os-${os}`} ref={(el) => el?.setAttribute("inert", "")} style={{ width: scr.w, height: scr.h, transform: `scale(${k})`, transformOrigin: "0 0", ["--accent" as string]: profile.accentColor ?? "#33b5e5" }}>
+          {os === "android" ? <AndroidLock pid={pid} profile={profile} /> : <Lock pid={pid} profile={profile} />}
+        </div>
+      </span>
+    </OSCtx.Provider>
   );
 }
 

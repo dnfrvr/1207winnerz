@@ -72,13 +72,20 @@ textarea, input { font: inherit; color: inherit; }
 
 /* ─── Écran verrouillé ───────────────────────────────────────────────────── */
 .lock { position: absolute; inset: 0; display: flex; flex-direction: column; background-size: cover; background-position: center; }
+/* Barres de verre d'iOS 6 : reflet clair sur la moitié haute, noir translucide dessous */
 .lock-clock {
-  padding: 6px 0 10px; text-align: center; color: #fff; text-shadow: 0 -1px 0 rgba(0,0,0,.7);
-  background: linear-gradient(rgba(30,30,30,.55), rgba(0,0,0,.75)); border-bottom: 1px solid rgba(255,255,255,.12);
+  padding: 8px 0 9px; text-align: center; color: #fff; text-shadow: 0 -1px 0 rgba(0,0,0,.8);
+  background: linear-gradient(rgba(255,255,255,.2), rgba(255,255,255,.06) 50%, rgba(0,0,0,.1) 51%, rgba(0,0,0,.25)), rgba(0,0,0,.55);
+  border-top: 1px solid rgba(255,255,255,.18); border-bottom: 1px solid rgba(0,0,0,.6); box-shadow: 0 1px 0 rgba(255,255,255,.12);
 }
-.lock-clock .t { font: 200 64px/1 var(--ios-font); letter-spacing: -1px; }
-.lock-clock .d { font: bold 15px var(--ios-font); margin-top: 2px; }
-.lock-bottom { margin-top: auto; padding: 22px 20px 26px; background: linear-gradient(rgba(0,0,0,.5), rgba(0,0,0,.85)); border-top: 1px solid rgba(255,255,255,.12); }
+.lock-clock .t { font: 300 66px/1 "Helvetica Neue", var(--ios-font); letter-spacing: -1px; }
+.lock-clock .d { font: 400 16px "Helvetica Neue", var(--ios-font); margin-top: 3px; }
+.lock-bottom { margin-top: auto; display: flex; align-items: center; gap: 12px; padding: 24px 14px 26px;
+  background: linear-gradient(rgba(255,255,255,.16), rgba(255,255,255,.04) 50%, rgba(0,0,0,.1) 51%, rgba(0,0,0,.25)), rgba(0,0,0,.55);
+  border-top: 1px solid rgba(255,255,255,.2); box-shadow: inset 0 1px 0 rgba(0,0,0,.5); }
+.lock-bottom .slider { flex: 1; }
+.lock-cam { flex: 0 0 40px; height: 48px; display: flex; align-items: center; justify-content: center; border-radius: 9px;
+  background: linear-gradient(#5c5c5c, #2c2c2c 50%, #1e1e1e 51%, #333); box-shadow: inset 0 1px 0 rgba(255,255,255,.3), 0 0 0 1px #000; }
 .slider {
   position: relative; height: 48px; border-radius: 12px; overflow: hidden;
   background: linear-gradient(#1a1a1a, #2e2e2e); box-shadow: inset 0 1px 4px #000, 0 1px 0 rgba(255,255,255,.15);
