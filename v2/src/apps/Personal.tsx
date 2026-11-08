@@ -415,35 +415,93 @@ export function WikipediaApp({ pid }: { pid: string }) {
 }
 
 // ── Reddit (Alien Blue) ──────────────────────────────────────────────────────
-type RPost = { sub?: string; age?: string; pts?: string; comm?: number; saved?: boolean; title?: string; domain?: string; order?: number; deleted?: boolean };
+type RPost = { sub?: string; age?: string; pts?: string; comm?: number; saved?: boolean; title?: string; domain?: string; author?: string; body?: string; img?: string;
+  comments?: Record<string, RComment>; order?: number; deleted?: boolean };
+type RComment = { author?: string; pts?: string; age?: string; text?: string; depth?: number; order?: number; deleted?: boolean };
+const RD_FIELDS = ["title", "sub", "author", "domain", "body", "img", "pts", "comm", "age", "saved"];
+const RD_C_FIELDS = ["author", "text", "pts", "age", "depth"];
+const RD_DEPTH = ["#3b6e9f", "#e8743b", "#5aa05a", "#9b59b6", "#c0a020"];
 
 export function RedditApp({ pid }: { pid: string }) {
+  return (
+    <div className="app rd">
+      <StatusBar />
+      <Routes>
+        <Route index element={<RedditList pid={pid} />} />
+        <Route path="p/:id" element={<RedditPost pid={pid} />} />
+      </Routes>
+    </div>
+  );
+}
+
+function RedditList({ pid }: { pid: string }) {
   const nav = useNavigate();
   const path = `phones/${pid}/data/reddit`;
   const posts = useList<RPost>(path);
   const ed = useEditor(pid);
   const [sub, setSub] = useState("front");
   const subs = [...new Set(posts.map(([, p]) => p.sub).filter(Boolean))] as string[];
-  const rf = ["title", "sub", "domain", "pts", "comm", "age", "saved"];
   const shown = posts.filter(([, p]) => sub === "front" || (sub === "saved" ? p.saved : p.sub === sub));
   return (
-    <div className="app rd">
-      <StatusBar />
+    <>
       <Bar cls="rd-bar" title={sub === "front" ? "Front Page" : sub === "saved" ? "Saved" : sub} onBack={() => nav(`/${pid}/home`)}
-        right={ed.canEdit ? <button onClick={() => ed.add(path, { title: "", sub: "r/AskReddit", domain: "self.AskReddit", pts: "1", comm: 0, age: "1h", saved: false }, { atStart: true, title: "Post", fields: rf })}>＋</button> : undefined} />
+        right={ed.canEdit ? <button onClick={() => ed.add(path, { title: "", sub: "r/AskReddit", author: "", domain: "self.AskReddit", body: "", pts: "1", comm: 0, age: "1h", saved: false }, { atStart: true, title: "Post", fields: RD_FIELDS })}>＋</button> : undefined} />
       <div className="rd-subs">{["front", "saved", ...subs].map((s) => <button key={s} className={sub === s ? "on" : ""} onClick={() => setSub(s)}>{s === "front" ? "Front" : s === "saved" ? <><Glyph i={mdiStar} size={12} /> Saved</> : s}</button>)}</div>
       <div className="rd-scroll">
         {shown.map(([id, p], i) => (
-          <div key={id} className="rd-post" onContextMenu={(e) => { e.preventDefault(); ed.itemLong(path, id, { fields: rf, label: p.title })?.(); }}>
+          <div key={id} className="rd-post" onClick={() => nav(`p/${id}`)} onContextMenu={(e) => { e.preventDefault(); ed.itemLong(path, id, { fields: RD_FIELDS, label: p.title })?.(); }}>
             <span className="rd-rank">{i + 1}</span>
             <span className="rd-vote">▲<b>{p.pts}</b>▼</span>
             <span className="rd-body"><b>{p.title}</b><small>({p.domain})</small><span>{p.age} · {p.sub} · {p.comm} comments{p.saved && <> · <Glyph i={mdiStar} size={11} /></>}</span></span>
+            {p.img && <img className="rd-thumb" src={img(p.img)} alt="" loading="lazy" />}
           </div>
         ))}
         {shown.length === 0 && <Empty>Nothing here</Empty>}
       </div>
       {ed.ui}
-    </div>
+    </>
+  );
+}
+
+function RedditPost({ pid }: { pid: string }) {
+  const { id = "" } = useParams();
+  const nav = useNavigate();
+  const ppath = `phones/${pid}/data/reddit/${id}`;
+  const p = useValue<RPost>(ppath) ?? {};
+  const cpath = `${ppath}/comments`;
+  const comments = useList<RComment>(cpath);
+  const ed = useEditor(pid);
+  const [vote, setVote] = useState(0);
+  return (
+    <>
+      <Bar cls="rd-bar" title={p.sub ?? "Post"} backLabel="Back" onBack={() => nav(`/${pid}/reddit`)}
+        right={ed.canEdit ? <button aria-label="Ajouter un commentaire" onClick={() => ed.add(cpath, { author: "", text: "", pts: "1", age: "1h", depth: 0 }, { title: "Commentaire", fields: RD_C_FIELDS })}>＋</button> : undefined} />
+      <div className="rd-scroll">
+        <article className="rd-op" onContextMenu={(e) => { e.preventDefault(); ed.edit({ path: ppath, fields: RD_FIELDS, title: "Post" }); }}>
+          <div className="rd-op-head">
+            <span className="rd-vote big">
+              <button className={vote > 0 ? "up" : ""} onClick={() => setVote(vote > 0 ? 0 : 1)} aria-label="Upvote">▲</button>
+              <b>{p.pts}</b>
+              <button className={vote < 0 ? "down" : ""} onClick={() => setVote(vote < 0 ? 0 : -1)} aria-label="Downvote">▼</button>
+            </span>
+            <span className="rd-body"><b>{p.title}</b><small>({p.domain})</small>
+              <span>submitted {p.age} ago{p.author ? <> by <i className="rd-user">{p.author}</i></> : null} to {p.sub}</span></span>
+          </div>
+          {p.img && <img className="rd-op-img" src={img(p.img)} alt="" loading="lazy" />}
+          {p.body && <p className="rd-op-text">{p.body}</p>}
+          <div className="rd-op-foot"><Glyph i={mdiCommentOutline} size={13} /> {p.comm ?? comments.length} comments{p.saved && <> · <Glyph i={mdiStar} size={12} /> saved</>}</div>
+        </article>
+        {comments.map(([cid, c]) => (
+          <div key={cid} className="rd-com" style={{ marginLeft: Math.min(4, c.depth ?? 0) * 12, borderLeftColor: RD_DEPTH[(c.depth ?? 0) % RD_DEPTH.length] }}
+            onContextMenu={(e) => { e.preventDefault(); ed.itemLong(cpath, cid, { fields: RD_C_FIELDS, label: c.author, template: { author: "", text: "", pts: "1", age: "1h", depth: (c.depth ?? 0) + 1 } })?.(); }}>
+            <div className="rd-com-head"><b>{c.author}</b><span>{c.pts} points · {c.age}</span></div>
+            <p>{c.text}</p>
+          </div>
+        ))}
+        {comments.length === 0 && <div className="rd-empty">{ed.canEdit ? "Aucun commentaire : « ＋ » en ajoute un." : "No comments yet."}</div>}
+      </div>
+      {ed.ui}
+    </>
   );
 }
 

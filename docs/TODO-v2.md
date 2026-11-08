@@ -50,8 +50,8 @@
   les villes, l'ajout et °C/°F ; l'icône se choisit dans une liste.
 - [x] **GroupMe** (2026-11-08) : groupes cliquables, fil de discussion (avatars, cœurs « like », envoi en son
   nom, « + » pour le message de quelqu'un d'autre), photo de groupe.
-- [ ] **Messenger** : la liste ne s'ouvre pas — pas de fil de discussion.
-- [ ] **Reddit** : pas de page de post ni de commentaires.
+- [x] **Messenger** (2026-11-08) : conversations cliquables, fil façon Messenger 2012 (bulles, photos, envoi, « + » pour un message reçu).
+- [x] **Reddit** (2026-11-08) : page de post (texte, image, votes) et commentaires en arbre, modifiables.
 - [ ] **Rappels** : une seule liste, pas de listes multiples ni de date d'échéance affichée façon iOS 6.
 - [ ] **Passbook** : pas de dos de carte (code-barres, détails).
 - [ ] **Nike+** : pas de détail de course (carte, allure par km).

@@ -177,7 +177,7 @@ const LABELS: Record<string, string> = {
   current_temp: "Température", transcript: "Transcription", username: "Utilisateur", n: "Non lus", emoji: "Emoji", deleted: "Supprimé",
   lines: "Lignes (une par info)", coords: "Coordonnées", q: "Question", a: "Réponse", league: "Ligue", home: "Domicile", away: "Extérieur",
   hs: "Score domicile", as: "Score extérieur", status: "Statut", subtitle: "Sous-titre", detail: "Détail", color: "Couleur", logo: "Logo",
-  archived: "Archivé", pinned: "Épinglé", tall: "Grand format", label: "Libellé", subreddit: "Subreddit", score: "Score", points: "Points",
+  depth: "Niveau (0 = réponse au post)", me: "Envoyé par moi", archived: "Archivé", pinned: "Épinglé", tall: "Grand format", label: "Libellé", subreddit: "Subreddit", score: "Score", points: "Points",
 };
 const IMAGE_KEYS = /^(src|img|photo|cover|thumbImg|avatar|av|image|bannerImg|chAvatarImg|wallpaper)$/;
 const VIDEO_KEYS = /^(video|cameraVideo)$/;

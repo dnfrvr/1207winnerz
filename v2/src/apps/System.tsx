@@ -1,9 +1,9 @@
 // Apps système et utilitaires : Appareil photo (obturateur à iris d'iOS 6), Boussole, FaceTime,
 // Passbook, Rappels, Messenger.
 import { Glyph } from "../kit/glyph";
-import { mdiCamera, mdiCameraFlip, mdiCheck, mdiClose, mdiFlashAuto, mdiMicrophoneOff, mdiSquareEditOutline, mdiVideo, mdiWallet } from "@mdi/js";
+import { mdiCamera, mdiCameraFlip, mdiCheck, mdiClose, mdiFlashAuto, mdiMicrophoneOff, mdiPlus, mdiSquareEditOutline, mdiVideo, mdiWallet } from "@mdi/js";
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Route, Routes, useNavigate, useParams } from "react-router-dom";
 import { useList, useValue } from "../data/hooks";
 import { img } from "../lib/img";
 import { AppFrame, BackButton, BarBack, StatusBar } from "../phone/IOSChrome";
@@ -170,28 +170,100 @@ export function RemindersApp({ pid }: { pid: string }) {
 }
 
 // ── Messenger ────────────────────────────────────────────────────────────────
-type Conv = { name?: string; last?: string; time?: string; unread?: boolean; order?: number; deleted?: boolean };
+type Conv = { name?: string; avatar?: string; last?: string; time?: string; unread?: boolean; order?: number; deleted?: boolean };
+type MsnMsg = { from?: string; text?: string; time?: string; me?: boolean; img?: string; order?: number; deleted?: boolean };
+const MSN_FIELDS = ["name", "avatar", "last", "time", "unread"];
+const MSN_MSG_FIELDS = ["text", "img", "time", "me"];
+
 export function MessengerApp({ pid }: { pid: string }) {
+  return (
+    <div className="app msn">
+      <StatusBar />
+      <Routes>
+        <Route index element={<MessengerList pid={pid} />} />
+        <Route path="c/:cid" element={<MessengerChat pid={pid} />} />
+      </Routes>
+    </div>
+  );
+}
+
+function MessengerList({ pid }: { pid: string }) {
   const nav = useNavigate();
   const path = `phones/${pid}/data/messenger`;
   const list = useList<Conv>(path);
   const ed = useEditor(pid);
-  const fields = ["name", "last", "time", "unread"];
   return (
-    <div className="app msn">
-      <StatusBar />
+    <>
       <div className="msn-bar"><BarBack onClick={() => nav(`/${pid}/home`)} label="Accueil" /><h1>Messenger</h1>
-        <button disabled={!ed.canEdit} onClick={() => ed.add(path, { name: "", last: "", time: "", unread: true }, { atStart: true, title: "Conversation", fields })}><Glyph i={mdiSquareEditOutline} size={20} /></button></div>
+        <button aria-label="Nouvelle conversation" disabled={!ed.canEdit} onClick={() => ed.add(path, { name: "", last: "", time: "", unread: true }, { atStart: true, title: "Conversation", fields: MSN_FIELDS })}><Glyph i={mdiSquareEditOutline} size={20} /></button></div>
       <div className="msn-list">
         {list.map(([id, c]) => (
-          <button key={id} className={c.unread ? "unread" : ""} onContextMenu={(e) => { e.preventDefault(); ed.itemLong(path, id, { fields, label: c.name })?.(); }}>
-            <Avatar name={c.name} size={44} round={false} color="#3b5998" />
+          <button key={id} className={c.unread ? "unread" : ""} onClick={() => nav(`c/${id}`)}
+            onContextMenu={(e) => { e.preventDefault(); ed.itemLong(path, id, { fields: MSN_FIELDS, label: c.name })?.(); }}>
+            <Avatar src={c.avatar} name={c.name} size={44} round={false} color="#3b5998" />
             <span><span className="top"><b>{c.name}</b><i>{c.time}</i></span><span className="last">{c.last}</span></span>
+            <span className="chev" aria-hidden>›</span>
           </button>
         ))}
         {list.length === 0 && <Empty>No messages</Empty>}
       </div>
       {ed.ui}
-    </div>
+    </>
+  );
+}
+
+function MessengerChat({ pid }: { pid: string }) {
+  const { cid = "" } = useParams();
+  const nav = useNavigate();
+  const cpath = `phones/${pid}/data/messenger/${cid}`;
+  const c = useValue<Conv>(cpath) ?? {};
+  const mpath = `${cpath}/messages`;
+  const msgs = useList<MsnMsg>(mpath);
+  const me = useValue<string>(`phones/${pid}/profile/name`) ?? pid;
+  const av = useValue<string | { src?: string }>(`phones/${pid}/profile/avatar`);
+  const myAvatar = typeof av === "string" ? av : av?.src;
+  const ed = useEditor(pid);
+  const [draft, setDraft] = useState("");
+  // Conversation sans fil enregistré : on montre son dernier message, en lecture seule.
+  const shown: [string, MsnMsg][] = msgs.length ? msgs : c.last ? [["last", { text: c.last, time: c.time }]] : [];
+  const send = () => {
+    const text = draft.trim(); if (!text || !ed.canEdit) return;
+    const d = new Date(), time = `${d.getHours() % 12 || 12}:${String(d.getMinutes()).padStart(2, "0")}${d.getHours() < 12 ? "am" : "pm"}`;
+    const keep = !msgs.length && shown[0] ? { [`${mpath}/m0`]: { ...shown[0][1], me: false, order: 1000 } } : {};
+    const order = keep[`${mpath}/m0`] ? 2000 : (msgs[msgs.length - 1]?.[1].order ?? 0) + 1000;
+    ed.write({ ...keep, [`${mpath}/m${Date.now().toString(36)}`]: { from: me, me: true, text, time, order }, [`${cpath}/last`]: text, [`${cpath}/time`]: time });
+    setDraft("");
+  };
+  return (
+    <>
+      <div className="msn-bar"><BarBack onClick={() => nav(`/${pid}/messenger`)} label="Messages" /><h1 className="msn-title">{c.name}</h1>
+        <span className="msn-bar-av"><Avatar src={c.avatar} name={c.name} size={30} round={false} color="#2d4373" /></span></div>
+      <div className="msn-chat">
+        {shown.map(([id, m], i) => {
+          const next = shown[i + 1]?.[1];
+          const tail = !next || !!next.me !== !!m.me; // avatar seulement en bas d'une série
+          return (
+            <div key={id} className={`msn-row ${m.me ? "me" : ""}`}
+              onContextMenu={id === "last" ? undefined : (e) => { e.preventDefault(); ed.itemLong(mpath, id, { fields: MSN_MSG_FIELDS, label: m.text?.slice(0, 20), template: { text: "", time: "", me: false } })?.(); }}>
+              {!m.me && (tail ? <Avatar src={c.avatar} name={c.name} size={28} round={false} color="#3b5998" /> : <span className="msn-gap" />)}
+              <div className="msn-bubble">
+                {m.text && <p>{m.text}</p>}
+                {m.img && <img src={img(m.img)} alt="" loading="lazy" />}
+                {tail && <small>{m.time}</small>}
+              </div>
+              {m.me && (tail ? <Avatar src={myAvatar} name={me} size={28} round={false} /> : <span className="msn-gap" />)}
+            </div>
+          );
+        })}
+        {shown.length === 0 && <Empty>No messages yet</Empty>}
+      </div>
+      <form className="msn-compose" onSubmit={(e) => { e.preventDefault(); send(); }}>
+        <button type="button" className="msn-attach" aria-label="Ajouter un message reçu" disabled={!ed.canEdit}
+          onClick={() => ed.add(mpath, { text: "", time: "", me: false }, { title: `Message de ${c.name ?? ""}`, fields: MSN_MSG_FIELDS })}><Glyph i={mdiPlus} size={18} /></button>
+        <input value={draft} onChange={(e) => setDraft(e.target.value)} placeholder="Write a message..." disabled={!ed.canEdit} />
+        <button type="submit" className="msn-send" disabled={!ed.canEdit || !draft.trim()}>Send</button>
+      </form>
+      {ed.ui}
+    </>
   );
 }

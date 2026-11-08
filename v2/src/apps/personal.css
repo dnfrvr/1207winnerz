@@ -130,6 +130,25 @@
 .rd-body b { font: bold 14px/1.25 var(--ios-font); color: #1f3d5a; }
 .rd-body small { font: 10px var(--ios-font); color: #999; }
 .rd-body span { font: 11px var(--ios-font); color: #7b8fa3; }
+.rd-post { cursor: pointer; align-items: flex-start; }
+.rd-thumb { flex: none; width: 52px; height: 52px; object-fit: cover; border-radius: 3px; border: 1px solid #ccd5df; }
+/* Page de post (Alien Blue) : post en tête, commentaires en arbre avec barre de couleur par niveau */
+.rd-op { padding: 10px 8px; background: #fff; border-bottom: 1px solid #b7c4d2; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+.rd-op-head { display: flex; gap: 8px; }
+.rd-vote.big { flex-basis: 36px; font-size: 14px; }
+.rd-vote.big button { color: #b7c4d2; font-size: 15px; line-height: 1; padding: 2px; }
+.rd-vote.big button.up { color: #ff8b60; }
+.rd-vote.big button.down { color: #9494ff; }
+.rd-vote.big b { font-size: 12px; }
+.rd-user { font-style: normal; color: #3b6e9f; }
+.rd-op-img { display: block; width: 100%; margin-top: 8px; border-radius: 4px; border: 1px solid #dde3ea; }
+.rd-op-text { margin: 8px 0 0; padding: 8px 10px; font: 13px/1.45 var(--ios-font); color: #333; background: #f5f8fb; border: 1px solid #dde3ea; border-radius: 4px; white-space: pre-wrap; }
+.rd-op-foot { display: flex; align-items: center; gap: 4px; margin-top: 8px; font: bold 11px var(--ios-font); color: #7b8fa3; }
+.rd-com { margin: 6px 6px 0; padding: 6px 8px; background: #fff; border-left: 3px solid #3b6e9f; border-radius: 2px; box-shadow: 0 1px 0 #dde3ea; }
+.rd-com-head { display: flex; gap: 6px; align-items: baseline; font: 11px var(--ios-font); color: #8a9aab; }
+.rd-com-head b { color: #3b6e9f; font-size: 12px; }
+.rd-com p { margin: 3px 0 0; font: 13px/1.4 var(--ios-font); color: #222; overflow-wrap: anywhere; }
+.rd-empty { padding: 24px 16px; text-align: center; font: 13px var(--ios-font); color: #8a9aab; }
 
 /* VPN */
 .vp { background: #eceff3; }
