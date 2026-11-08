@@ -5,7 +5,8 @@ import { useNavigate } from "react-router-dom";
 import { useList, useValue } from "../data/hooks";
 import type { Json } from "../data/store";
 import { img } from "../lib/img";
-import { AppFrame, BackButton, StatusBar } from "../phone/IOSChrome";
+import { AppFrame, BackButton, BarBack, StatusBar } from "../phone/IOSChrome";
+import { Press } from "./social";
 import { useOS } from "../phone/common";
 import { AddButton, Avatar, Empty, useEditor } from "../kit/kit";
 import { Icon } from "../kit/icons";
@@ -120,17 +121,18 @@ export function PassbookApp({ pid }: { pid: string }) {
   return (
     <div className="app pb">
       <StatusBar />
-      <div className="pb-top"><button onClick={() => nav(`/${pid}/home`)}>‹</button><span>Passbook</span>
+      <div className="pb-top"><BarBack onClick={() => nav(`/${pid}/home`)} label="Accueil" /><span>Passbook</span>
         {ed.canEdit ? <button onClick={() => { materialize(); ed.add(path, { title: "", subtitle: "", detail: "", color: "#555", logo: "🎟" }, { title: "Pass", fields }); }}>+</button> : <span />}</div>
       <div className="pb-stack">
         {rows.map(([id, p], i) => (
-          <button key={id} className={`pb-pass ${open === id ? "open" : ""}`} style={{ background: `linear-gradient(${p.color ?? "#555"}, color-mix(in srgb, ${p.color ?? "#555"} 70%, #000))`, zIndex: i, marginTop: i === 0 ? 0 : open === id ? 10 : -86 }}
+          // La carte qui suit une carte ouverte se décale sous elle, sinon elle cache son code-barres.
+          <Press as="button" key={id} className={`pb-pass ${open === id ? "open" : ""}`} style={{ background: `linear-gradient(${p.color ?? "#555"}, color-mix(in srgb, ${p.color ?? "#555"} 70%, #000))`, zIndex: i, marginTop: i === 0 ? 0 : rows[i - 1][0] === open ? 10 : -86 }}
             onClick={() => setOpen(open === id ? null : id)}
-            onContextMenu={(e) => { if (ed.canEdit) { e.preventDefault(); materialize(); if (!id.startsWith("d")) ed.itemLong(path, id, { fields, label: p.title })?.(); } }}>
+            onLong={ed.canEdit ? () => { materialize(); ed.itemLong(path, list.length ? id : `p${i}`, { fields, label: p.title })?.(); } : undefined}>
             <span className="pb-head"><span className="pb-logo">{p.logo}</span><b>{p.title}</b></span>
             <span className="pb-body"><small>{p.subtitle}</small><b>{p.detail}</b></span>
             <span className="pb-code" aria-hidden>{Array.from({ length: 30 }, (_, k) => <i key={k} style={{ width: (k * 5) % 3 + 1 }} />)}</span>
-          </button>
+          </Press>
         ))}
       </div>
       {ed.ui}
@@ -174,7 +176,7 @@ export function MessengerApp({ pid }: { pid: string }) {
   return (
     <div className="app msn">
       <StatusBar />
-      <div className="msn-bar"><button onClick={() => nav(`/${pid}/home`)}>‹</button><h1>Messenger</h1>
+      <div className="msn-bar"><BarBack onClick={() => nav(`/${pid}/home`)} label="Accueil" /><h1>Messenger</h1>
         <button disabled={!ed.canEdit} onClick={() => ed.add(path, { name: "", last: "", time: "", unread: true }, { atStart: true, title: "Conversation", fields })}>✎</button></div>
       <div className="msn-list">
         {list.map(([id, c]) => (

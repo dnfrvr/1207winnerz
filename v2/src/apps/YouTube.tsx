@@ -2,10 +2,10 @@
 // liste de vidéos à vignettes, page de lecture noire avec le bouton lecture rouge.
 // Android (YouTube 4.x, 2012) : barre d'action Holo sombre avec le logo, police Roboto.
 import { Route, Routes, useNavigate, useParams } from "react-router-dom";
-import { mdiChevronLeft, mdiMagnify, mdiMenu, mdiPlay, mdiPlus, mdiShareVariant, mdiThumbDown, mdiThumbUp } from "@mdi/js";
+import { mdiMagnify, mdiPlay, mdiPlus, mdiShareVariant, mdiThumbDown, mdiThumbUp } from "@mdi/js";
 import { useList, useValue } from "../data/hooks";
 import { img } from "../lib/img";
-import { StatusBar } from "../phone/IOSChrome";
+import { BarBack, StatusBar } from "../phone/IOSChrome";
 import { useOS } from "../phone/common";
 import { Empty, useEditor } from "../kit/kit";
 import { Glyph } from "../kit/glyph";
@@ -32,7 +32,7 @@ function Bar({ back, guide, right }: { back: string; guide?: boolean; right?: Re
   if (os === "android") return <HoloBar color="#262626" onUp={() => nav(back)} icon={<Logo />} actions={<><button aria-label="Rechercher"><Glyph i={mdiMagnify} size={24} /></button>{right}</>} />;
   return (
     <div className="yt-bar">
-      <button onClick={() => nav(back)} aria-label="Retour" className="yt-bbtn">{guide ? <Glyph i={mdiMenu} size={20} /> : <Glyph i={mdiChevronLeft} size={22} />}</button>
+      <BarBack onClick={() => nav(back)} label={guide ? "Accueil" : "Vidéos"} />
       <h1><Logo /></h1>
       <span className="yt-r">{right ?? <button className="yt-bbtn" aria-label="Rechercher"><Glyph i={mdiMagnify} size={20} /></button>}</span>
     </div>

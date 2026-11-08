@@ -52,7 +52,7 @@
 .os-android .page { grid-auto-rows: minmax(76px, 84px); padding-top: 12px; }
 .os-android .icon .tile { width: 54px; height: 54px; border-radius: 0; background: transparent; box-shadow: none; overflow: visible; font-size: 34px; }
 .os-android .icon .tile::after { display: none; }
-.os-android .icon .tile img { object-fit: contain; filter: drop-shadow(0 2px 3px rgba(0,0,0,.6)); border-radius: 10px; }
+.os-android .icon .tile img { object-fit: contain; filter: drop-shadow(0 2px 3px rgba(0,0,0,.6)); border-radius: 0; }
 .os-android .icon .name { font: 400 11px var(--and-font); text-shadow: 0 1px 2px #000, 0 0 4px rgba(0,0,0,.8); }
 .os-android .badge { top: -4px; right: -6px; min-width: 20px; height: 20px; border: 0; border-radius: 10px; background: #e53935; box-shadow: 0 1px 2px rgba(0,0,0,.5); font: 700 11px/20px var(--and-font); }
 .os-android .dots i { width: 7px; height: 7px; border-radius: 0; background: rgba(255,255,255,.35); }

@@ -39,13 +39,16 @@ Fait : Mail au lieu de Gmail sur iPhone (migration) ; bouton retour unique `BarB
 teintée / Android « Up ») branché sur Instagram, Snapchat, GroupMe, Plans, Musique, Personal (Grindr…VPN),
 Pinterest, Tumblr, Twitter.
 
+Fait le 2026-11-08 (2e passe) : `BarBack` sur Kik, Vine, YouTube, Messenger, Passbook (Boussole garde
+son « Done » d'époque) ; icônes Android carrées ; Passbook (la carte suivant une carte ouverte cachait
+son code-barres, appui long au doigt) ; horloges mondiales modifiables / ajoutables (`data/worldClocks`)
+et alarmes par défaut modifiables ; rayures de l'iPhone d'Elias ; l'écran ne défile plus quand un
+champ d'édition prend le focus (`overflow: clip`).
+
 Reste :
-- [ ] Bouton retour : vérifier visuellement + restes (Kik/Vine, YouTube, Messenger, Passbook, Boussole)
-- [ ] Icônes Android toutes carrées (`.os-android .icon .tile img` a encore un border-radius)
 - [ ] ask.fm, ESPN, Polyvore ne sont pas des jeux → vraies apps (comme Kik/Vine)
-- [ ] Passbook : clic sur les cartes buggé
-- [ ] Tout doit être éditable par le joueur (ex. horloges mondiales : modifier / ajouter)
-- [ ] Rayures « d'occasion » sur le téléphone d'Elias (perdues dans la v2 : chassisPng `__iphone4__`)
+- [ ] Tout doit être éditable par le joueur : passer les autres apps en revue (valeurs par défaut
+  codées en dur non éditables, comme l'étaient les horloges)
 - [ ] Musique : mini-lecteur sur la liste des chansons ; lecture réelle via Deezer (extraits)
 - [ ] SoundCloud et iNaturalist beaucoup plus réalistes
 - [ ] Connexion par identifiant au lieu d'e-mail

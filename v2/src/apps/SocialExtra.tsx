@@ -7,11 +7,11 @@
 //          phones/{pid}/data/vineProfile                  { name, bio, avatar, followers, following }
 import { useEffect, useRef, useState } from "react";
 import { Route, Routes, useNavigate, useParams } from "react-router-dom";
-import { mdiAccount, mdiCamera, mdiChevronLeft, mdiChevronRight, mdiCommentOutline, mdiDotsHorizontal, mdiHeart, mdiHeartOutline, mdiHome, mdiMenu,
+import { mdiAccount, mdiCamera, mdiChevronRight, mdiCommentOutline, mdiDotsHorizontal, mdiHeart, mdiHeartOutline, mdiHome, mdiMenu,
   mdiPencil, mdiPlus, mdiRepeat, mdiSwapHorizontal, mdiTrendingUp } from "@mdi/js";
 import { useList, useValue, useWriter } from "../data/hooks";
 import { img } from "../lib/img";
-import { StatusBar } from "../phone/IOSChrome";
+import { BarBack, StatusBar } from "../phone/IOSChrome";
 import { useOS } from "../phone/common";
 import { Avatar, Empty, useEditor } from "../kit/kit";
 import { Brand, Glyph } from "../kit/glyph";
@@ -49,7 +49,7 @@ function KikBar({ title, onBack, backLabel, right }: { title?: React.ReactNode; 
   if (os === "android") return <HoloBar color={KIK_GREEN} onUp={onBack} icon={title ? undefined : <Brand name="kik" size={30} color="#fff" />} title={title ?? "Kik Messenger"} actions={right} />;
   return (
     <div className="kk-bar">
-      <button className="kk-btn back" onClick={onBack}>{backLabel}</button>
+      <span className="kk-back"><BarBack onClick={onBack} label={backLabel} tone="light" /></span>
       <h1>{title ?? <Brand name="kik" size={44} color={KIK_GREEN} />}</h1>
       <span className="kk-side">{right}</span>
     </div>
@@ -189,7 +189,7 @@ export function VineApp({ pid }: { pid: string }) {
           </>} />
       ) : (
         <div className="vn-bar">
-          <button className="vn-ic" onClick={() => (tab === "home" ? nav(`/${pid}/home`) : go("home"))} aria-label="Retour"><Glyph i={mdiChevronLeft} size={24} /></button>
+          <BarBack onClick={() => (tab === "home" ? nav(`/${pid}/home`) : go("home"))} label={tab === "home" ? "Accueil" : "Vine"} />
           <button className="vn-ic" onClick={() => setMenu((m) => !m)} aria-label="Menu"><Glyph i={mdiMenu} size={22} /></button>
           <h1>{title ?? <span className="vn-word">Vine</span>}</h1>
           <button className="vn-ic cam" onClick={newPost} disabled={!ed.canEdit} aria-label="Filmer"><Glyph i={mdiCamera} size={22} /></button>

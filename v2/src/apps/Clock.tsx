@@ -5,6 +5,7 @@ import type { Json } from "../data/store";
 import { AppFrame, BackButton } from "../phone/IOSChrome";
 import { useNow, useOS } from "../phone/common";
 import { AddButton, Cell, Plain, Switch, TabBar, useEditor, type Tab } from "../kit/kit";
+import { Press } from "./social";
 import "./clock.css";
 
 const TABS: Tab[] = [
@@ -14,7 +15,8 @@ const TABS: Tab[] = [
   { id: "timer", label: "Timer", icon: "timer" },
 ];
 // Fuseaux de la fiction (Augusta, Maine = heure de l'Est en octobre 2012 → UTC-4).
-const CITIES: { name: string; off: number }[] = [
+type City = { name?: string; off?: number; order?: number; deleted?: boolean };
+const CITIES: City[] = [
   { name: "Augusta", off: -4 }, { name: "Chicago", off: -5 }, { name: "Cupertino", off: -7 }, { name: "Paris", off: 2 }, { name: "Tokyo", off: 9 },
 ];
 type Alarm = { time?: string; label?: string; on?: boolean; order?: number; deleted?: boolean };
@@ -27,11 +29,12 @@ export default function ClockApp({ pid }: { pid: string }) {
   const ed = useEditor(pid);
   return (
     <AppFrame title={TABS.find((t) => t.id === tab)?.label} left={<BackButton to={`/${pid}/home`} label="Accueil" />}
-      right={tab === "alarm" ? <AddButton show={ed.canEdit} onClick={() => ed.add(`phones/${pid}/data/alarms`, { time: "08:00", label: "Alarm", on: true }, { title: "Nouvelle alarme", fields: ["time", "label", "on"] })} /> : undefined}
+      right={tab === "alarm" ? <AddButton show={ed.canEdit} onClick={() => ed.add(`phones/${pid}/data/alarms`, { time: "08:00", label: "Alarm", on: true }, { title: "Nouvelle alarme", fields: ["time", "label", "on"] })} />
+        : tab === "world" ? <AddButton show={ed.canEdit} onClick={() => ed.add(`phones/${pid}/data/worldClocks`, { name: "", off: 0 }, { title: "Nouvelle ville", fields: CITY_FIELDS })} /> : undefined}
       bodyClass={`k-body-tabbed clk ${os}`}>
       <TabBar tabs={TABS} active={tab} onChange={setTab} />
       <div className="k-tab-scroll">
-        {tab === "world" && <World />}
+        {tab === "world" && <World pid={pid} ed={ed} />}
         {tab === "alarm" && <Alarms pid={pid} ed={ed} />}
         {tab === "stopwatch" && <Stopwatch />}
         {tab === "timer" && <Timer />}
@@ -53,22 +56,36 @@ function Face({ h, m, night }: { h: number; m: number; night: boolean }) {
   );
 }
 
-function World() {
+/** Valeurs par défaut écrites dans la base (sous les ids `${prefix}${i}`) au premier changement. */
+function seedPatches<T extends object>(path: string, prefix: string, defaults: T[]): Record<string, Json> {
+  return Object.fromEntries(defaults.map((d, i) => [`${path}/${prefix}${i}`, { ...d, order: (i + 1) * 1000 } as Json]));
+}
+
+const CITY_FIELDS = ["name", "off"];
+
+function World({ pid, ed }: { pid: string; ed: ReturnType<typeof useEditor> }) {
   const now = useNow(1000 * 20);
+  const path = `phones/${pid}/data/worldClocks`;
+  const list = useList<City>(path);
+  const rows: [string, City][] = list.length ? list : CITIES.map((c, i) => [`c${i}`, c]);
   const utc = now.getTime() + now.getTimezoneOffset() * 60_000;
+  const edit = (id: string, label?: string) => {
+    if (!list.length) ed.write(seedPatches(path, "c", CITIES));
+    ed.itemLong(path, id, { fields: CITY_FIELDS, label })?.();
+  };
   return (
     <Plain className="clk-world">
-      {CITIES.map((c) => {
-        const t = new Date(utc + c.off * 3600_000);
+      {rows.map(([id, c]) => {
+        const t = new Date(utc + Number(c.off ?? 0) * 3600_000);
         const h = t.getHours(), m = t.getMinutes();
         const night = h < 6 || h >= 19;
         const dayDiff = t.getDate() - new Date(utc - 4 * 3600_000).getDate();
         return (
-          <div key={c.name} className="clk-row">
+          <Press key={id} className="clk-row" onLong={ed.canEdit ? () => edit(id, c.name) : undefined}>
             <Face h={h} m={m} night={night} />
             <div className="clk-city"><b>{c.name}</b><span>{dayDiff === 0 ? "Today" : dayDiff > 0 ? "Tomorrow" : "Yesterday"}</span></div>
             <div className="clk-time">{t.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}</div>
-          </div>
+          </Press>
         );
       })}
     </Plain>
@@ -78,21 +95,24 @@ function World() {
 function Alarms({ pid, ed }: { pid: string; ed: ReturnType<typeof useEditor> }) {
   const list = useList<Alarm>(`phones/${pid}/data/alarms`);
   const path = `phones/${pid}/data/alarms`;
-  const rows: [string, Alarm][] = list.length ? list : DEFAULT_ALARMS.map((a, i) => [`default${i}`, a]);
-  // Alarmes par défaut : écrites dans la base au premier changement.
+  const rows: [string, Alarm][] = list.length ? list : DEFAULT_ALARMS.map((a, i) => [`a${i}`, a]);
   const toggle = (id: string, on: boolean) => {
-    if (id.startsWith("default")) {
-      const patches: Record<string, Json> = {};
-      DEFAULT_ALARMS.forEach((a, i) => { patches[`${path}/a${i}`] = { ...a, on: `default${i}` === id ? on : !!a.on, order: (i + 1) * 1000 } as Json; });
+    if (!list.length) {
+      const patches = seedPatches(path, "a", DEFAULT_ALARMS);
+      patches[`${path}/${id}`] = { ...(patches[`${path}/${id}`] as object), on };
       ed.write(patches);
     } else ed.write({ [`${path}/${id}/on`]: on });
+  };
+  const edit = (id: string, label?: string) => {
+    if (!list.length) ed.write(seedPatches(path, "a", DEFAULT_ALARMS));
+    ed.itemLong(path, id, { fields: ["time", "label", "on"], label })?.();
   };
   return (
     <Plain className="clk-alarms">
       {rows.map(([id, a]) => (
         <Cell key={id} title={<span className="clk-al-time">{a.time}</span>} subtitle={a.label}
           accessory={<Switch on={!!a.on} onChange={ed.canEdit ? (v) => toggle(id, v) : undefined} />}
-          onLong={id.startsWith("default") ? undefined : ed.itemLong(path, id, { fields: ["time", "label", "on"] })} />
+          onLong={ed.canEdit ? () => edit(id, a.label) : undefined} />
       ))}
     </Plain>
   );

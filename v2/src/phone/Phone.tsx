@@ -59,6 +59,7 @@ export function Phone() {
             <div className={`device ${os === "android" ? "android" : ""} ${profile.phoneColor === "black" || os === "android" ? "dark" : ""}`}>
               {screen(null)}
               {os === "ios" ? <HomeButton pid={pid} /> : <HardwareKeys pid={pid} os={os} inline />}
+              {profile.chassisPng === "__iphone4__" && <Scratches />}
             </div>
           )}
         </div>
@@ -87,6 +88,22 @@ function ChassisDevice({ pid, profile, render }: { pid: string; profile: Profile
       <button className="hotspot" aria-label="Retour" style={{ left: "70%", top: "89.3%", width: "14%", height: "4.6%" }} onClick={keys.back} />
       <button className="hotspot" aria-label="Menu" style={{ left: "16%", top: "89.3%", width: "14%", height: "4.6%" }} onClick={() => {}} />
     </div>
+  );
+}
+
+// Rayures « d'occasion » de l'iPhone d'Elias (reprises de la v1, repère 223.6×412.6 de l'ancienne coque).
+// [x1, y1, x2, y2, opacité, épaisseur] — coque d'abord, puis verre de l'écran (plus discret).
+const CHASSIS_SCRATCHES = [[18,42,27,68,.55,.4],[96,38,103,43,.4,.3],[200,155,206,178,.35,.35],[202,160,207,168,.25,.25],[88,360,102,368,.45,.4],
+  [140,372,148,378,.3,.3],[16,210,20,218,.3,.25],[14,213,17,220,.2,.2],[192,385,204,396,.5,.45],[195,388,201,393,.3,.25],[155,34,162,40,.35,.3],
+  [22,310,26,325,.4,.3],[19,140,24,152,.3,.25],[198,280,208,290,.4,.35],[60,375,72,380,.35,.3],[170,390,176,398,.3,.25]];
+const GLASS_SCRATCHES = [[55,110,72,118,.9,.35],[130,155,141,160,.8,.3],[80,220,88,230,.85,.25],[160,240,170,248,.7,.3],[45,290,58,296,.8,.25],[110,305,116,312,.6,.2]];
+function Scratches() {
+  const lines = (list: number[][]) => list.map(([x1, y1, x2, y2, o, w], i) => <line key={i} x1={x1} y1={y1} x2={x2} y2={y2} stroke={`rgba(255,255,255,${o})`} strokeWidth={w} strokeLinecap="round" />);
+  return (
+    <svg className="scratches" viewBox="0 0 223.591 412.584" preserveAspectRatio="none" aria-hidden>
+      <g opacity=".6">{lines(CHASSIS_SCRATCHES)}</g>
+      <g opacity=".18">{lines(GLASS_SCRATCHES)}</g>
+    </svg>
   );
 }
 

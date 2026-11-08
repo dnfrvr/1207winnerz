@@ -161,7 +161,7 @@ export function Splash({ title, subtitle, background, logo, color = "#fff", onTa
 // « Modifier » ouvre un formulaire natif listant les champs simples de l'élément.
 
 const LABELS: Record<string, string> = {
-  title: "Titre", name: "Nom", text: "Texte", body: "Contenu", time: "Heure", date: "Date", artist: "Artiste",
+  title: "Titre", name: "Nom", off: "Décalage UTC (heures)", text: "Texte", body: "Contenu", time: "Heure", date: "Date", artist: "Artiste",
   album: "Album", duration: "Durée", dur: "Durée", caption: "Légende", location: "Lieu", likes: "J'aime", comments: "Commentaires",
   src: "Image (URL)", img: "Image (URL)", photo: "Photo (URL)", cover: "Pochette (URL)", thumbImg: "Miniature (URL)", avatar: "Avatar (URL)",
   url: "Adresse", contact: "Contact", phone: "Téléphone", type: "Type", from: "De", subj: "Objet", preview: "Aperçu", unread: "Non lu",
