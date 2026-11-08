@@ -198,3 +198,6 @@
 .tour-four i:nth-child(2) { animation-delay: .8s; } .tour-four i:nth-child(3) { animation-delay: 1.6s; } .tour-four i:nth-child(4) { animation-delay: 2.4s; }
 @keyframes tour-peek { 0%, 20%, 100% { transform: none; } 10% { transform: translateY(-6px) rotate(-4deg); } }
 @media (prefers-reduced-motion: reduce) { .tour-demo * { animation: none !important; } .tour-sheet { transform: none; } }
+.w7-fs textarea { padding: 4px 6px; border: 1px solid #abadb3; border-top-color: #e3e9ef; border-radius: 2px; font: 13px var(--w7-font); resize: vertical; }
+.w7-fs .y2k-btn { align-self: flex-start; padding: 5px 22px; }
+.w7-ok { font: 12px var(--w7-font); color: #2a7a1a; }
