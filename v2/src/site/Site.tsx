@@ -1,6 +1,6 @@
 // Interface du site (hors téléphones) : bureau Aero de 2009, fenêtre façon messagerie instantanée
 // (les 4 persos en « contacts », avec leurs mini-téléphones), barre des tâches dont l'horloge
-// donne la date de lore, et « Panneau de configuration » pour le MJ (date de lore, téléphones).
+// donne la date de lore, et « Panneau de configuration » pour le MDJ (date de lore, téléphones).
 import { useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { useData, useValue, useWriter } from "../data/hooks";
@@ -110,7 +110,7 @@ export function Lobby({ me, account, admin }: { me: string | null; account: Reac
       {tour && <Tour onClose={closeTour} />}
       <Win title="#WhatsInOurPhones — University of Maine at Augusta" className="w7-msn">
         <div className="w7-me">
-          <span className="dp big" style={{ ["--st" as string]: "#4ad94a" }}>{avatarOf(mine) ? <img src={img(avatarOf(mine)!)} alt="" /> : <span>{admin ? "MJ" : "?"}</span>}</span>
+          <span className="dp big" style={{ ["--st" as string]: "#4ad94a" }}>{avatarOf(mine) ? <img src={img(avatarOf(mine)!)} alt="" /> : <span>{admin ? "MDJ" : "?"}</span>}</span>
           <span className="who">
             <b>{mine?.name ?? (admin ? "Maître·sse du jeu" : "Invité·e")} <i className="st">(En ligne)</i></b>
           </span>
@@ -124,7 +124,7 @@ export function Lobby({ me, account, admin }: { me: string | null; account: Reac
   );
 }
 
-// ── Panneau de configuration (MJ) ────────────────────────────────────────────
+// ── Panneau de configuration (MDJ) ────────────────────────────────────────────
 const PHONE_FIELDS: { key: keyof Profile; label: string; type?: string; options?: string[] }[] = [
   { key: "name", label: "Nom" }, { key: "username", label: "Pseudo" }, { key: "os", label: "Système", options: ["ios", "android"] },
   { key: "phoneColor", label: "Coque", options: ["white", "black"] }, { key: "accentColor", label: "Couleur d'accent", type: "color" },
@@ -157,8 +157,8 @@ export function Admin() {
   const { session } = useData();
   const lore = useValue<string>("meta/loreDate") || LORE_DATE_DEFAULT;
   const { set } = useWriter("meta");
-  if (session.role !== "mj") return (
-    <Desktop><Win title="Accès refusé" icon="🔒"><p className="w7-p">Le panneau de configuration est réservé au MJ. <Link to="/">Retour</Link></p></Win></Desktop>
+  if (session.role !== "mdj") return (
+    <Desktop><Win title="Accès refusé" icon="🔒"><p className="w7-p">Le panneau de configuration est réservé au MDJ. <Link to="/">Retour</Link></p></Win></Desktop>
   );
   return (
     <Desktop taskbar={<><Link className="w7-task" to="/">💬 #WhatsInOurPhones</Link><span className="w7-task on">⚙ Panneau de configuration</span></>}>

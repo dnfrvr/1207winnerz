@@ -3,7 +3,7 @@
 ## En attente (action de l'utilisateur·rice)
 
 - [ ] **Créer les comptes joueurs** (mis de côté le 2026-11-07)
-  `node v2/scripts/create-players.mjs glinda eoghan drew elias mj` (connexion par identifiant ;
+  `node v2/scripts/create-players.mjs glinda eoghan drew elias mdj` (connexion par identifiant ;
   `glinda=pseudo` ou `glinda=e-mail` possible)
   → mots de passe temporaires dans `migration/_out/comptes-joueurs.txt` (local, à supprimer après).
 - [ ] Ensuite : fusionner `migration/_out/users.json` dans `migration/_out/v2-from-live.json`
@@ -51,7 +51,7 @@ Fait le 2026-11-08 (3e passe) : ask.fm / ESPN / Polyvore en vraies apps ; tout �
 tactile partout via `touchContextMenu`, `useSeeded` pour les listes par défaut, Boussole, parties des
 jeux) ; Musique avec extraits Deezer, mini-lecteur, pochettes automatiques et ajout par recherche Deezer ;
 SoundCloud et iNaturalist refaits ; historique du navigateur trié par date ; connexion par identifiant
-(+ changement de mot de passe) ; site façon Aero/messagerie 2009 avec mini-téléphones, panneau MJ
+(+ changement de mot de passe) ; site façon Aero/messagerie 2009 avec mini-téléphones, panneau MDJ
 (`/admin` : date de lore, réglages des téléphones) et visite guidée animée.
 
 Reste :

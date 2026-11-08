@@ -4,33 +4,33 @@
     ".write": false,
 
     "meta": {
-      ".write": "root.child('users/' + auth.uid + '/role').val() === 'mj'",
+      ".write": "root.child('users/' + auth.uid + '/role').val() === 'mdj'",
       "loreDate": { ".write": "auth != null && root.child('users/' + auth.uid).exists()" }
     },
 
     "users": {
-      "$uid": { ".write": "root.child('users/' + auth.uid + '/role').val() === 'mj'" }
+      "$uid": { ".write": "root.child('users/' + auth.uid + '/role').val() === 'mdj'" }
     },
 
     "phones": {
       "$pid": {
-        ".write": "root.child('users/' + auth.uid + '/phone').val() === $pid || root.child('users/' + auth.uid + '/role').val() === 'mj'",
-        ".validate": "newData.exists() || root.child('users/' + auth.uid + '/role').val() === 'mj'"
+        ".write": "root.child('users/' + auth.uid + '/phone').val() === $pid || root.child('users/' + auth.uid + '/role').val() === 'mdj'",
+        ".validate": "newData.exists() || root.child('users/' + auth.uid + '/role').val() === 'mdj'"
       }
     },
 
     "threads": {
       "$tid": {
-        ".write": "root.child('users/' + auth.uid + '/role').val() === 'mj' || (data.exists() ? data.child('members/' + root.child('users/' + auth.uid + '/phone').val()).val() === true : newData.child('members/' + root.child('users/' + auth.uid + '/phone').val()).val() === true)",
-        ".validate": "newData.exists() || root.child('users/' + auth.uid + '/role').val() === 'mj'"
+        ".write": "root.child('users/' + auth.uid + '/role').val() === 'mdj' || (data.exists() ? data.child('members/' + root.child('users/' + auth.uid + '/phone').val()).val() === true : newData.child('members/' + root.child('users/' + auth.uid + '/phone').val()).val() === true)",
+        ".validate": "newData.exists() || root.child('users/' + auth.uid + '/role').val() === 'mdj'"
       }
     },
 
     "threadMessages": {
       "$tid": {
         "$mid": {
-          ".write": "root.child('users/' + auth.uid + '/role').val() === 'mj' || root.child('threads/' + $tid + '/members/' + root.child('users/' + auth.uid + '/phone').val()).val() === true",
-          ".validate": "newData.exists() || root.child('users/' + auth.uid + '/role').val() === 'mj'"
+          ".write": "root.child('users/' + auth.uid + '/role').val() === 'mdj' || root.child('threads/' + $tid + '/members/' + root.child('users/' + auth.uid + '/phone').val()).val() === true",
+          ".validate": "newData.exists() || root.child('users/' + auth.uid + '/role').val() === 'mdj'"
         }
       }
     },
@@ -38,8 +38,8 @@
     "feeds": {
       "$feed": {
         "$id": {
-          ".write": "root.child('users/' + auth.uid + '/role').val() === 'mj' || (!data.exists() && root.child('users/' + auth.uid).exists()) || data.child('author').val() === root.child('users/' + auth.uid + '/phone').val()",
-          ".validate": "newData.exists() || root.child('users/' + auth.uid + '/role').val() === 'mj'"
+          ".write": "root.child('users/' + auth.uid + '/role').val() === 'mdj' || (!data.exists() && root.child('users/' + auth.uid).exists()) || data.child('author').val() === root.child('users/' + auth.uid + '/phone').val()",
+          ".validate": "newData.exists() || root.child('users/' + auth.uid + '/role').val() === 'mdj'"
         }
       }
     },

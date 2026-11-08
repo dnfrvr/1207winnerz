@@ -3,7 +3,7 @@ import { byOrder, orderBetween, type Ordered } from "./order";
 import { join, type Json, type Patches, type Store } from "./store";
 
 // ─── Contexte : store + identité du joueur ───────────────────────────────────
-type Session = { uid: string; phone: string | null; role: "player" | "mj" };
+type Session = { uid: string; phone: string | null; role: "player" | "mdj" };
 type Ctx = { store: Store; session: Session; saving: number; track: <T>(p: Promise<T>) => Promise<T> };
 const DataCtx = createContext<Ctx | null>(null);
 
@@ -26,7 +26,7 @@ export const useData = () => {
 /** Le joueur connecté peut-il modifier ce téléphone ? */
 export const useCanEdit = (pid: string) => {
   const { session } = useData();
-  return session.role === "mj" || session.phone === pid;
+  return session.role === "mdj" || session.phone === pid;
 };
 
 // ─── Lecture ─────────────────────────────────────────────────────────────────

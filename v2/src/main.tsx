@@ -29,7 +29,7 @@ function Shell({ store, session, account, children }: { store: Store; session: S
       <BrowserRouter>
         <Suspense fallback={null}>
           <Routes>
-            <Route path="/" element={<Lobby me={session.phone} account={account} admin={session.role === "mj"} />} />
+            <Route path="/" element={<Lobby me={session.phone} account={account} admin={session.role === "mdj"} />} />
             <Route path="/admin" element={<Admin />} />
             <Route path="/:pid/*" element={<PhoneRoute />} />
           </Routes>
@@ -55,7 +55,7 @@ function FirebaseRoot({ config }: { config: Record<string, string> }) {
   );
   const account = (
     <p className="whoami">
-      Connecté·e : {emailToLogin(state.user.email)} · {state.session.role === "mj" ? "MJ" : `téléphone de ${state.session.phone}`}{" "}
+      Connecté·e : {emailToLogin(state.user.email)} · {state.session.role === "mdj" ? "MDJ" : `téléphone de ${state.session.phone}`}{" "}
       <button className="linkish" onClick={async () => { const p = window.prompt("Nouveau mot de passe (6 caractères min.)"); if (p) alert(await changePassword(config, p)); }}>Changer le mot de passe</button>{" · "}
       <button className="linkish" onClick={() => logout(config)}>Se déconnecter</button>
     </p>
@@ -70,7 +70,7 @@ function DemoRoot() {
   const [store, setStore] = useState<Store | null>(null);
   const [me, setMe] = useState<string | null>(readMe);
   useEffect(() => { import("./dev/seed-v2.json").then((m) => setStore(createMemoryStore(m.default as unknown as Json))); }, []);
-  const session = useMemo<Session>(() => (me === "mj" ? { uid: "mj", phone: null, role: "mj" } : { uid: me ?? "anon", phone: me, role: "player" }), [me]);
+  const session = useMemo<Session>(() => (me === "mdj" ? { uid: "mdj", phone: null, role: "mdj" } : { uid: me ?? "anon", phone: me, role: "player" }), [me]);
   if (!store) return <div className="lobby"><p>Chargement…</p></div>;
   const choose = (p: string | null) => {
     setMe(p);
@@ -83,7 +83,7 @@ function DemoRoot() {
         <select value={me ?? ""} onChange={(e) => choose(e.target.value || null)}>
           <option value="">— personne (lecture seule) —</option>
           {PIDS.map((p) => <option key={p} value={p}>{p}</option>)}
-          <option value="mj">MJ (tous les droits + panneau de configuration)</option>
+          <option value="mdj">MDJ (tous les droits + panneau de configuration)</option>
         </select>
       </div>
       <p className="devnote">

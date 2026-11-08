@@ -1,11 +1,11 @@
 // Connexion des joueurs (Firebase Auth, e-mail + mot de passe). Le lien compte → téléphone est
-// dans la base : users/{uid} = { phone: "glinda", role: "player" | "mj" } (créé dans la console).
+// dans la base : users/{uid} = { phone: "glinda", role: "player" | "mdj" } (créé dans la console).
 import { useEffect, useState, type FormEvent } from "react";
 import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut, sendPasswordResetEmail, updatePassword, type User } from "firebase/auth";
 import { getDatabase, onValue, ref } from "firebase/database";
 import { firebaseApp } from "./firebaseStore";
 
-export type Session = { uid: string; phone: string | null; role: "player" | "mj" };
+export type Session = { uid: string; phone: string | null; role: "player" | "mdj" };
 type State = { status: "loading" } | { status: "out" } | { status: "in"; user: User; session: Session; linked: boolean };
 
 export function useFirebaseSession(config: Record<string, string>) {
@@ -20,7 +20,7 @@ export function useFirebaseSession(config: Record<string, string>) {
       offProfile = onValue(ref(getDatabase(app), `users/${user.uid}`), (snap) => {
         const v = (snap.val() ?? {}) as { phone?: string; role?: string };
         setState({ status: "in", user, linked: snap.exists(),
-          session: { uid: user.uid, phone: v.phone ?? null, role: v.role === "mj" ? "mj" : "player" } });
+          session: { uid: user.uid, phone: v.phone ?? null, role: v.role === "mdj" ? "mdj" : "player" } });
       }, () => setState({ status: "in", user, linked: false, session: { uid: user.uid, phone: null, role: "player" } }));
     });
     return () => { off(); offProfile?.(); };
