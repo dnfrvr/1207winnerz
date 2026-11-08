@@ -1,7 +1,9 @@
 .cal-body { display: flex; flex-direction: column; overflow: hidden; background: #fff; }
 .cal-head { flex: 0 0 34px; display: flex; align-items: center; justify-content: space-between; padding: 0 14px; font: bold 20px var(--ios-font); color: #4d5761;
   background: linear-gradient(#f6f7f9, #cfd3d9); text-shadow: 0 1px 0 #fff; }
-.cal-head button { font-size: 14px; color: #4d5761; padding: 6px; }
+.cal-head button, .cal-dayhead button { display: flex; color: #4d5761; filter: drop-shadow(0 1px 0 #fff); }
+.cal-dayhead { position: sticky; top: 0; z-index: 2; height: 34px; display: flex; align-items: center; justify-content: space-between; padding: 0 6px;
+  background: linear-gradient(#f6f7f9, #cfd3d9); border-bottom: 1px solid #9ba3ad; font: bold 15px var(--ios-font); color: #4d5761; text-shadow: 0 1px 0 #fff; }
 .cal-dow { flex: 0 0 16px; display: grid; grid-template-columns: repeat(7, 1fr); background: #cfd3d9; border-bottom: 1px solid #9ba3ad; }
 .cal-dow span { text-align: center; font: bold 10px var(--ios-font); color: #4d5761; text-shadow: 0 1px 0 #fff; }
 .cal-grid { flex: 0 0 auto; display: grid; grid-template-columns: repeat(7, 1fr); background: #a5adb6; gap: 1px; border-bottom: 1px solid #7f8790; }
@@ -14,9 +16,16 @@
 .cal-grid button.sel i, .cal-grid button.today i { background: #fff; box-shadow: none; }
 .cal-list { flex: 1; min-height: 0; overflow-y: auto; }
 .cal-none { padding: 18px; text-align: center; font: bold 15px var(--ios-font); color: #999; }
-.cal-today { font: bold 12px var(--ios-font) !important; border-radius: 5px; border: 1px solid rgba(0,0,0,.45) !important;
-  background: linear-gradient(rgba(255,255,255,.25), rgba(255,255,255,0) 50%), linear-gradient(#8fa2bd, #5b7393) !important; padding: 6px 10px !important; }
-.cal-body .k-toolbar .k-seg { margin: 0; width: 140px; }
+.cal-today { height: 30px; align-items: center; font: bold 12px var(--ios-font) !important; border-radius: 5px; border: 1px solid rgba(0,0,0,.45) !important; filter: none !important;
+  text-shadow: 0 -1px 0 rgba(0,0,0,.45); box-shadow: inset 0 1px 0 rgba(255,255,255,.3), 0 1px 0 rgba(255,255,255,.25);
+  background: linear-gradient(rgba(255,255,255,.25), rgba(255,255,255,0) 50%, rgba(0,0,0,.08) 51%), linear-gradient(#8fa2bd, #5b7393) !important; padding: 0 10px !important; }
+.cal-inbox { width: 50px; justify-content: center; }
+/* Contrôle segmenté « style barre » d'iOS 6, teinté comme la barre d'outils */
+.cal-body .k-toolbar .k-seg.ios { margin: 0; width: 160px; border: 1px solid rgba(0,0,0,.5); border-radius: 5px; box-shadow: 0 1px 0 rgba(255,255,255,.25); }
+.cal-body .k-toolbar .k-seg.ios button { height: 30px; font: bold 12px var(--ios-font); color: #fff; text-shadow: 0 -1px 0 rgba(0,0,0,.45); filter: none; padding: 0; justify-content: center;
+  background: linear-gradient(rgba(255,255,255,.25), rgba(255,255,255,0) 50%, rgba(0,0,0,.06) 51%), linear-gradient(#8fa2bd, #5b7393); }
+.cal-body .k-toolbar .k-seg.ios button + button { border-left: 1px solid rgba(0,0,0,.45); }
+.cal-body .k-toolbar .k-seg.ios button.on { background: linear-gradient(rgba(255,255,255,.12), rgba(255,255,255,0) 50%), linear-gradient(#5d7499, #3c5378); box-shadow: inset 0 1px 3px rgba(0,0,0,.45); }
 
 /* Android 4.1 : grille plate, aujourd'hui en bleu holo */
 .cal-body.android .cal-head { background: #fafafa; color: #222; text-shadow: none; font: 400 18px var(--and-font); border-bottom: 1px solid #ddd; }
@@ -29,4 +38,9 @@
 .cal-body.android .cal-grid button.today { background: #fff; color: var(--holo); font-weight: 700; box-shadow: inset 0 -3px 0 var(--holo); }
 .cal-body.android .cal-grid button.sel { background: rgba(51,181,229,.2); color: #222; box-shadow: none; }
 .cal-body.android .cal-grid button i { background: var(--holo); box-shadow: none; left: auto; right: 5px; bottom: auto; top: 7px; }
-.cal-body.android .cal-today { border: 0 !important; background: none !important; color: #fff; }
+.cal-body.android { background: #fff; }
+.cal-body.android .cal-dayhead { background: #fafafa; color: #222; text-shadow: none; font: 400 15px var(--and-font); border-bottom: 1px solid #ddd; }
+.cal-body.android .cal-dayhead button, .cal-body.android .cal-head button { color: #666; filter: none; }
+.cal-and-today { position: relative; display: flex; }
+.cal-and-today b { position: absolute; left: 0; right: 0; top: 9px; text-align: center; font: 700 9px var(--and-font); }
+.cal-body.android .cal-none { font: 14px var(--and-font); }

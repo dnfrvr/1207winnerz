@@ -9,7 +9,7 @@
 .br-page { flex: 1; min-height: 0; overflow-y: auto; background: #fff; }
 .br-tools { flex: 0 0 44px; display: flex; align-items: center; justify-content: space-around;
   background: linear-gradient(#b2bfd0, #6d83a1); border-top: 1px solid #2d3642; box-shadow: inset 0 1px 0 rgba(255,255,255,.45); }
-.br-tools button { color: #fff; filter: drop-shadow(0 -1px 0 rgba(0,0,0,.5)); display: flex; padding: 6px 10px; }
+.br-tools button { width: 52px; height: 42px; color: #fff; filter: drop-shadow(0 -1px 0 rgba(0,0,0,.5)); display: flex; align-items: center; justify-content: center; }
 .br-tools button:disabled { opacity: .45; }
 .br-tabs-ic { width: 22px; height: 18px; border: 2px solid #fff; border-radius: 3px; font: bold 11px/14px var(--ios-font); text-align: center; }
 .br-google { padding: 10px 12px; font-family: Arial, sans-serif; }
@@ -29,10 +29,16 @@
 .br-blocks i { display: block; height: 10px; width: 100%; background: #e8e8e8; border-radius: 2px; }
 .br-sheet { position: absolute; inset: 0; z-index: 30; display: flex; flex-direction: column; background: #fff; animation: up .28s ease-out; }
 .br-list { flex: 1; min-height: 0; overflow-y: auto; }
-.br-ic { font-size: 18px; }
+.br-ic { display: flex; color: #6f7c8d; }
+.os-android .br-ic { color: #888; }
 .br-add { color: #2470d8; }
 .br.android .br-top { background: #f2f2f2; border-bottom: 1px solid #ccc; padding: 6px; }
 .br-and { display: flex; align-items: center; gap: 6px; }
 .br-and .br-url { border-radius: 2px; box-shadow: none; border: 1px solid #ccc; font-family: var(--and-font); }
-.br-and button { font-size: 20px; color: #666; padding: 0 6px; }
-.br.android .br-tools { background: #222; border-top: 0; box-shadow: none; }
+.br-and button { display: flex; align-items: center; color: #555; padding: 0 5px; height: 34px; }
+.br-and button:active { background: rgba(51,181,229,.3); }
+.br-globe { display: flex; color: #33b5e5; }
+.br-and .br-url { height: 34px; background: #fff; }
+.br-and .br-tabs-ic { border-color: #555; color: #555; width: 20px; height: 18px; border-radius: 2px; font: 700 11px/14px var(--and-font); }
+.br.android .br-page { background: #fff; }
+.br.android .br-sheet { background: #f2f2f2; }

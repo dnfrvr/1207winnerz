@@ -67,39 +67,54 @@
 
 .app-body.conv-wrap { display: flex; flex-direction: column; overflow: hidden; }
 
-/* ─── Messages Android (DA de l'app d'origine) ───────────────────────────── */
+.composer .cam-btn { flex: 0 0 auto; width: 30px; height: 28px; display: flex; align-items: center; justify-content: center; border-radius: 6px; color: #fff;
+  background: linear-gradient(#a3abb8, #6b7585); border: 1px solid #535c6b; box-shadow: inset 0 1px 0 rgba(255,255,255,.35); filter: drop-shadow(0 1px 0 rgba(255,255,255,.5)); }
+.composer .cam-btn svg { filter: drop-shadow(0 -1px 0 rgba(0,0,0,.4)); }
+.msg-trash-row svg { color: #8e8e93; }
+.who-btn svg { vertical-align: -2px; }
+
+/* ─── Messagerie Android 4.1 (AOSP Jelly Bean) ──────────────────────────────
+   Liste claire, photo de contact CARRÉE (silhouette par défaut), conversation sur fond blanc,
+   bulles rectangulaires à encoche, champ holo souligné + icône « envoyer ». */
 .os-android .msg-list { background: #fff; }
-.os-android .msg-row { min-height: 64px; align-items: center; border-bottom: 1px solid #e0e0e0; background: #fafafa; }
+.os-android .msg-row { min-height: 64px; align-items: center; border-bottom: 1px solid #e3e3e3; background: #fff; }
 .os-android .msg-row.unread { background: #fff; }
-.os-android .msg-row:active { background: rgba(51,181,229,.25); color: inherit; }
+.os-android .msg-row:active { background: rgba(51,181,229,.3); color: inherit; }
 .os-android .msg-row:active .who, .os-android .msg-row:active .when, .os-android .msg-row:active .prev { color: inherit; }
-.os-android .msg-row .avatar { flex: 0 0 38px; height: 38px; margin: 0 12px 0 14px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff; font: 700 14px var(--and-font); }
-.os-android .msg-row .body { padding: 10px 14px 10px 0; }
-.os-android .msg-row .who { font: 400 15px var(--and-font); color: #424242; }
-.os-android .msg-row.unread .who { font-weight: 700; color: #212121; }
-.os-android .msg-row .when { font: 11px var(--and-font); color: #bdbdbd; }
-.os-android .msg-row.unread .when { color: var(--accent); }
-.os-android .msg-row .prev { font: 12px/16px var(--and-font); color: #9e9e9e; -webkit-line-clamp: 1; }
-.os-android .msg-row.unread .prev { color: #616161; font-weight: 500; }
+.os-android .msg-row .avatar { flex: 0 0 48px; height: 48px; margin: 0 10px 0 8px; display: flex; align-items: flex-end; justify-content: center; overflow: hidden;
+  color: #fff; background: #a9bac6; }
+.os-android .msg-row .body { padding: 9px 12px 9px 0; }
+.os-android .msg-row .who { font: 400 17px var(--and-font); color: #222; }
+.os-android .msg-row.unread .who { font-weight: 700; }
+.os-android .msg-row .when { font: 12px var(--and-font); color: #8a8a8a; }
+.os-android .msg-row.unread .when { color: #222; font-weight: 700; }
+.os-android .msg-row .prev { font: 14px/18px var(--and-font); color: #8a8a8a; -webkit-line-clamp: 1; }
+.os-android .msg-row.unread .prev { color: #444; }
 .os-android .msg-row .chev { display: none; }
-.os-android .msg-trash-row { background: #eee; font: 600 13px var(--and-font); color: #616161; }
-.os-android .conv { background: #ece5dd; padding: 8px 0; }
-.os-android .day-pill { text-align: center; padding: 10px 0 6px; }
-.os-android .day-pill span { background: #d1c7bd; color: #777; padding: 3px 10px; border-radius: 10px; font: 500 10px var(--and-font); }
-.os-android .line { padding: 2px 10px; }
-.os-android .sender { color: #8e24aa; font: 600 10px var(--and-font); text-shadow: none; padding: 0 10px 2px; }
-.os-android .bubble { max-width: 72%; padding: 8px 12px; font: 13px/1.45 var(--and-font); border: 0; text-shadow: none; box-shadow: 0 1px 1px rgba(0,0,0,.13); }
-.os-android .bubble::before { display: none; }
-.os-android .bubble.them { background: #fff; color: #212121; border-radius: 18px 18px 18px 4px; }
-.os-android .bubble.me, .os-android .bubble.me.imsg, .os-android .bubble.me.sms { background: var(--accent); color: #fff; border: 0; text-shadow: none; box-shadow: 0 1px 1px rgba(0,0,0,.13); border-radius: 18px 18px 4px 18px; }
-.os-android .bubble.editing { background: #fff; border: 2px solid var(--accent); }
-.os-android .clock { font: 9px var(--and-font); color: #999; padding: 1px 5px 0; }
-.os-android .composer { background: #f0f0f0; border-top: 1px solid #ddd; box-shadow: none; padding: 6px 10px; align-items: center; gap: 8px; }
-.os-android .composer textarea { border-radius: 20px; border: 1px solid #e0e0e0; background: #fff; box-shadow: none; padding: 8px 14px; font: 13px/18px var(--and-font); }
-.os-android .composer .who-btn { background: #e0e0e0; color: #424242; text-shadow: none; border: 0; border-radius: 14px; box-shadow: none; font: 500 11px var(--and-font); }
-.send-round { flex: 0 0 38px; height: 38px; border-radius: 50%; background: var(--accent); display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 4px rgba(0,0,0,.2); }
-.send-round:disabled { opacity: .5; }
+.os-android .msg-trash-row { background: #f2f2f2; font: 500 13px var(--and-font); color: #555; text-transform: uppercase; border-bottom: 1px solid #ddd; }
+.os-android .msg-empty { font-family: var(--and-font); }
+.os-android .conv { background: #fff; padding: 6px 0; }
+.os-android .day-pill { text-align: center; padding: 10px 0 4px; }
+.os-android .day-pill span { font: 500 11px var(--and-font); color: #8a8a8a; text-transform: uppercase; }
+.os-android .line { padding: 3px 10px; }
+.os-android .sender { color: #777; font: 500 11px var(--and-font); text-shadow: none; padding: 0 4px 2px; }
+.os-android .bubble { max-width: 76%; padding: 7px 10px 6px; border-radius: 2px; font: 15px/1.35 var(--and-font); text-shadow: none; box-shadow: 0 1px 1px rgba(0,0,0,.18); }
+.os-android .bubble::before { display: block; width: 10px; height: 12px; bottom: auto; top: 8px; z-index: 1; clip-path: none; filter: none; }
+.os-android .bubble.them { background: #f3f3f3; color: #222; border: 1px solid #d5d5d5; }
+.os-android .bubble.them::before { left: -7px; background: #f3f3f3; clip-path: polygon(100% 0, 0 50%, 100% 100%); }
+.os-android .bubble.me, .os-android .bubble.me.imsg, .os-android .bubble.me.sms { background: #d9f1fb; color: #222; border: 1px solid #b5dcec; text-shadow: none; box-shadow: 0 1px 1px rgba(0,0,0,.18); }
+.os-android .bubble.me::before { right: -7px; background: #d9f1fb; clip-path: polygon(0 0, 100% 50%, 0 100%); }
+.os-android .bubble.editing { background: #fff; border: 1px solid var(--holo); }
+.os-android .bubble.editing::before { display: none; }
+.os-android .clock { font: 11px var(--and-font); color: #999; padding: 2px 4px 0; }
+.os-android .composer { background: #f5f5f5; border-top: 1px solid #d5d5d5; box-shadow: none; padding: 4px 4px 4px 10px; align-items: center; gap: 6px; }
+.os-android .composer textarea { border-radius: 0; border: 0; border-bottom: 1px solid #bdbdbd; background: transparent; box-shadow: none; padding: 8px 4px; font: 16px/20px var(--and-font); }
+.os-android .composer textarea:focus { border-bottom: 2px solid var(--holo); }
+.os-android .composer .who-btn { background: #e0e0e0; color: #424242; text-shadow: none; border: 0; border-radius: 2px; box-shadow: none; font: 500 11px var(--and-font); }
+.send-holo { flex: 0 0 44px; height: 44px; display: flex; align-items: center; justify-content: center; color: var(--holo); border-left: 1px solid #ddd; }
+.send-holo:disabled { color: #bdbdbd; }
+.send-holo:active { background: rgba(51,181,229,.3); }
 .os-android .insert-banner { font-family: var(--and-font); }
 .os-android .to-field, .os-android .suggest li button { font-family: var(--and-font); }
 .os-android .edit-actions button { border-radius: 2px; background: #e0e0e0; border: 0; font: 500 12px var(--and-font); text-transform: uppercase; }
-.os-android .edit-actions button.ok { background: var(--accent); }
+.os-android .edit-actions button.ok { background: var(--holo); }

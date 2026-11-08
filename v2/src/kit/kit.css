@@ -118,12 +118,17 @@
 .k-field input, .k-field textarea { width: 100%; border: 0; outline: none; font: 16px var(--ios-font); color: #000; background: transparent; resize: vertical; }
 .k-field-img { max-width: 100px; max-height: 100px; border-radius: 4px; margin-top: 4px; object-fit: cover; }
 .k-form.android { background: #f2f2f2; }
-.k-form.android .k-form-bar { background: #222; border: 0; box-shadow: 0 2px 6px rgba(0,0,0,.5); }
-.k-form.android .k-form-bar h1 { font: 400 17px var(--and-font); text-shadow: none; }
-.k-form.android .k-form-bar button { border: 0; background: none; font: 500 13px var(--and-font); text-transform: uppercase; text-shadow: none; }
+.k-form.android .k-form-bar { flex-basis: 48px; padding: 0; background: #222; border: 0; box-shadow: 0 2px 6px rgba(0,0,0,.5); }
+.k-form.android .k-form-bar button { flex: 1; height: 48px; display: flex; align-items: center; justify-content: flex-start; gap: 10px; padding: 0 14px; border: 0; border-radius: 0;
+  background: none; font: 500 14px var(--and-font); text-transform: uppercase; text-shadow: none; color: rgba(255,255,255,.87); }
+.k-form.android .k-form-bar button + button { border-left: 1px solid #3a3a3a; }
+.k-form.android .k-form-bar button:active { background: rgba(51,181,229,.35); }
+.k-form.android .k-field { background: #fafafa; border-bottom-color: #dcdcdc; }
+.k-form.android .k-field-label { font: 700 12px var(--and-font); color: var(--holo); text-transform: uppercase; }
+.k-form.android .k-field input, .k-form.android .k-field textarea { font: 16px var(--and-font); border-bottom: 1px solid var(--holo); padding: 4px 0; }
 
 /* ─── Android 4.1 : listes holo claires ───────────────────────────────────── */
-.os-android .k-grouped { background: #f2f2f2; padding-top: 0; }
+.os-android .k-grouped { background: #f2f2f2; padding-top: 0; display: flow-root; }
 .os-android .k-section { margin: 0; }
 .os-android .k-section-title { margin: 14px 12px 0; padding: 0 4px 4px; font: 700 13px var(--and-font); text-transform: uppercase; color: var(--holo); text-shadow: none; border-bottom: 2px solid var(--holo); }
 .os-android .k-group { border: 0; border-radius: 0; box-shadow: none; background: transparent; }

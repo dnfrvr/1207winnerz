@@ -1,14 +1,17 @@
-// Facebook pour iOS (2012) : barre bleue « facebook », bandeau Statut / Photo / Lieu, fil de
-// cartes (publications des 4 persos + pages suivies par ce téléphone).
+// Facebook pour iOS (5.x, 2012) : barre bleue « facebook », bandeau Status / Photo / Check In, fil
+// de cartes (publications des 4 persos + pages suivies par ce téléphone).
+// Android (2012) : barre bleue plate, bouton menu + trois « jewels », police Roboto.
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useList, useValue } from "../data/hooks";
 import { loreNowMs, loreToMs, msToLore } from "../lib/loreTime";
 import { StatusBar } from "../phone/IOSChrome";
 import { LORE_DATE_DEFAULT, useOS } from "../phone/common";
+import { img } from "../lib/img";
 import { Avatar, Empty, useEditor } from "../kit/kit";
-import { Icon } from "../kit/icons";
-import { num, useChars } from "./social";
+import { mdiAccountMultiple, mdiCamera, mdiCommentOutline, mdiEarth, mdiMapMarker, mdiMenu, mdiMessageText, mdiPencil, mdiThumbUp } from "@mdi/js";
+import { Glyph } from "../kit/glyph";
+import { num, Press, useChars } from "./social";
 import "./social.css";
 
 type FbPost = { author?: string; name?: string; text?: string; time?: string; likes?: number; comments?: number; img?: string; order?: number; deleted?: boolean };
@@ -37,13 +40,16 @@ export default function FacebookApp({ pid }: { pid: string }) {
     <div className={`app fb ${os}`}>
       <StatusBar />
       <div className="fb-bar">
-        <button className="fb-btn" onClick={() => nav(`/${pid}/home`)} aria-label="Retour"><Icon name="list" size={18} /></button>
-        <h1>facebook</h1>
-        <button className="fb-btn" aria-label="Discussions"><Icon name="people" size={18} /></button>
+        <button className="fb-btn" onClick={() => nav(`/${pid}/home`)} aria-label="Menu"><Glyph i={mdiMenu} size={20} /></button>
+        {os === "android" ? (
+          // Facebook pour Android (2012) : pas de logo, les trois « jewels » au centre.
+          <div className="fb-jewels"><Glyph i={mdiAccountMultiple} size={22} /><Glyph i={mdiMessageText} size={20} /><Glyph i={mdiEarth} size={21} /></div>
+        ) : <h1>facebook</h1>}
+        <button className="fb-btn" aria-label="Discussions"><Glyph i={mdiAccountMultiple} size={20} /></button>
       </div>
       <div className="fb-scroll">
         <div className="fb-publisher">
-          <button onClick={() => ed.canEdit && setStatus(true)}>✎ Status</button><button>📷 Photo</button><button>📍 Check In</button>
+          <button onClick={() => ed.canEdit && setStatus(true)}><Glyph i={mdiPencil} size={15} /> Status</button><button><Glyph i={mdiCamera} size={15} /> Photo</button><button><Glyph i={mdiMapMarker} size={15} /> Check In</button>
         </div>
         {status && (
           <div className="fb-card fb-composer">
@@ -55,16 +61,16 @@ export default function FacebookApp({ pid }: { pid: string }) {
           const c = p.author ? chars[p.author] : undefined;
           const mine = p.author === pid || page;
           return (
-            <div key={key} className="fb-card" onContextMenu={(e) => { if (ed.canEdit && mine) { e.preventDefault(); ed.edit({ path, fields: ["name", "text", "time", "likes", "comments", "img"], title: "Publication" }); } }}>
+            <Press key={key} className="fb-card" onLong={ed.canEdit && mine ? () => ed.edit({ path, fields: ["name", "text", "time", "likes", "comments", "img"], title: "Publication" }) : undefined}>
               <div className="fb-head">
                 <Avatar src={c?.avatar} name={p.name ?? c?.name} size={40} round={false} color={page ? "#3b5998" : undefined} />
                 <div><b>{p.name ?? c?.name}</b><span>{p.time}</span></div>
               </div>
               {p.text && <p className="fb-text">{p.text}</p>}
-              {p.img && <img className="fb-img" src={p.img} alt="" loading="lazy" />}
-              {(p.likes || p.comments) ? <div className="fb-counts">👍 {num((p.likes ?? 0) + (liked[key] ? 1 : 0))}{p.comments ? ` · ${num(p.comments)} comments` : ""}</div> : null}
-              <div className="fb-acts"><button className={liked[key] ? "on" : ""} onClick={() => setLiked((l) => ({ ...l, [key]: !l[key] }))}>👍 Like</button><button>💬 Comment</button></div>
-            </div>
+              {p.img && <img className="fb-img" src={img(p.img)} alt="" loading="lazy" onError={(e) => { e.currentTarget.style.display = "none"; }} />}
+              {(p.likes || p.comments || liked[key]) ? <div className="fb-counts"><Glyph i={mdiThumbUp} size={12} /> {num((p.likes ?? 0) + (liked[key] ? 1 : 0))}{p.comments ? ` · ${num(p.comments)} comments` : ""}</div> : null}
+              <div className="fb-acts"><button className={liked[key] ? "on" : ""} onClick={() => setLiked((l) => ({ ...l, [key]: !l[key] }))}><Glyph i={mdiThumbUp} size={14} /> {liked[key] ? "Unlike" : "Like"}</button><button><Glyph i={mdiCommentOutline} size={14} /> Comment</button></div>
+            </Press>
           );
         })}
         {feed.length === 0 && <Empty>No stories</Empty>}

@@ -61,25 +61,43 @@
   background: linear-gradient(rgba(0,0,0,0), rgba(0,0,0,.45)); border-top: 1px solid rgba(255,255,255,.14); }
 .and-dock .name { display: none; }
 
-/* Apps : barre d'action holo */
+/* Apps : barre d'action holo (48 dp) — affordance Up (chevron + icône) à gauche, titre Roboto,
+   actions en icônes à droite. Barre sombre par défaut, claire pour les apps Holo Light. */
 .app.and { background: #f2f2f2; }
-.actionbar { position: relative; z-index: 2; height: 48px; flex: 0 0 48px; display: flex; align-items: center; padding: 0 4px; box-shadow: 0 2px 6px rgba(0,0,0,.5); }
-.actionbar h1 { flex: 1; min-width: 0; padding: 0 12px; font: 400 17px var(--and-font); color: rgba(255,255,255,.87); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.ab-up + h1 { padding-left: 2px; }
-.ab-up { height: 48px; width: 40px; display: flex; align-items: center; justify-content: center; }
+.actionbar { position: relative; z-index: 2; height: 48px; flex: 0 0 48px; display: flex; align-items: center; padding: 0; color: rgba(255,255,255,.87);
+  box-shadow: 0 1px 0 rgba(0,0,0,.6), 0 2px 4px rgba(0,0,0,.35); }
+.actionbar h1 { flex: 1; min-width: 0; padding: 0 8px 0 6px; font: 400 18px var(--and-font); color: inherit; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.actionbar.light { color: #333; box-shadow: 0 1px 0 #c8c8c8, 0 2px 3px rgba(0,0,0,.12); }
+.ab-up { height: 48px; display: flex; align-items: center; gap: 1px; padding: 0 2px 0 4px; color: inherit; }
+.ab-caret { opacity: .75; }
+.ab-icon { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; }
+.ab-icon img { width: 32px; height: 32px; object-fit: contain; }
+.ab-icon-pad { width: 6px; }
+.actionbar > .ab-icon { margin-left: 8px; }
 .ab-up:active, .ab-actions button:active { background: rgba(51,181,229,.35); }
-.ab-actions { display: flex; align-items: center; }
-.ab-actions .barbtn { all: unset; height: 48px; min-width: 44px; display: flex; align-items: center; justify-content: center; color: #fff; font: 300 26px var(--and-font); cursor: pointer; }
-.ab-actions .barbtn.icon-btn { font-size: 20px; }
+.ab-actions { display: flex; align-items: center; height: 48px; }
+.ab-actions .barbtn { all: unset; box-sizing: border-box; height: 48px; min-width: 48px; padding: 0 10px; display: flex; align-items: center; justify-content: center; color: inherit;
+  font: 500 13px var(--and-font); text-transform: uppercase; cursor: pointer; }
+.ab-actions .barbtn:active { background: rgba(51,181,229,.35); }
+.ab-actions .barbtn.plus { font: 300 26px var(--and-font); text-transform: none; }
+.ab-actions .barbtn.icon-btn { font-size: 20px; text-transform: none; }
+/* séparateur vertical holo avant les actions textuelles */
+.ab-actions .barbtn.text { border-left: 1px solid rgba(255,255,255,.15); }
 .os-android .pinstripe { background: #1a1a1a; }
 .os-android .soon { color: #aaa; text-shadow: none; font-family: var(--and-font); }
 
-/* Feuilles « système » en version holo */
-.os-android .action-sheet { background: #282828; border-top: 2px solid var(--holo); padding: 8px 0 0; gap: 0; }
-.os-android .sheet-title { color: var(--holo); font: 500 15px var(--and-font); text-align: left; padding: 10px 16px; border-bottom: 1px solid #3a3a3a; text-shadow: none; }
-.os-android .sheet-btn { height: 48px; border-radius: 0; border: 0; border-bottom: 1px solid #333; background: transparent; color: #eee; text-shadow: none; text-align: left; padding: 0 16px; font: 400 16px var(--and-font); }
-.os-android .sheet-btn.red { color: #ff6b6b; background: transparent; }
-.os-android .sheet-btn.cancel { margin: 0; color: #aaa; background: #1f1f1f; }
+/* Feuilles « système » : sur Jelly Bean, l'appui long ouvre une boîte de dialogue centrée
+   (titre bleu holo souligné, liste d'options), pas une feuille qui monte du bas. */
+.os-android .sheet-backdrop { align-items: center; justify-content: center; background: rgba(0,0,0,.6); }
+.os-android .action-sheet { width: 280px; max-height: 80%; overflow-y: auto; background: #282828; border: 0; padding: 0; gap: 0; border-radius: 2px;
+  box-shadow: 0 4px 16px rgba(0,0,0,.7); animation: pop .18s ease-out; }
+.os-android .sheet-title { color: var(--holo); font: 400 18px var(--and-font); text-align: left; padding: 0 16px; height: 56px; display: flex; align-items: center;
+  border-bottom: 2px solid var(--holo); text-shadow: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.os-android .sheet-btn { flex-shrink: 0; height: 48px; border-radius: 0; border: 0; border-bottom: 1px solid #3a3a3a; background: transparent; color: #eee; text-shadow: none;
+  text-align: left; padding: 0 16px; font: 400 16px var(--and-font); box-shadow: none; }
+.os-android .sheet-btn:active { background: rgba(51,181,229,.35); }
+.os-android .sheet-btn.red { color: #eee; background: transparent; }
+.os-android .sheet-btn.cancel { margin: 0; border-bottom: 0; border-top: 1px solid #3a3a3a; color: #eee; background: transparent; text-align: center; font-size: 15px; }
 .os-android .callout { background: #282828; border: 1px solid #111; border-radius: 2px; box-shadow: 0 2px 8px rgba(0,0,0,.6); }
 .os-android .callout::after { border-top-color: #282828; }
 .os-android .callout button { font: 500 13px var(--and-font); text-transform: uppercase; text-shadow: none; }

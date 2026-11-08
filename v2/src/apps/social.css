@@ -18,21 +18,38 @@
 .tw-head span { color: #999; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; }
 .tw-head i { color: #999; font-style: normal; font-size: 12px; }
 .tw-body p { margin-top: 2px; font: 15px/1.3 var(--ios-font); color: #333; white-space: pre-wrap; word-wrap: break-word; }
-.tw-acts { display: flex; gap: 22px; margin-top: 6px; font: 12px var(--ios-font); color: #aab4bd; }
+.tw-acts { display: flex; gap: 26px; margin-top: 6px; font: 12px var(--ios-font); color: #aab4bd; }
+.tw-acts span { display: flex; align-items: center; gap: 3px; min-width: 30px; }
+.tw-acts .fav { color: #e8a83a; }
 .tw-tabs { flex: 0 0 49px; display: flex; background: linear-gradient(#f4f5f6, #d9dde1); border-top: 1px solid #a7b1ba; }
 .tw-tabs button { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; color: #9aa6b1; font: bold 10px var(--ios-font); }
 .tw-tabs button.on { color: #2b8be0; background: linear-gradient(#e2e7ec, #f3f5f7); box-shadow: inset 0 1px 3px rgba(0,0,0,.15); }
-.tw-me { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 16px 10px 0; color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,.8);
-  background: #2b4a66 center / cover; }
-.tw-me .k-avatar { border: 3px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,.5); }
-.tw-me b { font: bold 17px var(--ios-font); margin-top: 4px; }
-.tw-me > span { font: 13px var(--ios-font); }
-.tw-counts { align-self: stretch; display: flex; margin-top: 12px; background: rgba(255,255,255,.95); text-shadow: none; }
-.tw-counts span { flex: 1; display: flex; flex-direction: column; align-items: center; padding: 6px 0; font: bold 9px var(--ios-font); color: #999; }
-.tw-counts b { font: bold 15px var(--ios-font); color: #333; }
+.tw-tabs button.on svg { filter: drop-shadow(0 0 3px rgba(43,139,224,.45)); }
+/* « Me » : bannière (photo d'en-tête 2012) puis compteurs sur fond blanc, hors de l'image. */
+.tw-me { background: #fff; border-bottom: 1px solid #d8dde2; }
+.tw-banner { height: 168px; }
+.tw-banner .so-cover-in { align-items: center; justify-content: center; text-align: center; gap: 1px; padding: 10px 14px; }
+.tw-banner .k-avatar { border: 3px solid #fff; border-radius: 5px; box-shadow: 0 1px 3px rgba(0,0,0,.5); }
+.tw-banner b { margin-top: 5px; font: bold 17px var(--ios-font); max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tw-banner span { font: 13px var(--ios-font); opacity: .9; }
+.tw-banner p { margin-top: 3px; font: 12px/1.3 var(--ios-font); max-width: 100%; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.tw-counts { display: flex; background: linear-gradient(#fff, #f4f6f8); }
+.tw-counts span { flex: 1; display: flex; flex-direction: column; align-items: center; padding: 7px 0 6px; font: bold 9px var(--ios-font); color: #8899a6; letter-spacing: .3px; }
+.tw-counts span + span { border-left: 1px solid #e1e5e9; }
+.tw-counts b { font: bold 15px var(--ios-font); color: #292f33; }
+.tw-menu { margin: 10px 8px; border: 1px solid #ccd3da; border-radius: 6px; background: #fff; overflow: hidden; }
+.tw-menu div { display: flex; justify-content: space-between; padding: 11px 12px; font: bold 14px var(--ios-font); color: #292f33; }
+.tw-menu div + div { border-top: 1px solid #e1e5e9; }
+.tw-menu i { font-style: normal; color: #aab4bd; font-size: 18px; line-height: 14px; }
+.tw-trends { background: #fff; }
+.tw-search { display: flex; align-items: center; gap: 6px; height: 40px; padding: 0 12px; color: #999; font: 14px var(--ios-font); background: linear-gradient(#e9ecef, #d9dee3); border-bottom: 1px solid #b9c2ca; }
+.tw-search span { flex: 1; height: 28px; line-height: 28px; padding-left: 8px; background: #fff; border-radius: 14px; border: 1px solid #b9c2ca; box-shadow: inset 0 1px 2px rgba(0,0,0,.12); }
 .tw-trends .tw-th { padding: 8px 10px; font: bold 13px var(--ios-font); color: #666; background: #f0f2f4; border-bottom: 1px solid #dde1e5; }
 .tw-trend { padding: 12px 10px; font: bold 15px var(--ios-font); color: #2b8be0; border-bottom: 1px solid #e3e6e9; }
 .tw-compose { position: absolute; inset: 0; z-index: 30; display: flex; flex-direction: column; background: #fff; animation: up .25s ease-out; padding-top: 20px; }
+.tw-compose.android { padding-top: 24px; }
+.tw-holo-send { padding: 0 14px; font: 500 14px var(--and-font); color: #1da1f2 !important; }
+.tw-holo-send:disabled { opacity: .4; }
 .tw-compose textarea { flex: 1; border: 0; outline: none; padding: 12px; font: 17px var(--ios-font); resize: none; }
 .tw-left { padding: 8px 12px; text-align: right; color: #999; font: 14px var(--ios-font); border-top: 1px solid #eee; }
 
@@ -45,7 +62,7 @@
   background: linear-gradient(#5774ae, #34508c); border: 1px solid #1f3466; box-shadow: inset 0 1px 0 rgba(255,255,255,.25); }
 .fb-scroll { flex: 1; min-height: 0; overflow-y: auto; padding-bottom: 8px; }
 .fb-publisher { display: flex; background: linear-gradient(#f7f7f7, #e6e8ee); border-bottom: 1px solid #b4bbcd; }
-.fb-publisher button { flex: 1; height: 38px; font: bold 12px var(--ios-font); color: #6d84b4; }
+.fb-publisher button { flex: 1; height: 38px; display: flex; align-items: center; justify-content: center; gap: 4px; font: bold 12px var(--ios-font); color: #6d84b4; }
 .fb-publisher button + button { border-left: 1px solid #ccd; }
 .fb-card { margin: 8px 6px 0; background: #fff; border: 1px solid #c4cde0; border-radius: 3px; overflow: hidden; }
 .fb-head { display: flex; gap: 8px; padding: 8px; }
@@ -56,7 +73,8 @@
 .fb-img { width: 100%; display: block; }
 .fb-counts { padding: 5px 8px; font: 11px var(--ios-font); color: #6d84b4; background: #f2f4f8; border-top: 1px solid #e3e6ee; }
 .fb-acts { display: flex; border-top: 1px solid #e3e6ee; background: linear-gradient(#fafafa, #eef0f4); }
-.fb-acts button { flex: 1; height: 32px; font: bold 12px var(--ios-font); color: #6d84b4; }
+.fb-acts button { flex: 1; height: 32px; display: flex; align-items: center; justify-content: center; gap: 4px; font: bold 12px var(--ios-font); color: #6d84b4; }
+.fb-counts svg { vertical-align: -2px; }
 .fb-acts button.on { color: #3b5998; }
 .fb-acts button + button { border-left: 1px solid #e3e6ee; }
 .fb-composer textarea { width: 100%; min-height: 70px; border: 0; outline: none; padding: 8px; font: 14px var(--ios-font); resize: none; }
@@ -67,7 +85,7 @@
 /* ─── Tumblr 2012 ────────────────────────────────────────────────────────── */
 .tb { background: #2c4762; }
 .tb-bar { flex: 0 0 44px; display: flex; align-items: center; justify-content: space-between; padding: 0 6px; background: linear-gradient(#3b5878, #2c4762); border-bottom: 1px solid #1c2f42; }
-.tb-bar h1 { font: bold 24px Georgia, "Times New Roman", serif; color: #fff; }
+.tb-bar h1 { font: bold 18px var(--ios-font); color: #fff; max-width: 210px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .tb-ic { width: 38px; height: 30px; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 17px; border-radius: 4px; background: rgba(255,255,255,.1); border: 1px solid rgba(0,0,0,.3); }
 .tb-ic:disabled { opacity: .35; }
 .tb-scroll { flex: 1; min-height: 0; overflow-y: auto; padding: 6px 8px 12px 0; }
@@ -79,19 +97,29 @@
 .tb-card h3 { padding: 4px 10px 0; font: bold 17px Georgia, serif; color: #444; }
 .tb-card p { padding: 4px 10px 8px; font: 14px/1.4 Georgia, serif; color: #444; white-space: pre-wrap; word-wrap: break-word; }
 .tb-tags { padding: 0 10px 6px; font: 12px var(--ios-font); color: #a7a7a7; }
-.tb-foot { display: flex; justify-content: space-between; padding: 7px 10px; font: bold 11px var(--ios-font); color: #a7a7a7; border-top: 1px solid #eee; }
-.tb-cover { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 20px 10px 14px; margin-left: 8px; border-radius: 6px; color: #fff; text-shadow: 0 1px 3px #000;
-  background: #36465d center / cover; }
-.tb-cover b { font: bold 18px var(--ios-font); }
-.tb-cover span { font: 12px var(--ios-font); }
+.tb-foot { display: flex; justify-content: space-between; align-items: center; padding: 6px 10px; font: bold 11px var(--ios-font); color: #a7a7a7; border-top: 1px solid #eee; }
+/* En-tête du blog (onglet Account) : carte arrondie, couverture cadrée + voile, puis bio et compteurs. */
+.tb-head { margin: 8px 0 2px 8px; border-radius: 6px; overflow: hidden; background: #fff; }
+.tb-cover { height: 150px; }
+.tb-cover .so-cover-in { align-items: center; justify-content: center; text-align: center; gap: 3px; padding: 10px; }
+.tb-cover .k-avatar { border: 3px solid #fff; border-radius: 4px; box-shadow: 0 1px 4px rgba(0,0,0,.5); }
+.tb-cover b { margin-top: 4px; font: bold 18px var(--ios-font); max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tb-cover span { font: 12px var(--ios-font); opacity: .9; }
+.tb-bio { padding: 10px 12px 0; font: 13px/1.4 var(--ios-font); color: #444; white-space: pre-wrap; }
+.tb-stats { display: flex; padding: 8px 0; }
+.tb-stats span { flex: 1; display: flex; flex-direction: column; align-items: center; font: 11px var(--ios-font); color: #a7a7a7; }
+.tb-stats span + span { border-left: 1px solid #eee; }
+.tb-stats b { font: bold 15px var(--ios-font); color: #444; }
+.tb-logo { font: bold 26px Georgia, "Times New Roman", serif; letter-spacing: -.5px; }
+.tb-acts { display: flex; gap: 14px; color: #bbb; }
 .tb-tabs { flex: 0 0 49px; display: flex; background: linear-gradient(#36465d, #1f2c3b); border-top: 1px solid #10192a; }
 .tb-tabs button { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #7d8ea3; font: bold 10px var(--ios-font); }
-.tb-tabs button.on { color: #fff; }
+.tb-tabs button.on { color: #fff; background: rgba(255,255,255,.08); }
 
 /* ─── Pinterest 2012 ─────────────────────────────────────────────────────── */
 .pi { background: #f0eded; }
 .pi-bar { flex: 0 0 44px; display: flex; align-items: center; justify-content: space-between; padding: 0 8px; background: linear-gradient(#fff, #f1f0f0); border-bottom: 1px solid #ccc; box-shadow: 0 1px 2px rgba(0,0,0,.1); }
-.pi-bar h1 { font: italic bold 24px Georgia, "Times New Roman", serif; color: #cb2027; letter-spacing: -1px; }
+.pi-bar h1 { font: 400 30px/1 "Grand Hotel", "Brush Script MT", cursive; color: #cb2027; padding-top: 4px; }
 .pi-bar button { color: #8c7e7e; display: flex; padding: 4px; }
 .pi-bar button:disabled { opacity: .3; }
 .pi-scroll { flex: 1; min-height: 0; overflow-y: auto; }
@@ -101,19 +129,22 @@
 .pi-pin img { width: 100%; display: block; object-fit: cover; }
 .pi-emoji { aspect-ratio: 1; display: flex; align-items: center; justify-content: center; font-size: 50px; background: #f7f5f5; }
 .pi-pin p { padding: 6px 8px 2px; font: 11px/1.35 var(--ios-font); color: #524d4d; }
-.pi-stats { padding: 0 8px 6px; font: 10px var(--ios-font); color: #999; }
+.pi-stats { display: flex; align-items: center; gap: 2px; padding: 0 8px 6px; font: 10px var(--ios-font); color: #999; }
 .pi-by { padding: 6px 8px; font: 10px var(--ios-font); color: #999; background: #f7f5f5; border-top: 1px solid #ede9e9; }
 .pi-by b { color: #8c1d1d; }
+.pi-tabs { flex: 0 0 48px; display: flex; align-items: center; background: linear-gradient(#4a4a4a, #2a2a2a 50%, #1e1e1e 51%, #262626); border-top: 1px solid #111; }
+.pi-tabs button { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 1px; color: #9a9a9a; font: bold 9px var(--ios-font); }
+.pi-tabs button.on { color: #fff; }
+.pi-tabs .pi-cam { flex: 0 0 56px; height: 36px; justify-content: center; border-radius: 4px; color: #fff; background: linear-gradient(#e0474c, #b81e24 50%, #a5161c 51%, #b51d23); border: 1px solid #6e0d10; box-shadow: inset 0 1px 0 rgba(255,255,255,.3); }
 
 /* ─── YouTube 2012 ───────────────────────────────────────────────────────── */
 .yt { background: #fff; }
 .yt-bar { flex: 0 0 44px; display: flex; align-items: center; justify-content: space-between; padding: 0 6px; background: linear-gradient(#4b4b4b, #262626); border-bottom: 1px solid #000; }
-.yt-bar button { color: #ddd; display: flex; padding: 4px; }
-.yt-bar h1 { display: flex; align-items: center; font: bold 20px var(--ios-font); letter-spacing: -.5px; }
+.yt-bbtn { width: 36px; height: 30px; display: flex; align-items: center; justify-content: center; color: #ddd; border-radius: 4px; background: linear-gradient(#555, #2a2a2a); border: 1px solid #111; box-shadow: inset 0 1px 0 rgba(255,255,255,.15); }
+.yt-logo { display: flex; align-items: center; font: bold 20px var(--ios-font); letter-spacing: -.5px; }
 .yt-you { color: #fff; }
 .yt-tube { margin-left: 2px; padding: 0 4px; border-radius: 4px; color: #fff; background: linear-gradient(#e62117, #b31217); }
-.yt-r { width: 34px; display: flex; justify-content: flex-end; }
-.yt-r .barbtn { --btn-top: #555; --btn-bottom: #222; }
+.yt-r { width: 36px; display: flex; justify-content: flex-end; }
 .yt-scroll { flex: 1; min-height: 0; overflow-y: auto; }
 .yt-section { padding: 8px 10px; font: bold 13px var(--ios-font); color: #666; background: #f1f1f1; border-bottom: 1px solid #ddd; }
 .yt-row { display: flex; gap: 8px; width: 100%; padding: 8px; border-bottom: 1px solid #eee; text-align: left; }
@@ -126,18 +157,74 @@
 .yt-info span { font: 11px var(--ios-font); color: #777; }
 .yt-player { position: relative; flex: 0 0 auto; aspect-ratio: 16/9; display: flex; align-items: center; justify-content: center; overflow: hidden; }
 .yt-player img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: .85; }
-.yt-play { position: relative; width: 60px; height: 42px; border-radius: 10px; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 22px; background: rgba(205,32,31,.92); }
+.yt-play { position: relative; width: 62px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; color: #fff; background: linear-gradient(#e62117, #b31217); box-shadow: 0 2px 6px rgba(0,0,0,.5); }
 .yt-progress { position: absolute; left: 0; right: 0; bottom: 0; height: 3px; background: rgba(255,255,255,.3); }
 .yt-progress i { display: block; height: 100%; width: 12%; background: #cd201f; }
 .yt-detail { padding: 10px; }
 .yt-detail h2 { font: bold 16px/1.3 var(--ios-font); color: #222; }
 .yt-views { margin-top: 4px; font: 12px var(--ios-font); color: #777; }
+.yt-like span { display: flex; align-items: center; gap: 4px; }
 .yt-like { display: flex; gap: 18px; margin: 10px 0; padding: 8px 0; border-top: 1px solid #eee; border-bottom: 1px solid #eee; font: bold 12px var(--ios-font); color: #555; }
 .yt-ch { display: flex; align-items: center; gap: 8px; }
 .yt-chav { width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; font-size: 22px; background: #eee; border-radius: 3px; }
 .yt-ch b { flex: 1; font: bold 14px var(--ios-font); }
 .yt-ch button { height: 26px; padding: 0 10px; border-radius: 3px; font: bold 11px var(--ios-font); color: #fff; background: linear-gradient(#e62117, #b31217); }
 
-/* Android : mêmes apps, police Roboto, barres plates */
-.os-android .tw-bar, .os-android .tw-tabs { background: #f5f8fa; }
-.os-android .tw-head, .os-android .tw-body p, .os-android .fb-text, .os-android .tb-card p, .os-android .yt-info b { font-family: var(--and-font); }
+/* ─── Composants partagés ────────────────────────────────────────────────── */
+.so-cover { position: relative; overflow: hidden; color: #fff; }
+.so-cover-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center 35%; display: block; }
+.so-cover-scrim { position: absolute; inset: 0; background: radial-gradient(ellipse 70% 65% at 50% 60%, rgba(0,0,0,.42), rgba(0,0,0,.12)), linear-gradient(rgba(0,0,0,0) 55%, rgba(0,0,0,.35)); pointer-events: none; }
+.so-cover-in { position: relative; z-index: 1; height: 100%; display: flex; flex-direction: column; text-shadow: 0 1px 3px rgba(0,0,0,.85); }
+
+/* Barre d'action Holo (Android 4.1) */
+.so-holo { position: relative; z-index: 3; flex: 0 0 48px; height: 48px; display: flex; align-items: center; font-family: var(--and-font); box-shadow: 0 2px 4px rgba(0,0,0,.35); }
+.so-holo.dark { color: rgba(255,255,255,.92); }
+.so-holo.light { color: #333; border-bottom: 1px solid #c8c8c8; box-shadow: 0 1px 3px rgba(0,0,0,.15); }
+.so-holo-up { height: 48px; display: flex; align-items: center; gap: 4px; padding: 0 6px 0 4px; color: inherit; }
+.so-holo-up:disabled { cursor: default; }
+.so-holo-up:not(:disabled):active, .so-holo-actions button:active { background: rgba(51,181,229,.35); }
+.so-holo-icon { display: flex; align-items: center; justify-content: center; min-width: 32px; height: 32px; }
+.so-holo h1 { flex: 1; min-width: 0; padding-left: 4px; font: 400 18px var(--and-font); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: inherit; text-shadow: none; }
+.so-holo-actions { display: flex; align-items: center; margin-left: auto; }
+.so-holo-actions button { height: 48px; min-width: 48px; display: flex; align-items: center; justify-content: center; color: inherit; font: 500 14px var(--and-font); }
+.so-holo-actions button:disabled { opacity: .35; }
+.so-holo.light .so-holo-actions button { color: #555; }
+/* Onglets Holo */
+.so-htabs { position: relative; z-index: 2; flex: 0 0 44px; display: flex; background: #f3f3f3; border-bottom: 1px solid #cfcfcf; font-family: var(--and-font); }
+.so-htabs button { flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px; color: #8a8a8a; font: 500 13px var(--and-font); letter-spacing: .3px; }
+.so-htabs button + button { background-image: linear-gradient(#d6d6d6, #d6d6d6); background-size: 1px 50%; background-position: left center; background-repeat: no-repeat; }
+.so-htabs button.on { color: #333; }
+.so-htabs.dark { background: #22364b; border-bottom-color: #10192a; }
+.so-htabs.dark button { color: rgba(255,255,255,.55); }
+.so-htabs.dark button + button { background-image: linear-gradient(rgba(255,255,255,.15), rgba(255,255,255,.15)); }
+.so-htabs.dark button.on { color: #fff; }
+
+/* ─── Variantes Android 4.1 (Roboto, Holo) ───────────────────────────────── */
+.os-android .tw-head, .os-android .tw-body p, .os-android .tw-acts, .os-android .tw-counts span, .os-android .tw-counts b, .os-android .tw-banner b,
+.os-android .tw-banner span, .os-android .tw-banner p, .os-android .tw-menu div, .os-android .tw-trend, .os-android .tw-th, .os-android .tw-search,
+.os-android .tw-compose textarea, .os-android .tw-left { font-family: var(--and-font); }
+.tw.android .tw-tweet { background: #fff; padding: 12px 10px 10px; }
+.tw.android .tw-tweet .k-avatar { border-radius: 2px; }
+.tw.android .tw-menu { margin: 0; border-radius: 0; border-width: 0 0 1px; }
+.tw.android .tw-menu div { font-weight: 400; font-size: 16px; padding: 14px 16px; }
+.tw.android .tw-search { background: #f3f3f3; }
+.tw.android .tw-search span { border-radius: 0; border-width: 0 0 2px; border-color: #33b5e5; box-shadow: none; background: transparent; }
+.tw.android .tw-trend { font-weight: 400; font-size: 16px; color: #333; }
+.tw.android .tw-th { background: #fff; color: #33b5e5; font: 700 12px var(--and-font); text-transform: uppercase; border-bottom: 2px solid #33b5e5; }
+.tb.android .tb-card p, .tb.android .tb-user, .tb.android .tb-foot, .tb.android .tb-cover b, .tb.android .tb-cover span, .tb.android .tb-bio, .tb.android .tb-stats { font-family: var(--and-font); }
+.tb.android .tb-card, .tb.android .tb-head { border-radius: 2px; }
+.fb-jewels { display: flex; gap: 26px; color: rgba(255,255,255,.6); }
+.fb.android .fb-bar { flex-basis: 48px; background: #3b5998; border-bottom: 1px solid #2d4373; box-shadow: 0 1px 3px rgba(0,0,0,.4); }
+.fb.android .fb-btn { background: none; border: 0; box-shadow: none; width: 44px; height: 44px; }
+.fb.android .fb-publisher { background: #f7f7f7; }
+.fb.android .fb-publisher button, .fb.android .fb-acts button, .fb.android .fb-head b, .fb.android .fb-head span, .fb.android .fb-text, .fb.android .fb-counts { font-family: var(--and-font); }
+.fb.android .fb-publisher button { font-weight: 500; color: #555; }
+.fb.android .fb-card { margin: 8px 6px 0; border-radius: 2px; }
+.fb.android .fb-acts { background: #f7f7f7; }
+.fb.android .fb-acts button { font-weight: 500; }
+.yt.android .yt-logo { font-family: var(--and-font); font-size: 19px; }
+.yt.android .yt-bbtn { background: none; border: 0; box-shadow: none; width: 48px; height: 48px; color: inherit; }
+.yt.android .yt-section { background: #fff; color: #cc181e; font: 700 12px var(--and-font); text-transform: uppercase; border-bottom: 2px solid #cc181e; }
+.yt.android .yt-info b, .yt.android .yt-info span, .yt.android .yt-detail h2, .yt.android .yt-views, .yt.android .yt-like, .yt.android .yt-ch b, .yt.android .yt-ch button { font-family: var(--and-font); }
+.yt.android .yt-info b { font-weight: 400; font-size: 14px; }
+.yt.android .yt-ch button { border-radius: 2px; }

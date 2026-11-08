@@ -8,6 +8,8 @@ import { img } from "../lib/img";
 import { useOS } from "../phone/common";
 import { StatusBar } from "../phone/IOSChrome";
 import { ActionSheet, useLongPress, type SheetAction } from "../phone/Sheets";
+import { mdiCheck, mdiClose, mdiPlus } from "@mdi/js";
+import { Glyph } from "./glyph";
 import { Icon, type IconName } from "./icons";
 import "./kit.css";
 
@@ -212,9 +214,19 @@ function ItemForm({ pid, target, onClose }: { pid: string; target: EditTarget; o
     <div className={`k-form ${os}`}>
       <StatusBar />
       <div className="k-form-bar">
-        <button onClick={onClose}>{os === "ios" ? "Annuler" : "✕"}</button>
-        <h1>{target.title ?? "Modifier"}</h1>
-        <button className="ok" onClick={save}>{os === "ios" ? "OK" : "✓ Enregistrer"}</button>
+        {os === "ios" ? (
+          <>
+            <button onClick={onClose}>Annuler</button>
+            <h1>{target.title ?? "Modifier"}</h1>
+            <button className="ok" onClick={save}>OK</button>
+          </>
+        ) : (
+          // Barre « Terminé » de Jelly Bean : deux moitiés ✕ ANNULER | ✓ TERMINÉ.
+          <>
+            <button onClick={onClose}><Glyph i={mdiClose} size={20} />Annuler</button>
+            <button className="ok" onClick={save}><Glyph i={mdiCheck} size={20} />Terminé</button>
+          </>
+        )}
       </div>
       <div className="k-form-body">
         <Grouped>
@@ -296,6 +308,9 @@ export function useEditor(pid: string) {
 
 /** Bouton « + » de barre de navigation (affiché seulement pour le propriétaire). */
 export function AddButton({ onClick, show = true }: { onClick: () => void; show?: boolean }) {
+  const os = useOS();
   if (!show) return null;
+  // Android : icône « nouveau » holo (pas de bouton en relief).
+  if (os === "android") return <button className="barbtn" onClick={onClick} aria-label="Ajouter"><Glyph i={mdiPlus} size={26} /></button>;
   return <button className="barbtn plus" onClick={onClick} aria-label="Ajouter">+</button>;
 }

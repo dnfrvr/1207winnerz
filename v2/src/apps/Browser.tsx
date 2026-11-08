@@ -7,6 +7,8 @@ import { StatusBar } from "../phone/IOSChrome";
 import { useOS } from "../phone/common";
 import { Cell, Empty, Plain, PlainHeader, Segmented, useEditor } from "../kit/kit";
 import { Icon } from "../kit/icons";
+import { Glyph, IOS_ACTION } from "../kit/glyph";
+import { mdiBookmarkOutline, mdiBookOpenVariant, mdiClockOutline, mdiEarth, mdiHistory, mdiMenuLeft, mdiMenuRight, mdiRefresh, mdiStarOutline, mdiChevronLeft } from "@mdi/js";
 import "./browser.css";
 
 type Link = { title?: string; url?: string; time?: string; order?: number; deleted?: boolean };
@@ -32,12 +34,17 @@ export default function BrowserApp({ pid }: { pid: string }) {
           <>
             <div className="br-title">{page?.title ?? "Untitled"}</div>
             <div className="br-fields">
-              <div className="br-url"><span>{page?.url ? `http://${page.url.replace(/^https?:\/\//, "")}` : "Go to this address"}</span><Icon name="refresh" size={13} /></div>
+              <div className="br-url"><span>{page?.url ? `http://${page.url.replace(/^https?:\/\//, "")}` : "Go to this address"}</span><Glyph i={mdiRefresh} size={16} color="#7a7a7a" /></div>
               <div className="br-q"><Icon name="search" size={12} /> Google</div>
             </div>
           </>
         ) : (
-          <div className="br-and"><span className="br-globe">🌐</span><div className="br-url">{page?.url ?? "Rechercher ou saisir une URL"}</div><button onClick={() => setSheet(true)}>☆</button></div>
+          <div className="br-and">
+            <span className="br-globe"><Glyph i={mdiEarth} size={20} /></span>
+            <div className="br-url">{page?.url ?? "Rechercher ou saisir une URL"}</div>
+            <button aria-label="Onglets"><span className="br-tabs-ic">1</span></button>
+            <button onClick={() => setSheet(true)} aria-label="Favoris"><Glyph i={mdiBookmarkOutline} size={22} /></button>
+          </div>
         )}
       </div>
       <div className="br-page">
@@ -59,18 +66,33 @@ export default function BrowserApp({ pid }: { pid: string }) {
           </div>
         )}
       </div>
-      <div className="br-tools">
-        <button onClick={() => nav(`/${pid}/home`)} aria-label="Retour"><Icon name="back" size={22} /></button>
-        <button disabled aria-label="Suivant"><Icon name="forward" size={22} /></button>
-        <button aria-label="Partager"><Icon name="share" size={20} /></button>
-        <button onClick={() => setSheet(true)} aria-label="Signets"><Icon name="book" size={22} /></button>
-        <button aria-label="Onglets"><span className="br-tabs-ic">1</span></button>
-      </div>
+      {/* Safari iOS 6 : ◀ ▶ action signets onglets. Le navigateur Jelly Bean n'a pas de barre du bas. */}
+      {os === "ios" && (
+        <div className="br-tools">
+          <button onClick={() => nav(`/${pid}/home`)} aria-label="Retour"><Glyph i={mdiMenuLeft} size={38} /></button>
+          <button disabled aria-label="Suivant"><Glyph i={mdiMenuRight} size={38} /></button>
+          <button aria-label="Partager"><Glyph i={IOS_ACTION} size={24} /></button>
+          <button onClick={() => setSheet(true)} aria-label="Signets"><Glyph i={mdiBookOpenVariant} size={24} /></button>
+          <button aria-label="Onglets"><span className="br-tabs-ic">1</span></button>
+        </div>
+      )}
       {sheet && (
         <div className="br-sheet">
           <StatusBar />
-          <div className="navbar"><h1>{tab === "bookmarks" ? "Bookmarks" : "History"}</h1><div className="side r"><button className="barbtn blue" onClick={() => setSheet(false)}>Done</button></div></div>
-          <Segmented items={[{ id: "bookmarks", label: "Bookmarks" }, { id: "history", label: "History" }]} value={tab} onChange={setTab} />
+          {os === "ios" ? (
+            <>
+              <div className="navbar"><h1>{tab === "bookmarks" ? "Bookmarks" : "History"}</h1><div className="side r"><button className="barbtn blue" onClick={() => setSheet(false)}>Done</button></div></div>
+              <Segmented items={[{ id: "bookmarks", label: "Bookmarks" }, { id: "history", label: "History" }]} value={tab} onChange={setTab} />
+            </>
+          ) : (
+            <>
+              <div className="actionbar" style={{ background: "#222" }}>
+                <button className="ab-up" aria-label="Retour" onClick={() => setSheet(false)}><Glyph i={mdiChevronLeft} size={22} /><span className="ab-icon"><Glyph i={mdiEarth} size={26} color="#33b5e5" /></span></button>
+                <h1>Favoris</h1>
+              </div>
+              <Segmented items={[{ id: "bookmarks", label: "Favoris" }, { id: "history", label: "Historique" }]} value={tab} onChange={setTab} />
+            </>
+          )}
           <div className="br-list"><Plain>
             {(tab === "bookmarks" ? bookmarks : history).map(([id, l], i, arr) => {
               const day = l.time?.split(",")[0];
@@ -78,7 +100,7 @@ export default function BrowserApp({ pid }: { pid: string }) {
               return (
                 <div key={id}>
                   {head && <PlainHeader>{day}</PlainHeader>}
-                  <Cell icon={<span className="br-ic">{tab === "bookmarks" ? "📖" : "🕘"}</span>} title={l.title} subtitle={l.url} onClick={() => open(l)}
+                  <Cell icon={<span className="br-ic"><Glyph i={tab === "bookmarks" ? (os === "ios" ? mdiBookOpenVariant : mdiStarOutline) : (os === "ios" ? mdiClockOutline : mdiHistory)} size={22} /></span>} title={l.title} subtitle={l.url} onClick={() => open(l)}
                     onLong={ed.itemLong(`phones/${pid}/data/browser/${tab}`, id, { label: l.title, fields, template: { title: "", url: "", time: l.time ?? "" } })} />
                 </div>
               );

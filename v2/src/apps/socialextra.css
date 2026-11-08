@@ -1,0 +1,118 @@
+/* ─── Kik Messenger (fin 2012) ──────────────────────────────────────────────
+   Barre claire au logo « kik. » vert, liste blanche, bulles : les miennes vertes, les leurs
+   blanches cerclées de gris, accusés S / D / R sous le dernier message envoyé. */
+.kk { background: #fff; }
+.kk-bar { position: relative; flex: 0 0 44px; display: flex; align-items: center; justify-content: center; padding: 0 6px;
+  background: linear-gradient(#fdfdfd, #e9e9e9 50%, #e1e1e1 51%, #ececec); border-bottom: 1px solid #a9a9a9; box-shadow: 0 1px 2px rgba(0,0,0,.12); }
+.kk-bar h1 { display: flex; align-items: center; max-width: 190px; font: bold 18px var(--ios-font); color: #4d4d4d; text-shadow: 0 1px 0 #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.kk-bar .kk-btn.back { position: absolute; left: 6px; top: 7px; }
+.kk-side { position: absolute; right: 6px; top: 7px; display: flex; }
+.kk-btn { height: 30px; min-width: 34px; padding: 0 9px; display: flex; align-items: center; justify-content: center; border-radius: 5px; font: bold 12px var(--ios-font); color: #555;
+  text-shadow: 0 1px 0 #fff; background: linear-gradient(#fefefe, #dcdcdc); border: 1px solid #a3a3a3; box-shadow: inset 0 1px 0 #fff, 0 1px 0 rgba(255,255,255,.6); }
+.kk-btn.back { padding-left: 15px; clip-path: polygon(11px 0, 100% 0, 100% 100%, 11px 100%, 0 50%); border-left: 0; }
+.kk-btn.icon { color: #6aa317; }
+.kk-search { flex: 0 0 40px; display: flex; align-items: center; padding: 0 8px; background: linear-gradient(#e6e6e6, #d4d4d4); border-bottom: 1px solid #b0b0b0; }
+.kk-search span { flex: 1; height: 28px; line-height: 28px; padding-left: 12px; border-radius: 14px; background: #fff; border: 1px solid #b4b4b4; box-shadow: inset 0 1px 2px rgba(0,0,0,.15); font: 14px var(--ios-font); color: #aaa; }
+.kk-scroll { flex: 1; min-height: 0; overflow-y: auto; }
+.kk-row { width: 100%; display: flex; align-items: center; gap: 10px; padding: 9px 8px 9px 10px; border-bottom: 1px solid #e6e6e6; text-align: left; cursor: pointer; }
+.kk-row:active { background: #eef7e2; }
+.kk-row .k-avatar { box-shadow: 0 0 0 1px rgba(0,0,0,.12); }
+.kk-txt { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.kk-top { display: flex; justify-content: space-between; gap: 6px; }
+.kk-top b { font: bold 16px var(--ios-font); color: #222; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.kk-top i { flex-shrink: 0; font: 12px var(--ios-font); font-style: normal; color: #6aa317; }
+.kk-prev { display: flex; align-items: center; gap: 5px; font: 14px var(--ios-font); color: #8c8c8c; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.kk-unread { min-width: 22px; height: 22px; padding: 0 6px; border-radius: 11px; font: bold 12px/22px var(--ios-font); color: #fff; text-align: center;
+  background: linear-gradient(#9fd650, #6aa317); box-shadow: inset 0 1px 0 rgba(255,255,255,.4), 0 1px 1px rgba(0,0,0,.2); }
+.kk-chev { color: #b8b8b8; }
+/* Accusés de réception Kik : S (sent), D (delivered), R (read) */
+.kk-st { flex-shrink: 0; display: inline-block; font: bold 11px var(--ios-font); font-style: normal; color: #9a9a9a; }
+.kk-st.D { color: #6aa317; }
+.kk-st.R { color: #2f8fd6; }
+
+.kk-thread { display: flex; flex-direction: column; gap: 4px; padding: 10px 8px 12px; background: #f1f1f1; }
+.kk-line { display: flex; flex-direction: column; max-width: 78%; }
+.kk-line.me { align-self: flex-end; align-items: flex-end; }
+.kk-line.them { align-self: flex-start; align-items: flex-start; }
+.kk-stamp { align-self: center; margin: 8px 0 4px; font: bold 11px var(--ios-font); color: #a0a0a0; }
+.kk-line.me .kk-stamp, .kk-line.them .kk-stamp { align-self: center; width: 100%; text-align: center; }
+.kk-bubble { padding: 8px 12px; border-radius: 16px; font: 15px/1.3 var(--ios-font); white-space: pre-wrap; word-wrap: break-word; cursor: default; }
+.kk-line.me .kk-bubble { color: #fff; background: linear-gradient(#a6db57, #82bc23); border: 1px solid #6a9d1a; border-bottom-right-radius: 4px; text-shadow: 0 -1px 0 rgba(0,0,0,.15); box-shadow: inset 0 1px 0 rgba(255,255,255,.35); }
+.kk-line.them .kk-bubble { color: #333; background: #fff; border: 1px solid #cfcfcf; border-bottom-left-radius: 4px; box-shadow: 0 1px 1px rgba(0,0,0,.06); }
+.kk-line .kk-st { margin: 2px 4px 0; }
+.kk-compose { flex: 0 0 auto; display: flex; align-items: center; gap: 6px; padding: 6px; background: linear-gradient(#ececec, #d6d6d6); border-top: 1px solid #a9a9a9; }
+.kk-compose input { flex: 1; min-width: 0; height: 30px; padding: 0 12px; border-radius: 15px; border: 1px solid #b0b0b0; background: #fff; box-shadow: inset 0 1px 2px rgba(0,0,0,.15); font: 15px var(--ios-font); outline: none; }
+.kk-send { height: 30px; padding: 0 12px; border-radius: 5px; font: bold 13px var(--ios-font); color: #fff; text-shadow: 0 -1px 0 rgba(0,0,0,.25);
+  background: linear-gradient(#a6db57, #82bc23 50%, #74ad18 51%, #7cb61f); border: 1px solid #5d8c15; box-shadow: inset 0 1px 0 rgba(255,255,255,.35); }
+.kk-send:disabled { opacity: .5; }
+.kk-who { height: 30px; display: flex; align-items: center; gap: 3px; padding: 0 7px; border-radius: 5px; font: bold 11px var(--ios-font); color: #555; background: #fff; border: 1px solid #b0b0b0; }
+.kk-who.them { color: #2f8fd6; }
+
+/* Kik Android : Holo clair, barre verte, Roboto */
+.kk.android .kk-row, .kk.android .kk-top b, .kk.android .kk-top i, .kk.android .kk-prev, .kk.android .kk-bubble, .kk.android .kk-stamp,
+.kk.android .kk-compose input, .kk.android .kk-send, .kk.android .kk-who, .kk.android .kk-st, .kk.android .kk-unread { font-family: var(--and-font); }
+.kk.android .kk-top b { font-weight: 500; }
+.kk.android .so-holo .kk-btn { background: none; border: 0; box-shadow: none; color: #fff; height: 48px; min-width: 48px; }
+.kk.android .kk-compose { background: #f3f3f3; border-top: 1px solid #cfcfcf; }
+.kk.android .kk-compose input { border-radius: 0; border: 0; border-bottom: 2px solid #82bc23; box-shadow: none; background: transparent; }
+.kk.android .kk-send { border-radius: 2px; background: #82bc23; border: 0; box-shadow: none; text-shadow: none; text-transform: uppercase; }
+.kk.android .kk-bubble { border-radius: 4px; }
+
+/* ─── Vine (2013) ───────────────────────────────────────────────────────────
+   Barre verte au logo manuscrit, cartes blanches : vidéo carrée en boucle de 6 s. */
+.vn { background: #e9ece9; }
+.vn-bar { position: relative; z-index: 4; flex: 0 0 44px; display: flex; align-items: center; gap: 2px; padding: 0 6px;
+  background: linear-gradient(#1fd2a5, #00bf8f 50%, #00ad81 51%, #00b88a); border-bottom: 1px solid #00825f; box-shadow: inset 0 1px 0 rgba(255,255,255,.3); }
+.vn-bar h1 { flex: 1; min-width: 0; text-align: center; padding-right: 34px; font: bold 18px var(--ios-font); color: #fff; text-shadow: 0 -1px 0 rgba(0,0,0,.25); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.vn-word { font: 400 31px/1 "Grand Hotel", "Brush Script MT", cursive; color: #fff; text-shadow: 0 -1px 0 rgba(0,0,0,.2); letter-spacing: .5px; }
+.vn-word.sm { font-size: 26px; }
+.vn-ic { width: 34px; height: 32px; display: flex; align-items: center; justify-content: center; color: #fff; border-radius: 4px; }
+.vn-ic:active { background: rgba(0,0,0,.12); }
+.vn-ic.cam { position: absolute; right: 6px; top: 6px; background: rgba(0,0,0,.12); box-shadow: inset 0 1px 2px rgba(0,0,0,.2); }
+.vn-ic:disabled { opacity: .45; }
+.vn-menu { position: absolute; inset: 64px 0 0; z-index: 10; background: rgba(0,0,0,.35); }
+.vn.android .vn-menu { inset: 72px 0 0; }
+.vn-menu-in { width: 70%; height: 100%; background: #2b2b2b; box-shadow: 2px 0 8px rgba(0,0,0,.5); animation: vnSlide .2s ease-out; }
+@keyframes vnSlide { from { transform: translateX(-100%); } }
+.vn-menu-in button { width: 100%; display: flex; align-items: center; gap: 12px; padding: 14px 16px; color: #ddd; font: bold 15px var(--ios-font); border-bottom: 1px solid #1e1e1e; text-align: left; }
+.vn-menu-in button.on { color: #fff; background: #00bf8f; }
+.vn-scroll { flex: 1; min-height: 0; overflow-y: auto; padding-bottom: 8px; }
+.vn-post { margin: 8px 6px 0; background: #fff; border-radius: 4px; overflow: hidden; box-shadow: 0 1px 2px rgba(0,0,0,.15); }
+.vn-head { display: flex; align-items: center; gap: 8px; padding: 8px; }
+.vn-who { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.vn-who b { font: bold 14px var(--ios-font); color: #333; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.vn-who small { font: 11px var(--ios-font); color: #00a67c; }
+.vn-head i { font: 12px var(--ios-font); font-style: normal; color: #aaa; }
+.vn-media { position: relative; aspect-ratio: 1; background: #1b1b1b; overflow: hidden; }
+.vn-media img, .vn-media video { width: 100%; height: 100%; object-fit: cover; display: block; }
+/* Une photo fixe « boucle » comme une vine : léger zoom de 6 s. */
+.vn-media img { animation: vnLoop 6s ease-in-out infinite; }
+@keyframes vnLoop { 50% { transform: scale(1.06); } }
+.vn-nomedia { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: radial-gradient(circle at 50% 40%, #2fe0b4, #00a67c 60%, #00704f); }
+.vn-loop { position: absolute; left: 0; right: 0; bottom: 0; height: 3px; background: rgba(255,255,255,.25); }
+.vn-loop i { display: block; height: 100%; background: #00bf8f; animation: vnBar 6s linear infinite; transform-origin: left; }
+@keyframes vnBar { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+@media (prefers-reduced-motion: reduce) { .vn-media img, .vn-loop i { animation: none; } }
+.vn-cap { padding: 8px 10px 0; font: 14px/1.35 var(--ios-font); color: #333; white-space: pre-wrap; word-wrap: break-word; }
+.vn-acts { display: flex; gap: 6px; padding: 8px; }
+.vn-acts button { display: flex; align-items: center; gap: 4px; height: 28px; padding: 0 9px; border-radius: 4px; font: bold 12px var(--ios-font); color: #666;
+  background: linear-gradient(#fff, #eee); border: 1px solid #d3d3d3; }
+.vn-acts button.on { color: #00a67c; border-color: #9fdcc9; }
+.vn-acts .more { margin-left: auto; padding: 0 6px; }
+.vn-counts { display: flex; flex-wrap: wrap; gap: 4px 12px; padding: 0 10px 10px; font: bold 12px var(--ios-font); color: #00a67c; }
+.vn-counts span { display: flex; align-items: center; gap: 3px; }
+.vn-prof { display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 18px 14px 0; background: #fff; border-bottom: 1px solid #d6dad6; text-align: center; }
+.vn-prof .k-avatar { border: 3px solid #fff; box-shadow: 0 0 0 1px #d6dad6, 0 1px 4px rgba(0,0,0,.2); }
+.vn-prof > b { margin-top: 6px; font: bold 19px var(--ios-font); color: #333; }
+.vn-prof > span { font: 12px var(--ios-font); color: #00a67c; }
+.vn-prof > p { font: 13px/1.35 var(--ios-font); color: #666; white-space: pre-wrap; }
+.vn-stats { align-self: stretch; display: flex; margin-top: 12px; border-top: 1px solid #eee; }
+.vn-stats span { flex: 1; display: flex; flex-direction: column; align-items: center; padding: 8px 0; font: 11px var(--ios-font); color: #999; }
+.vn-stats span + span { border-left: 1px solid #eee; }
+.vn-stats b { font: bold 16px var(--ios-font); color: #333; }
+.vn-empty { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 50px 30px; text-align: center; font: 15px/1.4 var(--ios-font); color: #888; }
+.vn-empty button { display: flex; align-items: center; gap: 4px; padding: 8px 18px; border-radius: 4px; font: bold 14px var(--ios-font); color: #fff; background: linear-gradient(#1fd2a5, #00ad81); border: 1px solid #00825f; }
+
+.vn.android .vn-who b, .vn.android .vn-cap, .vn.android .vn-acts button, .vn.android .vn-counts, .vn.android .vn-prof, .vn.android .vn-menu-in button, .vn.android .vn-empty { font-family: var(--and-font); }
+.vn.android .vn-post { border-radius: 2px; }
+.vn.android .vn-acts button { border-radius: 2px; background: #f3f3f3; }

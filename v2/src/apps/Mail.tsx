@@ -3,16 +3,20 @@ import { Route, Routes, useNavigate, useParams } from "react-router-dom";
 import { useList, useValue } from "../data/hooks";
 import { AppFrame, BackButton } from "../phone/IOSChrome";
 import { useOS } from "../phone/common";
-import { AddButton, Avatar, Cell, Empty, Grouped, Plain, Section, Toolbar, useEditor } from "../kit/kit";
-import { Icon } from "../kit/icons";
+import { AddButton, Cell, Empty, Grouped, Plain, Section, Toolbar, useEditor } from "../kit/kit";
+import { Glyph } from "../kit/glyph";
+import {
+  mdiArchiveArrowDownOutline, mdiDeleteOutline, mdiEmailOutline, mdiFileDocumentEditOutline, mdiFolderMove, mdiInboxArrowDown, mdiMagnify, mdiPencil,
+  mdiRefresh, mdiReply, mdiSend, mdiSquareEditOutline, mdiStar, mdiStarOutline, mdiTagOutline, mdiTrashCan, mdiEmailPlusOutline,
+} from "@mdi/js";
 import "./mail.css";
 
 type MailItem = { from?: string; to?: string; subj?: string; preview?: string; body?: string; time?: string; unread?: boolean; order?: number; deleted?: boolean };
 const BOXES: { id: string; ios: string; and: string; icon: string }[] = [
-  { id: "inbox", ios: "Inbox", and: "Boîte de réception", icon: "📥" },
-  { id: "drafts", ios: "Drafts", and: "Brouillons", icon: "📝" },
-  { id: "sent", ios: "Sent", and: "Envoyés", icon: "📤" },
-  { id: "trash", ios: "Trash", and: "Corbeille", icon: "🗑" },
+  { id: "inbox", ios: "Inbox", and: "Boîte de réception", icon: mdiInboxArrowDown },
+  { id: "drafts", ios: "Drafts", and: "Brouillons", icon: mdiFileDocumentEditOutline },
+  { id: "sent", ios: "Sent", and: "Envoyés", icon: mdiSend },
+  { id: "trash", ios: "Trash", and: "Corbeille", icon: mdiTrashCan },
 ];
 const FIELDS = ["from", "to", "subj", "preview", "body", "time", "unread"];
 
@@ -38,7 +42,7 @@ function Mailboxes({ pid }: { pid: string }) {
         <Section title={email ?? "UMA"}>
           {BOXES.map((b, i) => {
             const unread = b.id === "inbox" ? counts[i].filter(([, m]) => m.unread).length : counts[i].length;
-            return <Cell key={b.id} icon={<span className="ml-box">{b.icon}</span>} title={b.ios} chevron onClick={() => nav(b.id)}
+            return <Cell key={b.id} icon={<span className="ml-box"><Glyph i={b.icon} size={22} /></span>} title={b.ios} chevron onClick={() => nav(b.id)}
               accessory={unread ? <span className="ml-count">{unread}</span> : undefined} />;
           })}
         </Section>
@@ -67,18 +71,21 @@ function Box({ pid, forced }: { pid: string; forced?: string }) {
           {list.map(([id, m]) => (
             <button key={id} className={`ml-row ${m.unread ? "unread" : ""}`} onClick={() => { if (m.unread && ed.canEdit) ed.write({ [`${path}/${id}/unread`]: false }); nav(`/${pid}/gmail/${box}/${id}`); }}
               onContextMenu={(e) => { e.preventDefault(); ed.itemLong(path, id, { fields: FIELDS, label: m.subj })?.(); }}>
-              {os === "android" ? <Avatar name={m.from} size={36} /> : <span className="ml-dot">{m.unread && <i />}</span>}
+              {os === "android" ? <span className="ml-label" /> : <span className="ml-dot">{m.unread && <i />}</span>}
               <span className="ml-main">
                 <span className="ml-top"><b>{m.from}</b><span>{m.time}</span></span>
                 <span className="ml-subj">{m.subj}</span>
                 <span className="ml-prev">{m.preview}</span>
               </span>
+              {os === "android" && <span className="ml-star"><Glyph i={m.unread ? mdiStar : mdiStarOutline} size={20} /></span>}
             </button>
           ))}
           {list.length === 0 && <Empty>No Mail</Empty>}
         </Plain>
       </div>
-      {os === "ios" && <Toolbar><span className="ml-upd">Updated Just Now</span></Toolbar>}
+      {os === "ios"
+        ? <Toolbar><button aria-label="Relever"><Glyph i={mdiRefresh} size={22} /></button><span className="ml-upd">Updated Just Now</span><button aria-label="Nouveau message"><Glyph i={mdiSquareEditOutline} size={22} /></button></Toolbar>
+        : <Toolbar><button aria-label="Nouveau message"><Glyph i={mdiEmailPlusOutline} size={24} /></button><button aria-label="Rechercher"><Glyph i={mdiMagnify} size={24} /></button><button aria-label="Libellés"><Glyph i={mdiTagOutline} size={24} /></button><button aria-label="Actualiser"><Glyph i={mdiRefresh} size={24} /></button></Toolbar>}
       {ed.ui}
     </AppFrame>
   );
@@ -92,7 +99,7 @@ function Message({ pid }: { pid: string }) {
   const ed = useEditor(pid);
   return (
     <AppFrame title={os === "ios" ? "" : m.subj} left={<BackButton to={`/${pid}/gmail/${box}`} label={BOXES.find((b) => b.id === box)?.ios ?? "Inbox"} />}
-      right={ed.canEdit ? <button className="barbtn" onClick={() => ed.edit({ path: `phones/${pid}/data/mail/${box}/${id}`, fields: FIELDS, title: "Mail" })}>{os === "ios" ? "Edit" : "✎"}</button> : undefined}
+      right={ed.canEdit ? <button className="barbtn" aria-label="Modifier" onClick={() => ed.edit({ path: `phones/${pid}/data/mail/${box}/${id}`, fields: FIELDS, title: "Mail" })}>{os === "ios" ? "Edit" : <Glyph i={mdiPencil} size={22} />}</button> : undefined}
       bodyClass={`ml-msg ${os} k-body-tabbed`}>
       <div className="k-tab-scroll">
         <div className="ml-head">
@@ -103,7 +110,9 @@ function Message({ pid }: { pid: string }) {
         </div>
         <div className="ml-body">{m.body || m.preview}</div>
       </div>
-      {os === "ios" && <Toolbar><button><Icon name="refresh" size={18} /></button><button><Icon name="trash" size={18} /></button><button><Icon name="share" size={18} /></button><button><Icon name="plus" size={18} /></button></Toolbar>}
+      {os === "ios"
+        ? <Toolbar><button aria-label="Déplacer"><Glyph i={mdiFolderMove} size={22} /></button><button aria-label="Supprimer"><Glyph i={mdiTrashCan} size={22} /></button><button aria-label="Répondre"><Glyph i={mdiReply} size={24} /></button><button aria-label="Nouveau message"><Glyph i={mdiSquareEditOutline} size={22} /></button></Toolbar>
+        : <Toolbar><button aria-label="Archiver"><Glyph i={mdiArchiveArrowDownOutline} size={24} /></button><button aria-label="Supprimer"><Glyph i={mdiDeleteOutline} size={24} /></button><button aria-label="Libellés"><Glyph i={mdiTagOutline} size={24} /></button><button aria-label="Marquer comme non lu"><Glyph i={mdiEmailOutline} size={24} /></button></Toolbar>}
       {ed.ui}
     </AppFrame>
   );

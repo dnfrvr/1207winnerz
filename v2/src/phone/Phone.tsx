@@ -158,7 +158,8 @@ function PhoneScreen({ pid, profile, os }: { pid: string; profile: Profile; os: 
   useEffect(() => {
     const p = prev.current;
     prev.current = { location: loc, app: appId };
-    if (p?.app && p.app !== appId) {
+    // Animation de fermeture seulement au sein du même téléphone (sinon la route d'origine n'existe plus ici).
+    if (p?.app && p.app !== appId && p.location.pathname.split("/")[1] === loc.pathname.split("/")[1]) {
       setExiting({ location: p.location, app: p.app });
       const t = setTimeout(() => setExiting(null), ANIM_MS);
       return () => { clearTimeout(t); setExiting(null); };
@@ -177,7 +178,7 @@ function PhoneScreen({ pid, profile, os }: { pid: string; profile: Profile; os: 
           <AppStack pid={pid} />
         </div>
       )}
-      {exiting && exiting.app !== appId && (
+      {exiting && exiting.app !== appId && exiting.location.pathname.split("/")[1] === pid && (
         <div className="app-layer exit" style={originStyle(exiting.app, os)}>
           <Suspense fallback={<div className="app" />}>
             <Routes location={exiting.location}><Route path=":app/*" element={<AppRoute pid={pid} />} /></Routes>

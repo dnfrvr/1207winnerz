@@ -1,32 +1,74 @@
-.notes-paper {
-  --line: 30px;
-  font-family: "Marker Felt", "Noteworthy", "Chalkboard SE", "Comic Sans MS", cursive;
-  color: #2b2116;
-  background:
-    linear-gradient(90deg, transparent 30px, #e8a2a2 30px, #e8a2a2 31px, transparent 31px, transparent 34px, #e8a2a2 34px, #e8a2a2 35px, transparent 35px),
-    repeating-linear-gradient(transparent 0 calc(var(--line) - 1px), #b9cde0 calc(var(--line) - 1px) var(--line)),
-    #fdf9b8;
-  background-attachment: local;
-  min-height: 100%;
-  position: relative;
+/* ─── Notes iOS 6 ────────────────────────────────────────────────────────────
+   Cuir brun grainé (barre de nav + barre d'outils), bloc jaune ligné, bord déchiré,
+   Noteworthy (police par défaut d'iOS 6) → Marker Felt → Patrick Hand (repli web). */
+:root {
+  --nt-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.75' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 .5 -.08'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E");
+  --nt-leather: var(--nt-grain), linear-gradient(#9a6c41, #7a522d 48%, #6a4523 52%, #573717);
+  --nt-paper-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='p'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.55' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .55  0 0 0 0 .45  0 0 0 0 .1  0 0 0 .09 0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23p)'/%3E%3C/svg%3E");
+  --nt-font: "Noteworthy", "Marker Felt", "Patrick Hand", "Chalkboard SE", "Comic Sans MS", cursive;
 }
-.notes-list { list-style: none; }
-.notes-list li { height: 30px; }
-.notes-list button { width: 100%; height: 30px; display: flex; align-items: center; gap: 6px; padding: 0 10px 0 44px; text-align: left; font-family: inherit; font-size: 17px; }
-.notes-list .t { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.notes-list .d { font-size: 13px; color: #8b6a3e; }
-.notes-list .chev { font-size: 22px; color: #a08860; line-height: 1; }
-.notes-list .empty { padding: 4px 44px; color: #8b6a3e; }
 
-.note-sheet { padding: 0 12px 60px 44px; display: flex; flex-direction: column; }
-.note-date { height: 30px; line-height: 30px; text-align: center; font-size: 13px; color: #8b6a3e; background: transparent; border: 0; outline: none; }
-.note-title, .note-body { font-family: inherit; font-size: 19px; line-height: 30px; background: transparent; border: 0; outline: none; width: 100%; color: inherit; }
-.note-title { height: 30px; font-weight: bold; }
-.note-body { resize: none; overflow: hidden; white-space: pre-wrap; }
-.note-body.ro { min-height: 0; }
+.nt { font-family: var(--nt-font); color: #3b2a14; }
+.nt-ios { --row: 44px; background: var(--nt-paper-grain), #fcf4a7; }
 
-.notes-toolbar {
-  position: sticky; bottom: 0; height: 44px; display: flex; align-items: center; justify-content: flex-end; padding: 0 16px;
-  background: linear-gradient(#a57a4c, #6e4b28); border-top: 1px solid #3a240f; font-size: 20px;
-}
-.notes-toolbar button { filter: grayscale(1) brightness(2); }
+/* Barre de recherche (teinte tabac des Notes d'iOS 6) */
+.nt-search { padding: 7px 6px; background: linear-gradient(#cfbf97, #b29e72); border-bottom: 1px solid #7d6a45; }
+.nt-search label { display: flex; align-items: center; gap: 5px; height: 29px; padding: 0 10px; border-radius: 15px; background: #fff; color: #8e8e8e;
+  border: 1px solid #8a7752; box-shadow: inset 0 1px 2px rgba(0,0,0,.35); }
+.nt-search input { flex: 1; min-width: 0; border: 0; outline: none; background: transparent; font: 15px var(--ios-font); color: #000; }
+
+/* Restes des feuilles arrachées : bande dentelée avec ombre portée */
+.nt-torn { position: relative; z-index: 1; height: 9px; margin-bottom: -9px; filter: drop-shadow(0 1px 1px rgba(60,40,0,.35)); pointer-events: none; }
+.nt-torn i { display: block; height: 100%; background: var(--nt-paper-grain), linear-gradient(#efe28e, #f6eb9c);
+  -webkit-mask: conic-gradient(from -45deg at bottom, #0000, #000 1deg 89deg, #0000 90deg) 50% / 7px 100%;
+  mask: conic-gradient(from -45deg at bottom, #0000, #000 1deg 89deg, #0000 90deg) 50% / 7px 100%; }
+
+/* Liste : une note par ligne du bloc */
+.nt-list { list-style: none; padding-top: 6px; min-height: calc(100% - 44px);
+  background: repeating-linear-gradient(transparent 0 calc(var(--row) - 1px), rgba(150,130,80,.28) calc(var(--row) - 1px) var(--row)); background-position: 0 6px; }
+.nt-list li { height: var(--row); }
+.nt-list button { width: 100%; height: var(--row); display: flex; align-items: center; gap: 8px; padding: 2px 8px 0 12px; text-align: left; font: 20px var(--nt-font); color: #3b2a14; }
+.nt-list button:active { background: rgba(160,120,40,.18); }
+.nt-list .t { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.nt-list .d { flex-shrink: 0; font-size: 15px; color: #8c6a3c; }
+.nt-list .chev { flex-shrink: 0; font: bold 22px/1 var(--ios-font); color: #a3895c; margin-top: -2px; }
+.nt-list .empty { padding: 10px 12px; font-size: 18px; color: #8c6a3c; }
+
+/* Note */
+.app-body.nt-note { display: flex; flex-direction: column; overflow: hidden; }
+.nt-scroll { flex: 1; min-height: 0; overflow-y: auto; }
+.nt-sheet { --line: 29px; min-height: 100%; padding: 6px 12px 40px 14px; display: flex; flex-direction: column;
+  background: repeating-linear-gradient(transparent 0 calc(var(--line) - 1px), rgba(150,130,80,.3) calc(var(--line) - 1px) var(--line)); background-position: 0 6px; }
+.nt-date { height: 29px; display: flex; align-items: center; justify-content: space-between; gap: 8px; font: 14px var(--nt-font); color: #8c6a3c; }
+.nt-date input { width: 110px; text-align: right; font: inherit; color: inherit; background: transparent; border: 0; outline: none; }
+.nt-line { width: 100%; font: 19px/29px var(--nt-font); color: inherit; background: transparent; border: 0; outline: none; }
+.nt-title { height: 29px; }
+.nt-body { resize: none; overflow: hidden; white-space: pre-wrap; }
+.nt-line::placeholder { color: #b9a46e; }
+
+/* Barre d'outils cuir : ◀  action  corbeille  ▶ (glyphes blancs en relief) */
+.nt-toolbar { flex: 0 0 44px; display: flex; align-items: center; justify-content: space-around; padding: 0 6px;
+  background: var(--nt-leather); border-top: 1px solid #24140a; box-shadow: inset 0 1px 0 rgba(255,236,200,.3); }
+.nt-toolbar button { width: 56px; height: 40px; display: flex; align-items: center; justify-content: center; color: #fff; filter: drop-shadow(0 -1px 0 rgba(0,0,0,.6)); }
+.nt-toolbar button:active { color: #f3e2c0; }
+.nt-toolbar button:disabled { opacity: .4; }
+
+/* ─── Android 4.1 : mémos façon S Memo ─────────────────────────────────────── */
+.os-android .nt { font-family: var(--and-font); color: #333; }
+.nt-and { background: #e9e4d8; }
+.nt-memos { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 10px; }
+.nt-memo { position: relative; height: 150px; display: flex; flex-direction: column; gap: 4px; padding: 10px 10px 22px; overflow: hidden; text-align: left;
+  background: linear-gradient(#fff9c4, #fff3a6); border-top: 3px solid #f2d65a;
+  box-shadow: 0 1px 2px rgba(0,0,0,.3); font-family: var(--and-font); color: #333; }
+.nt-memo:active { box-shadow: 0 0 0 3px rgba(51,181,229,.7); }
+.nt-memo b { flex-shrink: 0; font: 700 13px var(--and-font); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.nt-memo-body { flex: 1; min-height: 0; font: 12px/17px var(--and-font); color: #555; white-space: pre-line; overflow: hidden; }
+.nt-memo small { position: absolute; right: 8px; bottom: 5px; font: 10px var(--and-font); color: #998a5a; }
+.nt-and-empty { padding: 40px; text-align: center; font: 15px var(--and-font); color: #8a8270; }
+.nt-and-note { background: #fff7b8; }
+.nt-and-note .nt-sheet { --line: 28px; padding: 4px 16px 40px; background-position: 0 4px;
+  background-image: repeating-linear-gradient(transparent 0 27px, rgba(160,140,70,.3) 27px 28px); }
+.nt-and-note .nt-date { height: 28px; font: 12px var(--and-font); color: #998a5a; }
+.nt-and-note .nt-line { font: 16px/28px var(--and-font); color: #333; }
+.nt-and-note .nt-title { height: 28px; font-weight: 700; }
+.nt-and-note .nt-line::placeholder { color: #c4b47a; }

@@ -3,8 +3,9 @@
 // selon le téléphone affiché (useOS).
 import { useContext, useRef, useState, type ReactNode } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { useData } from "../data/hooks";
-import { ANDROID_APP_COLORS, NavDirCtx, useClock, useOS } from "./common";
+import { useData, useValue } from "../data/hooks";
+import { img } from "../lib/img";
+import { ANDROID_APP_COLORS, ANDROID_LIGHT_BARS, NavDirCtx, useClock, useOS } from "./common";
 
 export { LORE_DATE_DEFAULT, NavDirCtx, useClock, useLoreDate, type NavDir } from "./common";
 
@@ -52,8 +53,9 @@ export function AppFrame({ title, left, right, children, navStyle, bodyClass = "
   if (os === "android") return (
     <div className={`app and ${mountDir}`}>
       <StatusBar />
-      <div className="actionbar" style={{ background: ANDROID_APP_COLORS[app] ?? "#212121" }}>
-        {left}
+      {/* navStyle (teinte iOS) volontairement ignoré : la barre d'action holo a sa couleur propre. */}
+      <div className={`actionbar ${ANDROID_LIGHT_BARS.has(app) ? "light" : ""}`} style={{ background: ANDROID_APP_COLORS[app] ?? "#222" }}>
+        {left ?? <AppGlyph app={app} />}
         <h1>{title}</h1>
         {right && <div className="ab-actions">{right}</div>}
       </div>
@@ -73,12 +75,22 @@ export function AppFrame({ title, left, right, children, navStyle, bodyClass = "
   );
 }
 
+/** Icône de l'app dans la barre d'action Android (comme dans les apps Jelly Bean). */
+function AppGlyph({ app }: { app: string }) {
+  const icons = useValue<Record<string, string>>("shared/androidIcons");
+  const src = icons?.[app];
+  return src ? <span className="ab-icon"><img src={img(src)} alt="" draggable={false} /></span> : <span className="ab-icon-pad" />;
+}
+
 export function BackButton({ to, label, style }: { to: string; label: string; style?: React.CSSProperties }) {
   const nav = useNavigate();
   const os = useOS();
+  const { app = "" } = useParams();
+  // Android 4.1 : « affordance Up » = petit chevron + icône de l'app, à gauche du titre.
   if (os === "android") return (
     <button className="ab-up" aria-label={label} onClick={() => nav(to)}>
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden><path d="M15 18l-6-6 6-6" stroke="rgba(255,255,255,.87)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+      <svg className="ab-caret" width="8" height="14" viewBox="0 0 8 14" aria-hidden><path d="M7 1L1.5 7 7 13" fill="none" stroke="currentColor" strokeWidth="1.6" /></svg>
+      <AppGlyph app={app} />
     </button>
   );
   return <button className="barbtn back" style={style} onClick={() => nav(to)}>{label}</button>;
@@ -104,7 +116,9 @@ export function SlideToUnlock({ onUnlock }: { onUnlock: () => void }) {
       }}
     >
       <div className="label" style={{ opacity: 1 - x / max() }}>slide to unlock</div>
-      <div className="knob" style={{ transform: `translateX(${x}px)`, transition: start.current === null ? "transform .25s" : "none" }}>➜</div>
+      <div className="knob" style={{ transform: `translateX(${x}px)`, transition: start.current === null ? "transform .25s" : "none" }}>
+        <svg width="28" height="22" viewBox="0 0 28 22" aria-hidden><path d="M2 8h14V2l10 9-10 9v-6H2z" fill="url(#stu)" stroke="#7d7d7d" strokeWidth=".8" /><defs><linearGradient id="stu" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#9a9a9a" /><stop offset="1" stopColor="#c8c8c8" /></linearGradient></defs></svg>
+      </div>
     </div>
   );
 }

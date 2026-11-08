@@ -5,13 +5,25 @@ import { useList, useValue } from "../data/hooks";
 import { AppFrame, BackButton } from "../phone/IOSChrome";
 import { useOS } from "../phone/common";
 import { AddButton, Cell, Grouped, Section, Switch, useEditor } from "../kit/kit";
+import { Glyph } from "../kit/glyph";
+import { img } from "../lib/img";
+import {
+  mdiAirplane, mdiAntenna, mdiApps, mdiBattery, mdiBackupRestore, mdiBluetooth, mdiBrightness7, mdiChartPie, mdiCloud, mdiCog, mdiCompass,
+  mdiDatabase, mdiDotsHorizontal, mdiEmail, mdiFormatListBulleted, mdiHandBackRight, mdiInformationOutline, mdiLinkVariant, mdiLock,
+  mdiLockOutline, mdiMapMarker, mdiMessageText, mdiMusic, mdiNoteText, mdiPhone, mdiPhoneClassic, mdiClockOutline, mdiTranslate,
+  mdiVolumeHigh, mdiWifi, mdiWifiStrength3, mdiWifiStrength3Lock, mdiBrightness6,
+} from "@mdi/js";
 import "./settings.css";
 
 type Net = { name?: string; secured?: boolean; current?: boolean; order?: number; deleted?: boolean };
 type Dev = { name?: string; connected?: boolean; order?: number; deleted?: boolean };
 type Prefs = { wifi?: boolean; bt?: boolean; airplane?: boolean };
 
-const tile = (bg: string, glyph: string) => <span className="st-tile" style={{ background: bg }}>{glyph}</span>;
+// Tuile colorée d'iOS 6 (29 pt, coins arrondis, reflet) avec glyphe blanc.
+const tile = (bg: string, glyph: string) => <span className="st-tile" style={{ background: bg }}><Glyph i={glyph} size={19} /></span>;
+// Icône holo de Jelly Bean (glyphe gris clair).
+const ic = (glyph: string) => <span className="st-ic"><Glyph i={glyph} size={24} /></span>;
+const BLUE = "linear-gradient(#5aaaf7,#1f6fd8)", GREEN = "linear-gradient(#7fd66b,#2f9b22)", GREY = "linear-gradient(#9da7b4,#5d6877)", RED = "linear-gradient(#ff7272,#d41b1b)", ORANGE = "linear-gradient(#ffad45,#f07000)";
 
 export default function SettingsApp({ pid }: { pid: string }) {
   return (
@@ -36,25 +48,29 @@ function Root({ pid }: { pid: string }) {
   const { p, set } = usePrefs(pid);
   const nets = useList<Net>(`phones/${pid}/data/wifiNetworks`);
   const current = nets.find(([, n]) => n.current)?.[1].name;
+  // Lignes des apps : iOS 6 y affiche l'icône réelle de l'app en miniature.
+  const appIcons = useValue<Record<string, string>>(`phones/${pid}/profile/appIcons`) ?? {};
+  const appTile = (id: string, bg: string, glyph: string) => appIcons[id]
+    ? <span className="st-tile st-app"><img src={img(appIcons[id])} alt="" /></span> : tile(bg, glyph);
   if (os === "android") return (
     <AppFrame title="Paramètres" left={<BackButton to={`/${pid}/home`} label="Accueil" />} bodyClass="st android">
       <Grouped>
         <Section title="Sans fil et réseaux">
-          <Cell icon={<span className="st-ic">📶</span>} title="Wi-Fi" onClick={() => nav("wifi")} accessory={<Switch on={p.wifi} onChange={set && ((v) => set("wifi", v))} />} />
-          <Cell icon={<span className="st-ic">ᛒ</span>} title="Bluetooth" onClick={() => nav("bluetooth")} accessory={<Switch on={p.bt} onChange={set && ((v) => set("bt", v))} />} />
-          <Cell icon={<span className="st-ic">◔</span>} title="Consommation des données" />
-          <Cell icon={<span className="st-ic">⋯</span>} title="Plus…" />
+          <Cell icon={ic(mdiWifi)} title="Wi-Fi" onClick={() => nav("wifi")} accessory={<Switch on={p.wifi} onChange={set && ((v) => set("wifi", v))} />} />
+          <Cell icon={ic(mdiBluetooth)} title="Bluetooth" onClick={() => nav("bluetooth")} accessory={<Switch on={p.bt} onChange={set && ((v) => set("bt", v))} />} />
+          <Cell icon={ic(mdiChartPie)} title="Consommation des données" />
+          <Cell icon={ic(mdiDotsHorizontal)} title="Plus…" />
         </Section>
         <Section title="Appareil">
-          <Cell icon={<span className="st-ic">🔊</span>} title="Son" /><Cell icon={<span className="st-ic">☀</span>} title="Affichage" />
-          <Cell icon={<span className="st-ic">▤</span>} title="Stockage" /><Cell icon={<span className="st-ic">🔋</span>} title="Batterie" /><Cell icon={<span className="st-ic">▦</span>} title="Applications" />
+          <Cell icon={ic(mdiVolumeHigh)} title="Son" /><Cell icon={ic(mdiBrightness6)} title="Affichage" />
+          <Cell icon={ic(mdiDatabase)} title="Stockage" /><Cell icon={ic(mdiBattery)} title="Batterie" /><Cell icon={ic(mdiApps)} title="Applications" />
         </Section>
         <Section title="Personnel">
-          <Cell icon={<span className="st-ic">⌖</span>} title="Services de localisation" /><Cell icon={<span className="st-ic">🔒</span>} title="Sécurité" />
-          <Cell icon={<span className="st-ic">A</span>} title="Langue et saisie" /><Cell icon={<span className="st-ic">↺</span>} title="Sauvegarder et réinitialiser" />
+          <Cell icon={ic(mdiMapMarker)} title="Services de localisation" /><Cell icon={ic(mdiLock)} title="Sécurité" />
+          <Cell icon={ic(mdiTranslate)} title="Langue et saisie" /><Cell icon={ic(mdiBackupRestore)} title="Sauvegarder et réinitialiser" />
         </Section>
         <Section title="Système">
-          <Cell icon={<span className="st-ic">◷</span>} title="Date et heure" /><Cell icon={<span className="st-ic">ⓘ</span>} title="À propos du téléphone" onClick={() => nav("about")} />
+          <Cell icon={ic(mdiClockOutline)} title="Date et heure" /><Cell icon={ic(mdiInformationOutline)} title="À propos du téléphone" onClick={() => nav("about")} />
         </Section>
       </Grouped>
     </AppFrame>
@@ -63,28 +79,28 @@ function Root({ pid }: { pid: string }) {
     <AppFrame title="Settings" left={<BackButton to={`/${pid}/home`} label="Accueil" />} bodyClass="st">
       <Grouped>
         <Section>
-          <Cell icon={tile("linear-gradient(#ffa33a,#f07400)", "✈")} title="Airplane Mode" accessory={<Switch on={p.airplane} onChange={set && ((v) => set("airplane", v))} />} />
-          <Cell icon={tile("linear-gradient(#4aa3f5,#1a6fd4)", "📶")} title="Wi-Fi" detail={p.wifi ? (current ?? "Not Connected") : "Off"} chevron onClick={() => nav("wifi")} />
-          <Cell icon={tile("linear-gradient(#4aa3f5,#1a6fd4)", "ᛒ")} title="Bluetooth" detail={p.bt ? "On" : "Off"} chevron onClick={() => nav("bluetooth")} />
-          <Cell icon={tile("linear-gradient(#7ad66a,#33a524)", "◉")} title="Cellular" chevron />
-          <Cell icon={tile("linear-gradient(#7ad66a,#33a524)", "⇆")} title="Personal Hotspot" detail="Off" chevron />
-          <Cell icon={tile("linear-gradient(#8e9aab,#5a6678)", "☏")} title="Carrier" detail="AT&T" chevron />
+          <Cell icon={tile(ORANGE, mdiAirplane)} title="Airplane Mode" accessory={<Switch on={p.airplane} onChange={set && ((v) => set("airplane", v))} />} />
+          <Cell icon={tile(BLUE, mdiWifi)} title="Wi-Fi" detail={p.wifi ? (current ?? "Not Connected") : "Off"} chevron onClick={() => nav("wifi")} />
+          <Cell icon={tile(BLUE, mdiBluetooth)} title="Bluetooth" detail={p.bt ? "On" : "Off"} chevron onClick={() => nav("bluetooth")} />
+          <Cell icon={tile(GREEN, mdiAntenna)} title="Cellular" chevron />
+          <Cell icon={tile(GREEN, mdiLinkVariant)} title="Personal Hotspot" detail="Off" chevron />
+          <Cell icon={tile(GREEN, mdiPhoneClassic)} title="Carrier" detail="AT&T" chevron />
         </Section>
         <Section>
-          <Cell icon={tile("linear-gradient(#ff6a6a,#e01a1a)", "◉")} title="Notifications" chevron />
-          <Cell icon={tile("linear-gradient(#8e9aab,#5a6678)", "⚙")} title="General" chevron onClick={() => nav("about")} />
-          <Cell icon={tile("linear-gradient(#ff6a6a,#e01a1a)", "🔊")} title="Sounds" chevron />
-          <Cell icon={tile("linear-gradient(#4aa3f5,#1a6fd4)", "☀")} title="Brightness & Wallpaper" chevron />
-          <Cell icon={tile("linear-gradient(#8e9aab,#5a6678)", "✋")} title="Privacy" chevron />
+          <Cell icon={tile(RED, mdiFormatListBulleted)} title="Notifications" chevron />
+          <Cell icon={tile(GREY, mdiCog)} title="General" chevron onClick={() => nav("about")} />
+          <Cell icon={tile(RED, mdiVolumeHigh)} title="Sounds" chevron />
+          <Cell icon={tile(BLUE, mdiBrightness7)} title="Brightness & Wallpaper" chevron />
+          <Cell icon={tile(GREY, mdiHandBackRight)} title="Privacy" chevron />
         </Section>
         <Section>
-          <Cell icon={tile("linear-gradient(#9fd2ff,#3a8fe0)", "☁")} title="iCloud" chevron />
-          <Cell icon={tile("linear-gradient(#4aa3f5,#1a6fd4)", "✉")} title="Mail, Contacts, Calendars" chevron />
-          <Cell icon={tile("linear-gradient(#fff3a0,#f5c400)", "✎")} title="Notes" chevron />
-          <Cell icon={tile("linear-gradient(#8ed97f,#33a524)", "☎")} title="Phone" chevron />
-          <Cell icon={tile("linear-gradient(#8ed97f,#33a524)", "💬")} title="Messages" chevron />
-          <Cell icon={tile("linear-gradient(#4aa3f5,#1a6fd4)", "🧭")} title="Safari" chevron />
-          <Cell icon={tile("linear-gradient(#ff8fc9,#e0157f)", "♫")} title="Music" chevron />
+          <Cell icon={tile("linear-gradient(#a9d8ff,#3d93e6)", mdiCloud)} title="iCloud" chevron />
+          <Cell icon={tile(BLUE, mdiEmail)} title="Mail, Contacts, Calendars" chevron />
+          <Cell icon={appTile("notes", "linear-gradient(#ffe66a,#e9b800)", mdiNoteText)} title="Notes" chevron />
+          <Cell icon={appTile("phone", GREEN, mdiPhone)} title="Phone" chevron />
+          <Cell icon={appTile("messages", GREEN, mdiMessageText)} title="Messages" chevron />
+          <Cell icon={appTile("safari", BLUE, mdiCompass)} title="Safari" chevron />
+          <Cell icon={appTile("music", ORANGE, mdiMusic)} title="Music" chevron />
         </Section>
       </Grouped>
     </AppFrame>
@@ -99,7 +115,7 @@ function Wifi({ pid }: { pid: string }) {
   const path = `phones/${pid}/data/wifiNetworks`;
   const fields = ["name", "secured", "current"];
   return (
-    <AppFrame title={os === "ios" ? "Wi-Fi Networks" : "Wi-Fi"} left={<BackButton to={`/${pid}/settings`} label="Settings" />}
+    <AppFrame title="Wi-Fi" left={<BackButton to={`/${pid}/settings`} label="Settings" />}
       right={<AddButton show={ed.canEdit} onClick={() => ed.add(path, { name: "", secured: true, current: false }, { title: "Réseau", fields })} />} bodyClass={`st ${os}`}>
       <Grouped>
         <Section><Cell title="Wi-Fi" accessory={<Switch on={p.wifi} onChange={set && ((v) => set("wifi", v))} />} /></Section>
@@ -107,9 +123,9 @@ function Wifi({ pid }: { pid: string }) {
           <Section title={os === "ios" ? "Choose a Network…" : "Réseaux"}>
             {nets.map(([id, n]) => (
               <Cell key={id} className={n.current ? "st-cur" : ""} title={n.name}
-                icon={os === "ios" ? <span className="st-check">{n.current ? "✓" : ""}</span> : <span className="st-ic">📶</span>}
+                icon={os === "ios" ? <span className="st-check">{n.current ? "✓" : ""}</span> : ic(n.secured ? mdiWifiStrength3Lock : mdiWifiStrength3)}
                 subtitle={os === "android" ? (n.current ? "Connecté" : n.secured ? "Sécurisé par WPA2" : "Ouvert") : undefined}
-                accessory={os === "ios" ? <span className="st-wifi">{n.secured ? "🔒" : ""}<b>≋</b><i className="st-disclose">›</i></span> : undefined}
+                accessory={os === "ios" ? <span className="st-wifi">{n.secured && <Glyph i={mdiLockOutline} size={14} />}<Glyph i={mdiWifi} size={18} /><i className="st-disclose">›</i></span> : undefined}
                 onClick={ed.canEdit ? () => { const patches: Record<string, boolean> = {}; for (const [k, x] of nets) if (x.current !== (k === id)) patches[`${path}/${k}/current`] = k === id; ed.write(patches); } : undefined}
                 onLong={ed.itemLong(path, id, { label: n.name, fields })} />
             ))}
@@ -139,9 +155,9 @@ function Bluetooth({ pid }: { pid: string }) {
           <Cell title="Bluetooth" accessory={<Switch on={p.bt} onChange={set && ((v) => set("bt", v))} />} />
         </Section>
         {p.bt && (
-          <Section title="Devices">
+          <Section title={os === "ios" ? "Devices" : "Appareils associés"}>
             {devs.map(([id, d]) => (
-              <Cell key={id} title={d.name} detail={d.connected ? "Connected" : "Not Connected"} chevron={os === "ios"}
+              <Cell key={id} title={d.name} detail={os === "ios" ? (d.connected ? "Connected" : "Not Connected") : undefined} subtitle={os === "android" ? (d.connected ? "Connecté" : "Associé") : undefined} chevron={os === "ios"}
                 onLong={ed.itemLong(path, id, { label: d.name, fields: ["name", "connected"] })} />
             ))}
           </Section>

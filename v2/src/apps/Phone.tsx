@@ -7,7 +7,11 @@ import { inboxLabel, loreNowMs, loreToMs } from "../lib/loreTime";
 import { AppFrame, BackButton, StatusBar } from "../phone/IOSChrome";
 import { LORE_DATE_DEFAULT, useOS } from "../phone/common";
 import { AddButton, Avatar, Cell, Empty, Grouped, Plain, PlainHeader, Section, Segmented, TabBar, useEditor, type Tab } from "../kit/kit";
-import { Icon } from "../kit/icons";
+import { Glyph } from "../kit/glyph";
+import {
+  mdiAccountBox, mdiAccountPlus, mdiBackspace, mdiCallMade, mdiCallMissed, mdiCallReceived, mdiDialpad, mdiMicrophoneOff, mdiPencil, mdiPhone,
+  mdiPhoneHangup, mdiPhoneOutgoing, mdiPlus, mdiVideo, mdiVolumeHigh,
+} from "@mdi/js";
 import "./phone.css";
 
 type Call = { contact?: string; type?: "missed" | "incoming" | "outgoing"; time?: string; duration?: string; order?: number; deleted?: boolean };
@@ -26,10 +30,10 @@ function CallScreen({ name, onEnd }: { name: string; onEnd: () => void }) {
       <div className="ph-call-top"><b>{name}</b><span>{status}</span></div>
       <div className="ph-call-mid">
         {os === "ios" ? (
-          <div className="ph-call-grid">{["mute", "keypad", "speaker", "add call", "FaceTime", "contacts"].map((l) => <button key={l}><i />{l}</button>)}</div>
+          <div className="ph-call-grid">{([["mute", mdiMicrophoneOff], ["keypad", mdiDialpad], ["speaker", mdiVolumeHigh], ["add call", mdiPlus], ["FaceTime", mdiVideo], ["contacts", mdiAccountBox]] as const).map(([l, g]) => <button key={l}><Glyph i={g} size={34} />{l}</button>)}</div>
         ) : <Avatar name={name} size={140} round={false} />}
       </div>
-      <button className="ph-end" onClick={onEnd}><Icon name="mic" size={0} />{os === "ios" ? "End" : "Raccrocher"}</button>
+      <button className="ph-end" onClick={onEnd}><Glyph i={mdiPhoneHangup} size={os === "ios" ? 30 : 32} />{os === "ios" ? "End" : ""}</button>
     </div>
   );
 }
@@ -100,7 +104,9 @@ function Recents({ pid, onCall, ed }: { pid: string; onCall: (n: string) => void
       <Plain>
         {rows.map(([id, c]) => (
           <Cell key={id} className={c.type === "missed" ? "missed" : ""}
-            icon={os === "android" ? <span className={`ph-dir ${c.type}`}>{c.type === "missed" ? "↙" : c.type === "incoming" ? "↙" : "↗"}</span> : c.type === "outgoing" ? <span className="ph-out">↗</span> : <span />}
+            icon={os === "android"
+              ? <span className={`ph-dir ${c.type}`}><Glyph i={c.type === "missed" ? mdiCallMissed : c.type === "incoming" ? mdiCallReceived : mdiCallMade} size={20} /></span>
+              : c.type === "outgoing" ? <span className="ph-out"><Glyph i={mdiPhoneOutgoing} size={14} /></span> : <span className="ph-out" />}
             title={c.contact || "Unknown"} subtitle={c.duration ? (os === "ios" ? "mobile" : c.duration) : (os === "ios" ? "mobile" : "")}
             detail={inboxLabel(loreToMs(c.time), loreNowMs(lore))}
             onClick={() => c.contact && onCall(c.contact)}
@@ -154,9 +160,9 @@ function Keypad({ onCall }: { onCall: (n: string) => void }) {
         {keys.map(([k, l]) => <button key={k} onClick={() => setNum((n) => (n + k).slice(0, 16))}><b>{k}</b><small>{l}</small></button>)}
       </div>
       <div className="ph-keyrow">
-        <button className="ph-addc" aria-label="Ajouter un contact">{os === "ios" ? "+👤" : ""}</button>
-        <button className="ph-callbtn" onClick={() => num && onCall(num)}>{os === "ios" ? "Call" : "☎"}</button>
-        <button className="ph-del" onClick={() => setNum((n) => n.slice(0, -1))} aria-label="Effacer">⌫</button>
+        <button className="ph-addc" aria-label="Ajouter un contact"><Glyph i={mdiAccountPlus} size={26} /></button>
+        <button className="ph-callbtn" onClick={() => num && onCall(num)}><Glyph i={mdiPhone} size={26} />{os === "ios" && <span>Call</span>}</button>
+        <button className="ph-del" onClick={() => setNum((n) => n.slice(0, -1))} aria-label="Effacer"><Glyph i={mdiBackspace} size={26} /></button>
       </div>
     </div>
   );
@@ -202,7 +208,7 @@ function ContactCard({ pid, back }: { pid: string; back: string }) {
   const call = useCalling();
   return (
     <AppFrame title={os === "ios" ? "Info" : (c.name ?? "")} left={<BackButton to={`/${pid}/${back}`} label={back === "phone" ? "Contacts" : "All Contacts"} />}
-      right={ed.canEdit ? <button className="barbtn" onClick={() => ed.edit({ path: `phones/${pid}/data/contacts/${id}`, fields: ["name", "phone", "photo"], title: "Modifier" })}>{os === "ios" ? "Edit" : "✎"}</button> : undefined}>
+      right={ed.canEdit ? <button className="barbtn" onClick={() => ed.edit({ path: `phones/${pid}/data/contacts/${id}`, fields: ["name", "phone", "photo"], title: "Modifier" })}>{os === "ios" ? "Edit" : <Glyph i={mdiPencil} size={22} />}</button> : undefined}>
       <Grouped className="ct-card">
         <div className="ct-head"><span className="ct-photo"><Avatar src={c.photo} name={c.name} size={64} round={false} /></span><b>{c.name}</b></div>
         <Section><Cell title={<span className="ct-lbl">mobile</span>} detail={c.phone || "—"} onClick={() => c.phone && call.call(c.name ?? c.phone)} /></Section>

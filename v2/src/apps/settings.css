@@ -1,13 +1,25 @@
-.st-tile { width: 29px; height: 29px; border-radius: 6px; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 15px;
-  box-shadow: inset 0 0 0 1px rgba(0,0,0,.2), 0 1px 1px rgba(0,0,0,.2); text-shadow: 0 -1px 0 rgba(0,0,0,.3); }
+/* Tuiles d'icônes des Réglages iOS 6 : 29 pt, arrondi 6 px, liseré sombre, reflet, glyphe blanc embossé */
+.st-tile { position: relative; width: 29px; height: 29px; border-radius: 6px; overflow: hidden; display: flex; align-items: center; justify-content: center; color: #fff;
+  box-shadow: inset 0 0 0 1px rgba(0,0,0,.22), 0 1px 1px rgba(0,0,0,.25); }
+.st-tile svg { filter: drop-shadow(0 -1px 0 rgba(0,0,0,.35)); position: relative; z-index: 1; }
+.st-tile::after { content: ""; position: absolute; left: -20%; right: -20%; top: -40%; height: 85%; border-radius: 0 0 50% 50% / 0 0 35% 35%;
+  background: linear-gradient(rgba(255,255,255,.5), rgba(255,255,255,.08)); pointer-events: none; }
+.st-tile.st-app { box-shadow: 0 1px 1px rgba(0,0,0,.3); }
+.st-tile.st-app::after { display: none; }
+.st-tile img { width: 100%; height: 100%; object-fit: cover; }
 .st-check { width: 16px; color: #385487; font: bold 18px var(--ios-font); }
 .st-cur .k-title { color: #385487; }
-.st-wifi { display: flex; align-items: center; gap: 6px; font-size: 13px; color: #385487; }
-.st-wifi b { font-size: 18px; }
-.st-disclose { width: 22px; height: 22px; border-radius: 50%; font: bold 18px/20px var(--ios-font); font-style: normal; color: #fff; text-align: center;
+.st-wifi { display: flex; align-items: center; gap: 5px; color: #000; }
+.st-disclose { width: 22px; height: 22px; margin-left: 2px; border-radius: 50%; font: bold 18px/20px var(--ios-font); font-style: normal; color: #fff; text-align: center;
   background: linear-gradient(#5aa6ff, #1561d6); box-shadow: 0 1px 2px rgba(0,0,0,.4), inset 0 0 0 1.5px #fff; }
-.st-ic { width: 28px; text-align: center; font-size: 18px; color: var(--holo); }
-.st.android .k-grouped { background: #111; }
-.st.android .k-title { color: #eee; }
-.st.android .k-cell { border-bottom-color: #262626; }
-.st.android .k-detail, .st.android .k-sub { color: #888; }
+
+/* Paramètres Jelly Bean : Holo sombre, icônes gris clair */
+.st-ic { width: 32px; display: flex; justify-content: center; color: #d6d6d6; }
+.st.android { background: #000; }
+.st.android .k-grouped { background: #000; display: flow-root; }
+.st.android .k-section-title { border-bottom-width: 1px; font-size: 14px; }
+.st.android .k-title { color: #f2f2f2; font-size: 18px; }
+.st.android .k-cell { border-bottom-color: #1f1f1f; min-height: 52px; }
+.st.android .k-cell.tap:active { background: rgba(51,181,229,.4); }
+.st.android .k-detail, .st.android .k-sub { color: #8a8a8a; }
+.st.android .k-section-footer { color: #8a8a8a; }

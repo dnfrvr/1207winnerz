@@ -16,6 +16,9 @@ export function Glyph({ i, size = 22, color, className, style, title }: { i: str
   );
 }
 
+/** Icône « Action » d'iOS 6 (plateau + flèche courbe), absente de MDI. À passer à <Glyph i={IOS_ACTION} />. */
+export const IOS_ACTION = "M3 10h3v2H5v8h14v-8h-1v-2h3v12H3zM8 17c0-5 3.5-8.5 9-8.5V5l5.5 5-5.5 5v-3.4c-4 0-7 1.6-9 5.4z";
+
 // Logo Vine (2013) : « V » à volute — redessiné, absent des bibliothèques.
 const VINE = "M3.5 5.2h3.3l2.6 8.4c.9-1.5 2-3.6 2.6-5.5.4-1.4.5-2.6.1-3.3-.3-.5-.9-.7-1.4-.6.3-1.2 1.5-1.9 2.8-1.9 1.9 0 2.9 1.4 2.9 3.4 0 .8-.1 1.6-.4 2.5-.3.9-.7 1.7-1.1 2.6l-.4.8c-1 1.9-2.3 3.9-3.6 5.4H8.4z";
 

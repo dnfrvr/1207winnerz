@@ -12,6 +12,8 @@ import { useOS } from "../phone/common";
 import { img } from "../lib/img";
 import { AppFrame, BackButton, LORE_DATE_DEFAULT } from "../phone/IOSChrome";
 import { ActionSheet, Callout, PromptAlert, useLongPress, type SheetAction } from "../phone/Sheets";
+import { Glyph } from "../kit/glyph";
+import { mdiAccount, mdiCamera, mdiMessagePlus, mdiSend, mdiSquareEditOutline, mdiSwapHorizontal, mdiTrashCan } from "@mdi/js";
 import "./messages.css";
 
 const PIDS = ["glinda", "eoghan", "drew", "elias"];
@@ -129,10 +131,10 @@ function Inbox({ pid, trash }: { pid: string; trash: boolean }) {
     <AppFrame
       title={trash ? "Supprimées" : "Messages"}
       left={<BackButton to={trash ? `/${pid}/messages` : `/${pid}/home`} label={trash ? "Messages" : "Accueil"} />}
-      right={canEdit && !trash ? <button className="barbtn icon-btn" aria-label="Nouveau message" onClick={() => nav("new")}>✎</button> : undefined}
+      right={canEdit && !trash ? <NewButton onClick={() => nav("new")} /> : undefined}
     >
       {!trash && trashCount > 0 && (
-        <button className="msg-trash-row" onClick={() => nav("trash")}>🗑 <span style={{ flex: 1 }}>Conversations supprimées</span>{trashCount} ›</button>
+        <button className="msg-trash-row" onClick={() => nav("trash")}><Glyph i={mdiTrashCan} size={18} /> <span style={{ flex: 1 }}>Conversations supprimées</span>{trashCount} ›</button>
       )}
       <ul className="msg-list">
         {visible.map(([tid, e]) => {
@@ -153,9 +155,15 @@ function Inbox({ pid, trash }: { pid: string; trash: boolean }) {
   );
 }
 
-const AVATAR_COLORS = ["#e53935", "#1e88e5", "#43a047", "#fb8c00", "#8e24aa", "#00897b"];
-const avatarColor = (name: string) => AVATAR_COLORS[(name.codePointAt(0) ?? 0) % AVATAR_COLORS.length];
-const initials = (name: string) => name.replace(/[^\p{L}\p{N} ]/gu, "").trim().split(/\s+/).map((w) => w[0]).join("").slice(0, 2).toUpperCase() || "?";
+/** Bouton « nouveau message » : icône de composition (iOS 6) / bulle + (Jelly Bean). */
+function NewButton({ onClick }: { onClick: () => void }) {
+  const os = useOS();
+  return (
+    <button className="barbtn icon-btn" aria-label="Nouveau message" onClick={onClick}>
+      <Glyph i={os === "ios" ? mdiSquareEditOutline : mdiMessagePlus} size={os === "ios" ? 20 : 24} />
+    </button>
+  );
+}
 
 function InboxRow({ contact, unread, dim, when, preview, onOpen, onLong }: {
   contact: string; unread: boolean; dim: boolean; when: string; preview: string; onOpen: () => void; onLong?: () => void;
@@ -166,7 +174,7 @@ function InboxRow({ contact, unread, dim, when, preview, onOpen, onLong }: {
     <li>
       <button className={`msg-row ${dim ? "dim" : ""} ${unread ? "unread" : ""}`} {...(onLong ? lp.handlers : {})} onClick={() => { if (!lp.fired.current) onOpen(); }}>
         {os === "android"
-          ? <span className="avatar" style={{ background: avatarColor(contact) }}>{initials(contact)}</span>
+          ? <span className="avatar"><Glyph i={mdiAccount} size={40} /></span>
           : <span className="dot">{unread && <i />}</span>}
         <span className="body">
           <span className="top"><span className="who">{contact}</span><span className="when">{when}</span></span>
@@ -320,18 +328,17 @@ function Composer({ sms, onSend, who, onToggleWho }: { sms: boolean; onSend: (t:
   const os = useOS();
   if (os === "android") return (
     <div className="composer">
-      {who !== null && <button className="who-btn" onClick={onToggleWho} title="Changer l'expéditeur">{who} ⇄</button>}
+      {who !== null && <button className="who-btn" onClick={onToggleWho} title="Changer l'expéditeur">{who} <Glyph i={mdiSwapHorizontal} size={13} /></button>}
       <textarea ref={ref} rows={1} value={text} placeholder="Text message"
         onChange={(e) => setText(e.target.value)}
         onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); submit(); } }} />
-      <button className="send-round" disabled={!text.trim()} onClick={submit} aria-label="Envoyer">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M22 2L11 13M22 2L15 22L11 13L2 9L22 2Z" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
-      </button>
+      <button className="send-holo" disabled={!text.trim()} onClick={submit} aria-label="Envoyer"><Glyph i={mdiSend} size={26} /></button>
     </div>
   );
   return (
     <div className="composer">
-      {who !== null && <button className="who-btn" onClick={onToggleWho} title="Changer l'expéditeur">{who} ⇄</button>}
+      {who !== null && <button className="who-btn" onClick={onToggleWho} title="Changer l'expéditeur">{who} <Glyph i={mdiSwapHorizontal} size={13} /></button>}
+      {who === null && <button className="cam-btn" aria-label="Photo"><Glyph i={mdiCamera} size={18} /></button>}
       <textarea ref={ref} rows={1} value={text} placeholder={sms ? "Text Message" : "iMessage"}
         onChange={(e) => setText(e.target.value)}
         onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); submit(); } }} />
