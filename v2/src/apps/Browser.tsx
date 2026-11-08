@@ -1,10 +1,11 @@
 // Safari iOS 6 (barre d'adresse + champ Google, barre d'outils du bas, signets, historique)
 // / Navigateur Android 4.1. Une page s'affiche comme un résultat Google 2012 ou une page simple.
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useList } from "../data/hooks";
+import { loreToMs } from "../lib/loreTime";
 import { StatusBar } from "../phone/IOSChrome";
-import { useOS } from "../phone/common";
+import { useLoreDate, useOS } from "../phone/common";
 import { Cell, Empty, Plain, PlainHeader, Segmented, useEditor } from "../kit/kit";
 import { Icon } from "../kit/icons";
 import { Glyph, IOS_ACTION } from "../kit/glyph";
@@ -13,11 +14,24 @@ import "./browser.css";
 
 type Link = { title?: string; url?: string; time?: string; order?: number; deleted?: boolean };
 
+const MON = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"];
+/** Instant d'une entrée d'historique (« Aujourd'hui, 7:14pm », « Hier », « 30 sep, 11:00pm »…), pour trier du plus récent au plus ancien. */
+function historyMs(time: string | undefined, today: Date): number {
+  const s = (time ?? "").trim();
+  const rel = s.match(/^(aujourd.?hui|today|hier|yesterday)\s*,?\s*(.*)$/i);
+  if (!rel) return loreToMs(s) ?? 0;
+  const d = new Date(today);
+  if (/^(hier|yesterday)/i.test(rel[1])) d.setDate(d.getDate() - 1);
+  return loreToMs(`${d.getDate()} ${MON[d.getMonth()]}, ${rel[2]}`) ?? 0;
+}
+
 export default function BrowserApp({ pid }: { pid: string }) {
   const os = useOS();
   const nav = useNavigate();
   const bookmarks = useList<Link>(`phones/${pid}/data/browser/bookmarks`);
-  const history = useList<Link>(`phones/${pid}/data/browser/history`);
+  const today = useLoreDate();
+  const rawHistory = useList<Link>(`phones/${pid}/data/browser/history`);
+  const history = useMemo(() => [...rawHistory].sort((a, b) => historyMs(b[1].time, today) - historyMs(a[1].time, today)), [rawHistory, today.getTime()]); // eslint-disable-line react-hooks/exhaustive-deps
   const ed = useEditor(pid);
   const [page, setPage] = useState<Link | null>(() => history[0]?.[1] ?? null);
   const [sheet, setSheet] = useState(false);
