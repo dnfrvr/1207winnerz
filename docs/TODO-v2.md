@@ -16,7 +16,7 @@
 
 - [x] ~~Supabase injoignable~~ : de nouveau joignable le 2026-11-08 ; les 49 URL Supabase des données
   migrées pointent maintenant vers les copies locales (`public/assets/live`).
-- [ ] **Clés Supabase pour l'envoi de photos** : ajouter `VITE_SUPABASE_URL` et `VITE_SUPABASE_ANON_KEY`
+- [x] **Clés Supabase pour l'envoi de photos** (ajoutées à `v2/.env.local` le 2026-11-08 ; reste à les mettre dans le futur site Netlify v2) : ajouter `VITE_SUPABASE_URL` et `VITE_SUPABASE_ANON_KEY`
   (les mêmes que l'ancienne app, dans Netlify) à `v2/.env.local` et au futur site Netlify v2.
 
 ## À vérifier dans les données
@@ -51,8 +51,7 @@ Fait le 2026-11-08 (3e passe) : ask.fm / ESPN / Polyvore en vraies apps ; tout �
 tactile partout via `touchContextMenu`, `useSeeded` pour les listes par défaut, Boussole, parties des
 jeux) ; Musique avec extraits Deezer, mini-lecteur, pochettes automatiques et ajout par recherche Deezer ;
 SoundCloud et iNaturalist refaits ; historique du navigateur trié par date ; connexion par identifiant
-(+ changement de mot de passe) ; site façon Aero/messagerie 2009 avec mini-téléphones, panneau MDJ
-(`/admin` : date de lore, réglages des téléphones) et visite guidée animée.
+(+ changement de mot de passe) ; site façon Aero/messagerie 2009 avec mini-téléphones, date de lore modifiable par le MDJ (clic sur la date de la barre des tâches ; plus de panneau d'admin, le MDJ édite dans les téléphones) et visite guidée animée.
 
 Reste :
 - [ ] Appareil photo : courte vidéo par perso (fichiers à fournir)
