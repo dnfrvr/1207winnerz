@@ -40,8 +40,49 @@ export async function uploadImage(file: File, pid: string): Promise<string> {
 
 const MAX_VIDEO = 30 * 1024 * 1024; // vidéos courtes du viseur : au-delà, le quota part vite
 /** Renvoie l'URL publique de la vidéo envoyée (telle quelle, 30 Mo max). */
+/** Le navigateur arrive-t-il à décoder une image de la vidéo ? (HEVC d'iPhone : souvent non sur PC.) */
+function canPlay(file: File): Promise<boolean> {
+  return new Promise((resolve) => {
+    const v = document.createElement("video");
+    const url = URL.createObjectURL(file);
+    let settled = false;
+    const done = (ok: boolean) => { if (settled) return; settled = true; URL.revokeObjectURL(url); v.removeAttribute("src"); resolve(ok); };
+    v.muted = true; v.preload = "auto";
+    v.onloadeddata = () => done(v.videoWidth > 0);
+    v.onerror = () => done(false);
+    setTimeout(() => done(v.videoWidth > 0), 8000);
+    v.src = url;
+  });
+}
+
+/** Codec HEVC déclaré dans le conteneur MP4/MOV (« hvc1 » ou « hev1 », dans la boîte moov, souvent en fin de fichier). */
+export async function isHevc(file: Blob): Promise<boolean> {
+  return hevcInMoov(new Uint8Array(await file.arrayBuffer()));
+}
+
+/** Parcourt les boîtes de premier niveau et cherche le codec seulement dans « moov » (pas dans les données vidéo). */
+export function hevcInMoov(b: Uint8Array): boolean {
+  const dv = new DataView(b.buffer, b.byteOffset, b.byteLength);
+  const tag = (i: number) => String.fromCharCode(b[i], b[i + 1], b[i + 2], b[i + 3]);
+  let off = 0;
+  while (off + 8 <= b.length) {
+    let size = dv.getUint32(off), head = 8;
+    if (size === 1 && off + 16 <= b.length) { size = Number(dv.getBigUint64(off + 8)); head = 16; }
+    else if (size === 0) size = b.length - off;
+    if (size < head) return false; // fichier abîmé : on laisse le test de lecture décider
+    if (tag(off + 4) === "moov") {
+      for (let i = off + head; i + 4 <= Math.min(b.length, off + size); i++) { const t = tag(i); if (t === "hvc1" || t === "hev1") return true; }
+      return false;
+    }
+    off += size;
+  }
+  return false;
+}
+
 export async function uploadVideo(file: File, pid: string): Promise<string> {
   if (!file.type.startsWith("video/")) throw new Error("Ce n'est pas une vidéo");
   if (file.size > MAX_VIDEO) throw new Error("Vidéo trop lourde (30 Mo max) : raccourcis-la ou compresse-la");
+  // HEVC (iPhone) : illisible chez une partie des joueurs (Firefox, beaucoup de PC) → refusé même si CE navigateur le lit.
+  if (await isHevc(file) || !(await canPlay(file))) throw new Error("Vidéo illisible dans le navigateur (souvent le format HEVC des iPhone). Sur iPhone : Réglages › Appareil photo › Formats › « Le plus compatible », ou réexporte-la en H.264 (MP4).");
   return send(file, pid, (file.name.split(".").pop() || "mp4").toLowerCase());
 }

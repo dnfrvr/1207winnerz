@@ -33,3 +33,4 @@
 .st-wp-vid { width: 120px; height: 160px; border-radius: 3px; object-fit: cover; background: #222; box-shadow: 0 0 0 1px rgba(0,0,0,.4); }
 .st-wp-vid.empty { display: flex; align-items: center; justify-content: center; font: 13px var(--ios-font); color: #999; }
 .st.android .st-wp-prev, .st.android .st-wp-vid { border-radius: 0; }
+.st-wp-vid.empty { padding: 8px; text-align: center; font-size: 11px; line-height: 1.3; }

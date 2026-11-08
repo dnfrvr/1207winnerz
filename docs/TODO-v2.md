@@ -19,6 +19,24 @@
 - [x] **Clés Supabase pour l'envoi de photos** (ajoutées à `v2/.env.local` le 2026-11-08 ; reste à les mettre dans le futur site Netlify v2) : ajouter `VITE_SUPABASE_URL` et `VITE_SUPABASE_ANON_KEY`
   (les mêmes que l'ancienne app, dans Netlify) à `v2/.env.local` et au futur site Netlify v2.
 
+## ▶ Reprendre ici (session du 2026-11-08 arrêtée : limite atteinte)
+
+- [ ] **Convertir les vidéos à l'envoi** (au lieu de refuser) : les vidéos d'iPhone sont en HEVC,
+  illisibles dans Firefox et sur beaucoup de PC (écran bleu dans l'appareil photo). Aujourd'hui
+  `v2/src/lib/upload.ts` détecte le HEVC (`hevcInMoov`, à tester : `glinda.mp4` HEVC → true,
+  une vidéo H.264 → false) et **refuse** l'envoi avec un message. À remplacer par une conversion
+  en H.264 dans le navigateur (WebCodecs, ou ffmpeg.wasm chargé seulement quand c'est nécessaire),
+  sans service payant. Attention : un navigateur qui ne décode pas le HEVC ne pourra pas convertir non plus.
+- [ ] **Vidéos de Glinda en double dans Supabase** : la clé publique ne peut pas supprimer. Dans le
+  tableau de bord Supabase › Storage › `uploads/v2/glinda/`, garder une seule des 3 copies
+  (`1794158716240_s2dyy8.mp4`, `1794158739321_l7o0uj.mp4`, `1794159983692_vvfhws.mp4`) — celle
+  enregistrée dans `phones/glinda/profile/cameraVideo` (vérifier dans la console Firebase) — ou
+  toutes, une fois la vidéo renvoyée convertie.
+- [ ] **Guide de prise en main dans chaque app**, pensé mobile d'abord : à la 1re ouverture d'une
+  app, quelques bulles qui montrent quoi toucher (appui long pour modifier, « + » pour ajouter,
+  changer d'expéditeur dans Messages…).
+- [ ] Pousser les commits locaux sur GitHub (`git push origin main`).
+
 ## À vérifier dans les données
 
 - [ ] Copie ancienne du fil Glinda ↔ Eoghan (rangée dans `legacy/charCopies/drew_sharedThreads`) :

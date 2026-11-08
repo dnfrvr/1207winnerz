@@ -20,7 +20,9 @@ export function CameraApp({ pid }: { pid: string }) {
   const gallery = useList<{ src?: string }>(`phones/${pid}/data/gallery`);
   const last = gallery[gallery.length - 1]?.[1].src;
   const wallpaper = useValue<string>(`phones/${pid}/profile/wallpaper`);
-  const video = useValue<string>(`phones/${pid}/profile/cameraVideo`); // réglée dans Réglages › Fond d'écran
+  const video = useValue<string>(`phones/${pid}/profile/cameraVideo`); // réglée dans Réglages › Photos & Camera
+  const [videoBroken, setVideoBroken] = useState<string | null>(null); // vidéo illisible → fond d'écran
+  const playVideo = !!video && videoBroken !== video;
   const [shot, setShot] = useState(0);
   const [mode, setMode] = useState<"photo" | "video">("photo");
   const [rec, setRec] = useState(false);
@@ -33,8 +35,8 @@ export function CameraApp({ pid }: { pid: string }) {
         {os === "ios" && <button className="cam-pill">HDR Off</button>}
         <button className="cam-pill" aria-label="Changer de caméra"><Glyph i={mdiCameraFlip} size={16} /></button>
       </div>
-      <div className="cam-view" style={{ backgroundImage: wallpaper && !video ? `url(${img(wallpaper)})` : undefined }}>
-        {video && <video className="cam-video" src={img(video)} autoPlay muted loop playsInline />}
+      <div className="cam-view" style={{ backgroundImage: wallpaper && !playVideo ? `url(${img(wallpaper)})` : undefined }}>
+        {playVideo && <video className="cam-video" src={img(video)} autoPlay muted loop playsInline onError={() => setVideoBroken(video!)} />}
         <div className="cam-grid" />
         <div className="cam-focus" />
         {shot > 0 && <div key={shot} className={`cam-iris ${os}`} />}

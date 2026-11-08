@@ -1,5 +1,6 @@
 // Réglages iOS 6 (tableau groupé avec icônes, Wi-Fi, Bluetooth, Général › Informations)
 // / Paramètres Android 4.1 (sections holo).
+import { useState } from "react";
 import { Route, Routes, useNavigate } from "react-router-dom";
 import { useList, useValue } from "../data/hooks";
 import { AppFrame, BackButton } from "../phone/IOSChrome";
@@ -56,6 +57,12 @@ function Wallpaper({ pid }: { pid: string }) {
   );
 }
 
+function VideoPreview({ src }: { src: string }) {
+  const [broken, setBroken] = useState<string | null>(null);
+  if (broken === src) return <span className="st-wp-vid empty">Vidéo illisible ici (format HEVC d'iPhone ?) — renvoie-la en H.264</span>;
+  return <video className="st-wp-vid" src={img(src)} autoPlay muted loop playsInline onError={() => setBroken(src)} />;
+}
+
 /** Photos & Camera (iOS 6) / Appareil photo (Android) : vidéo qui tourne dans le viseur. */
 function CameraSettings({ pid }: { pid: string }) {
   const os = useOS();
@@ -68,7 +75,7 @@ function CameraSettings({ pid }: { pid: string }) {
         <Section footer="Vidéo qui tourne dans le viseur de l'appareil photo (courte, sans son).">
           <div className="st-wp">
             {prof.cameraVideo
-              ? <video className="st-wp-vid" src={img(prof.cameraVideo)} autoPlay muted loop playsInline />
+              ? <VideoPreview src={prof.cameraVideo} />
               : <span className="st-wp-vid empty">Aucune vidéo</span>}
           </div>
           {ed.canEdit && <Cell title={os === "ios" ? "Camera Video" : "Vidéo du viseur"} detail={prof.cameraVideo ? "Modifier" : "Ajouter"} chevron onClick={() => edit("cameraVideo", "Vidéo de l'appareil photo")} />}
