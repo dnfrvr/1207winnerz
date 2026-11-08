@@ -1,6 +1,6 @@
 // Snapchat (2012), GroupMe (2012), Starbucks (2012), Fichiers (style Dropbox 2012).
 import { Glyph, Brand } from "../kit/glyph";
-import { mdiFolder, mdiMapMarker, mdiSend, mdiStar } from "@mdi/js";
+import { mdiAccountMultiple, mdiFolder, mdiHeart, mdiHeartOutline, mdiMapMarker, mdiPlus, mdiSend, mdiStar } from "@mdi/js";
 import { useState } from "react";
 import { Route, Routes, useNavigate, useParams } from "react-router-dom";
 import { useList, useValue } from "../data/hooks";
@@ -8,6 +8,7 @@ import { AppFrame, BackButton, StatusBar, BarBack } from "../phone/IOSChrome";
 import { useOS } from "../phone/common";
 import { AddButton, Avatar, Cell, Empty, Plain, PlainHeader, TabBar, useEditor, type Tab } from "../kit/kit";
 import { Icon } from "../kit/icons";
+import { img } from "../lib/img";
 import "./lifestyle.css";
 
 // ── Snapchat ─────────────────────────────────────────────────────────────────
@@ -52,34 +53,113 @@ export function SnapchatApp({ pid }: { pid: string }) {
 }
 
 // ── GroupMe ──────────────────────────────────────────────────────────────────
-type Group = { name?: string; last?: string; time?: string; n?: number; members?: number; order?: number; deleted?: boolean };
+type Group = { name?: string; last?: string; time?: string; n?: number; members?: number; avatar?: string; messages?: Record<string, GmMsg>; order?: number; deleted?: boolean };
+type GmMsg = { from?: string; text?: string; time?: string; likes?: number; me?: boolean; img?: string; order?: number; deleted?: boolean };
+const GM_BLUE = "#00aff0";
+const GM_GROUP_FIELDS = ["name", "avatar", "last", "time", "n", "members"];
+const GM_MSG_FIELDS = ["from", "text", "img", "time", "likes", "me"];
+const clock12 = (d: Date) => `${d.getHours() % 12 || 12}:${String(d.getMinutes()).padStart(2, "0")}${d.getHours() < 12 ? "am" : "pm"}`;
 
 export function GroupMeApp({ pid }: { pid: string }) {
+  return (
+    <div className="app gm">
+      <StatusBar />
+      <Routes>
+        <Route index element={<GroupMeList pid={pid} />} />
+        <Route path="g/:gid" element={<GroupMeChat pid={pid} />} />
+      </Routes>
+    </div>
+  );
+}
+
+function GroupMeList({ pid }: { pid: string }) {
   const nav = useNavigate();
   const path = `phones/${pid}/data/groupmeGroups`;
   const groups = useList<Group>(path);
   const ed = useEditor(pid);
-  const fields = ["name", "last", "time", "n", "members"];
   return (
-    <div className="app gm">
-      <StatusBar />
+    <>
       <div className="gm-bar">
         <BarBack onClick={() => nav(`/${pid}/home`)} label="Accueil" />
         <h1>GroupMe</h1>
-        <button aria-label="Nouveau groupe" disabled={!ed.canEdit} onClick={() => ed.add(path, { name: "", last: "", time: "", n: 0, members: 2 }, { atStart: true, title: "Groupe", fields })}><Icon name="plus" size={20} /></button>
+        <button aria-label="Nouveau groupe" disabled={!ed.canEdit} onClick={() => ed.add(path, { name: "", last: "", time: "", n: 0, members: 2 }, { atStart: true, title: "Groupe", fields: GM_GROUP_FIELDS })}><Icon name="plus" size={20} /></button>
       </div>
       <div className="gm-scroll">
         {groups.map(([id, g]) => (
-          <button key={id} className="gm-row" onContextMenu={(e) => { e.preventDefault(); ed.itemLong(path, id, { fields, label: g.name })?.(); }}>
-            <Avatar name={g.name} size={44} round={false} color="#00aff0" />
-            <span className="gm-txt"><span className="gm-top"><b>{g.name}</b><i>{g.time}</i></span><span>{g.last}</span><small>{g.members} members</small></span>
+          <button key={id} className="gm-row" onClick={() => nav(`g/${id}`)}
+            onContextMenu={(e) => { e.preventDefault(); ed.itemLong(path, id, { fields: GM_GROUP_FIELDS, label: g.name })?.(); }}>
+            <Avatar src={g.avatar} name={g.name} size={46} round={false} color={GM_BLUE} />
+            <span className="gm-txt">
+              <span className="gm-top"><b>{g.name}</b><i>{g.time}</i></span>
+              <span className="gm-last">{g.last}</span>
+              <small><Glyph i={mdiAccountMultiple} size={12} /> {g.members} members</small>
+            </span>
             {!!g.n && <span className="gm-n">{g.n}</span>}
+            <span className="gm-chev" aria-hidden>›</span>
           </button>
         ))}
         {groups.length === 0 && <Empty>No groups</Empty>}
       </div>
       {ed.ui}
-    </div>
+    </>
+  );
+}
+
+function GroupMeChat({ pid }: { pid: string }) {
+  const { gid = "" } = useParams();
+  const nav = useNavigate();
+  const gpath = `phones/${pid}/data/groupmeGroups/${gid}`;
+  const g = useValue<Group>(gpath) ?? {};
+  const mpath = `${gpath}/messages`;
+  const msgs = useList<GmMsg>(mpath);
+  const me = useValue<string>(`phones/${pid}/profile/name`) ?? pid;
+  const av = useValue<string | { src?: string }>(`phones/${pid}/profile/avatar`);
+  const myAvatar = typeof av === "string" ? av : av?.src;
+  const ed = useEditor(pid);
+  const [draft, setDraft] = useState("");
+  // Groupe sans fil enregistré : on montre au moins son dernier message (« Nom: texte »), en lecture seule.
+  const shown: [string, GmMsg][] = msgs.length ? msgs : g.last ? [["last", (() => { const m = g.last.match(/^([^:]{1,30}):\s*(.+)$/); return { from: m?.[1] ?? "", text: m?.[2] ?? g.last, time: g.time }; })()]] : [];
+  const send = () => {
+    const text = draft.trim(); if (!text || !ed.canEdit) return;
+    const order = (msgs[msgs.length - 1]?.[1].order ?? 0) + 1000, time = clock12(new Date()), first = me.split(" ")[0];
+    // 1er envoi dans un groupe sans fil : on enregistre d'abord le dernier message connu, pour ne pas le perdre.
+    const keep = !msgs.length && shown[0] ? { [`${mpath}/m0`]: { ...shown[0][1], likes: 0, me: false, order: 1000 } } : {};
+    ed.write({ ...keep, [`${mpath}/m${Date.now().toString(36)}`]: { from: me, me: true, text, time, likes: 0, order: keep[`${mpath}/m0`] ? 2000 : order }, [`${gpath}/last`]: `${first}: ${text}`, [`${gpath}/time`]: time });
+    setDraft("");
+  };
+  return (
+    <>
+      <div className="gm-bar">
+        <BarBack onClick={() => nav(`/${pid}/groupme`)} label="Groups" />
+        <h1 className="gm-title"><span>{g.name}</span><small>{g.members} members</small></h1>
+        <span className="gm-bar-av"><Avatar src={g.avatar} name={g.name} size={30} round={false} color="#0089bf" /></span>
+      </div>
+      <div className="gm-chat">
+        {shown.map(([id, m]) => (
+          <div key={id} className={`gm-msg ${m.me ? "me" : ""}`}
+            onContextMenu={id === "last" ? undefined : (e) => { e.preventDefault(); ed.itemLong(mpath, id, { fields: GM_MSG_FIELDS, label: m.from, template: { from: "", text: "", time: "", likes: 0, me: false } })?.(); }}>
+            <Avatar src={m.me ? myAvatar : m.from ? undefined : g.avatar} name={m.from || g.name} size={36} round={false} color={m.from ? undefined : GM_BLUE} />
+            <div className="gm-body">
+              <div className="gm-head"><b>{m.from || g.name}</b><i>{m.time}</i></div>
+              {m.text && <p>{m.text}</p>}
+              {m.img && <img className="gm-img" src={img(m.img)} alt="" loading="lazy" />}
+            </div>
+            <button className={`gm-like ${m.likes ? "on" : ""}`} aria-label="J'aime" disabled={!ed.canEdit || id === "last"}
+              onClick={() => ed.write({ [`${mpath}/${id}/likes`]: (m.likes ?? 0) + 1 })}>
+              <Glyph i={m.likes ? mdiHeart : mdiHeartOutline} size={16} />{m.likes ? <span>{m.likes}</span> : null}
+            </button>
+          </div>
+        ))}
+        {shown.length === 0 && <Empty>No messages yet</Empty>}
+      </div>
+      <form className="gm-compose" onSubmit={(e) => { e.preventDefault(); send(); }}>
+        <button type="button" className="gm-attach" aria-label="Ajouter un message" disabled={!ed.canEdit}
+          onClick={() => ed.add(mpath, { from: "", text: "", time: clock12(new Date()), likes: 0, me: false }, { title: "Message", fields: GM_MSG_FIELDS })}><Glyph i={mdiPlus} size={18} /></button>
+        <input value={draft} onChange={(e) => setDraft(e.target.value)} placeholder="Send a message..." disabled={!ed.canEdit} />
+        <button type="submit" className="gm-send" disabled={!ed.canEdit || !draft.trim()}>Send</button>
+      </form>
+      {ed.ui}
+    </>
   );
 }
 

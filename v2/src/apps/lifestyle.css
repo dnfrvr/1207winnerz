@@ -21,23 +21,51 @@
   background: radial-gradient(circle at 40% 30%, #4a4a4a, #111); }
 .sc-timer { position: absolute; top: 30px; right: 14px; width: 30px; height: 30px; border-radius: 50%; border: 2px solid #fff; color: #fff; font: bold 15px/26px var(--ios-font); text-align: center; }
 
-/* GroupMe 2012 */
-.gm { background: #f3f6f8; }
-.gm-bar { flex: 0 0 44px; display: flex; align-items: center; justify-content: space-between; padding: 0 8px; background: linear-gradient(#25bdf5, #0092cf); border-bottom: 1px solid #006a96; }
-.gm-bar h1 { font: bold 20px var(--ios-font); color: #fff; text-shadow: 0 -1px 0 rgba(0,0,0,.2); }
+/* GroupMe 2012 : barre bleu ciel, liste de groupes, fil à avatars carrés et cœurs « like » */
+.gm { background: #eef2f5; }
+.gm-bar { flex: 0 0 44px; display: grid; grid-template-columns: 80px 1fr 80px; align-items: center; padding: 0 6px; background: linear-gradient(#3cc8f8, #00a3e2 50%, #0092cf 51%, #0089c4);
+  border-bottom: 1px solid #006a96; box-shadow: inset 0 1px 0 rgba(255,255,255,.35); }
+.gm-bar > :last-child { justify-self: end; }
+.gm-bar h1 { text-align: center; font: bold 20px var(--ios-font); color: #fff; text-shadow: 0 -1px 0 rgba(0,0,0,.25); }
 .gm-bar button { color: #fff; display: flex; padding: 4px; }
 .gm-bar button:disabled { opacity: .4; }
+.gm-title { display: flex; flex-direction: column; line-height: 1.1; min-width: 0; }
+.gm-title span { font-size: 16px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.gm-title small { font: bold 11px var(--ios-font); opacity: .85; }
+.gm-bar-av .k-avatar { border-radius: 6px; border: 1px solid rgba(255,255,255,.7); }
 .gm-scroll { flex: 1; min-height: 0; overflow-y: auto; }
-.gm-row { width: 100%; display: flex; align-items: center; gap: 10px; padding: 10px; background: #fff; border-bottom: 1px solid #e3e8ec; text-align: left; }
-.gm-row .k-avatar { border-radius: 8px; }
-.gm-txt { flex: 1; min-width: 0; display: flex; flex-direction: column; font: 13px var(--ios-font); color: #666; }
+.gm-row { width: 100%; display: flex; align-items: center; gap: 10px; padding: 10px 8px 10px 10px; background: linear-gradient(#fff, #f7f9fa); border-bottom: 1px solid #dde3e8; text-align: left; }
+.gm-row:active { background: #e3f5fd; }
+.gm-row .k-avatar { border-radius: 8px; box-shadow: 0 1px 2px rgba(0,0,0,.25); }
+.gm-txt { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; font: 13px var(--ios-font); color: #555; }
 .gm-txt span, .gm-txt small { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.gm-top { display: flex; justify-content: space-between; }
-.gm-top b { font: bold 15px var(--ios-font); color: #222; }
-.gm-top i { font-style: normal; font-size: 11px; color: #aaa; }
-.gm-txt small { font-size: 11px; color: #aaa; }
-.gm-n { min-width: 22px; height: 22px; padding: 0 6px; border-radius: 11px; background: #00aff0; color: #fff; font: bold 12px/22px var(--ios-font); text-align: center; }
+.gm-top { display: flex; justify-content: space-between; gap: 6px; }
+.gm-top b { font: bold 15px var(--ios-font); color: #222; overflow: hidden; text-overflow: ellipsis; }
+.gm-top i { flex: none; font-style: normal; font-size: 11px; color: #00a3e2; }
+.gm-txt small { display: flex; align-items: center; gap: 3px; font-size: 11px; color: #9aa6b0; }
+.gm-n { min-width: 22px; height: 22px; padding: 0 6px; border-radius: 11px; background: #00aff0; color: #fff; font: bold 12px/22px var(--ios-font); text-align: center; box-shadow: inset 0 1px 0 rgba(255,255,255,.4); }
+.gm-chev { color: #b8c3cc; font: bold 20px var(--ios-font); }
 
+.gm-chat { flex: 1; min-height: 0; overflow-y: auto; padding: 6px 0; }
+.gm-msg { display: flex; align-items: flex-start; gap: 9px; padding: 8px 8px 8px 10px; border-bottom: 1px solid #e1e7ec; background: #fff; }
+.gm-msg.me { background: #e9f7fd; }
+.gm-msg .k-avatar { flex: none; border-radius: 6px; }
+.gm-body { flex: 1; min-width: 0; }
+.gm-head { display: flex; justify-content: space-between; gap: 6px; }
+.gm-head b { font: bold 13px var(--ios-font); color: #0089c4; }
+.gm-head i { flex: none; font: normal 11px var(--ios-font); color: #a3adb5; }
+.gm-body p { margin: 2px 0 0; font: 14px/1.35 var(--ios-font); color: #222; overflow-wrap: anywhere; }
+.gm-img { display: block; max-width: 100%; margin-top: 6px; border-radius: 6px; border: 1px solid #d5dde3; }
+.gm-like { flex: none; display: flex; align-items: center; gap: 2px; padding: 2px; color: #c3ccd3; font: bold 11px var(--ios-font); }
+.gm-like.on { color: #00a3e2; }
+.gm-compose { flex: 0 0 auto; display: flex; align-items: center; gap: 6px; padding: 6px; background: linear-gradient(#e9edf0, #cfd6dc); border-top: 1px solid #aab4bc; }
+.gm-compose input { flex: 1; min-width: 0; height: 30px; padding: 0 10px; border-radius: 15px; border: 1px solid #a9b3bb; background: #fff; font: 14px var(--ios-font);
+  box-shadow: inset 0 1px 2px rgba(0,0,0,.15); }
+.gm-attach { width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; border-radius: 50%; color: #5d6b76; border: 1px solid #a9b3bb;
+  background: linear-gradient(#fff, #e3e8ec); }
+.gm-send { height: 30px; padding: 0 12px; border-radius: 6px; color: #fff; font: bold 13px var(--ios-font); border: 1px solid #0078ad;
+  background: linear-gradient(#3cc8f8, #00a3e2 50%, #0092cf 51%, #0089c4); text-shadow: 0 -1px 0 rgba(0,0,0,.25); }
+.gm-send:disabled, .gm-attach:disabled { opacity: .5; }
 /* Starbucks 2012 */
 .sb-logo { font: bold 16px var(--ios-font); letter-spacing: 1px; }
 .sb .k-tab-scroll { background: #f2f0eb; }

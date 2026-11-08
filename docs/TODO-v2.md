@@ -44,6 +44,21 @@
   « 4 hours ago », « Today · 3:02pm ») et les heures seules restent en texte.
 - [x] Pousser les commits locaux sur GitHub (`git push origin main`).
 
+## Apps à étoffer (UI)
+
+- [x] **Weather** (2026-11-08) : vraies icônes météo, bandeau heure par heure, dos de carte iOS 6 (« i ») avec
+  les villes, l'ajout et °C/°F ; l'icône se choisit dans une liste.
+- [x] **GroupMe** (2026-11-08) : groupes cliquables, fil de discussion (avatars, cœurs « like », envoi en son
+  nom, « + » pour le message de quelqu'un d'autre), photo de groupe.
+- [ ] **Messenger** : la liste ne s'ouvre pas — pas de fil de discussion.
+- [ ] **Reddit** : pas de page de post ni de commentaires.
+- [ ] **Rappels** : une seule liste, pas de listes multiples ni de date d'échéance affichée façon iOS 6.
+- [ ] **Passbook** : pas de dos de carte (code-barres, détails).
+- [ ] **Nike+** : pas de détail de course (carte, allure par km).
+- [ ] **Snapchat** : pas d'histoires ni de discussion.
+- [ ] **Plans** : carte figée, pas d'itinéraire ni de fiche de lieu.
+- [ ] **Boussole, FaceTime, VPN, Wikipédia, Kindle, Polyvore, ESPN** : écrans uniques, à enrichir si besoin.
+
 ## À vérifier dans les données
 
 - [ ] Copie ancienne du fil Glinda ↔ Eoghan (rangée dans `legacy/charCopies/drew_sharedThreads`) :
