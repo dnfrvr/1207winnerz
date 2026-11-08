@@ -22,7 +22,7 @@ const TIPS: Record<string, Step[] | null> = {
   clock: [["Touche « + » pour ajouter une alarme ou une ville, selon l'onglet.", ADD], ["Maintiens une ville ou une alarme pour la modifier.", ".clk-row"]],
   weather: [["Touche le nom de la ville pour changer la température et le temps.", ".wx-top"], ["Touche un jour des prévisions pour le modifier.", ".wx-day"]],
   settings: [["Touche ici pour changer le fond d'écran.", ".k-cell|Wallpaper", ".k-cell|Affichage"], ["Touche ici pour changer la vidéo du viseur de l'appareil photo.", ".k-cell|Photos & Camera", ".k-cell|Appareil photo"], ["Dans Wi-Fi et Bluetooth, touche « + » pour ajouter un réseau ou un appareil.", ".k-cell|Wi-Fi"]],
-  insta: [["Maintiens une publication pour la modifier ou la supprimer.", ".ig-post"], ["Sur ton profil, touche ce bouton pour ajouter une photo.", '@[aria-label="Nouvelle publication"]']],
+  insta: [["Maintiens une publication pour la modifier ou la supprimer.", ".ig-post > :first-child", ".ig-post"], ["Sur ton profil, touche ce bouton pour ajouter une photo.", '@[aria-label="Nouvelle publication"]']],
   twitter: [["Touche ce bouton pour écrire un tweet.", '[aria-label="Tweeter"]'], ["Maintiens un tweet pour le modifier ou le supprimer.", ".tw-tweet"]],
   facebook: [["Maintiens une de tes publications pour la modifier.", ".fb-card"]],
   tumblr: [["Touche ce bouton pour publier un billet.", '[aria-label="Publier"]'], ["Maintiens un billet pour le modifier ou le supprimer.", ".tb-row"]],
@@ -102,6 +102,8 @@ export function AppTips({ pid, app }: { pid: string; app: string }) {
   const [i, setI] = useState(() => saved(app));
   const [box, setBox] = useState<Box | null>(null);
   const ref = useRef<HTMLDivElement>(null);
+  const cardRef = useRef<HTMLDivElement>(null);
+  const [cardH, setCardH] = useState(150); // hauteur réelle de la carte, mesurée, pour savoir où elle tient
   const step = canEdit && steps ? steps[i] : undefined;
   const waits = !!step?.[1]?.startsWith("@");
 
@@ -110,6 +112,7 @@ export function AppTips({ pid, app }: { pid: string; app: string }) {
     if (!step) return;
     const tick = () => {
       if (!ref.current) return;
+      if (cardRef.current) { const h = cardRef.current.offsetHeight; setCardH((o) => (o === h ? o : h)); }
       const b = locate(ref.current, step.slice(1));
       // Cible absente (app ouverte dans un fil, fil sans bouton d'expéditeur…) : on saute à une étape suivante dont la cible est visible.
       if (!b && step.length > 1 && steps) for (let j = i + 1; j < steps.length; j++) if (steps[j].length > 1 && locate(ref.current, steps[j].slice(1))) { setI(j); return; }
@@ -127,18 +130,21 @@ export function AppTips({ pid, app }: { pid: string; app: string }) {
   const hold = step[0].startsWith("Maintiens");
   const last = i === steps.length - 1;
   const pad = 6;
-  // Carte sous la cible si elle est dans la moitié haute, sinon au-dessus ; la flèche vise son centre.
-  const below = box ? box.y + box.h / 2 < box.H / 2 : false;
+  // Carte sous la cible s'il y a la place, sinon au-dessus ; si elle ne tient d'aucun côté (cible très
+  // grande, ex. publication Instagram), elle se pose au bord de l'écran opposé à la cible, sans flèche.
+  const gap = pad + 12, room = cardH + 8;
+  const fitsBelow = box ? box.H - (box.y + box.h + gap) >= room : false;
+  const fitsAbove = box ? box.y - gap >= room : false;
+  const place = !box ? "free" : fitsBelow ? "below" : fitsAbove ? "above" : box.y + box.h / 2 > box.H / 2 ? "free top" : "free";
   const cx = box ? box.x + box.w / 2 : 0;
-  const cardStyle = box
-    ? { ...(below ? { top: box.y + box.h + pad + 12 } : { bottom: box.H - box.y + pad + 12 }), ["--ax" as string]: `${Math.min(box.W - 34, Math.max(34, cx)) - 12}px` }
-    : undefined;
+  const cardStyle = place === "below" ? { top: box!.y + box!.h + gap } : place === "above" ? { bottom: box!.H - box!.y + gap } : {};
+  if (box) (cardStyle as Record<string, string>)["--ax"] = `${Math.min(box.W - 34, Math.max(34, cx)) - 12}px`;
   return (
     <div className="at-tour" ref={ref} role="dialog" aria-label="Prise en main">
       <svg className="at-shade" aria-hidden><path d={shade(ref.current, box, pad)} /></svg>
       {box && <div className="at-spot" style={{ left: box.x - pad, top: box.y - pad, width: box.w + pad * 2, height: box.h + pad * 2 }} />}
       {box && <span key={`f${i}`} className={`at-finger ${hold ? "hold" : "tap"}`} style={{ left: cx, top: box.y + box.h / 2 }} aria-hidden />}
-      <div key={i} className={`at-card ${box ? (below ? "below" : "above") : "free"}`} style={cardStyle}>
+      <div key={i} ref={cardRef} className={`at-card ${place}`} style={cardStyle}>
         {/* Même fenêtre Windows 7 que la visite guidée de l'accueil. */}
         <Win title="Prise en main" icon={<Glyph i={mdiHelpCircleOutline} size={15} />}>
           <p className="at-text">{step[0]}</p>
