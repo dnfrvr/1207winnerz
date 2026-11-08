@@ -33,7 +33,11 @@ if (!API_KEY) { console.error("VITE_FIREBASE_API_KEY introuvable dans v2/.env.lo
 const LOGIN_DOMAIN = "joueurs.invalid";
 const toEmail = (login) => { const l = login.trim().toLowerCase(); return l.includes("@") ? l : `${l}@${LOGIN_DOMAIN}`; };
 const args = process.argv.slice(2).map((a) => { const [p, login = p] = a.split("="); return [p, toEmail(login)]; });
-if (!args.length || args.some(([p, e]) => !PHONES.includes(p) || !/^[a-z0-9._-]+@[^@\s]+\.[^@\s]+$/.test(e))) {
+const bad = args.find(([p, e]) => !PHONES.includes(p) || !/^[a-z0-9._-]+@[^@\s]+\.[^@\s]+$/.test(e));
+if (!args.length || bad) {
+  if (bad) console.error(!PHONES.includes(bad[0])
+    ? `« ${bad[0]} » n'est pas un téléphone (choix : ${PHONES.join(", ")}). Pour l'utiliser comme identifiant : <téléphone>=${bad[0]} (ex. mj=${bad[0]})`
+    : `Identifiant invalide pour « ${bad[0]} » (lettres, chiffres, . _ - uniquement).`);
   console.error("Usage : node v2/scripts/create-players.mjs glinda eoghan drew elias [mj]   (ou glinda=identifiant / glinda=e-mail)");
   process.exit(1);
 }
