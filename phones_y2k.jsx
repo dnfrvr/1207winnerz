@@ -3112,7 +3112,7 @@ export default function App() {
   const pendingFirebaseUpdate = useRef({});
   const firebaseTimer = useRef(null);
   const lastSnapshotTime = useRef(0); // pour ne pas spammer les snapshots (1 max toutes les 30s)
-  const MAX_SNAPSHOTS = 20;
+  const MAX_SNAPSHOTS = 5; // ~15 Mo chacun : 5 max pour rester loin du quota Supabase gratuit (1 Go)
 
   // ── Snapshots automatiques ────────────────────────────────────────────────────
   // Avant chaque envoi vers Firebase, on sauvegarde une copie de l'état complet dans
@@ -3124,7 +3124,7 @@ export default function App() {
   const takeSnapshot = async (currentData) => {
     if (!firebaseDb) return;
     const now = Date.now();
-    if (now - lastSnapshotTime.current < 10 * 60_000) return; // throttle 10 min (20 × 10 min ≈ 3 h de couverture)
+    if (now - lastSnapshotTime.current < 10 * 60_000) return; // throttle 10 min (5 × 10 min ≈ 50 min ; la sauvegarde quotidienne GitHub couvre le reste)
     lastSnapshotTime.current = now;
     try {
       // La donnée volumineuse du snapshot part sur Supabase Storage (hors de la racine Firebase
