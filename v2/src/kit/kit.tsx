@@ -5,7 +5,7 @@ import { useCanEdit, useData, useList, useWriter } from "../data/hooks";
 import { orderBetween, byOrder, type Ordered } from "../data/order";
 import type { Json } from "../data/store";
 import { img } from "../lib/img";
-import { canUpload, uploadImage } from "../lib/upload";
+import { canUpload, uploadImage, uploadVideo } from "../lib/upload";
 import { useOS } from "../phone/common";
 import { StatusBar } from "../phone/IOSChrome";
 import { ActionSheet, useLongPress, type SheetAction } from "../phone/Sheets";
@@ -164,12 +164,12 @@ export function Splash({ title, subtitle, background, logo, color = "#fff", onTa
 const LABELS: Record<string, string> = {
   title: "Titre", name: "Nom", off: "Décalage UTC (heures)", text: "Texte", body: "Contenu", time: "Heure", date: "Date", artist: "Artiste",
   album: "Album", duration: "Durée", dur: "Durée", caption: "Légende", location: "Lieu", likes: "J'aime", comments: "Commentaires",
-  src: "Image (URL)", img: "Image (URL)", photo: "Photo (URL)", cover: "Pochette (URL)", thumbImg: "Miniature (URL)", avatar: "Avatar (URL)",
+  src: "Image", img: "Image", photo: "Photo", cover: "Pochette", thumbImg: "Miniature", avatar: "Avatar",
   url: "Adresse", contact: "Contact", phone: "Téléphone", type: "Type", from: "De", subj: "Objet", preview: "Aperçu", unread: "Non lu",
   author: "Auteur", desc: "Description", board: "Tableau", pinner: "Épinglé par", repins: "Repins", views: "Vues", ch: "Chaîne", age: "Âge",
   distance: "Distance", online: "En ligne", connected: "Connecté", current: "Actuel", secured: "Sécurisé", day: "Jour", month: "Mois",
   year: "Année", condition: "Conditions", hi: "Max", lo: "Min", pct: "Progression (%)", latin: "Nom latin", common: "Nom commun",
-  place: "Lieu", note: "Note", notes: "Notes", grade: "Qualité", members: "Membres", last: "Dernier message", handle: "Identifiant",
+  wallpaper: "Fond d'écran", cameraVideo: "Vidéo de l'appareil photo", place: "Lieu", note: "Note", notes: "Notes", grade: "Qualité", members: "Membres", last: "Dernier message", handle: "Identifiant",
   displayName: "Nom affiché", bio: "Bio", followers: "Abonnés", following: "Abonnements", size: "Taille", ext: "Extension",
   opened: "Ouvert", sent: "Envoyé", rt: "Retweets", fav: "Favoris", rp: "Réponses", h: "Identifiant", av: "Avatar", route: "Parcours",
   pace: "Allure", cal: "Calories", plays: "Écoutes", reposts: "Reposts", tag: "Tags", posted: "Publié", headline: "Accroche", about: "À propos",
@@ -178,16 +178,17 @@ const LABELS: Record<string, string> = {
   hs: "Score domicile", as: "Score extérieur", status: "Statut", subtitle: "Sous-titre", detail: "Détail", color: "Couleur", logo: "Logo",
   archived: "Archivé", pinned: "Épinglé", tall: "Grand format", label: "Libellé", subreddit: "Subreddit", score: "Score", points: "Points",
 };
-const IMAGE_KEYS = /^(src|img|photo|cover|thumbImg|avatar|av|image|bannerImg|chAvatarImg)$/;
+const IMAGE_KEYS = /^(src|img|photo|cover|thumbImg|avatar|av|image|bannerImg|chAvatarImg|wallpaper)$/;
+const VIDEO_KEYS = /^(video|cameraVideo)$/;
 const HIDDEN = new Set(["order", "id", "deleted", "authorKey", "senderKey"]);
 
-type FieldSpec = { key: string; label: string; kind: "text" | "long" | "number" | "bool" | "image" };
+type FieldSpec = { key: string; label: string; kind: "text" | "long" | "number" | "bool" | "image" | "video" };
 
 const fieldsOf = (item: Record<string, Json>, only?: string[]): FieldSpec[] => {
   const keys = only ?? Object.keys(item).filter((k) => !HIDDEN.has(k) && (item[k] === null || typeof item[k] !== "object"));
   return keys.map((key) => {
     const v = item[key];
-    const kind: FieldSpec["kind"] = IMAGE_KEYS.test(key) ? "image" : typeof v === "boolean" ? "bool" : typeof v === "number" ? "number"
+    const kind: FieldSpec["kind"] = IMAGE_KEYS.test(key) ? "image" : VIDEO_KEYS.test(key) ? "video" : typeof v === "boolean" ? "bool" : typeof v === "number" ? "number"
       : typeof v === "string" && (v.length > 40 || v.includes("\n")) ? "long" : "text";
     return { key, label: LABELS[key] ?? key, kind };
   });
@@ -237,6 +238,35 @@ function ItemForm({ pid, target, onClose }: { pid: string; target: EditTarget; o
         <Grouped>
           <Section>
             {fields.map((f) => (
+              f.kind === "image" || f.kind === "video" ? (
+                // Images et vidéos : uniquement par envoi depuis l'appareil (pas d'URL à taper).
+                <div key={f.key} className={`k-field ${f.kind}`}>
+                  <span className="k-field-label">{f.label}</span>
+                  {typeof draft[f.key] === "string" && draft[f.key]
+                    ? (f.kind === "video"
+                      ? <video className="k-field-img" src={img(draft[f.key] as string)} autoPlay muted loop playsInline />
+                      : <img className="k-field-img" src={img(draft[f.key] as string)} alt="" />)
+                    : <span className="k-field-none">{f.kind === "video" ? "Aucune vidéo" : "Aucune photo"}</span>}
+                  <span className="k-upload-row">
+                    {canUpload ? (
+                      <span className="k-upload">
+                        <input type="file" accept={f.kind === "video" ? "video/*" : "image/*"} aria-label={`Choisir un fichier pour ${f.label}`} disabled={uploading === f.key}
+                          onChange={async (e) => {
+                            const file = e.target.files?.[0]; e.target.value = "";
+                            if (!file) return;
+                            setUploading(f.key); setUploadErr(null);
+                            try { const url = await (f.kind === "video" ? uploadVideo : uploadImage)(file, pid); setDraft((d) => ({ ...d, [f.key]: url })); }
+                            catch (err) { setUploadErr((err as Error).message); }
+                            finally { setUploading(null); }
+                          }} />
+                        {uploading === f.key ? "Envoi…" : f.kind === "video" ? "🎥 Choisir une vidéo" : "📷 Choisir une photo"}
+                      </span>
+                    ) : <span className="k-upload-err">Envoi de fichiers indisponible pour l'instant.</span>}
+                    {typeof draft[f.key] === "string" && draft[f.key] && <button type="button" className="k-upload-del" onClick={() => setDraft((d) => ({ ...d, [f.key]: "" }))}>Retirer</button>}
+                  </span>
+                  {uploadErr && <span className="k-upload-err">{uploadErr}</span>}
+                </div>
+              ) : (
               <label key={f.key} className={`k-field ${f.kind}`}>
                 <span className="k-field-label">{f.label}</span>
                 {f.kind === "bool" ? (
@@ -247,23 +277,8 @@ function ItemForm({ pid, target, onClose }: { pid: string; target: EditTarget; o
                   <input type={f.kind === "number" ? "number" : "text"} value={draft[f.key] === null || draft[f.key] === undefined ? "" : String(draft[f.key])}
                     onChange={(e) => setDraft((d) => ({ ...d, [f.key]: e.target.value }))} />
                 )}
-                {f.kind === "image" && typeof draft[f.key] === "string" && draft[f.key] && <img className="k-field-img" src={img(draft[f.key] as string)} alt="" />}
-                {f.kind === "image" && canUpload && (
-                  <span className="k-upload">
-                    <input type="file" accept="image/*" aria-label={`Choisir une photo pour ${f.label}`} disabled={uploading === f.key}
-                      onChange={async (e) => {
-                        const file = e.target.files?.[0]; e.target.value = "";
-                        if (!file) return;
-                        setUploading(f.key); setUploadErr(null);
-                        try { const url = await uploadImage(file, pid); setDraft((d) => ({ ...d, [f.key]: url })); }
-                        catch (err) { setUploadErr((err as Error).message); }
-                        finally { setUploading(null); }
-                      }} />
-                    {uploading === f.key ? "Envoi…" : "📷 Choisir une photo"}
-                  </span>
-                )}
-                {uploadErr && f.kind === "image" && <span className="k-upload-err">{uploadErr}</span>}
               </label>
+              )
             ))}
             {fields.length === 0 && <div className="k-field"><span className="k-field-label">Rien à modifier ici.</span></div>}
           </Section>

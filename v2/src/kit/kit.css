@@ -154,3 +154,6 @@
 .k-upload input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
 .android .k-upload { border-radius: 2px; color: #33b5e5; font-family: var(--and-font); background: transparent; border-color: #33b5e5; }
 .k-upload-err { margin-top: 4px; font: 12px var(--ios-font); color: #c22; }
+.k-field-none { margin-top: 4px; font: italic 13px var(--ios-font); color: #999; }
+.k-upload-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.k-upload-del { margin-top: 6px; font: 13px var(--ios-font); color: #c22; text-decoration: underline; }

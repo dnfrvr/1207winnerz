@@ -8,7 +8,7 @@ import { AddButton, Cell, Grouped, Section, Switch, useEditor } from "../kit/kit
 import { Glyph } from "../kit/glyph";
 import { img } from "../lib/img";
 import {
-  mdiAirplane, mdiAntenna, mdiApps, mdiBattery, mdiBackupRestore, mdiBluetooth, mdiBrightness7, mdiChartPie, mdiCloud, mdiCog, mdiCompass,
+  mdiAirplane, mdiAntenna, mdiCamera, mdiApps, mdiBattery, mdiBackupRestore, mdiBluetooth, mdiBrightness7, mdiChartPie, mdiCloud, mdiCog, mdiCompass,
   mdiDatabase, mdiDotsHorizontal, mdiEmail, mdiFormatListBulleted, mdiHandBackRight, mdiInformationOutline, mdiLinkVariant, mdiLock,
   mdiLockOutline, mdiMapMarker, mdiMessageText, mdiMusic, mdiNoteText, mdiPhone, mdiPhoneClassic, mdiClockOutline, mdiTranslate,
   mdiVolumeHigh, mdiWifi, mdiWifiStrength3, mdiWifiStrength3Lock, mdiBrightness6,
@@ -32,7 +32,55 @@ export default function SettingsApp({ pid }: { pid: string }) {
       <Route path="wifi" element={<Wifi pid={pid} />} />
       <Route path="bluetooth" element={<Bluetooth pid={pid} />} />
       <Route path="about" element={<About pid={pid} />} />
+      <Route path="wallpaper" element={<Wallpaper pid={pid} />} />
+      <Route path="camera" element={<CameraSettings pid={pid} />} />
     </Routes>
+  );
+}
+
+/** Luminosité et fond d'écran (iOS 6) / Affichage (Android). */
+function Wallpaper({ pid }: { pid: string }) {
+  const os = useOS();
+  const ed = useEditor(pid);
+  const prof = useValue<{ wallpaper?: string }>(`phones/${pid}/profile`) ?? {};
+  const edit = (field: string, title: string) => ed.edit({ path: `phones/${pid}/profile`, fields: [field], title });
+  const wp = prof.wallpaper ? img(prof.wallpaper) : undefined;
+  return (
+    <AppFrame title={os === "ios" ? "Brightness & Wallpaper" : "Affichage"} left={<BackButton to={`/${pid}/settings`} label={os === "ios" ? "Settings" : "Paramètres"} />} bodyClass={`st ${os}`}>
+      <Grouped>
+        <Section title={os === "ios" ? undefined : "Fond d'écran"}>
+          <div className="st-wp">
+            <span className="st-wp-prev lock" style={{ backgroundImage: wp && `url(${wp})` }}><i /></span>
+            <span className="st-wp-prev" style={{ backgroundImage: wp && `url(${wp})` }}><b /></span>
+          </div>
+          {ed.canEdit && <Cell title={os === "ios" ? "Wallpaper" : "Fond d'écran"} detail="Modifier" chevron onClick={() => edit("wallpaper", "Fond d'écran")} />}
+        </Section>
+      </Grouped>
+      {ed.ui}
+    </AppFrame>
+  );
+}
+
+/** Photos & Camera (iOS 6) / Appareil photo (Android) : vidéo qui tourne dans le viseur. */
+function CameraSettings({ pid }: { pid: string }) {
+  const os = useOS();
+  const ed = useEditor(pid);
+  const prof = useValue<{ cameraVideo?: string }>(`phones/${pid}/profile`) ?? {};
+  const edit = (field: string, title: string) => ed.edit({ path: `phones/${pid}/profile`, fields: [field], title });
+  return (
+    <AppFrame title={os === "ios" ? "Photos & Camera" : "Appareil photo"} left={<BackButton to={`/${pid}/settings`} label={os === "ios" ? "Settings" : "Paramètres"} />} bodyClass={`st ${os}`}>
+      <Grouped>
+        <Section footer="Vidéo qui tourne dans le viseur de l'appareil photo (courte, sans son).">
+          <div className="st-wp">
+            {prof.cameraVideo
+              ? <video className="st-wp-vid" src={img(prof.cameraVideo)} autoPlay muted loop playsInline />
+              : <span className="st-wp-vid empty">Aucune vidéo</span>}
+          </div>
+          {ed.canEdit && <Cell title={os === "ios" ? "Camera Video" : "Vidéo du viseur"} detail={prof.cameraVideo ? "Modifier" : "Ajouter"} chevron onClick={() => edit("cameraVideo", "Vidéo de l'appareil photo")} />}
+        </Section>
+      </Grouped>
+      {ed.ui}
+    </AppFrame>
   );
 }
 
@@ -62,7 +110,8 @@ function Root({ pid }: { pid: string }) {
           <Cell icon={ic(mdiDotsHorizontal)} title="Plus…" />
         </Section>
         <Section title="Appareil">
-          <Cell icon={ic(mdiVolumeHigh)} title="Son" /><Cell icon={ic(mdiBrightness6)} title="Affichage" />
+          <Cell icon={ic(mdiVolumeHigh)} title="Son" /><Cell icon={ic(mdiBrightness6)} title="Affichage" onClick={() => nav("wallpaper")} />
+          <Cell icon={ic(mdiCamera)} title="Appareil photo" onClick={() => nav("camera")} />
           <Cell icon={ic(mdiDatabase)} title="Stockage" /><Cell icon={ic(mdiBattery)} title="Batterie" /><Cell icon={ic(mdiApps)} title="Applications" />
         </Section>
         <Section title="Personnel">
@@ -90,7 +139,7 @@ function Root({ pid }: { pid: string }) {
           <Cell icon={tile(RED, mdiFormatListBulleted)} title="Notifications" chevron />
           <Cell icon={tile(GREY, mdiCog)} title="General" chevron onClick={() => nav("about")} />
           <Cell icon={tile(RED, mdiVolumeHigh)} title="Sounds" chevron />
-          <Cell icon={tile(BLUE, mdiBrightness7)} title="Brightness & Wallpaper" chevron />
+          <Cell icon={tile(BLUE, mdiBrightness7)} title="Brightness & Wallpaper" chevron onClick={() => nav("wallpaper")} />
           <Cell icon={tile(GREY, mdiHandBackRight)} title="Privacy" chevron />
         </Section>
         <Section>
@@ -101,6 +150,7 @@ function Root({ pid }: { pid: string }) {
           <Cell icon={appTile("messages", GREEN, mdiMessageText)} title="Messages" chevron />
           <Cell icon={appTile("safari", BLUE, mdiCompass)} title="Safari" chevron />
           <Cell icon={appTile("music", ORANGE, mdiMusic)} title="Music" chevron />
+          <Cell icon={appTile("photos", GREY, mdiCamera)} title="Photos & Camera" chevron onClick={() => nav("camera")} />
         </Section>
       </Grouped>
     </AppFrame>

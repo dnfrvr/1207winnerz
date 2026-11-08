@@ -18,6 +18,7 @@ export function CameraApp({ pid }: { pid: string }) {
   const gallery = useList<{ src?: string }>(`phones/${pid}/data/gallery`);
   const last = gallery[gallery.length - 1]?.[1].src;
   const wallpaper = useValue<string>(`phones/${pid}/profile/wallpaper`);
+  const video = useValue<string>(`phones/${pid}/profile/cameraVideo`); // réglée dans Réglages › Fond d'écran
   const [shot, setShot] = useState(0);
   const [mode, setMode] = useState<"photo" | "video">("photo");
   const [rec, setRec] = useState(false);
@@ -30,7 +31,8 @@ export function CameraApp({ pid }: { pid: string }) {
         {os === "ios" && <button className="cam-pill">HDR Off</button>}
         <button className="cam-pill" aria-label="Changer de caméra">⟲</button>
       </div>
-      <div className="cam-view" style={{ backgroundImage: wallpaper ? `url(${img(wallpaper)})` : undefined }}>
+      <div className="cam-view" style={{ backgroundImage: wallpaper && !video ? `url(${img(wallpaper)})` : undefined }}>
+        {video && <video className="cam-video" src={img(video)} autoPlay muted loop playsInline />}
         <div className="cam-grid" />
         <div className="cam-focus" />
         {shot > 0 && <div key={shot} className={`cam-iris ${os}`} />}

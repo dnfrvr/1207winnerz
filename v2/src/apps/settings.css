@@ -23,3 +23,13 @@
 .st.android .k-cell.tap:active { background: rgba(51,181,229,.4); }
 .st.android .k-detail, .st.android .k-sub { color: #8a8a8a; }
 .st.android .k-section-footer { color: #8a8a8a; }
+
+/* Luminosité et fond d'écran : aperçus écran verrouillé / accueil (iOS 6), vidéo du viseur */
+.st-wp { display: flex; justify-content: center; gap: 18px; padding: 14px 10px; }
+.st-wp-prev { position: relative; width: 84px; height: 149px; border-radius: 3px; background: #333 center / cover; box-shadow: 0 0 0 1px rgba(0,0,0,.4), 0 2px 5px rgba(0,0,0,.3); overflow: hidden; }
+.st-wp-prev.lock i { position: absolute; left: 0; right: 0; top: 0; height: 26px; background: rgba(0,0,0,.55); }
+.st-wp-prev.lock::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 26px; background: rgba(0,0,0,.55); }
+.st-wp-prev b { position: absolute; inset: 10px 8px 34px; background: repeating-linear-gradient(90deg, rgba(255,255,255,.55) 0 14px, transparent 14px 20px); -webkit-mask: repeating-linear-gradient(rgba(0,0,0,1) 0 14px, transparent 14px 22px); mask: repeating-linear-gradient(#000 0 14px, transparent 14px 22px); }
+.st-wp-vid { width: 120px; height: 160px; border-radius: 3px; object-fit: cover; background: #222; box-shadow: 0 0 0 1px rgba(0,0,0,.4); }
+.st-wp-vid.empty { display: flex; align-items: center; justify-content: center; font: 13px var(--ios-font); color: #999; }
+.st.android .st-wp-prev, .st.android .st-wp-vid { border-radius: 0; }
