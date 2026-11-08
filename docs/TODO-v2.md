@@ -21,21 +21,22 @@
 
 ## ▶ Reprendre ici (session du 2026-11-08 arrêtée : limite atteinte)
 
-- [ ] **Convertir les vidéos à l'envoi** (au lieu de refuser) : les vidéos d'iPhone sont en HEVC,
-  illisibles dans Firefox et sur beaucoup de PC (écran bleu dans l'appareil photo). Aujourd'hui
-  `v2/src/lib/upload.ts` détecte le HEVC (`hevcInMoov`, à tester : `glinda.mp4` HEVC → true,
-  une vidéo H.264 → false) et **refuse** l'envoi avec un message. À remplacer par une conversion
-  en H.264 dans le navigateur (WebCodecs, ou ffmpeg.wasm chargé seulement quand c'est nécessaire),
-  sans service payant. Attention : un navigateur qui ne décode pas le HEVC ne pourra pas convertir non plus.
+- [x] **Convertir les vidéos à l'envoi** : le HEVC est réencodé en H.264 (MP4) dans le navigateur
+  (`toH264` dans `v2/src/lib/upload.ts` : lecture muette dans un canvas + MediaRecorder, sans dépendance,
+  en temps réel, sans le son). Testé sur la vidéo de Glinda : 13,5 Mo HEVC → 1,3 Mo avc1, lisible.
+  Limites : l'onglet doit rester au premier plan pendant la conversion ; un navigateur qui ne décode
+  pas le HEVC (Firefox sur PC…) refuse toujours — envoyer depuis l'iPhone (Safari).
 - [ ] **Vidéos de Glinda en double dans Supabase** : la clé publique ne peut pas supprimer. Dans le
   tableau de bord Supabase › Storage › `uploads/v2/glinda/`, garder une seule des 3 copies
   (`1794158716240_s2dyy8.mp4`, `1794158739321_l7o0uj.mp4`, `1794159983692_vvfhws.mp4`) — celle
   enregistrée dans `phones/glinda/profile/cameraVideo` (vérifier dans la console Firebase) — ou
-  toutes, une fois la vidéo renvoyée convertie.
-- [ ] **Guide de prise en main dans chaque app**, pensé mobile d'abord : à la 1re ouverture d'une
-  app, quelques bulles qui montrent quoi toucher (appui long pour modifier, « + » pour ajouter,
-  changer d'expéditeur dans Messages…).
-- [ ] Pousser les commits locaux sur GitHub (`git push origin main`).
+  toutes, une fois la vidéo renvoyée convertie (conversion maintenant en place : renvoyer la vidéo
+  depuis l'iPhone, puis supprimer les 3 anciennes).
+- [x] **Guide de prise en main dans chaque app** : à la 1re ouverture d'une app (par navigateur,
+  seulement pour qui peut modifier), une bulle « Compris » en bas de l'écran (`v2/src/phone/AppTips.tsx`).
+  Textes propres à Messages et Notes, rappel générique (appui long, « + ») ailleurs.
+  - [ ] Ajouter des textes dédiés aux autres apps quand leurs gestes diffèrent.
+- [x] Pousser les commits locaux sur GitHub (`git push origin main`).
 
 ## À vérifier dans les données
 

@@ -148,6 +148,9 @@ textarea, input { font: inherit; color: inherit; }
 .home-layer.behind { transform: scale(1.22); opacity: 0; pointer-events: none; }
 @keyframes homeIn { from { transform: scale(1.25); opacity: 0; } }
 .app-layer { position: absolute; inset: 0; overflow: hidden; will-change: transform, opacity; backface-visibility: hidden; }
+.app-tip { position: absolute; left: 10px; right: 10px; bottom: 14px; z-index: 50; display: flex; gap: 10px; align-items: center; padding: 10px 12px; border-radius: 10px; background: rgba(20, 24, 32, .92); color: #fff; font: 13px/1.4 var(--ios-font); box-shadow: 0 4px 16px rgba(0,0,0,.4); animation: appOpen .3s ease-out both; }
+.app-tip ul { flex: 1; margin: 0; padding-left: 16px; }
+.app-tip button { flex: none; min-height: 40px; padding: 0 14px; border: 0; border-radius: 8px; background: #2a7ad0; color: #fff; font: bold 13px var(--ios-font); }
 .app-layer.open { animation: appOpen .38s cubic-bezier(.22,.8,.26,1) both; }
 .app-layer.exit { animation: appClose .34s cubic-bezier(.4,0,.7,.2) both; pointer-events: none; z-index: 2; }
 @keyframes appOpen { 0% { transform: scale(.14); opacity: 0; } 25% { opacity: 1; } 100% { transform: none; opacity: 1; } }

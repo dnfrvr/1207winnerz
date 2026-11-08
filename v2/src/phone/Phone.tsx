@@ -5,6 +5,7 @@ import { mdiApplication, mdiHome, mdiSwapHorizontal } from "@mdi/js";
 import { Suspense, useEffect, useRef, useState, type CSSProperties } from "react";
 import { Link, Route, Routes, useLocation, useNavigate, useParams, type Location } from "react-router-dom";
 import { useCanEdit, useValue } from "../data/hooks";
+import { AppTips } from "./AppTips";
 import { AppFrame, BackButton, NavDirCtx, RingUnlock, SlideToUnlock, StatusBar, useClock, useLoreDate, type NavDir } from "./IOSChrome";
 import { OSCtx, useNow, type OS } from "./common";
 import { APP_META } from "../../../src/shared/app-meta.js";
@@ -407,7 +408,7 @@ function AndroidHome({ pid, profile }: { pid: string; profile: Profile }) {
 function AppRoute({ pid }: { pid: string }) {
   const { app = "" } = useParams();
   const Impl = APPS[app];
-  if (Impl) return <Impl pid={pid} />;
+  if (Impl) return <><Impl pid={pid} /><AppTips pid={pid} app={app} /></>;
   const label = META[app]?.droidLabel ?? META[app]?.label ?? app;
   return (
     <AppFrame title={label} left={<BackButton to={`/${pid}/home`} label="Accueil" />} bodyClass="pinstripe">
