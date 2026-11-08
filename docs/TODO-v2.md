@@ -3,7 +3,8 @@
 ## En attente (action de l'utilisateur·rice)
 
 - [ ] **Créer les comptes joueurs** (mis de côté le 2026-11-07)
-  `node v2/scripts/create-players.mjs glinda=… eoghan=… drew=… elias=… [mj=…]`
+  `node v2/scripts/create-players.mjs glinda eoghan drew elias mj` (connexion par identifiant ;
+  `glinda=pseudo` ou `glinda=e-mail` possible)
   → mots de passe temporaires dans `migration/_out/comptes-joueurs.txt` (local, à supprimer après).
 - [ ] Ensuite : fusionner `migration/_out/users.json` dans `migration/_out/v2-from-live.json`
   puis l'**importer** dans la Realtime Database v2 (console → Données → ⋮ → Importer JSON).
@@ -45,15 +46,36 @@ son code-barres, appui long au doigt) ; horloges mondiales modifiables / ajoutab
 et alarmes par défaut modifiables ; rayures de l'iPhone d'Elias ; l'écran ne défile plus quand un
 champ d'édition prend le focus (`overflow: clip`).
 
+Fait le 2026-11-08 (3e passe) : ask.fm / ESPN / Polyvore en vraies apps ; tout éditable (appui long
+tactile partout via `touchContextMenu`, `useSeeded` pour les listes par défaut, Boussole, parties des
+jeux) ; Musique avec extraits Deezer, mini-lecteur, pochettes automatiques et ajout par recherche Deezer ;
+SoundCloud et iNaturalist refaits ; historique du navigateur trié par date ; connexion par identifiant
+(+ changement de mot de passe) ; site façon Aero/messagerie 2009 avec mini-téléphones, panneau MJ
+(`/admin` : date de lore, réglages des téléphones) et visite guidée animée.
+
 Reste :
-- [ ] ask.fm, ESPN, Polyvore ne sont pas des jeux → vraies apps (comme Kik/Vine)
-- [ ] Tout doit être éditable par le joueur : passer les autres apps en revue (valeurs par défaut
-  codées en dur non éditables, comme l'étaient les horloges)
-- [ ] Musique : mini-lecteur sur la liste des chansons ; lecture réelle via Deezer (extraits)
-- [ ] SoundCloud et iNaturalist beaucoup plus réalistes
-- [ ] Connexion par identifiant au lieu d'e-mail
-- [ ] Accueil : garder l'aperçu des 4 téléphones ; espace admin (date de lore, etc.)
-- [ ] Interface du site : toujours Y2K mais plus quali, inspiration MSN / Windows 7
-- [ ] Onboarding animé façon unlokmi (ajouter du contenu, le consulter…)
 - [ ] Appareil photo : courte vidéo par perso (fichiers à fournir)
-- [ ] Ensuite : liste d'améliorations pour un téléphone aussi réaliste et personnalisable que possible
+- [ ] Tester sur un vrai iPhone / Android (appui long tactile, audio Deezer, plein écran)
+
+## Pistes d'amélioration (réalisme et personnalisation)
+
+Réalisme :
+- [ ] Notifications : bannières iOS 6 / barre de notif Android qui tombent quand un autre joueur écrit
+- [ ] Centre de notifications (iOS 6) et volet déroulant (Android) avec l'historique des notifs
+- [ ] Écran verrouillé : notifications en attente, photo de verrouillage distincte, code PIN par perso
+- [ ] Batterie / réseau qui varient (E, 3G, Wi-Fi) ; mode avion ; « Pas de service » scénarisable
+- [ ] Appels : écran d'appel entrant/sortant, journal d'appels, messagerie vocale (fichiers audio)
+- [ ] Clavier iOS 6 / Android dessiné, avec autocorrection de l'époque (option)
+- [ ] Recherche Spotlight (iOS) / Google Now (Android) sur le contenu du téléphone
+- [ ] App Store / Play Store avec les apps installées et leurs mises à jour
+- [ ] Indicateurs « Lu à 14:02 », « Distribué », « en train d'écrire… » dans Messages
+- [ ] Sons système (clic clavier, verrouillage, SMS « Tri-tone ») activables
+
+Personnalisation :
+- [ ] Réorganiser les icônes à l'appui long (mode « tremblement » iOS / glisser Android), dossiers
+- [ ] Choisir fond d'écran et sonnerie depuis Réglages (déjà en base : `profile.wallpaper`)
+- [ ] Ajouter / retirer une app de l'écran d'accueil, renommer, changer l'icône
+- [ ] Widgets Android (horloge, météo, musique) sur l'écran d'accueil de Drew
+- [ ] Coques : couleur, étui, fissure d'écran, autocollants (comme les rayures d'Elias)
+- [ ] Historique des modifications (déjà enregistré dans `history/`) consultable et annulable par le joueur
+- [ ] Import de photos depuis l'appareil (nécessite le stockage Supabase réactivé)
