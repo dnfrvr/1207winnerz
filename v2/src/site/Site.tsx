@@ -1,0 +1,152 @@
+// Interface du site (hors téléphones) : bureau Aero de 2009, fenêtre façon messagerie instantanée
+// (les 4 persos en « contacts », avec leurs mini-téléphones), barre des tâches dont l'horloge
+// donne la date de lore, et « Panneau de configuration » pour le MJ (date de lore, téléphones).
+import { useState, type ReactNode } from "react";
+import { Link } from "react-router-dom";
+import { useData, useValue, useWriter } from "../data/hooks";
+import { img } from "../lib/img";
+import { LORE_DATE_DEFAULT } from "../phone/common";
+import { APP_META } from "../../../src/shared/app-meta.js";
+import "./site.css";
+
+export const PIDS = ["glinda", "eoghan", "drew", "elias"] as const;
+const META = APP_META as Record<string, { iosIcon?: string }>;
+
+type Profile = { name?: string; os?: string; avatar?: string | { src?: string }; accentColor?: string; phoneColor?: string; wallpaper?: string;
+  bio?: string; username?: string; appIcons?: Record<string, string> };
+const avatarOf = (p?: Profile) => (typeof p?.avatar === "string" ? p.avatar : p?.avatar?.src);
+
+/** Fenêtre au verre dépoli avec barre de titre et boutons ─ □ ✕ (décoratifs). */
+export function Win({ title, icon = "💬", children, className = "" }: { title: string; icon?: ReactNode; children: ReactNode; className?: string }) {
+  return (
+    <section className={`w7-win ${className}`}>
+      <header className="w7-title"><span className="w7-ico" aria-hidden>{icon}</span><h2>{title}</h2>
+        <span className="w7-caps" aria-hidden><i>─</i><i>□</i><i className="x">✕</i></span></header>
+      <div className="w7-body">{children}</div>
+    </section>
+  );
+}
+
+/** Bureau + barre des tâches (horloge = date de lore). */
+export function Desktop({ children, taskbar }: { children: ReactNode; taskbar?: ReactNode }) {
+  const lore = useValue<string>("meta/loreDate") || LORE_DATE_DEFAULT;
+  const [y, m, d] = lore.split("-");
+  const time = new Date().toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
+  return (
+    <div className="w7-desk">
+      <div className="w7-bloom" aria-hidden />
+      <main className="w7-main">{children}</main>
+      <footer className="w7-bar">
+        <span className="w7-orb" aria-hidden>UMA</span>
+        <span className="w7-tasks">{taskbar}</span>
+        <span className="w7-clock"><b>{time}</b><small>{d}/{m}/{y}</small></span>
+      </footer>
+    </div>
+  );
+}
+
+/** Mini-téléphone : coque, fond d'écran, premières icônes de l'écran d'accueil. */
+function MiniPhone({ pid, p }: { pid: string; p?: Profile }) {
+  const home = useValue<{ apps?: string[]; dock?: string[] }>(`phones/${pid}/home`);
+  const ids = [...(home?.apps ?? []).filter((a) => !(home?.dock ?? []).includes(a)).slice(0, 16), ...(home?.dock ?? []).slice(0, 4)];
+  const android = p?.os === "android";
+  return (
+    <span className={`mini ${android ? "and" : "ios"} ${p?.phoneColor === "white" ? "white" : ""}`}>
+      <span className="mini-screen" style={{ backgroundImage: p?.wallpaper ? `url(${img(p.wallpaper)})` : undefined }}>
+        <span className="mini-status" />
+        <span className="mini-grid">
+          {ids.map((id, i) => (
+            <span key={id + i} className={`mini-ic ${i >= ids.length - Math.min(4, home?.dock?.length ?? 0) ? "dock" : ""}`}>
+              {p?.appIcons?.[id] ? <img src={img(p.appIcons[id])} alt="" loading="lazy" /> : <em>{META[id]?.iosIcon ?? "▪"}</em>}
+            </span>
+          ))}
+        </span>
+      </span>
+    </span>
+  );
+}
+
+function Contact({ pid, mine }: { pid: string; mine: boolean }) {
+  const p = useValue<Profile>(`phones/${pid}/profile`);
+  const av = avatarOf(p);
+  return (
+    <Link to={`/${pid}`} className={`w7-contact ${mine ? "mine" : ""}`}>
+      <span className="dp" style={{ ["--st" as string]: mine ? "#4ad94a" : "#f2b324" }}>{av ? <img src={img(av)} alt="" /> : <span>{(p?.name ?? pid)[0]}</span>}</span>
+      <span className="who"><b>{p?.name ?? pid}</b>{mine && <i>(moi)</i>}<small>{p?.bio || `@${p?.username ?? pid}`}</small></span>
+      <MiniPhone pid={pid} p={p} />
+    </Link>
+  );
+}
+
+export function Lobby({ me, account, admin }: { me: string | null; account: ReactNode; admin: boolean }) {
+  const [open, setOpen] = useState(true);
+  const mine = useValue<Profile>(me ? `phones/${me}/profile` : null);
+  return (
+    <Desktop taskbar={<><span className="w7-task on">💬 #WhatsInOurPhones</span>{admin && <Link className="w7-task" to="/admin">⚙ Panneau de configuration</Link>}</>}>
+      <Win title="#WhatsInOurPhones — University of Maine at Augusta" className="w7-msn">
+        <div className="w7-me">
+          <span className="dp big" style={{ ["--st" as string]: "#4ad94a" }}>{avatarOf(mine) ? <img src={img(avatarOf(mine)!)} alt="" /> : <span>{admin ? "MJ" : "?"}</span>}</span>
+          <span className="who">
+            <b>{mine?.name ?? (admin ? "Maître·sse du jeu" : "Invité·e")} <i className="st">(En ligne)</i></b>
+            <small>{mine?.bio || "Fall 2012 · quatre téléphones, quatre secrets"}</small>
+          </span>
+        </div>
+        <div className="w7-account">{account}</div>
+        <button className="w7-group" onClick={() => setOpen((o) => !o)} aria-expanded={open}>{open ? "▾" : "▸"} Téléphones ({PIDS.length})</button>
+        {open && <div className="w7-list">{PIDS.map((p, i) => <div key={p} style={{ animationDelay: `${i * 70}ms` }} className="w7-in"><Contact pid={p} mine={me === p} /></div>)}</div>}
+        <p className="w7-hint">Clique sur un téléphone pour l'ouvrir. Sur le tien, appui long (ou clic droit) sur n'importe quoi pour le modifier.</p>
+      </Win>
+    </Desktop>
+  );
+}
+
+// ── Panneau de configuration (MJ) ────────────────────────────────────────────
+const PHONE_FIELDS: { key: keyof Profile; label: string; type?: string; options?: string[] }[] = [
+  { key: "name", label: "Nom" }, { key: "username", label: "Pseudo" }, { key: "os", label: "Système", options: ["ios", "android"] },
+  { key: "phoneColor", label: "Coque", options: ["white", "black"] }, { key: "accentColor", label: "Couleur d'accent", type: "color" },
+  { key: "wallpaper", label: "Fond d'écran (URL)" },
+];
+
+function PhoneSettings({ pid }: { pid: string }) {
+  const p = useValue<Profile>(`phones/${pid}/profile`) ?? {};
+  const { set } = useWriter(pid);
+  return (
+    <fieldset className="w7-fs">
+      <legend>{p.name ?? pid}</legend>
+      {PHONE_FIELDS.map((f) => (
+        <label key={f.key}><span>{f.label}</span>
+          {f.options ? (
+            <select value={String(p[f.key] ?? "")} onChange={(e) => set(`phones/${pid}/profile/${f.key}`, e.target.value)}>
+              {f.options.map((o) => <option key={o}>{o}</option>)}
+            </select>
+          ) : (
+            <input type={f.type ?? "text"} defaultValue={String(p[f.key] ?? (f.type === "color" ? "#33b5e5" : ""))} key={String(p[f.key] ?? "")}
+              onBlur={(e) => e.target.value !== String(p[f.key] ?? "") && set(`phones/${pid}/profile/${f.key}`, e.target.value)} />
+          )}
+        </label>
+      ))}
+    </fieldset>
+  );
+}
+
+export function Admin() {
+  const { session } = useData();
+  const lore = useValue<string>("meta/loreDate") || LORE_DATE_DEFAULT;
+  const { set } = useWriter("meta");
+  if (session.role !== "mj") return (
+    <Desktop><Win title="Accès refusé" icon="🔒"><p className="w7-p">Le panneau de configuration est réservé au MJ. <Link to="/">Retour</Link></p></Win></Desktop>
+  );
+  return (
+    <Desktop taskbar={<><Link className="w7-task" to="/">💬 #WhatsInOurPhones</Link><span className="w7-task on">⚙ Panneau de configuration</span></>}>
+      <Win title="Panneau de configuration" icon="⚙" className="w7-cp">
+        <nav className="w7-crumbs"><Link to="/">Accueil</Link> › Panneau de configuration</nav>
+        <fieldset className="w7-fs">
+          <legend>Date et heure de la fiction</legend>
+          <label><span>Date de lore (« Aujourd'hui » dans les téléphones)</span>
+            <input type="date" value={lore} min="2012-01-01" max="2013-12-31" onChange={(e) => e.target.value && set("meta/loreDate", e.target.value)} /></label>
+        </fieldset>
+        <div className="w7-cols">{PIDS.map((p) => <PhoneSettings key={p} pid={p} />)}</div>
+      </Win>
+    </Desktop>
+  );
+}

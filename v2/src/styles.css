@@ -178,21 +178,7 @@ textarea, input { font: inherit; color: inherit; }
 /* Petit bandeau « Lecture seule » quand on regarde le tel d'un autre joueur */
 .readonly-tag { animation: tagFade 4s ease-in forwards; position: absolute; left: 50%; top: 26px; transform: translateX(-50%); z-index: 30; padding: 3px 10px; border-radius: 10px; background: rgba(0,0,0,.6); color: #fff; font: bold 10px var(--ios-font); pointer-events: none; }
 
-/* ─── Accueil (page web façon 2012) ──────────────────────────────────────── */
-.lobby { min-height: 100dvh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; padding: 32px 16px;
-  font-family: Verdana, Tahoma, sans-serif; color: #0f4499; text-align: center;
-  background: linear-gradient(160deg, #c6d9f0 0%, #b0ccee 30%, #d8e8f8 60%, #c0d5ec 100%); }
-.lobby h1 { font: 34px Impact, "Arial Black", sans-serif; letter-spacing: 1px; text-shadow: 2px 2px 0 #fff; }
-.lobby .sub { font-size: 11px; letter-spacing: 3px; text-transform: uppercase; color: #557; }
-.lobby .phones { display: grid; grid-template-columns: repeat(2, 140px); gap: 14px; }
-@media (min-width: 700px) { .lobby .phones { grid-template-columns: repeat(4, 140px); } }
-.lobby-phone { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 12px; border-radius: 12px; border: 3px solid #0f4499;
-  background: linear-gradient(#fff, #eef3ff); box-shadow: 4px 4px 0 #0a2f77; color: #0f4499; text-decoration: none; font-weight: bold; text-transform: capitalize; }
-.lobby-phone img, .lobby-phone .ph { width: 72px; height: 72px; border-radius: 10px; object-fit: cover; font-size: 48px; }
-.lobby-phone.mine { background: linear-gradient(#fffbe0, #ffe98a); }
-.lobby-phone small { font-size: 10px; font-weight: normal; text-transform: none; }
-.whoami { font-size: 13px; } .whoami select { font: inherit; padding: 2px 4px; }
-.devnote { font-size: 11px; color: #557; } .devnote button { text-decoration: underline; color: #0f4499; }
+/* Accueil, connexion, admin : voir site/site.css */
 
 /* ─── Feuilles iOS 6 (action sheet, alert, callout) ──────────────────────── */
 .sheet-backdrop { position: absolute; inset: 0; z-index: 50; display: flex; align-items: flex-end; background: rgba(0,0,0,.45); animation: fade .2s; }
@@ -224,15 +210,6 @@ textarea, input { font: inherit; color: inherit; }
 .callout button { padding: 9px 11px; font: bold 13px var(--ios-font); color: #fff; text-shadow: 0 -1px 0 #000; white-space: nowrap; }
 .callout button.sep { border-left: 1px solid #000; box-shadow: inset 1px 0 0 rgba(255,255,255,.18); }
 .barbtn.icon-btn { padding: 0 9px; font-size: 16px; }
-.login { display: flex; flex-direction: column; gap: 10px; width: min(300px, 100%); padding: 16px; border-radius: 12px; border: 3px solid #0f4499;
-  background: linear-gradient(#fff, #eef3ff); box-shadow: 4px 4px 0 #0a2f77; text-align: left; font-size: 12px; font-weight: bold; }
-.login label { display: flex; flex-direction: column; gap: 3px; }
-.login input { padding: 6px 8px; border: 1px solid #7f9db9; border-radius: 3px; font: 14px Verdana, sans-serif; box-shadow: inset 1px 1px 2px rgba(0,0,0,.15); }
-.login .err { color: #c00; } .login .ok { color: #070; }
-.y2k-btn { padding: 7px 0; border-radius: 20px; font: bold 13px Verdana, sans-serif; color: #fff; background: linear-gradient(#7fb3e8, #2a72c0); border: 2px solid #0a4a90; box-shadow: 0 3px 0 #0a3a70; position: relative; }
-.y2k-btn:disabled { opacity: .6; }
-.linkish { text-decoration: underline; color: #0f4499; font-size: 11px; }
-.lobby code { user-select: all; background: #fff; padding: 1px 4px; }
 @keyframes tagFade { 0%, 70% { opacity: 1; } 100% { opacity: 0; } }
 
 /* Bouton retour teinté : s'accorde à n'importe quelle couleur de barre (calque translucide) */
