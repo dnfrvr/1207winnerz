@@ -1,13 +1,16 @@
 // Apps propres à certains persos : Grindr, Nike+ Running, SoundCloud, iNaturalist, Kindle,
 // Wikipédia, Reddit (Alien Blue), VPN — chacune dans son look de 2012.
 import { useState } from "react";
+import { mdiAccount, mdiBinoculars, mdiCamera, mdiCommentOutline, mdiHeart, mdiMicrophone, mdiPause, mdiPlay, mdiPlus, mdiPlusCircle, mdiRepeat, mdiWaveform } from "@mdi/js";
 import { Route, Routes, useNavigate, useParams } from "react-router-dom";
 import { useList, useValue } from "../data/hooks";
 import { img } from "../lib/img";
 import { StatusBar, BarBack } from "../phone/IOSChrome";
-import { useOS } from "../phone/common";
+import { useNow, useOS } from "../phone/common";
 import { Avatar, Empty, Switch, useEditor } from "../kit/kit";
 import { Icon } from "../kit/icons";
+import { Brand, Glyph } from "../kit/glyph";
+import { Press, compact, pickLocal, useChars } from "./social";
 import "./personal.css";
 
 const Bar = ({ cls, title, onBack, right, backLabel = "Accueil" }: { cls: string; title: React.ReactNode; onBack: () => void; right?: React.ReactNode; backLabel?: string }) => (
@@ -160,86 +163,176 @@ export function NikeApp({ pid }: { pid: string }) {
   );
 }
 
-// ── SoundCloud ───────────────────────────────────────────────────────────────
+// ── SoundCloud (iOS 2.x, 2012) ───────────────────────────────────────────────
+// Barre orange au nuage, onglets Stream / You, forme d'onde à barres fines avec progression
+// orange et avatars des commentaires horodatés posés dessus (comme le vrai lecteur).
 type Track = { title?: string; desc?: string; dur?: string; likes?: number; plays?: number; reposts?: number; posted?: string; tag?: string; wave?: number[];
   comments?: Record<string, { at?: string; t?: string; u?: string; order?: number }>; order?: number; deleted?: boolean };
-type SC = { displayName?: string; handle?: string; followers?: number; following?: number };
+type SC = { displayName?: string; handle?: string; followers?: number; following?: number; avatar?: string };
+const toSec = (s?: string) => { const m = (s ?? "").match(/(\d+):(\d{2})/); return m ? Number(m[1]) * 60 + Number(m[2]) : 0; };
+const mmss = (s: number) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
 
 export function SoundCloudApp({ pid }: { pid: string }) {
   const nav = useNavigate();
+  const os = useOS();
+  const chars = useChars();
   const base = `phones/${pid}/data/soundcloud`;
   const me = useValue<SC>(base) ?? {};
   const tracks = useList<Track>(`${base}/tracks`);
   const ed = useEditor(pid);
+  const [tab, setTab] = useState<"stream" | "you">("stream");
   const [open, setOpen] = useState<string | null>(null);
+  const [playing, setPlaying] = useState<{ id: string; at: number } | null>(null);
+  const now = useNow(playing ? 250 : 60_000);
   const tf = ["title", "desc", "dur", "posted", "tag", "plays", "likes", "reposts"];
+  const name = me.displayName ?? chars[pid]?.name ?? pid;
+  const avatar = pickLocal(me.avatar, chars[pid]?.avatar);
+  const totalPlays = tracks.reduce((n, [, t]) => n + (t.plays ?? 0), 0);
+  const editMe = ed.canEdit ? () => ed.edit({ path: base, fields: ["displayName", "handle", "avatar", "followers", "following"], title: "Profil" }) : undefined;
+  const newTrack = (title: string, dur: string, tag: string) =>
+    ed.add(`${base}/tracks`, { title, desc: "", dur, posted: "now", tag, plays: 0, likes: 0, reposts: 0 }, { atStart: true, title: "Son", fields: tf });
   return (
-    <div className="app sd">
+    <div className={`app sd ${os}`}>
       <StatusBar />
-      <Bar cls="sd-bar" title={<span className="sd-logo">☁ SoundCloud</span>} onBack={() => nav(`/${pid}/home`)}
-        right={ed.canEdit ? <button onClick={() => ed.add(`${base}/tracks`, { title: "Nouveau son", desc: "", dur: "3:00", posted: "6 oct", tag: "", plays: 0, likes: 0, reposts: 0 }, { atStart: true, title: "Son", fields: tf })}>＋</button> : undefined} />
+      <Bar cls="sd-bar" title={<span className="sd-logo"><Brand name="soundcloud" size={30} color="#fff" /></span>} onBack={() => nav(`/${pid}/home`)}
+        right={ed.canEdit ? <button aria-label="Nouveau son" onClick={() => newTrack("Nouveau son", "3:00", "")}><Glyph i={mdiPlus} size={22} /></button> : undefined} />
       <div className="sd-scroll">
-        <div className="sd-me" onClick={ed.canEdit ? () => ed.edit({ path: base, fields: ["displayName", "handle", "followers", "following"], title: "Profil" }) : undefined}>
-          <b>{me.displayName}</b><span>{me.followers} followers · {me.following} following</span>
-        </div>
+        {tab === "you" && (
+          <Press className="sd-me" onLong={editMe}>
+            <Avatar src={avatar} name={name} size={72} round={false} />
+            <span><b>{name}</b><small>{me.handle && `soundcloud.com/${me.handle}`}</small>
+              <span className="sd-me-stats"><span><b>{compact(me.followers)}</b>Followers</span><span><b>{compact(me.following)}</b>Following</span><span><b>{tracks.length}</b>Sounds</span></span></span>
+          </Press>
+        )}
+        {tab === "stream" && <div className="sd-section">Stream · {compact(totalPlays)} plays</div>}
         {tracks.map(([id, t]) => {
-          const wave = t.wave?.length ? t.wave : Array.from({ length: 48 }, (_, i) => 6 + ((i * 37 + id.length * 13) % 22));
+          const total = toSec(t.dur) || 180;
+          const pos = playing?.id === id ? Math.min(total, (now.getTime() - playing.at) / 1000) : 0;
+          const wave = t.wave?.length ? t.wave : Array.from({ length: 60 }, (_, i) => 6 + ((i * 37 + id.length * 13) % 22));
+          const bars = Array.from({ length: 72 }, (_, i) => wave[Math.floor((i / 72) * wave.length)]);
+          const peak = Math.max(...bars, 1);
           const comments = Object.entries(t.comments ?? {}).sort((a, b) => (a[1].order ?? 0) - (b[1].order ?? 0));
+          const isOpen = open === id;
+          const isPlaying = playing?.id === id;
           return (
-            <div key={id} className="sd-track" onContextMenu={(e) => { e.preventDefault(); ed.itemLong(`${base}/tracks`, id, { fields: tf, label: t.title })?.(); }}>
-              <div className="sd-head"><button className="sd-play" onClick={() => setOpen(open === id ? null : id)}>{open === id ? "❚❚" : "▶"}</button>
-                <div><span>{me.displayName}</span><b>{t.title}</b></div><small>{t.posted}</small></div>
-              <div className={`sd-wave ${open === id ? "playing" : ""}`}>{wave.map((h, i) => <i key={i} style={{ height: `${Math.min(100, h * 3)}%` }} />)}</div>
-              <div className="sd-stats">▶ {t.plays} · ♥ {t.likes} · ⟲ {t.reposts} · {t.dur}{t.tag && <em> {t.tag}</em>}</div>
-              {open === id && (
+            <Press key={id} as="article" className="sd-track" onLong={ed.itemLong(`${base}/tracks`, id, { fields: tf, label: t.title })}>
+              <header className="sd-head">
+                <Avatar src={avatar} name={name} size={36} round={false} />
+                <span><small>{name}</small><b>{t.title}</b></span>
+                <i>{t.posted}</i>
+              </header>
+              <div className="sd-player">
+                <button className="sd-play" aria-label={isPlaying ? "Pause" : "Lecture"} onClick={() => setPlaying(isPlaying ? null : { id, at: Date.now() })}>
+                  <Glyph i={isPlaying ? mdiPause : mdiPlay} size={22} />
+                </button>
+                <div className="sd-wave" onClick={() => setOpen(isOpen ? null : id)}>
+                  {bars.map((h, i) => <i key={i} className={i / bars.length < pos / total ? "on" : ""} style={{ height: `${18 + (h / peak) * 82}%` }} />)}
+                  <span className="sd-time">{mmss(pos)} / {t.dur}</span>
+                  {comments.map(([cid, c]) => (
+                    <span key={cid} className="sd-pin" style={{ left: `${Math.min(96, (toSec(c.at) / total) * 100)}%` }} title={`${c.u} at ${c.at}: ${c.t}`}>
+                      <Avatar name={c.u} size={12} round={false} />
+                    </span>
+                  ))}
+                </div>
+              </div>
+              <div className="sd-stats">
+                <span><Glyph i={mdiPlay} size={12} />{compact(t.plays)}</span>
+                <span><Glyph i={mdiHeart} size={12} />{compact(t.likes)}</span>
+                <span><Glyph i={mdiRepeat} size={12} />{compact(t.reposts)}</span>
+                <button onClick={() => setOpen(isOpen ? null : id)}><Glyph i={mdiCommentOutline} size={12} />{comments.length}</button>
+                {t.tag && <em>{t.tag}</em>}
+              </div>
+              {isOpen && (
                 <div className="sd-comments">
                   {t.desc && <p className="sd-desc">{t.desc}</p>}
-                  {comments.map(([cid, c]) => <p key={cid}><b>{c.u}</b> at {c.at}: {c.t}</p>)}
-                  {ed.canEdit && <button onClick={() => ed.add(`${base}/tracks/${id}/comments`, { u: "", at: "0:00", t: "" }, { title: "Commentaire", fields: ["u", "at", "t"] })}>+ commentaire</button>}
+                  {comments.map(([cid, c]) => (
+                    <Press key={cid} className="sd-c" onLong={ed.itemLong(`${base}/tracks/${id}/comments`, cid, { fields: ["u", "at", "t"], label: c.t })}>
+                      <Avatar name={c.u} size={26} round={false} />
+                      <span><small><b>{c.u}</b> at {c.at}</small>{c.t}</span>
+                    </Press>
+                  ))}
+                  {ed.canEdit && <button className="sd-addc" onClick={() => ed.add(`${base}/tracks/${id}/comments`, { u: "", at: "0:00", t: "" }, { title: "Commentaire", fields: ["u", "at", "t"] })}>+ Write a comment</button>}
                 </div>
               )}
-            </div>
+            </Press>
           );
         })}
         {tracks.length === 0 && <Empty>No sounds yet</Empty>}
+      </div>
+      <div className="sd-tabs">
+        <button className={tab === "stream" ? "on" : ""} onClick={() => setTab("stream")}><Glyph i={mdiWaveform} size={22} />Stream</button>
+        <button disabled={!ed.canEdit} onClick={() => newTrack("Recording", "0:30", "#voicememo")}><Glyph i={mdiMicrophone} size={22} />Record</button>
+        <button className={tab === "you" ? "on" : ""} onClick={() => setTab("you")}><Glyph i={mdiAccount} size={22} />You</button>
       </div>
       {ed.ui}
     </div>
   );
 }
 
-// ── iNaturalist ──────────────────────────────────────────────────────────────
+// ── iNaturalist (iPhone 2.x, 2012 / Android) ─────────────────────────────────
+// Barre verte, onglets Observations / Observe / Me, badges de qualité, fiche d'observation.
 type Obs = { common?: string; latin?: string; date?: string; emoji?: string; grade?: string; ids?: number; note?: string; place?: string; photo?: string; order?: number; deleted?: boolean };
 type INat = { observer?: string; observations?: number; species?: number; identifications?: number; rank?: string };
+const gradeCls = (g?: string) => { const s = (g ?? "").toLowerCase(); return s.includes("research") ? "rg" : s.includes("casual") ? "cas" : "nid"; };
 
 export function INaturalistApp({ pid }: { pid: string }) {
   const nav = useNavigate();
+  const os = useOS();
   const base = `phones/${pid}/data/inaturalist`;
   const me = useValue<INat>(base) ?? {};
   const list = useList<Obs>(`${base}/list`);
   const ed = useEditor(pid);
+  const [tab, setTab] = useState<"obs" | "me">("obs");
   const [open, setOpen] = useState<string | null>(null);
   const of = ["common", "latin", "date", "place", "emoji", "grade", "ids", "note", "photo"];
+  const add = () => ed.add(`${base}/list`, { common: "", latin: "", date: "", place: "", emoji: "🌿", grade: "Needs ID", ids: 0, note: "" }, { atStart: true, title: "Observation", fields: of });
+  const cur = list.find(([id]) => id === open);
   return (
-    <div className="app inat">
+    <div className={`app inat ${os}`}>
       <StatusBar />
-      <Bar cls="inat-bar" title="iNaturalist" onBack={() => nav(`/${pid}/home`)}
-        right={ed.canEdit ? <button onClick={() => ed.add(`${base}/list`, { common: "", latin: "", date: "6 oct 2012", place: "", emoji: "🪱", grade: "Needs ID", ids: 0, note: "" }, { atStart: true, title: "Observation", fields: of })}>＋</button> : undefined} />
-      <div className="inat-scroll">
-        <div className="inat-me" onClick={ed.canEdit ? () => ed.edit({ path: base, fields: ["observer", "observations", "species", "identifications", "rank"], title: "Profil" }) : undefined}>
-          <b>{me.observer}</b><span>{me.rank}</span>
-          <div className="inat-stats"><span><b>{me.observations}</b>observations</span><span><b>{me.species}</b>species</span><span><b>{me.identifications}</b>identifications</span></div>
+      <Bar cls="inat-bar" title={cur ? cur[1].common : <span className="inat-logo">iNaturalist</span>} onBack={() => (cur ? setOpen(null) : nav(`/${pid}/home`))} backLabel={cur ? "Back" : "Accueil"}
+        right={ed.canEdit && !cur ? <button aria-label="Nouvelle observation" onClick={add}><Glyph i={mdiCamera} size={22} /></button> : undefined} />
+      {cur ? (
+        <Press className="inat-scroll inat-detail" onLong={ed.itemLong(`${base}/list`, cur[0], { fields: of, label: cur[1].common })}>
+          <div className="inat-hero">{cur[1].photo ? <img src={img(cur[1].photo)} alt="" /> : <span>{cur[1].emoji}</span>}</div>
+          <div className="inat-card">
+            <b>{cur[1].common}</b><i>{cur[1].latin}</i>
+            <span className={`inat-grade ${gradeCls(cur[1].grade)}`}>{cur[1].grade}</span>
+          </div>
+          <div className="inat-card inat-kv">
+            <span><small>Observed</small>{cur[1].date}</span>
+            <span><small>Place</small>{cur[1].place}</span>
+            <span><small>Identifications</small>{cur[1].ids ?? 0}</span>
+            <span><small>Observer</small>{me.observer}</span>
+          </div>
+          {cur[1].note && <div className="inat-card"><small>Notes</small><p>{cur[1].note}</p></div>}
+        </Press>
+      ) : tab === "me" ? (
+        <div className="inat-scroll">
+          <Press className="inat-me" onLong={ed.canEdit ? () => ed.edit({ path: base, fields: ["observer", "observations", "species", "identifications", "rank"], title: "Profil" }) : undefined}>
+            <b>{me.observer}</b><span>{me.rank}</span>
+            <div className="inat-stats"><span><b>{me.observations ?? list.length}</b>observations</span><span><b>{me.species}</b>species</span><span><b>{me.identifications}</b>identifications</span></div>
+          </Press>
         </div>
-        {list.map(([id, o]) => (
-          <button key={id} className="inat-row" onClick={() => setOpen(open === id ? null : id)} onContextMenu={(e) => { e.preventDefault(); ed.itemLong(`${base}/list`, id, { fields: of, label: o.common })?.(); }}>
-            <span className="inat-thumb">{o.photo ? <img src={img(o.photo)} alt="" /> : o.emoji}</span>
-            <span className="inat-t"><b>{o.common}</b><i>{o.latin}</i><span>{o.place} · {o.date}</span>
-              {open === id && o.note && <p>{o.note}</p>}</span>
-            <span className={`inat-grade ${(o.grade ?? "").toLowerCase().includes("research") ? "rg" : ""}`}>{o.grade}</span>
-          </button>
-        ))}
-        {list.length === 0 && <Empty>No observations</Empty>}
-      </div>
+      ) : (
+        <div className="inat-scroll">
+          {list.map(([id, o]) => (
+            <Press as="button" key={id} className="inat-row" onClick={() => setOpen(id)} onLong={ed.itemLong(`${base}/list`, id, { fields: of, label: o.common })}>
+              <span className="inat-thumb">{o.photo ? <img src={img(o.photo)} alt="" /> : o.emoji}</span>
+              <span className="inat-t"><b>{o.common}</b><i>{o.latin}</i><span>{o.place}</span><span>{o.date} · {o.ids ?? 0} IDs</span></span>
+              <span className={`inat-grade ${gradeCls(o.grade)}`}>{o.grade}</span>
+            </Press>
+          ))}
+          {list.length === 0 && <Empty>No observations</Empty>}
+        </div>
+      )}
+      {!cur && (
+        <div className="inat-tabs">
+          <button className={tab === "obs" ? "on" : ""} onClick={() => setTab("obs")}><Glyph i={mdiBinoculars} size={22} />Observations</button>
+          <button onClick={add} disabled={!ed.canEdit}><Glyph i={mdiPlusCircle} size={22} />Observe</button>
+          <button className={tab === "me" ? "on" : ""} onClick={() => setTab("me")}><Glyph i={mdiAccount} size={22} />Me</button>
+        </div>
+      )}
       {ed.ui}
     </div>
   );
