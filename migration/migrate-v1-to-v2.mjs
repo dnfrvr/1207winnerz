@@ -264,6 +264,13 @@ function applyLegacyDefaults(v2, report) {
     if (ph.profile.badges.snapchat === undefined && L.SNAP_BADGE_COUNTS?.[u] && has("snapchat")) ph.profile.badges.snapchat = L.SNAP_BADGE_COUNTS[u];
     if (ph.profile.badges.gmail === undefined && L.GMAIL_BADGE_COUNTS?.[u]) ph.profile.badges.gmail = L.GMAIL_BADGE_COUNTS[u];
   }
+  // Sur iPhone, l'app de messagerie s'appelle « Mail » avec l'icône d'iOS 6 (pas Gmail).
+  const iosMailIcon = v2.phones.glinda?.profile?.appIcons?.gmail;
+  for (const pid of PIDS) {
+    const pr = v2.phones[pid]?.profile; if (!pr || pr.os !== "ios") continue;
+    if (pr.appNames?.gmail && /gmail/i.test(pr.appNames.gmail)) delete pr.appNames.gmail;
+    if (iosMailIcon && pr.appIcons) pr.appIcons.gmail = iosMailIcon;
+  }
   report.counts.legacyInjected = injected.length;
   report.legacyInjected = injected;
   for (const k of Object.keys(L)) if (k.startsWith("_error")) report.warnings.push(`contenu d'origine non extrait : ${k} (${L[k]})`);
@@ -286,7 +293,9 @@ export function verify(v1, v2) {
   collectStrings(v1Clean, before);
   collectStrings(v2, after);
   const missing = [];
-  for (const [s, n] of before) if (!REMOVED_APPS.has(s) && (after.get(s) || 0) < n) missing.push({ text: s.slice(0, 80), expected: n, found: after.get(s) || 0 });
+  // Libellés retirés exprès (Hipstamatic, « Gmail » renommé « Mail » sur iPhone).
+  const INTENTIONAL = new Set([...REMOVED_APPS, "Gmail"]);
+  for (const [s, n] of before) if (!INTENTIONAL.has(s) && (after.get(s) || 0) < n) missing.push({ text: s.slice(0, 80), expected: n, found: after.get(s) || 0 });
   return { textsV1: before.size, missing };
 }
 

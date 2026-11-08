@@ -5,12 +5,12 @@ import { useState } from "react";
 import { Route, Routes, useNavigate, useParams } from "react-router-dom";
 import { useList, useValue } from "../data/hooks";
 import { img } from "../lib/img";
-import { StatusBar } from "../phone/IOSChrome";
+import { StatusBar, BarBack } from "../phone/IOSChrome";
 import { useOS } from "../phone/common";
 import { Avatar, Empty, useEditor } from "../kit/kit";
 import { Icon } from "../kit/icons";
 import { Glyph } from "../kit/glyph";
-import { mdiChevronLeft, mdiCommentOutline, mdiDotsHorizontal, mdiHeart, mdiPlus } from "@mdi/js";
+import { mdiCommentOutline, mdiDotsHorizontal, mdiHeart, mdiPlus } from "@mdi/js";
 import { Press } from "./social";
 import { PIDS, num, useChars } from "./social";
 import "./instagram.css";
@@ -77,7 +77,7 @@ function Feed({ pid }: { pid: string }) {
   const { feed } = useTimeline(pid);
   return (
     <>
-      <Bar left={<button className="ig-btn" onClick={() => nav(`/${pid}/home`)} aria-label="Retour"><Glyph i={mdiChevronLeft} size={20} /></button>} right={<button className="ig-btn"><Icon name="refresh" size={16} /></button>} />
+      <Bar left={<BarBack onClick={() => nav(`/${pid}/home`)} label="Accueil" />} right={<button className="ig-btn"><Icon name="refresh" size={16} /></button>} />
       <div className="ig-scroll">
         {feed.map((f) => <PostCard key={`${f.owner}/${f.id}`} pid={pid} owner={f.owner} id={f.id} post={f.post} />)}
         {feed.length === 0 && <Empty>Aucune publication</Empty>}

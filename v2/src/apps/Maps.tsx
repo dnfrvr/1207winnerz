@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useList } from "../data/hooks";
-import { StatusBar } from "../phone/IOSChrome";
+import { StatusBar, BarBack } from "../phone/IOSChrome";
 import { useOS } from "../phone/common";
 import { useEditor } from "../kit/kit";
 import { Icon } from "../kit/icons";
@@ -51,7 +51,7 @@ export default function MapsApp({ pid }: { pid: string }) {
     <div className={`app mp ${os}`}>
       <StatusBar />
       <div className="mp-bar">
-        <button className="mp-btn" onClick={() => nav(`/${pid}/home`)} aria-label="Retour"><Icon name="back" size={18} /></button>
+        <BarBack onClick={() => nav(`/${pid}/home`)} label="Accueil" />
         <div className="mp-search"><Icon name="search" size={13} /><input value={q} onChange={(e) => setQ(e.target.value)} placeholder={os === "ios" ? "Search or Address" : "Rechercher dans Maps"} /></div>
         <button className="mp-btn" aria-label="Itinéraire"><Icon name="map" size={18} /></button>
       </div>

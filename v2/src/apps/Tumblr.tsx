@@ -3,11 +3,11 @@
 // Mélange les posts des 4 persos et le « décor ». Android : barre d'action Holo bleu nuit.
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { mdiAccount, mdiChevronLeft, mdiHeart, mdiHome, mdiMagnify, mdiPencil, mdiRepeat } from "@mdi/js";
+import { mdiAccount, mdiHeart, mdiHome, mdiMagnify, mdiPencil, mdiRepeat } from "@mdi/js";
 import { useList, useValue } from "../data/hooks";
 import { loreNowMs, msToLore } from "../lib/loreTime";
 import { img } from "../lib/img";
-import { StatusBar } from "../phone/IOSChrome";
+import { StatusBar, BarBack } from "../phone/IOSChrome";
 import { LORE_DATE_DEFAULT, useOS } from "../phone/common";
 import { Avatar, Empty, useEditor } from "../kit/kit";
 import { Brand, Glyph } from "../kit/glyph";
@@ -51,7 +51,7 @@ export default function TumblrApp({ pid }: { pid: string }) {
         </>
       ) : (
         <div className="tb-bar">
-          <button className="tb-ic" onClick={() => nav(`/${pid}/home`)} aria-label="Retour"><Glyph i={mdiChevronLeft} size={22} /></button>
+          <BarBack onClick={() => nav(`/${pid}/home`)} label="Accueil" />
           <h1>{title ?? <span className="tb-logo">tumblr.</span>}</h1>
           <button className="tb-ic" aria-label="Publier" disabled={!ed.canEdit} onClick={compose}><Glyph i={mdiPencil} size={17} /></button>
         </div>

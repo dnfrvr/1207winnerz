@@ -4,10 +4,10 @@
 // Le fil mêle les tweets des 4 persos (partagés) et le fil « décor » propre au téléphone.
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { mdiAccount, mdiAt, mdiChevronLeft, mdiFeather, mdiHome, mdiMagnify, mdiPound, mdiRepeat, mdiReply, mdiStar } from "@mdi/js";
+import { mdiAccount, mdiAt, mdiFeather, mdiHome, mdiMagnify, mdiPound, mdiRepeat, mdiReply, mdiStar } from "@mdi/js";
 import { useList, useValue } from "../data/hooks";
 import { loreNowMs, loreToMs, msToLore } from "../lib/loreTime";
-import { StatusBar } from "../phone/IOSChrome";
+import { StatusBar, BarBack } from "../phone/IOSChrome";
 import { LORE_DATE_DEFAULT, useOS } from "../phone/common";
 import { Avatar, Empty, useEditor } from "../kit/kit";
 import { Brand, Glyph } from "../kit/glyph";
@@ -72,7 +72,7 @@ export default function TwitterApp({ pid }: { pid: string }) {
         </>
       ) : (
         <div className="tw-bar">
-          <button className="tw-ic" onClick={() => nav(`/${pid}/home`)} aria-label="Retour"><Glyph i={mdiChevronLeft} size={22} /></button>
+          <BarBack onClick={() => nav(`/${pid}/home`)} label="Accueil" tone="light" />
           <h1>{title}</h1>
           <button className="tw-ic" onClick={() => setCompose(true)} aria-label="Tweeter" disabled={!ed.canEdit}><Glyph i={mdiFeather} size={18} /></button>
         </div>

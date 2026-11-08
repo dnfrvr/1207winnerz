@@ -233,3 +233,10 @@ textarea, input { font: inherit; color: inherit; }
 .linkish { text-decoration: underline; color: #0f4499; font-size: 11px; }
 .lobby code { user-select: all; background: #fff; padding: 1px 4px; }
 @keyframes tagFade { 0%, 70% { opacity: 1; } 100% { opacity: 0; } }
+
+/* Bouton retour teinté : s'accorde à n'importe quelle couleur de barre (calque translucide) */
+.barbtn.back.tint { --btn-top: transparent; --btn-bottom: transparent; flex-shrink: 0;
+  background: linear-gradient(rgba(255,255,255,.32), rgba(255,255,255,.08) 50%, rgba(0,0,0,.06) 51%, rgba(0,0,0,.18)); }
+.barbtn.back.tint.light { color: #4b5b6b; text-shadow: 0 1px 0 rgba(255,255,255,.8); border-color: rgba(0,0,0,.28);
+  background: linear-gradient(#fdfdfd, #e6e8eb 50%, #dadde1 51%, #e9ebee); }
+.ab-up.bar-up { color: inherit; height: 44px; }

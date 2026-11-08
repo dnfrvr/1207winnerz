@@ -96,6 +96,23 @@ export function BackButton({ to, label, style }: { to: string; label: string; st
   return <button className="barbtn back" style={style} onClick={() => nav(to)}>{label}</button>;
 }
 
+/**
+ * Bouton retour unique pour les barres personnalisées des apps (Instagram, Grindr, VPN…).
+ * iOS 6 : bouton en flèche bordé avec libellé, teinté pour s'accorder à la couleur de la barre
+ * (`tone="light"` sur barre claire : texte sombre). Android 4.1 : affordance « Up » Holo.
+ */
+export function BarBack({ onClick, label = "Retour", tone = "dark" }: { onClick: () => void; label?: string; tone?: "dark" | "light" }) {
+  const os = useOS();
+  const { app = "" } = useParams();
+  if (os === "android") return (
+    <button className="ab-up bar-up" aria-label={label} onClick={onClick}>
+      <svg className="ab-caret" width="8" height="14" viewBox="0 0 8 14" aria-hidden><path d="M7 1L1.5 7 7 13" fill="none" stroke="currentColor" strokeWidth="1.6" /></svg>
+      <AppGlyph app={app} />
+    </button>
+  );
+  return <button className={`barbtn back tint ${tone}`} onClick={onClick}>{label}</button>;
+}
+
 /** Curseur « slide to unlock » (glisser au doigt ou à la souris). */
 export function SlideToUnlock({ onUnlock }: { onUnlock: () => void }) {
   const track = useRef<HTMLDivElement>(null);

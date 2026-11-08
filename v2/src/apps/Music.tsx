@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { Route, Routes, useNavigate, useParams } from "react-router-dom";
 import { useList, useValue } from "../data/hooks";
 import { img } from "../lib/img";
-import { AppFrame, BackButton, StatusBar } from "../phone/IOSChrome";
+import { AppFrame, BackButton, StatusBar, BarBack } from "../phone/IOSChrome";
 import { useOS } from "../phone/common";
 import { AddButton, Cell, Empty, Plain, PlainHeader, TabBar, useEditor, type Tab } from "../kit/kit";
 import { Icon } from "../kit/icons";
@@ -143,7 +143,7 @@ function NowPlaying({ pid }: { pid: string }) {
     <div className={`app mu-now ${os}`}>
       <StatusBar variant={os === "ios" ? "opaque" : "opaque"} />
       <div className="mu-now-bar">
-        <button className="mu-back" onClick={() => nav(`/${pid}/music`)} aria-label="Retour"><Icon name="back" size={22} /></button>
+        <BarBack onClick={() => nav(`/${pid}/music`)} label="Music" />
         <div className="mu-meta"><span>{t?.artist}</span><b>{t?.title ?? "—"}</b><span>{t?.album}</span></div>
         <span className="mu-list"><Icon name="list" size={20} /></span>
       </div>

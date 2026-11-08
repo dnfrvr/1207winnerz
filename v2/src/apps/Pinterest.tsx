@@ -2,10 +2,10 @@
 // colonnes d'épingles, barre d'onglets sombre avec le bouton « Pin » rouge au centre.
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { mdiAccount, mdiCamera, mdiChevronLeft, mdiCompassOutline, mdiHome, mdiMessageText, mdiPlus, mdiPin } from "@mdi/js";
+import { mdiAccount, mdiCamera, mdiCompassOutline, mdiHome, mdiMessageText, mdiPlus, mdiPin } from "@mdi/js";
 import { useList } from "../data/hooks";
 import { img } from "../lib/img";
-import { StatusBar } from "../phone/IOSChrome";
+import { StatusBar, BarBack } from "../phone/IOSChrome";
 import { Empty, useEditor } from "../kit/kit";
 import { Glyph } from "../kit/glyph";
 import { compact, Press } from "./social";
@@ -28,7 +28,7 @@ export default function PinterestApp({ pid }: { pid: string }) {
     <div className="app pi">
       <StatusBar />
       <div className="pi-bar">
-        <button onClick={() => nav(`/${pid}/home`)} aria-label="Retour"><Glyph i={mdiChevronLeft} size={24} /></button>
+        <BarBack onClick={() => nav(`/${pid}/home`)} label="Accueil" tone="light" />
         <h1>Pinterest</h1>
         <button aria-label="Épingler" disabled={!ed.canEdit} onClick={add}><Glyph i={mdiPlus} size={22} /></button>
       </div>

@@ -4,15 +4,15 @@ import { useState } from "react";
 import { Route, Routes, useNavigate, useParams } from "react-router-dom";
 import { useList, useValue } from "../data/hooks";
 import { img } from "../lib/img";
-import { StatusBar } from "../phone/IOSChrome";
+import { StatusBar, BarBack } from "../phone/IOSChrome";
 import { useOS } from "../phone/common";
 import { Avatar, Empty, Switch, useEditor } from "../kit/kit";
 import { Icon } from "../kit/icons";
 import "./personal.css";
 
-const Bar = ({ cls, title, onBack, right }: { cls: string; title: React.ReactNode; onBack: () => void; right?: React.ReactNode }) => (
+const Bar = ({ cls, title, onBack, right, backLabel = "Accueil" }: { cls: string; title: React.ReactNode; onBack: () => void; right?: React.ReactNode; backLabel?: string }) => (
   <div className={`pb-bar ${cls}`}>
-    <button onClick={onBack} aria-label="Retour"><Icon name="back" size={20} /></button>
+    <BarBack onClick={onBack} label={backLabel} />
     <h1>{title}</h1>
     <span className="pb-r">{right}</span>
   </div>

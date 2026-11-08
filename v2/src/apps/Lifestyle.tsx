@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { Route, Routes, useNavigate, useParams } from "react-router-dom";
 import { useList, useValue } from "../data/hooks";
-import { AppFrame, BackButton, StatusBar } from "../phone/IOSChrome";
+import { AppFrame, BackButton, StatusBar, BarBack } from "../phone/IOSChrome";
 import { useOS } from "../phone/common";
 import { AddButton, Avatar, Cell, Empty, Plain, PlainHeader, TabBar, useEditor, type Tab } from "../kit/kit";
 import { Icon } from "../kit/icons";
@@ -28,7 +28,7 @@ export function SnapchatApp({ pid }: { pid: string }) {
     <div className="app sc">
       <StatusBar />
       <div className="sc-bar">
-        <button onClick={() => nav(`/${pid}/home`)} aria-label="Retour"><Icon name="back" size={20} /></button>
+        <BarBack onClick={() => nav(`/${pid}/home`)} label="Accueil" />
         <h1>Snapchat</h1>
         <button onClick={() => nav(`/${pid}/camera`)} aria-label="Appareil photo"><Icon name="camera" size={20} /></button>
       </div>
@@ -62,7 +62,7 @@ export function GroupMeApp({ pid }: { pid: string }) {
     <div className="app gm">
       <StatusBar />
       <div className="gm-bar">
-        <button onClick={() => nav(`/${pid}/home`)} aria-label="Retour"><Icon name="back" size={20} /></button>
+        <BarBack onClick={() => nav(`/${pid}/home`)} label="Accueil" />
         <h1>GroupMe</h1>
         <button aria-label="Nouveau groupe" disabled={!ed.canEdit} onClick={() => ed.add(path, { name: "", last: "", time: "", n: 0, members: 2 }, { atStart: true, title: "Groupe", fields })}><Icon name="plus" size={20} /></button>
       </div>
