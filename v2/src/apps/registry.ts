@@ -51,10 +51,10 @@ const loaders: Record<string, () => Promise<AppModule>> = {
   pou: () => import("./Games"),
   wordswfriends: () => import("./Games"),
   vine: named(() => import("./SocialExtra"), "VineApp"),
-  polyvore: () => import("./Games"),
+  polyvore: named(() => import("./Web2012"), "PolyvoreApp"),
   kik: named(() => import("./SocialExtra"), "KikApp"),
-  askfm: () => import("./Games"),
-  espn: () => import("./Games"),
+  askfm: named(() => import("./Web2012"), "AskFmApp"),
+  espn: named(() => import("./Web2012"), "EspnApp"),
   shazam: () => import("./Games"),
 };
 

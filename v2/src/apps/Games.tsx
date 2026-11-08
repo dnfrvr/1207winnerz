@@ -1,12 +1,11 @@
 // Jeux et apps tierces de 2012 : écran de lancement fidèle, puis un écran de jeu / de contenu.
-// Shazam reconnaît un morceau de la musique du téléphone ; ESPN affiche les scores (dont le
-// match de l'UMA) ; ask.fm et Kik ont un contenu éditable.
+// Shazam reconnaît un morceau de la musique du téléphone. (ask.fm, ESPN, Polyvore : Web2012.tsx.)
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useList } from "../data/hooks";
 import { img } from "../lib/img";
 import { StatusBar } from "../phone/IOSChrome";
-import { Avatar, Empty, Splash, useEditor } from "../kit/kit";
+import { Splash } from "../kit/kit";
 import "./games.css";
 
 type GameCfg = { title: string; sub?: string; bg: string; logo: string; color?: string; menu: { title: string; lines: string[]; bg: string; color?: string } };
@@ -23,13 +22,6 @@ const GAMES: Record<string, GameCfg> = {
     menu: { title: "Pou · Level 18", lines: ["Hunger ▮▮▮▮▯", "Health ▮▮▮▮▮", "Fun ▮▮▯▯▯", "Energy ▮▮▮▯▯"], bg: "linear-gradient(#fff3d6, #e7c89a)", color: "#4a2f17" } },
   wordswfriends: { title: "Words With Friends", sub: "Zynga", bg: "radial-gradient(circle at 50% 40%, #5fd0ff, #0a6fbf 60%, #053c66)", logo: "🔤",
     menu: { title: "Your Move (3)", lines: ["vs Elias — 212 / 198", "vs Glinda — 140 / 167", "vs Maman — 98 / 77"], bg: "linear-gradient(#e9f6ff, #b9dcf4)", color: "#053c66" } },
-  vine: { title: "Vine", sub: "Twitter, Inc.", bg: "#00bf8f", logo: "🌿",
-    menu: { title: "Popular Now", lines: ["▶ 6 s · @nilsss", "▶ 6 s · @dreww_orms", "▶ 6 s · @umamoose"], bg: "linear-gradient(#f2f2f2, #ddd)", color: "#00a078" } },
-  polyvore: { title: "polyvore", sub: "Fashion & style", bg: "#fff", logo: "👗", color: "#333",
-    menu: { title: "My Sets", lines: ["Game day ♡ UMA", "Fall 2012 — cozy", "Date night ✨"], bg: "linear-gradient(#fff, #f2f2f2)", color: "#333" } },
-  kik: { title: "kik", sub: "Messenger", bg: "#82bc23", logo: "💬", menu: { title: "", lines: [], bg: "#fff" } },
-  askfm: { title: "ask.fm", sub: "Ask me anything", bg: "linear-gradient(#ee4f6f, #c2244b)", logo: "❓", menu: { title: "", lines: [], bg: "#fff" } },
-  espn: { title: "ESPN", sub: "ScoreCenter", bg: "linear-gradient(#d00, #8b0000)", logo: "🏈", menu: { title: "", lines: [], bg: "#fff" } },
   shazam: { title: "Shazam", sub: "", bg: "radial-gradient(circle at 50% 40%, #3a9cff, #0a5bd6 60%, #052f73)", logo: "𝑺", menu: { title: "", lines: [], bg: "#fff" } },
 };
 
@@ -45,7 +37,7 @@ export default function GameApp({ pid }: { pid: string }) {
       <button className="gm-x" onClick={() => nav(`/${pid}/home`)} aria-label="Quitter">✕</button>
       {stage === "splash" && app !== "shazam" ? (
         <Splash title={cfg.title} subtitle={cfg.sub} background={cfg.bg} color={cfg.color} logo={cfg.logo} onTap={() => setStage("in")} />
-      ) : app === "shazam" ? <Shazam pid={pid} /> : app === "espn" ? <Espn pid={pid} /> : app === "askfm" ? <AskFm pid={pid} /> : app === "kik" ? <Kik pid={pid} /> : (
+      ) : app === "shazam" ? <Shazam pid={pid} /> : (
         <div className="gm-menu" style={{ background: cfg.menu.bg, color: cfg.menu.color ?? "#fff" }}>
           <div className="gm-logo">{cfg.logo}</div>
           <h2>{cfg.menu.title}</h2>
@@ -77,77 +69,3 @@ function Shazam({ pid }: { pid: string }) {
   );
 }
 
-type Score = { home?: string; away?: string; hs?: string; as?: string; status?: string; league?: string; order?: number; deleted?: boolean };
-const DEFAULT_SCORES: Score[] = [
-  { league: "NCAA Football", home: "UMA Moose", away: "Vermont Beavers", hs: "—", as: "—", status: "Today · GAME DAY" },
-  { league: "NFL", home: "New England", away: "Seattle", hs: "23", as: "24", status: "Final" },
-  { league: "MLB · World Series", home: "San Francisco", away: "Detroit", hs: "8", as: "3", status: "Final · Game 1" },
-  { league: "NBA", home: "Boston", away: "Miami", hs: "107", as: "120", status: "Final" },
-];
-function Espn({ pid }: { pid: string }) {
-  const path = `phones/${pid}/data/espn`;
-  const list = useList<Score>(path);
-  const ed = useEditor(pid);
-  const rows: [string, Score][] = list.length ? list : DEFAULT_SCORES.map((s, i) => [`d${i}`, s]);
-  const fields = ["league", "home", "hs", "away", "as", "status"];
-  return (
-    <div className="es">
-      <div className="es-bar"><b>ESPN</b> ScoreCenter{ed.canEdit && <button onClick={() => ed.add(path, { league: "", home: "", hs: "", away: "", as: "", status: "" }, { title: "Score", fields })}>＋</button>}</div>
-      <div className="es-list">
-        {rows.map(([id, s]) => (
-          <div key={id} className="es-row" onContextMenu={(e) => { e.preventDefault(); if (!id.startsWith("d")) ed.itemLong(path, id, { fields, label: s.home })?.(); }}>
-            <small>{s.league}</small>
-            <div><span>{s.away}</span><b>{s.as}</b></div>
-            <div><span>{s.home}</span><b>{s.hs}</b></div>
-            <i>{s.status}</i>
-          </div>
-        ))}
-      </div>
-      {ed.ui}
-    </div>
-  );
-}
-
-type QA = { q?: string; a?: string; from?: string; likes?: number; order?: number; deleted?: boolean };
-function AskFm({ pid }: { pid: string }) {
-  const path = `phones/${pid}/data/askfm`;
-  const list = useList<QA>(path);
-  const ed = useEditor(pid);
-  const fields = ["q", "a", "from", "likes"];
-  return (
-    <div className="af">
-      <div className="af-bar">ask.fm{ed.canEdit && <button onClick={() => ed.add(path, { q: "", a: "", from: "Anonymous", likes: 0 }, { atStart: true, title: "Question", fields })}>＋</button>}</div>
-      <div className="af-list">
-        {list.map(([id, x]) => (
-          <div key={id} className="af-qa" onContextMenu={(e) => { e.preventDefault(); ed.itemLong(path, id, { fields, label: x.q })?.(); }}>
-            <b>{x.q}</b><p>{x.a}</p><small>{x.from} · ♥ {x.likes ?? 0}</small>
-          </div>
-        ))}
-        {list.length === 0 && <Empty>No answers yet</Empty>}
-      </div>
-      {ed.ui}
-    </div>
-  );
-}
-
-type KikChat = { name?: string; last?: string; time?: string; order?: number; deleted?: boolean };
-function Kik({ pid }: { pid: string }) {
-  const path = `phones/${pid}/data/kik`;
-  const list = useList<KikChat>(path);
-  const ed = useEditor(pid);
-  const fields = ["name", "last", "time"];
-  return (
-    <div className="kk">
-      <div className="kk-bar">kik.{ed.canEdit && <button onClick={() => ed.add(path, { name: "", last: "", time: "" }, { atStart: true, title: "Discussion", fields })}>＋</button>}</div>
-      <div className="kk-list">
-        {list.map(([id, c]) => (
-          <div key={id} className="kk-row" onContextMenu={(e) => { e.preventDefault(); ed.itemLong(path, id, { fields, label: c.name })?.(); }}>
-            <Avatar name={c.name} size={40} color="#82bc23" /><span><b>{c.name}</b><small>{c.last}</small></span><i>{c.time}</i>
-          </div>
-        ))}
-        {list.length === 0 && <Empty>No chats yet</Empty>}
-      </div>
-      {ed.ui}
-    </div>
-  );
-}

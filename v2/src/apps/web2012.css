@@ -1,0 +1,67 @@
+/* ask.fm, ESPN ScoreCenter, Polyvore (2012) */
+.w12-bar { position: relative; z-index: 3; flex: 0 0 44px; display: flex; align-items: center; padding: 0 6px; border-bottom: 1px solid rgba(0,0,0,.45);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.3); color: #fff; }
+.w12-bar.light { color: #333; border-bottom-color: #bbb; }
+.w12-bar h1 { position: absolute; left: 90px; right: 90px; text-align: center; font: bold 19px var(--ios-font); text-shadow: 0 -1px 0 rgba(0,0,0,.3); white-space: nowrap; overflow: hidden; }
+.w12-bar.light h1 { text-shadow: 0 1px 0 #fff; }
+.w12-side { margin-left: auto; display: flex; }
+.w12-add { width: 34px; height: 30px; display: flex; align-items: center; justify-content: center; color: inherit; border-radius: 5px; border: 1px solid rgba(0,0,0,.35);
+  background: rgba(0,0,0,.12); box-shadow: inset 0 1px 0 rgba(255,255,255,.25); }
+.android .w12-add { border: 0; background: none; box-shadow: none; width: 48px; height: 48px; border-radius: 0; }
+.w12-scroll { flex: 1; min-height: 0; overflow-y: auto; }
+.android .w12-scroll, .android .w12-scroll * { font-family: var(--and-font); }
+
+/* ask.fm */
+.af2-logo { font: bold 22px "Helvetica Neue", Arial, sans-serif; letter-spacing: -.5px; }
+.af2-logo i { font-style: normal; opacity: .85; }
+.af2-bg { background: #f0f0f0; }
+.af2-prof { display: flex; gap: 10px; align-items: center; padding: 12px; background: #fff; border-bottom: 1px solid #ddd; }
+.af2-prof span { display: flex; flex-direction: column; min-width: 0; }
+.af2-prof b { font: bold 17px var(--ios-font); }
+.af2-prof small { font: 13px var(--ios-font); color: #999; }
+.af2-prof em { font: italic 12px var(--ios-font); color: #555; margin-top: 3px; }
+.af2-ask { margin: 10px; padding: 10px; background: #fff; border: 1px solid #ddd; border-radius: 4px; display: flex; flex-direction: column; gap: 6px; }
+.af2-ask > b { font: bold 13px var(--ios-font); color: #e1325b; }
+.af2-ask textarea { height: 54px; resize: none; padding: 6px; border: 1px solid #ccc; border-radius: 3px; font: 13px var(--ios-font); }
+.af2-ask div { display: flex; align-items: center; justify-content: space-between; font: 11px var(--ios-font); color: #777; }
+.af2-ask label { display: flex; align-items: center; gap: 4px; }
+.af2-ask button { padding: 5px 16px; border-radius: 3px; color: #fff; font: bold 13px var(--ios-font); background: linear-gradient(#f05a7e, #c8234a); border: 1px solid #a01b3b; }
+.af2-ask button:disabled { opacity: .5; }
+.af2-count { padding: 4px 12px; font: bold 11px var(--ios-font); color: #999; text-transform: uppercase; }
+.af2-qa { margin: 0 10px 8px; padding: 10px 12px; background: #fff; border: 1px solid #ddd; border-radius: 4px; }
+.af2-qa > b { display: block; font: bold 14px var(--ios-font); color: #333; }
+.af2-qa p { margin-top: 5px; font: 14px/1.35 var(--ios-font); color: #444; }
+.af2-qa .af2-unans { color: #bbb; font-style: italic; }
+.af2-qa small { display: flex; justify-content: space-between; margin-top: 6px; font: 11px var(--ios-font); color: #aaa; }
+.af2-qa small span { display: flex; align-items: center; gap: 3px; color: #e1325b; }
+
+/* ESPN ScoreCenter */
+.es2-logo { font: italic 900 22px Arial, sans-serif; letter-spacing: -1px; }
+.es2-logo small { font: bold 11px var(--ios-font); letter-spacing: 0; font-style: normal; opacity: .85; }
+.es2-tabs { flex: 0 0 auto; display: flex; gap: 2px; padding: 4px; overflow-x: auto; background: linear-gradient(#444, #222); }
+.es2-tabs button { flex-shrink: 0; padding: 5px 10px; border-radius: 3px; color: #ccc; font: bold 11px var(--ios-font); white-space: nowrap; }
+.es2-tabs button.on { color: #fff; background: linear-gradient(#777, #555); box-shadow: inset 0 1px 0 rgba(255,255,255,.2); }
+.es2-bg { background: #e4e4e4; }
+.es2-bg h2 { padding: 4px 10px; font: bold 12px var(--ios-font); color: #fff; text-shadow: 0 -1px 0 #000; background: linear-gradient(#8c8c8c, #5e5e5e); }
+.es2-row { display: flex; align-items: center; gap: 8px; padding: 8px 10px; background: linear-gradient(#fff, #f2f2f2); border-bottom: 1px solid #ccc; }
+.es2-teams { flex: 1; display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.es2-teams span { display: flex; justify-content: space-between; font: 15px var(--ios-font); color: #555; }
+.es2-teams span.w { color: #000; font-weight: bold; }
+.es2-teams b { font-weight: inherit; min-width: 30px; text-align: right; }
+.es2-row i { flex: 0 0 82px; font: bold 10px var(--ios-font); color: #c00; font-style: normal; text-align: right; text-transform: uppercase; }
+
+/* Polyvore */
+.pv-logo { font: italic 26px Georgia, "Times New Roman", serif; letter-spacing: -1px; color: #222; }
+.pv-tabs { flex: 0 0 auto; display: flex; border-bottom: 1px solid #ddd; background: #fafafa; }
+.pv-tabs button { flex: 1; padding: 9px 0; font: bold 12px var(--ios-font); color: #999; text-transform: uppercase; letter-spacing: .5px; }
+.pv-tabs button.on { color: #222; box-shadow: inset 0 -2px 0 #222; }
+.pv-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 10px; align-content: start; background: #f5f5f5; }
+.pv-set { position: relative; display: flex; flex-direction: column; padding: 6px; background: #fff; border: 1px solid #e2e2e2; }
+.pv-img { aspect-ratio: 1; display: grid; grid-template-columns: 1fr 1fr; gap: 6px; padding: 8px; background: #fff; overflow: hidden; }
+.pv-img img { grid-column: 1 / -1; grid-row: 1 / 3; width: 100%; height: 100%; object-fit: contain; }
+.pv-img i { border-radius: 2px; }
+.pv-set b { margin-top: 6px; font: bold 12px var(--ios-font); color: #222; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pv-set small { font: 10px var(--ios-font); color: #999; }
+.pv-set button { position: absolute; right: 8px; bottom: 6px; display: flex; align-items: center; gap: 2px; font: 10px var(--ios-font); color: #999; }
+.pv-set button.on { color: #e0245e; }
+.pv-grid .k-empty, .pv-grid > :only-child { grid-column: 1 / -1; }
