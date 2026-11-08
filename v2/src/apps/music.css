@@ -54,3 +54,9 @@
 .mu-mini-txt small { font: 11px var(--ios-font); color: #aaa; }
 .android .mu-mini-txt b, .android .mu-mini-txt small { font-family: var(--and-font); }
 .mu-mini button { width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; color: #fff; }
+
+/* Ajout depuis Deezer */
+.mu-search { flex: 0 0 auto; display: flex; align-items: center; gap: 6px; margin: 7px 8px; padding: 0 10px; height: 30px; border-radius: 15px; background: #fff;
+  border: 1px solid #9aa4ae; box-shadow: inset 0 1px 2px rgba(0,0,0,.25); color: #8a8f96; }
+.mu-search input { flex: 1; min-width: 0; border: 0; outline: 0; background: none; font: 14px var(--ios-font); color: #000; }
+.android .mu-search { border-radius: 0; border: 0; border-bottom: 2px solid #33b5e5; box-shadow: none; background: transparent; }

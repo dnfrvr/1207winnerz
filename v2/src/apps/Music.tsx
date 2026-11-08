@@ -1,8 +1,10 @@
 // Musique (iOS 6) / Play Musique (Android 4.1) : onglets, listes, écran « En cours » noir,
 // lecture simulée (progression animée, morceau suivant automatique).
-import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { Route, Routes, useNavigate, useParams } from "react-router-dom";
-import { useList, useValue } from "../data/hooks";
+import { useCanEdit, useList, useValue, useWriter } from "../data/hooks";
+import type { Json } from "../data/store";
+import { deezerMatch, deezerSearch, type DzTrack } from "../lib/deezer";
 import { img } from "../lib/img";
 import { AppFrame, BackButton, StatusBar, BarBack } from "../phone/IOSChrome";
 import { useOS } from "../phone/common";
@@ -14,25 +16,29 @@ type Track = { id?: number | string; title?: string; artist?: string; album?: st
 type Playlist = { name?: string; trackIds?: (number | string)[]; cover?: string | null; order?: number };
 const TRACK_FIELDS = ["title", "artist", "album", "duration", "cover", "preview"];
 
-// ── Extraits Deezer (30 s) : API publique en JSONP (pas de CORS, pas de clé) ─────
-const previews = new Map<string, Promise<string | null>>();
-function deezerPreview(t: Track): Promise<string | null> {
-  if (t.preview) return Promise.resolve(t.preview);
-  const q = `${t.artist ?? ""} ${t.title ?? ""}`.trim();
-  if (!q) return Promise.resolve(null);
-  if (!previews.has(q)) previews.set(q, new Promise((resolve) => {
-    const w = window as unknown as Record<string, unknown>;
-    const cb = `dz_${Math.random().toString(36).slice(2)}`;
-    const s = document.createElement("script");
-    let settled = false;
-    const done = (url: string | null) => { if (settled) return; settled = true; delete w[cb]; s.remove(); resolve(url); };
-    w[cb] = (r: { data?: { preview?: string }[] }) => done(r?.data?.find((d) => d.preview)?.preview ?? null);
-    s.onerror = () => done(null);
-    setTimeout(() => done(null), 6000);
-    s.src = `https://api.deezer.com/search?q=${encodeURIComponent(q)}&limit=3&output=jsonp&callback=${cb}`;
-    document.head.appendChild(s);
-  }));
-  return previews.get(q)!;
+// ── Deezer : extraits de 30 s et pochettes (voir lib/deezer) ─────────────────
+const deezerPreview = (t: Track): Promise<string | null> =>
+  t.preview ? Promise.resolve(t.preview) : deezerMatch(t.artist, t.title).then((m) => m?.preview || null);
+
+/**
+ * Pochettes manquantes : cherchées sur Deezer. Le propriétaire les enregistre en base (elles
+ * apparaissent alors pour tout le monde) ; les autres joueurs les voient seulement en local.
+ */
+function useAutoCovers(pid: string, tracks: [string, Track][], canEdit: boolean, write: (p: Record<string, Json>) => void) {
+  const [found, setFound] = useState<Record<string, string>>({});
+  const tried = useRef(new Set<string>());
+  useEffect(() => {
+    for (const [id, t] of tracks) {
+      if (t.cover || tried.current.has(id) || !t.title) continue;
+      tried.current.add(id);
+      deezerMatch(t.artist, t.title).then((m) => {
+        if (!m?.cover) return;
+        if (canEdit) write({ [`phones/${pid}/data/music/${id}/cover`]: m.cover, ...(t.album ? {} : { [`phones/${pid}/data/music/${id}/album`]: m.album }) });
+        else setFound((f) => ({ ...f, [id]: m.cover }));
+      });
+    }
+  }, [pid, tracks, canEdit, write]);
+  return useMemo(() => tracks.map(([id, t]): [string, Track] => (t.cover || !found[id] ? [id, t] : [id, { ...t, cover: found[id] }])), [tracks, found]);
 }
 
 // ── lecteur (partagé par tous les écrans de l'app) : extrait réel, sinon lecture simulée ──
@@ -78,13 +84,15 @@ const TABS: Tab[] = [
 
 function useTracks(pid: string) {
   const list = useList<Track>(`phones/${pid}/data/music`);
-  return list;
+  const { write } = useWriter(pid);
+  return useAutoCovers(pid, list, useCanEdit(pid), write);
 }
 
 export default function MusicApp({ pid }: { pid: string }) {
   return (
     <Routes>
       <Route index element={<Library pid={pid} />} />
+      <Route path="add" element={<AddFromDeezer pid={pid} />} />
       <Route path="now" element={<NowPlaying pid={pid} />} />
       <Route path="playlist/:id" element={<PlaylistView pid={pid} />} />
     </Routes>
@@ -125,7 +133,7 @@ function Library({ pid }: { pid: string }) {
 
   return (
     <AppFrame title={TABS.find((t) => t.id === tab)?.label ?? "Music"} left={<BackButton to={`/${pid}/home`} label="Accueil" />}
-      right={tab === "songs" && ed.canEdit ? <AddButton onClick={() => ed.add(`phones/${pid}/data/music`, { title: "Nouveau morceau", artist: "", album: "", duration: "3:00", cover: "" }, { fields: TRACK_FIELDS })} /> : <NowButton />}
+      right={tab === "songs" && ed.canEdit ? <AddButton onClick={() => nav("add")} /> : <NowButton />}
       bodyClass="mu-body">
       <TabBar tabs={TABS} active={tab} onChange={setTab} />
       <div className="mu-scroll">
@@ -147,6 +155,37 @@ function Library({ pid }: { pid: string }) {
         </Plain>
       </div>
       <MiniPlayer pid={pid} />
+      {ed.ui}
+    </AppFrame>
+  );
+}
+
+/** Ajout d'un morceau : recherche dans le catalogue Deezer (titre, artiste, album, durée, pochette). */
+function AddFromDeezer({ pid }: { pid: string }) {
+  const ed = useEditor(pid);
+  const [q, setQ] = useState("");
+  const [res, setRes] = useState<DzTrack[] | null>(null);
+  const [busy, setBusy] = useState(false);
+  useEffect(() => {
+    if (!q.trim()) { setRes(null); return; }
+    const h = setTimeout(() => { setBusy(true); deezerSearch(q, 15).then((r) => { setRes(r); setBusy(false); }); }, 350);
+    return () => clearTimeout(h);
+  }, [q]);
+  const path = `phones/${pid}/data/music`;
+  // La preview n'est pas enregistrée (URL signée qui expire) : elle est recherchée à la lecture.
+  const pick = (d: DzTrack) => ed.add(path, { title: d.title, artist: d.artist, album: d.album, duration: d.duration, cover: d.cover }, { title: "Nouveau morceau", fields: TRACK_FIELDS });
+  return (
+    <AppFrame title="Ajouter" left={<BackButton to={`/${pid}/music`} label="Songs" />} bodyClass="mu-body">
+      <div className="mu-search"><Icon name="search" size={14} /><input autoFocus value={q} onChange={(e) => setQ(e.target.value)} placeholder="Titre, artiste… (catalogue Deezer)" /></div>
+      <div className="mu-scroll"><Plain>
+        {res?.map((d, i) => (
+          <Cell key={i} title={d.title} subtitle={`${d.artist} — ${d.album}`} image={d.cover || null} detail={d.duration} onClick={() => pick(d)} />
+        ))}
+        {busy && !res?.length && <Empty>Recherche…</Empty>}
+        {res && !res.length && !busy && <Empty>Aucun résultat</Empty>}
+        {!q.trim() && <Empty>Cherche une chanson : elle sera ajoutée avec sa pochette.</Empty>}
+        <Cell title="Saisie manuelle…" onClick={() => ed.add(path, { title: q || "Nouveau morceau", artist: "", album: "", duration: "3:00", cover: "" }, { fields: TRACK_FIELDS })} />
+      </Plain></div>
       {ed.ui}
     </AppFrame>
   );
