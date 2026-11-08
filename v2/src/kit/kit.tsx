@@ -202,7 +202,8 @@ const fieldsOf = (item: Record<string, Json>, only?: string[]): FieldSpec[] => {
   });
 };
 
-export type EditTarget = { path: string; title?: string; fields?: string[] };
+/** `choices` : champs à valeur imposée, affichés en liste déroulante ([libellé, valeur]). */
+export type EditTarget = { path: string; title?: string; fields?: string[]; choices?: Record<string, [string, string][]> };
 
 /** Formulaire plein écran « Modifier » au style du système. */
 function ItemForm({ pid, target, onClose }: { pid: string; target: EditTarget; onClose: () => void }) {
@@ -280,6 +281,10 @@ function ItemForm({ pid, target, onClose }: { pid: string; target: EditTarget; o
                 <span className="k-field-label">{f.label}</span>
                 {f.kind === "bool" ? (
                   <Switch on={!!draft[f.key]} onChange={(v) => setDraft((d) => ({ ...d, [f.key]: v }))} />
+                ) : target.choices?.[f.key] ? (
+                  <select value={String(draft[f.key] ?? "")} onChange={(e) => setDraft((d) => ({ ...d, [f.key]: e.target.value }))}>
+                    {target.choices[f.key].map(([label, value]) => <option key={value} value={value}>{label}</option>)}
+                  </select>
                 ) : f.kind === "dmy" ? (
                   <input type="date" value={`${draft.year ?? 2012}-${String(draft.month ?? 1).padStart(2, "0")}-${String(draft.day ?? 1).padStart(2, "0")}`}
                     onChange={(e) => { const [y, m, d] = e.target.value.split("-").map(Number); if (y) setDraft((o) => ({ ...o, day: d, month: m, year: y })); }} />
@@ -324,7 +329,7 @@ export function useEditor(pid: string) {
   const latest = useRef({ store, write });
   latest.current = { store, write };
 
-  const add = (listPath: string, template: Record<string, Json>, opts: { afterId?: string; atStart?: boolean; title?: string; fields?: string[] } = {}) => {
+  const add = (listPath: string, template: Record<string, Json>, opts: { afterId?: string; atStart?: boolean; title?: string; fields?: string[]; choices?: EditTarget["choices"] } = {}) => {
     const { store: s, write: w } = latest.current;
     const list = Object.entries((s.peek(listPath) as Record<string, Ordered> | undefined) ?? {}).filter(([, v]) => v).sort(byOrder);
     let order: number;
@@ -335,7 +340,7 @@ export function useEditor(pid: string) {
     }
     const id = s.newId("i");
     w({ [`${listPath}/${id}`]: { ...template, order } });
-    setForm({ path: `${listPath}/${id}`, title: opts.title ?? "Nouvel élément", fields: opts.fields });
+    setForm({ path: `${listPath}/${id}`, title: opts.title ?? "Nouvel élément", fields: opts.fields, choices: opts.choices });
     return id;
   };
 
