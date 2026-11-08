@@ -26,16 +26,14 @@
   en temps réel, sans le son). Testé sur la vidéo de Glinda : 13,5 Mo HEVC → 1,3 Mo avc1, lisible.
   Limites : l'onglet doit rester au premier plan pendant la conversion ; un navigateur qui ne décode
   pas le HEVC (Firefox sur PC…) refuse toujours — envoyer depuis l'iPhone (Safari).
-- [ ] **Vidéos de Glinda en double dans Supabase** : la clé publique ne peut pas supprimer. Dans le
-  tableau de bord Supabase › Storage › `uploads/v2/glinda/`, garder une seule des 3 copies
-  (`1794158716240_s2dyy8.mp4`, `1794158739321_l7o0uj.mp4`, `1794159983692_vvfhws.mp4`) — celle
-  enregistrée dans `phones/glinda/profile/cameraVideo` (vérifier dans la console Firebase) — ou
-  toutes, une fois la vidéo renvoyée convertie (conversion maintenant en place : renvoyer la vidéo
-  depuis l'iPhone, puis supprimer les 3 anciennes).
+- [x] **Vidéos de Glinda en double dans Supabase** : `s2dyy8` et `l7o0uj` supprimées le 2026-11-08 ;
+  reste `1794159983692_vvfhws.mp4` (celle de `cameraVideo`, encore en HEVC — à renvoyer depuis l'iPhone
+  pour qu'elle passe par la conversion, puis supprimer l'ancienne).
 - [x] **Guide de prise en main dans chaque app** : à la 1re ouverture d'une app (par navigateur,
   seulement pour qui peut modifier), une bulle « Compris » en bas de l'écran (`v2/src/phone/AppTips.tsx`).
-  Textes propres à Messages et Notes, rappel générique (appui long, « + ») ailleurs.
-  - [ ] Ajouter des textes dédiés aux autres apps quand leurs gestes diffèrent.
+  Texte propre à chaque app (relevé dans son code), pas de bulle là où rien ne se modifie (Appareil photo,
+  FaceTime, Shazam). Petites animations : carte qui monte, lignes en cascade, doigt animé (onde pour
+  « touche », anneau qui se remplit pour « appui long ») ; coupées si « réduire les animations ».
 - [x] Pousser les commits locaux sur GitHub (`git push origin main`).
 
 ## À vérifier dans les données
