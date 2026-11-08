@@ -203,10 +203,16 @@ function Conversation({ pid }: { pid: string }) {
   const isLocal = thread?.kind === "local";
   const isGroup = thread?.kind === "group" || (!!entry?.isGroup && !isLocal);
   const sms = isSms(contact, thread, pid, names);
+  // Le MDJ écrit et corrige au nom de n'importe quel membre, directement dans le téléphone.
+  const mdj = useData().session.role === "mdj";
   const canSend = canEditPhone && (isLocal || !!thread?.members?.[pid]);
-  const canEditMsg = (m: Msg) => canEditPhone && (isLocal || m.from === pid);
+  const canEditMsg = (m: Msg) => canEditPhone && (isLocal || m.from === pid || mdj);
 
-  const [asContact, setAsContact] = useState(false); // fil local : écrire au nom du contact
+  // Expéditeurs possibles : fil local → le perso ou son contact ; fil partagé → le perso (MDJ : tous les membres).
+  const senders = isLocal ? [pid, "npc"] : mdj ? [pid, ...Object.keys(thread?.members ?? {}).filter((m) => m !== pid)] : [pid];
+  const [senderIdx, setSenderIdx] = useState(0);
+  const sender = senders[senderIdx % senders.length];
+  const senderLabel = sender === "npc" ? contact : sender === pid ? "Moi" : names[sender]?.name ?? sender;
   const [insertAfter, setInsertAfter] = useState<string | null>(null);
   const [callout, setCallout] = useState<{ id: string; x: number; y: number } | null>(null);
   const [editing, setEditing] = useState<string | null>(null);
@@ -228,7 +234,7 @@ function Conversation({ pid }: { pid: string }) {
       const lastMs = prev ? loreToMs(prev.time) : null;
       time = msToLore(Math.max(loreNowMs(lore), (lastMs ?? 0) + 60_000));
     }
-    const from = isLocal && asContact ? { from: "npc", npcName: contact } : { from: pid };
+    const from = sender === "npc" ? { from: "npc", npcName: contact } : { from: sender };
     const id = `m_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
     write({ [`${base}/${id}`]: { ...from, text, time, order: orderBetween(prev?.order, next?.order) } as Json });
     if (insertAfter) setInsertAfter(id);
@@ -280,7 +286,7 @@ function Conversation({ pid }: { pid: string }) {
       )}
       {canSend && (
         <Composer sms={sms} onSend={send}
-          who={isLocal ? (asContact ? contact : "Moi") : null} onToggleWho={() => setAsContact((v) => !v)} />
+          who={senders.length > 1 ? senderLabel : null} onToggleWho={() => setSenderIdx((i) => (i + 1) % senders.length)} />
       )}
       {callout && (() => {
         const m = msgs.find(([id]) => id === callout.id)?.[1];

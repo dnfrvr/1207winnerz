@@ -1,11 +1,9 @@
 // Interface du site (hors téléphones) : bureau Aero de 2009, fenêtre façon messagerie instantanée
 // (les 4 persos en « contacts », avec leurs mini-téléphones), barre des tâches dont l'horloge
-// donne la date de lore, et « Panneau de configuration » pour le MDJ (date de lore, messages).
+// donne la date de lore (le MDJ la change d'un clic sur la date).
 import { useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { useData, useValue, useWriter } from "../data/hooks";
-import type { Json } from "../data/store";
-import { loreNowMs, loreToMs, msToLore } from "../lib/loreTime";
 import { img } from "../lib/img";
 import { LORE_DATE_DEFAULT } from "../phone/common";
 import { LockPreview } from "../phone/Phone";
@@ -33,6 +31,10 @@ export function Desktop({ children, taskbar }: { children: ReactNode; taskbar?: 
   const lore = useValue<string>("meta/loreDate") || LORE_DATE_DEFAULT;
   const [y, m, d] = lore.split("-");
   const time = new Date().toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
+  const { session } = useData();
+  const { set } = useWriter("meta");
+  const [cal, setCal] = useState(false);
+  const mdj = session.role === "mdj";
   return (
     <div className="w7-desk">
       <div className="w7-bloom" aria-hidden />
@@ -40,7 +42,18 @@ export function Desktop({ children, taskbar }: { children: ReactNode; taskbar?: 
       <footer className="w7-bar">
         <span className="w7-orb" aria-hidden>UMA</span>
         <span className="w7-tasks">{taskbar}</span>
-        <span className="w7-clock"><b>{time}</b><small>{d}/{m}/{y}</small></span>
+        {/* MDJ : clic sur la date = changer la date de lore (« Aujourd'hui » dans tous les téléphones). */}
+        <button className={`w7-clock ${mdj ? "edit" : ""}`} disabled={!mdj} onClick={() => setCal((c) => !c)} aria-expanded={mdj ? cal : undefined}
+          title={mdj ? "Changer la date de lore" : undefined}><b>{time}</b><small>{d}/{m}/{y}</small></button>
+        {mdj && cal && (
+          <div className="w7-cal" role="dialog" aria-label="Date de lore">
+            <b>Date de la fiction</b>
+            <input type="date" value={lore} min="2012-01-01" max="2013-12-31" autoFocus
+              onChange={(e) => e.target.value && set("meta/loreDate", e.target.value)} />
+            <small>« Aujourd'hui » dans tous les téléphones.</small>
+            <button className="y2k-btn" onClick={() => setCal(false)}>OK</button>
+          </div>
+        )}
       </footer>
     </div>
   );
@@ -107,7 +120,7 @@ export function Lobby({ me, account, admin }: { me: string | null; account: Reac
   const closeTour = () => { setTour(false); try { localStorage.setItem(TOUR_KEY, "1"); } catch { /* rien */ } };
   const mine = useValue<Profile>(me ? `phones/${me}/profile` : null);
   return (
-    <Desktop taskbar={<><span className="w7-task on">💬 #WhatsInOurPhones</span>{admin && <Link className="w7-task" to="/admin">⚙ Panneau de configuration</Link>}
+    <Desktop taskbar={<><span className="w7-task on">💬 #WhatsInOurPhones</span>
       <button className="w7-task" onClick={() => setTour(true)}>❔ Visite guidée</button></>}>
       {tour && <Tour onClose={closeTour} />}
       <Win title="#WhatsInOurPhones — University of Maine at Augusta" className="w7-msn">
@@ -121,101 +134,6 @@ export function Lobby({ me, account, admin }: { me: string | null; account: Reac
         <button className="w7-group" onClick={() => setOpen((o) => !o)} aria-expanded={open}>{open ? "▾" : "▸"} Téléphones ({PIDS.length})</button>
         {open && <div className="w7-grid">{PIDS.map((p, i) => <div key={p} style={{ animationDelay: `${i * 70}ms` }} className="w7-in"><PhoneCard pid={p} mine={me === p} /></div>)}</div>}
         <p className="w7-hint">Clique sur un téléphone pour l'ouvrir. Sur le tien, appui long (ou clic droit) sur n'importe quoi pour le modifier.</p>
-      </Win>
-    </Desktop>
-  );
-}
-
-// ── Panneau de configuration (MDJ) : date de lore + messages dans les téléphones des joueurs ──
-type Thread = { kind?: string; members?: Record<string, boolean>; name?: string; contact?: string | null };
-type Msg = { from?: string; npcName?: string | null; text?: string; time?: string; order?: number; deleted?: boolean };
-
-function AddMessage({ lore }: { lore: string }) {
-  const { store } = useData();
-  const [pid, setPid] = useState<string>(PIDS[0]);
-  const [tid, setTid] = useState("");
-  const [from, setFrom] = useState("");
-  const [text, setText] = useState("");
-  const [done, setDone] = useState<string | null>(null);
-  const inbox = useValue<Record<string, { contact?: string; threadId?: string; deleted?: boolean }>>(`phones/${pid}/inbox`) ?? {};
-  const threads = useValue<Record<string, Thread>>("threads") ?? {};
-  const names = Object.fromEntries(PIDS.map((p) => [p, p[0].toUpperCase() + p.slice(1)]));
-  const { write } = useWriter(pid);
-  // Conversations du téléphone : entrées de sa boîte + fils partagés dont il est membre.
-  const convs = new Map<string, string>();
-  for (const [k, e] of Object.entries(inbox)) if (e && !e.deleted) {
-    const id = e.threadId ?? k, t = threads[id];
-    convs.set(id, e.contact || t?.name || Object.keys(t?.members ?? {}).filter((m) => m !== pid).map((m) => names[m] ?? m).join(", ") || t?.contact || id);
-  }
-  for (const [id, t] of Object.entries(threads)) if (t?.kind !== "local" && t?.members?.[pid] && !convs.has(id))
-    convs.set(id, t.name || Object.keys(t.members).filter((m) => m !== pid).map((m) => names[m] ?? m).join(", "));
-  const t = threads[tid];
-  const contact = convs.get(tid) ?? "";
-  // Qui peut écrire : les membres du fil ; dans un fil « local », le joueur ou son contact hors jeu.
-  const senders: [string, string][] = t?.kind === "local" || !t?.members
-    ? [[pid, names[pid]], ["npc", contact]]
-    : Object.keys(t.members).map((m) => [m, names[m] ?? m]);
-  const send = () => {
-    if (!tid || !text.trim()) return;
-    const msgs = Object.values((store.peek(`threadMessages/${tid}`) as Record<string, Msg> | undefined) ?? {}).filter((m) => m && !m.deleted)
-      .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
-    const last = msgs[msgs.length - 1];
-    const lastMs = loreToMs(last?.time);
-    const who = from || senders[0][0];
-    const id = `m_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
-    const patches: Record<string, Json> = {
-      [`threadMessages/${tid}/${id}`]: { ...(who === "npc" ? { from: "npc", npcName: contact } : { from: who }), text: text.trim(),
-        time: msToLore(Math.max(loreNowMs(lore), (lastMs ?? 0) + 60_000)), order: (last?.order ?? 0) + 1000 },
-    };
-    // Non lu chez les destinataires qui ont déjà la conversation dans leur boîte.
-    for (const m of t?.kind === "local" ? [pid] : Object.keys(t?.members ?? { [pid]: true })) {
-      if (m !== who && store.peek(`phones/${m}/inbox/${tid}`)) patches[`phones/${m}/inbox/${tid}/unread`] = true;
-    }
-    write(patches);
-    setText(""); setDone(`Envoyé dans « ${contact} » (téléphone de ${names[pid]}).`);
-  };
-  return (
-    <fieldset className="w7-fs">
-      <legend>Ajouter un message dans un téléphone</legend>
-      <label><span>Téléphone</span>
-        <select value={pid} onChange={(e) => { setPid(e.target.value); setTid(""); setFrom(""); setDone(null); }}>
-          {PIDS.map((p) => <option key={p} value={p}>{names[p]}</option>)}
-        </select></label>
-      <label><span>Conversation</span>
-        <select value={tid} onChange={(e) => { setTid(e.target.value); setFrom(""); setDone(null); }}>
-          <option value="">— choisir —</option>
-          {[...convs.entries()].sort((a, b) => a[1].localeCompare(b[1])).map(([id, label]) => <option key={id} value={id}>{label}</option>)}
-        </select></label>
-      {tid && <>
-        <label><span>De</span>
-          <select value={from || senders[0][0]} onChange={(e) => setFrom(e.target.value)}>
-            {senders.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
-          </select></label>
-        <label><span>Message</span><textarea rows={3} value={text} onChange={(e) => setText(e.target.value)} /></label>
-        <button className="y2k-btn" disabled={!text.trim()} onClick={send}>Envoyer</button>
-      </>}
-      {done && <p className="w7-ok">{done}</p>}
-    </fieldset>
-  );
-}
-
-export function Admin() {
-  const { session } = useData();
-  const lore = useValue<string>("meta/loreDate") || LORE_DATE_DEFAULT;
-  const { set } = useWriter("meta");
-  if (session.role !== "mdj") return (
-    <Desktop><Win title="Accès refusé" icon="🔒"><p className="w7-p">Le panneau de configuration est réservé au MDJ. <Link to="/">Retour</Link></p></Win></Desktop>
-  );
-  return (
-    <Desktop taskbar={<><Link className="w7-task" to="/">💬 #WhatsInOurPhones</Link><span className="w7-task on">⚙ Panneau de configuration</span></>}>
-      <Win title="Panneau de configuration" icon="⚙" className="w7-cp">
-        <nav className="w7-crumbs"><Link to="/">Accueil</Link> › Panneau de configuration</nav>
-        <fieldset className="w7-fs">
-          <legend>Date et heure de la fiction</legend>
-          <label><span>Date de lore (« Aujourd'hui » dans les téléphones)</span>
-            <input type="date" value={lore} min="2012-01-01" max="2013-12-31" onChange={(e) => e.target.value && set("meta/loreDate", e.target.value)} /></label>
-        </fieldset>
-        <AddMessage lore={lore} />
       </Win>
     </Desktop>
   );

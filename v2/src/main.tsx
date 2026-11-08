@@ -7,7 +7,7 @@ import { createFirebaseStore } from "./data/firebaseStore";
 import { changePassword, emailToLogin, LoginScreen, logout, useFirebaseSession, type Session } from "./data/auth";
 import type { Json, Store } from "./data/store";
 import { Phone } from "./phone/Phone";
-import { Admin, Lobby, PIDS } from "./site/Site";
+import { Lobby, PIDS } from "./site/Site";
 import { installTouchContextMenu } from "./phone/touchContextMenu";
 import "./styles.css";
 
@@ -30,7 +30,6 @@ function Shell({ store, session, account, children }: { store: Store; session: S
         <Suspense fallback={null}>
           <Routes>
             <Route path="/" element={<Lobby me={session.phone} account={account} admin={session.role === "mdj"} />} />
-            <Route path="/admin" element={<Admin />} />
             <Route path="/:pid/*" element={<PhoneRoute />} />
           </Routes>
         </Suspense>

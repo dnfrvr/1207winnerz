@@ -201,3 +201,14 @@
 .w7-fs textarea { padding: 4px 6px; border: 1px solid #abadb3; border-top-color: #e3e9ef; border-radius: 2px; font: 13px var(--w7-font); resize: vertical; }
 .w7-fs .y2k-btn { align-self: flex-start; padding: 5px 22px; }
 .w7-ok { font: 12px var(--w7-font); color: #2a7a1a; }
+
+/* Horloge de la barre des tâches : le MDJ y change la date de lore */
+.w7-clock { color: #fff; border-radius: 3px; }
+.w7-clock.edit { cursor: pointer; }
+.w7-clock.edit:hover { background: linear-gradient(rgba(255,255,255,.3), rgba(255,255,255,.1)); box-shadow: inset 0 0 0 1px rgba(255,255,255,.4); }
+.w7-cal { position: fixed; right: 6px; bottom: 46px; z-index: 3; width: 230px; display: flex; flex-direction: column; gap: 8px; padding: 12px; border-radius: 6px; color: var(--w7-ink);
+  font: 12px var(--w7-font); background: linear-gradient(#fff, #eaf2fb); border: 1px solid rgba(20,45,80,.75); box-shadow: inset 0 0 0 1px #fff, 0 8px 24px rgba(0,20,60,.5); animation: w7-open .2s; }
+.w7-cal b { font: 600 13px var(--w7-font); color: #1e5aa0; }
+.w7-cal input { padding: 4px 6px; border: 1px solid #abadb3; border-radius: 2px; font: 14px var(--w7-font); }
+.w7-cal small { color: #6b7f97; }
+.w7-cal .y2k-btn { align-self: flex-end; padding: 4px 18px; }
