@@ -1,22 +1,55 @@
 name: Keep Supabase Alive
 
+# Le projet Supabase gratuit se met en pause après 7 jours sans activité. Ce workflow fait
+# chaque jour de vraies requêtes d'API (lecture du stockage + API REST) et échoue bruyamment
+# si Supabase ne répond pas (e-mail de GitHub), au lieu de passer en silence.
+#
+# GitHub désactive les workflows planifiés d'un dépôt sans activité depuis 60 jours (c'est ce
+# qui a mis le projet en pause en 2026) : la dernière étape ré-active ce workflow et celui de
+# sauvegarde via l'API, ce qui remet ce compteur à zéro.
+#
+# Secrets requis (GitHub → Settings → Secrets and variables → Actions) :
+#   SUPABASE_URL       = https://<projet>.supabase.co
+#   SUPABASE_ANON_KEY  = la clé anon (publique) du projet
+
 on:
   schedule:
-    - cron: '0 8 */3 * *'
+    - cron: '17 6 * * *'   # tous les jours
   workflow_dispatch:
+
+permissions:
+  actions: write
+  contents: read
 
 jobs:
   ping-supabase:
     runs-on: ubuntu-latest
     steps:
-      - name: Ping Supabase project
+      - name: Requêtes d'activité
         env:
-          # À définir dans GitHub → Settings → Secrets and variables → Actions :
-          #   SUPABASE_URL       = https://<projet>.supabase.co
-          #   SUPABASE_ANON_KEY  = la clé anon (publique) du projet Supabase
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
         run: |
-          curl -s -o /dev/null -w "HTTP %{http_code}\n" \
-            "${SUPABASE_URL}/rest/v1/" \
-            -H "apikey: ${SUPABASE_ANON_KEY}"
+          set -euo pipefail
+          if [ -z "${SUPABASE_URL}" ] || [ -z "${SUPABASE_ANON_KEY}" ]; then
+            echo "::error::Secrets SUPABASE_URL / SUPABASE_ANON_KEY manquants"; exit 1
+          fi
+          check() {
+            code=$(curl -s -o /tmp/out -w "%{http_code}" "$@")
+            echo "HTTP ${code} ← $2"
+            if [ "${code}" -ge 400 ]; then echo "::error::Supabase répond ${code} (projet en pause ?)"; head -c 300 /tmp/out; exit 1; fi
+          }
+          # Liste des fichiers du bucket « uploads » (activité réelle du stockage)
+          check -X POST "${SUPABASE_URL}/storage/v1/object/list/uploads" \
+            -H "apikey: ${SUPABASE_ANON_KEY}" -H "Authorization: Bearer ${SUPABASE_ANON_KEY}" \
+            -H "Content-Type: application/json" -d '{"prefix":"","limit":1}'
+          # API REST (base de données)
+          check "${SUPABASE_URL}/rest/v1/" -H "apikey: ${SUPABASE_ANON_KEY}"
+
+      - name: Empêcher GitHub de désactiver les workflows planifiés
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          for wf in keep-supabase-alive.yml backup-firebase.yml; do
+            gh api -X PUT "repos/${{ github.repository }}/actions/workflows/${wf}/enable" && echo "ré-activé : ${wf}" || echo "::warning::impossible de ré-activer ${wf}"
+          done
