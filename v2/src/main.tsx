@@ -82,7 +82,7 @@ function DemoRoot() {
         Je joue :{" "}
         <select value={me ?? ""} onChange={(e) => choose(e.target.value || null)}>
           <option value="">— personne (lecture seule) —</option>
-          {PIDS.map((p) => <option key={p} value={p}>{p}</option>)}
+          {PIDS.map((p) => <option key={p} value={p}>{p[0].toUpperCase() + p.slice(1)}</option>)}
           <option value="mdj">MDJ (tous les droits + panneau de configuration)</option>
         </select>
       </div>

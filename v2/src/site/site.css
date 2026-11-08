@@ -83,7 +83,7 @@
 .w7-phone-name { display: flex; align-items: center; gap: 6px; max-width: 100%; }
 .w7-phone-name b { font: 600 13px var(--w7-font); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .w7-phone-name b { font-size: 12px; }
-@media (min-width: 600px) { .w7-phone-name b { font-size: 13px; } .w7-phone.mine .w7-phone-name b::after { content: " (moi)"; font-weight: 400; color: #7a8ea6; } }
+@media (min-width: 600px) { .w7-phone-name b { font-size: 13px; } }
 .dp.sm { width: 24px; height: 24px; padding: 2px; border-radius: 6px; }
 .dp.sm img, .dp.sm > span { border-radius: 4px; font-size: 11px; }
 
