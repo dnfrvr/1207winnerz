@@ -13,28 +13,28 @@ type Step = [string, ...string[]];
 const ADD = '[aria-label="Ajouter"]';
 const TIPS: Record<string, Step[] | null> = {
   messages: [["Touche ce bouton pour démarrer une conversation.", '[aria-label="Nouveau message"]'], ["Maintiens une conversation pour la modifier ou la supprimer.", ".msg-row"],
-    ["Touche ce bouton pour changer qui envoie le message.", "@.who-btn"], ["Maintiens une bulle pour la modifier ou la supprimer.", "@.bubble"]],
-  notes: [["Touche « + » pour créer une note.", '[aria-label="Nouvelle note"]', '[aria-label="Nouveau mémo"]'], ["Touche une note pour l'écrire.", ".nt-memo"], ["Touche la corbeille pour supprimer la note.", '@[aria-label="Mettre à la corbeille"]', '@[aria-label="Supprimer"]']],
+    ["Touche ce bouton pour changer qui envoie le message.", "@.who-btn"], ["Maintiens une de tes bulles pour la modifier ou la supprimer.", "@.bubble.me"]],
+  notes: [["Touche « + » pour créer une note.", '[aria-label="Nouvelle note"]', '[aria-label="Nouveau mémo"]'], ["Touche une note pour l'écrire.", ".nt-list button", ".nt-memo"], ["Touche la corbeille pour supprimer la note.", '@[aria-label="Mettre à la corbeille"]', '@[aria-label="Supprimer"]']],
   photos: [["Touche « + » pour ajouter une photo.", ADD], ["Maintiens une photo pour la modifier ou la supprimer.", "@.ph-cell"]],
-  music: [["Dans l'onglet Songs, touche « + » pour ajouter un morceau.", ADD], ["Maintiens un morceau ou une playlist pour le modifier."]],
-  phone: [["Touche « + » pour ajouter un appel ou un contact, selon l'onglet.", ADD], ["Maintiens un appel, un message vocal ou un contact pour le modifier."]],
-  calendar: [["Touche « + » pour ajouter un événement.", ADD], ["Maintiens un événement pour le modifier ou le supprimer."]],
+  music: [["Dans l'onglet Songs, touche « + » pour ajouter un morceau.", ADD], ["Maintiens un morceau ou une playlist pour le modifier.", ".k-cell"]],
+  phone: [["Touche « + » pour ajouter un appel ou un contact, selon l'onglet.", ADD], ["Maintiens un appel, un message vocal ou un contact pour le modifier.", ".k-cell"]],
+  calendar: [["Touche « + » pour ajouter un événement.", ADD], ["Maintiens un événement pour le modifier ou le supprimer.", ".k-cell"]],
   clock: [["Touche « + » pour ajouter une alarme ou une ville, selon l'onglet.", ADD], ["Maintiens une ville ou une alarme pour la modifier.", ".clk-row"]],
   weather: [["Touche le nom de la ville pour changer la température et le temps.", ".wx-top"], ["Touche un jour des prévisions pour le modifier.", ".wx-day"]],
   settings: [["Touche ici pour changer le fond d'écran.", ".k-cell|Wallpaper", ".k-cell|Affichage"], ["Touche ici pour changer la vidéo du viseur de l'appareil photo.", ".k-cell|Photos & Camera", ".k-cell|Appareil photo"], ["Dans Wi-Fi et Bluetooth, touche « + » pour ajouter un réseau ou un appareil.", ".k-cell|Wi-Fi"]],
-  insta: [["Maintiens une publication pour la modifier ou la supprimer.", ".ig-post > :first-child", ".ig-post"], ["Sur ton profil, touche ce bouton pour ajouter une photo.", '@[aria-label="Nouvelle publication"]']],
+  insta: [["Maintiens une photo pour modifier ou supprimer la publication.", ".ig-photo"], ["Sur ton profil, touche ce bouton pour ajouter une photo.", '@[aria-label="Nouvelle publication"]']],
   twitter: [["Touche ce bouton pour écrire un tweet.", '[aria-label="Tweeter"]'], ["Maintiens un tweet pour le modifier ou le supprimer.", ".tw-tweet"]],
   facebook: [["Maintiens une de tes publications pour la modifier.", ".fb-card"]],
   tumblr: [["Touche ce bouton pour publier un billet.", '[aria-label="Publier"]'], ["Maintiens un billet pour le modifier ou le supprimer.", ".tb-row"]],
   pinterest: [["Maintiens une épingle pour la modifier ou la supprimer.", ".pi-pin"]],
   youtube: [["Touche ce bouton pour ajouter une vidéo.", ADD], ["Maintiens une vidéo pour la modifier ou la supprimer.", ".yt-row"]],
   gmail: [["Touche une boîte pour voir ses mails.", ".k-cell"], ["Touche « + » pour ajouter un mail.", "@" + ADD], ["Maintiens un mail pour le modifier ou le supprimer.", "@.ml-row"], ["Touche « Modifier » pour changer ce mail.", '@[aria-label="Modifier"]']],
-  safari: [["Maintiens un signet ou une page de l'historique pour le modifier."]],
+  safari: [["Maintiens un signet ou une page de l'historique pour le modifier.", ".k-cell"]],
   maps: [["Maintiens une épingle pour changer le lieu.", ".mp-pin"]],
   snapchat: [["Touche « + Snap » pour ajouter un snap.", ".sc-foot button"], ["Maintiens un snap pour le modifier ou le supprimer.", ".sc-row"]],
   groupme: [["Touche ce bouton pour créer un groupe.", '[aria-label="Nouveau groupe"]'], ["Maintiens un groupe pour le modifier ou le supprimer.", ".gm-row"]],
-  starbucks: [["Touche « Edit » pour changer les étoiles et le solde de la carte.", ".barbtn|Edit"], ["Maintiens un achat ou un café favori pour le modifier."]],
-  files: [["Touche « + » pour ajouter un fichier.", ADD], ["Touche ici pour créer un dossier.", ".fl-add"], ["Maintiens un fichier ou un dossier pour le modifier."]],
+  starbucks: [["Touche « Edit » pour changer les étoiles et le solde de la carte.", ".barbtn|Edit"], ["Maintiens un achat ou un café favori pour le modifier.", ".k-cell"]],
+  files: [["Touche « + » pour ajouter un fichier.", ADD], ["Touche ici pour créer un dossier.", ".fl-add"], ["Maintiens un fichier ou un dossier pour le modifier.", ".k-cell"]],
   grindr: [["Touche ton profil pour le modifier.", ".gr-me"], ["Maintiens un profil pour le modifier ou le supprimer.", ".gr-cell"]],
   nikeplus: [["Maintiens une course pour la modifier. Le crayon, en haut, change les totaux.", ".nk-run"]],
   soundcloud: [["Touche ce bouton pour ajouter un son.", '[aria-label="Nouveau son"]'], ["Maintiens un son ou le profil pour le modifier."]],
@@ -58,7 +58,7 @@ const TIPS: Record<string, Step[] | null> = {
 };
 // Apps à deux noms (iOS / Android) ; les jeux se modifient tous pareil.
 const ALIAS: Record<string, string> = { gallery: "photos", contacts: "phone", browser: "safari" };
-for (const g of ["candycrush", "templerun", "angrybirds", "subwaysurf", "pou", "wordswfriends"]) TIPS[g] = [["Maintiens le menu du jeu pour changer la partie en cours.", ".gm-menu"]];
+for (const g of ["candycrush", "templerun", "angrybirds", "subwaysurf", "pou", "wordswfriends"]) TIPS[g] = [["Maintiens le menu du jeu pour changer la partie en cours.", "@.gm-menu"]];
 const GENERIC: Step[] = [["Maintiens un élément pour le modifier ou le supprimer."]];
 const stepsFor = (app: string) => { const t = TIPS[ALIAS[app] ?? app]; return t === undefined ? GENERIC : t; };
 
@@ -69,13 +69,25 @@ const save = (app: string, i: number) => { try { localStorage.setItem(KEY(app), 
 
 type Box = { x: number; y: number; w: number; h: number; W: number; H: number };
 /** Première cible visible dans l'app, en coordonnées de la visite (le téléphone peut être mis à l'échelle). */
-function locate(tour: HTMLElement, targets: string[]): Box | null {
+// shortcut: lit les props React posées sur le nœud (clé interne __reactProps$…) ; à revoir si React change ce nom.
+const props = (el: Element) => { const k = Object.keys(el).find((x) => x.startsWith("__reactProps$")); return k ? (el as unknown as Record<string, Record<string, unknown>>)[k] : undefined; };
+/** La cible réagit-elle au geste annoncé (elle ou ses 2 parents) ? Évite de pointer une publication d'un autre, une photo non modifiable… */
+function reacts(el: Element, hold: boolean): boolean {
+  for (let e: Element | null = el, n = 0; e && n < 3; e = e.parentElement, n++) {
+    const p = props(e);
+    if (hold ? p?.onContextMenu || p?.onPointerDown : p?.onClick || e.tagName === "A") return true;
+  }
+  return false;
+}
+const isHold = (s: Step) => s[0].startsWith("Maintiens");
+
+function locate(tour: HTMLElement, targets: string[], hold: boolean): Box | null {
   const root = tour.parentElement; if (!root) return null;
   const R = tour.getBoundingClientRect(); const k = R.width / tour.offsetWidth || 1;
   for (const t of targets) {
     const [sel, text] = t.replace(/^@/, "").split("|");
     for (const el of root.querySelectorAll(sel)) {
-      if (tour.contains(el) || (text && !el.textContent?.includes(text))) continue;
+      if (tour.contains(el) || (text && !el.textContent?.includes(text)) || !reacts(el, hold)) continue;
       const r = el.getBoundingClientRect();
       if (!r.width || r.bottom <= R.top || r.top >= R.bottom) continue;
       // Vraiment visible : au centre, le premier élément sous la visite doit être la cible (pas une barre qui la cache).
@@ -113,9 +125,9 @@ export function AppTips({ pid, app }: { pid: string; app: string }) {
     const tick = () => {
       if (!ref.current) return;
       if (cardRef.current) { const h = cardRef.current.offsetHeight; setCardH((o) => (o === h ? o : h)); }
-      const b = locate(ref.current, step.slice(1));
+      const b = locate(ref.current, step.slice(1), isHold(step));
       // Cible absente (app ouverte dans un fil, fil sans bouton d'expéditeur…) : on saute à une étape suivante dont la cible est visible.
-      if (!b && step.length > 1 && steps) for (let j = i + 1; j < steps.length; j++) if (steps[j].length > 1 && locate(ref.current, steps[j].slice(1))) { setI(j); return; }
+      if (!b && step.length > 1 && steps) for (let j = i + 1; j < steps.length; j++) if (steps[j].length > 1 && locate(ref.current, steps[j].slice(1), isHold(steps[j]))) { setI(j); return; }
       setBox((o) => (JSON.stringify(o) === JSON.stringify(b) ? o : b));
     };
     tick(); const h = setInterval(tick, 250);
@@ -127,7 +139,7 @@ export function AppTips({ pid, app }: { pid: string; app: string }) {
   if (!step || !steps) return null;
   if (waits && !box) return <div className="at-tour waiting" ref={ref} aria-hidden />;
   const close = () => setI(steps.length);
-  const hold = step[0].startsWith("Maintiens");
+  const hold = isHold(step);
   const last = i === steps.length - 1;
   const pad = 6;
   // Carte sous la cible s'il y a la place, sinon au-dessus ; si elle ne tient d'aucun côté (cible très
