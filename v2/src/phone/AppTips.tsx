@@ -2,7 +2,10 @@
 // l'écran s'assombrit sauf l'élément à toucher, un doigt fantôme y mime le geste, et une carte
 // pointe dessus. Étape sans cible visible (élément dans un sous-écran) : carte en bas, sans flèche.
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { mdiHelpCircleOutline } from "@mdi/js";
 import { useCanEdit } from "../data/hooks";
+import { Glyph } from "../kit/glyph";
+import { Win } from "../site/Win";
 
 /** [texte, ...cibles] ; cible = sélecteur CSS, ou « sélecteur|texte contenu ». « Maintiens… » = appui long.
  *  Cible préfixée « @ » : l'étape attend que l'élément apparaisse (ex. dans un fil ouvert) avant de s'afficher. */
@@ -136,12 +139,15 @@ export function AppTips({ pid, app }: { pid: string; app: string }) {
       {box && <div className="at-spot" style={{ left: box.x - pad, top: box.y - pad, width: box.w + pad * 2, height: box.h + pad * 2 }} />}
       {box && <span key={`f${i}`} className={`at-finger ${hold ? "hold" : "tap"}`} style={{ left: cx, top: box.y + box.h / 2 }} aria-hidden />}
       <div key={i} className={`at-card ${box ? (below ? "below" : "above") : "free"}`} style={cardStyle}>
-        {steps.length > 1 && <div className="at-progress" aria-hidden>{steps.map((_, k) => <i key={k} className={k <= i ? "on" : ""} />)}</div>}
-        <p>{step[0]}</p>
-        <div className="at-btns">
-          {!last && <button type="button" className="skip" onClick={close}>Passer</button>}
-          <button type="button" onClick={() => setI(i + 1)}>{last ? "Compris" : "Suivant"}</button>
-        </div>
+        {/* Même fenêtre Windows 7 que la visite guidée de l'accueil. */}
+        <Win title="Prise en main" icon={<Glyph i={mdiHelpCircleOutline} size={15} />}>
+          <p className="at-text">{step[0]}</p>
+          {steps.length > 1 && <span className="tour-dots" aria-hidden>{steps.map((_, k) => <i key={k} className={k === i ? "on" : ""} />)}</span>}
+          <div className="tour-btns">
+            {!last && <button type="button" className="linkish" onClick={close}>Passer</button>}
+            <button type="button" className="y2k-btn" onClick={() => setI(i + 1)}>{last ? "Compris" : "Suivant ›"}</button>
+          </div>
+        </Win>
       </div>
     </div>
   );

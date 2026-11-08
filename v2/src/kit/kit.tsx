@@ -5,6 +5,7 @@ import { useCanEdit, useData, useList, useWriter } from "../data/hooks";
 import { orderBetween, byOrder, type Ordered } from "../data/order";
 import type { Json } from "../data/store";
 import { img } from "../lib/img";
+import { formatDateField, parseDateField } from "../lib/loreTime";
 import { canUpload, uploadImage, uploadVideo } from "../lib/upload";
 import { useOS } from "../phone/common";
 import { StatusBar } from "../phone/IOSChrome";
@@ -182,13 +183,20 @@ const IMAGE_KEYS = /^(src|img|photo|cover|thumbImg|avatar|av|image|bannerImg|chA
 const VIDEO_KEYS = /^(video|cameraVideo)$/;
 const HIDDEN = new Set(["order", "id", "deleted", "authorKey", "senderKey"]);
 
-type FieldSpec = { key: string; label: string; kind: "text" | "long" | "number" | "bool" | "image" | "video" };
+type FieldSpec = { key: string; label: string; kind: "text" | "long" | "number" | "bool" | "image" | "video" | "date" | "dmy" };
+// Champs de date : sélecteur avec un jour précis quand la valeur est une vraie date (pas « Hier », « 8:02 AM »…).
+const DATE_KEYS = /^(date|time|due|posted|when)$/;
+const isDate = (key: string, v: Json | undefined) => DATE_KEYS.test(key) && typeof v === "string" && (v === "" ? key !== "time" : !!parseDateField(v));
 
 const fieldsOf = (item: Record<string, Json>, only?: string[]): FieldSpec[] => {
-  const keys = only ?? Object.keys(item).filter((k) => !HIDDEN.has(k) && (item[k] === null || typeof item[k] !== "object"));
+  let keys = only ?? Object.keys(item).filter((k) => !HIDDEN.has(k) && (item[k] === null || typeof item[k] !== "object"));
+  // Jour / mois / année en nombres (Calendrier) : un seul sélecteur « Date » à la place des trois champs.
+  const dmy = ["day", "month", "year"].every((k) => keys.includes(k) && typeof item[k] === "number");
+  if (dmy) keys = keys.filter((k) => k !== "month" && k !== "year");
   return keys.map((key) => {
+    if (dmy && key === "day") return { key, label: "Date", kind: "dmy" as const };
     const v = item[key];
-    const kind: FieldSpec["kind"] = IMAGE_KEYS.test(key) ? "image" : VIDEO_KEYS.test(key) ? "video" : typeof v === "boolean" ? "bool" : typeof v === "number" ? "number"
+    const kind: FieldSpec["kind"] = IMAGE_KEYS.test(key) ? "image" : VIDEO_KEYS.test(key) ? "video" : isDate(key, v) ? "date" : typeof v === "boolean" ? "bool" : typeof v === "number" ? "number"
       : typeof v === "string" && (v.length > 40 || v.includes("\n")) ? "long" : "text";
     return { key, label: LABELS[key] ?? key, kind };
   });
@@ -212,6 +220,7 @@ function ItemForm({ pid, target, onClose }: { pid: string; target: EditTarget; o
       let v = draft[f.key];
       if (f.kind === "number" && typeof v === "string") v = v.trim() === "" ? null : Number(v);
       if (v !== original[f.key]) patches[`${target.path}/${f.key}`] = v ?? null;
+      if (f.kind === "dmy") for (const k of ["month", "year"]) if (draft[k] !== original[k]) patches[`${target.path}/${k}`] = draft[k] ?? null;
     }
     if (Object.keys(patches).length) write(patches);
     onClose();
@@ -271,7 +280,17 @@ function ItemForm({ pid, target, onClose }: { pid: string; target: EditTarget; o
                 <span className="k-field-label">{f.label}</span>
                 {f.kind === "bool" ? (
                   <Switch on={!!draft[f.key]} onChange={(v) => setDraft((d) => ({ ...d, [f.key]: v }))} />
-                ) : f.kind === "long" ? (
+                ) : f.kind === "dmy" ? (
+                  <input type="date" value={`${draft.year ?? 2012}-${String(draft.month ?? 1).padStart(2, "0")}-${String(draft.day ?? 1).padStart(2, "0")}`}
+                    onChange={(e) => { const [y, m, d] = e.target.value.split("-").map(Number); if (y) setDraft((o) => ({ ...o, day: d, month: m, year: y })); }} />
+                ) : f.kind === "date" ? (() => {
+                  const df = parseDateField(String(draft[f.key] ?? "")) ?? parseDateField("")!;
+                  // Sans année dans le format, l'année est implicite (2012) : on reste dans 2012.
+                  const lock = !/\{Y/.test(df.tpl);
+                  return <input type={df.type} value={df.value} min={lock ? (df.type === "date" ? "2012-01-01" : "2012-01-01T00:00") : undefined}
+                    max={lock ? (df.type === "date" ? "2012-12-31" : "2012-12-31T23:59") : undefined}
+                    onChange={(e) => { const v = e.target.value; if (v) setDraft((d) => ({ ...d, [f.key]: formatDateField(df, v) })); }} />;
+                })() : f.kind === "long" ? (
                   <textarea value={String(draft[f.key] ?? "")} rows={4} onChange={(e) => setDraft((d) => ({ ...d, [f.key]: e.target.value }))} />
                 ) : (
                   <input type={f.kind === "number" ? "number" : "text"} value={draft[f.key] === null || draft[f.key] === undefined ? "" : String(draft[f.key])}

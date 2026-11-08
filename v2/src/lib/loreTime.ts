@@ -91,3 +91,78 @@ export const stampLabel = (ms: number) => {
   const d = new Date(ms);
   return `${FULL_EN[d.getMonth() + 1].slice(0, 3)} ${d.getDate()}, ${d.getFullYear()} ${clockLabel(ms)}`;
 };
+
+// ─── Sélecteur de date ─────────────────────────────────────────────────────
+// Les dates sont stockées en texte dans des formats variés (« 18 sep, 5:10pm », « 13 Sep 2012 »,
+// « Oct 1 at 12:14PM », « 08/04/2012 11:00am »…). On les lit en jour précis pour un <input> natif,
+// puis on réécrit le choix dans le MÊME format (modèle à trous), pour ne rien changer à l'affichage.
+const MON_EN = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const MON_FR = ["jan", "fév", "mar", "avr", "mai", "juin", "juil", "août", "sep", "oct", "nov", "déc"];
+const MON_PREFIX: [string, number][] = [["jan", 1], ["feb", 2], ["fév", 2], ["mar", 3], ["apr", 4], ["avr", 4], ["may", 5], ["mai", 5], ["jun", 6], ["juin", 6], ["jul", 7], ["juil", 7], ["aug", 8], ["aoû", 8], ["sep", 9], ["oct", 10], ["nov", 11], ["dec", 12], ["déc", 12]];
+const FR_ONLY = /^(fév|avr|mai|juin|juil|aoû|déc|janv|mars|sept)/;
+const MON_RE = /(?<![a-zà-ÿ])(jan|feb|fév|mar|apr|avr|may|mai|jun|juin|jul|juil|aug|aoû|sep|oct|nov|dec|déc)[a-zà-ÿ]*\.?/i;
+
+export type DateField = {
+  type: "date" | "datetime-local"; value: string; tpl: string; orig: string; tok: string; mo: number;
+  fr: boolean; cap: boolean; dPad: boolean; hPad: boolean; ampm: "" | "am" | "AM"; sp: boolean;
+};
+const p2 = (n: number) => String(n).padStart(2, "0");
+
+/** Lit une date texte (null si ce n'est pas une date avec un jour ou un mois). "" = date vide au format lore. */
+export function parseDateField(s: string): DateField | null {
+  const f: DateField = { type: "date", value: "", tpl: "", orig: s, tok: "", mo: 0, fr: false, cap: false, dPad: false, hPad: false, ampm: "", sp: false };
+  if (!s.trim()) return { ...f, tpl: "{D} {M}" };
+  let t = s, y = 2012, mo = 0, d = 0, h: number | null = null, mi = 0;
+  const cut = (i: number, len: number, tok: string) => { t = t.slice(0, i) + tok + t.slice(i + len); };
+  const slash = t.match(/(\d{1,2})\/(\d{1,2})\/(\d{4}|\d{2})/);
+  const clock = t.match(/(\d{1,2}):(\d{2})(\s*)(am|pm)?/i);
+  if (clock && clock.index !== undefined && (!slash || clock.index > (slash.index ?? 0) + slash[0].length)) {
+    h = +clock[1] % 24; mi = +clock[2]; f.hPad = clock[1].startsWith("0") || (!clock[4] && clock[1].length === 2);
+    if (clock[4]) { f.ampm = clock[4] === clock[4].toUpperCase() ? "AM" : "am"; f.sp = !!clock[3]; if (/pm/i.test(clock[4]) && h !== 12) h += 12; if (/am/i.test(clock[4]) && h === 12) h = 0; }
+    cut(clock.index, clock[0].length, "{T}");
+  }
+  if (slash && slash.index !== undefined) {
+    d = +slash[1]; mo = +slash[2]; y = +slash[3] < 100 ? 2000 + +slash[3] : +slash[3]; f.dPad = slash[1].length === 2;
+    cut(slash.index, slash[0].length, `{D}/{MO}/${slash[3].length === 2 ? "{YY}" : "{Y}"}`);
+  } else {
+    const m = t.match(MON_RE);
+    if (!m || m.index === undefined) return null;
+    const tok = m[1].toLowerCase();
+    mo = MON_PREFIX.find(([p]) => tok.startsWith(p))![1];
+    f.fr = FR_ONLY.test(tok); f.tok = m[0]; f.mo = mo; f.cap = m[0][0] !== m[0][0].toLowerCase();
+    cut(m.index, m[0].length, "{M}");
+    const yr = t.match(/(?<!\d)(19|20)\d{2}(?!\d)/);
+    if (yr && yr.index !== undefined) { y = +yr[0]; cut(yr.index, 4, "{Y}"); }
+    const at = t.indexOf("{M}");
+    const before = t.slice(0, at).match(/(\d{1,2})(\s*)$/), after = t.slice(at + 3).match(/^(\s*)(\d{1,2})(?![\d:])/);
+    if (before && before.index !== undefined) { d = +before[1]; f.dPad = before[1].startsWith("0"); cut(before.index, before[1].length, "{D}"); }
+    else if (after) { d = +after[2]; f.dPad = after[2].startsWith("0"); cut(at + 3 + after[1].length, after[2].length, "{D}"); }
+    else if (t.includes("{Y}")) { d = 1; t = "{D} {M} {Y}"; } // « Oct 2012 » : on passe à un jour précis
+    else return null;
+  }
+  if (d < 1 || d > 31 || mo < 1 || mo > 12) return null;
+  f.tpl = t;
+  const date = `${y}-${p2(mo)}-${p2(d)}`;
+  return h === null ? { ...f, value: date } : { ...f, type: "datetime-local", value: `${date}T${p2(h)}:${p2(mi)}` };
+}
+
+/** Réécrit la valeur d'un <input type="date|datetime-local"> dans le format de `f`. */
+export function formatDateField(f: DateField, input: string): string {
+  const m = input.match(/^(\d{4})-(\d{2})-(\d{2})(?:T(\d{2}):(\d{2}))?/);
+  if (!m) return "";
+  if (input === f.value) return f.orig; // rien changé : on garde le texte exact
+  const [y, mo, d] = [+m[1], +m[2], +m[3]];
+  const h = m[4] === undefined ? 0 : +m[4], mi = m[5] ?? "00";
+  const name = mo === f.mo ? f.tok : f.fr ? MON_FR[mo - 1] : MON_EN[mo - 1]; // même mois : même orthographe
+  const h12 = h % 12 === 0 ? 12 : h % 12;
+  const clock = f.ampm
+    ? `${f.hPad ? p2(h12) : h12}:${mi}${f.sp ? " " : ""}${h < 12 ? "am" : "pm"}`
+    : `${f.hPad ? p2(h) : h}:${mi}`;
+  return f.tpl
+    .replace("{D}", f.dPad ? p2(d) : String(d))
+    .replace("{MO}", p2(mo))
+    .replace("{M}", mo === f.mo ? name : f.cap ? name[0].toUpperCase() + name.slice(1) : name.toLowerCase())
+    .replace("{YY}", p2(y % 100))
+    .replace("{Y}", String(y))
+    .replace("{T}", f.ampm === "AM" ? clock.toUpperCase() : clock);
+}

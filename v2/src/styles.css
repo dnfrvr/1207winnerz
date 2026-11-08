@@ -158,20 +158,20 @@ textarea, input { font: inherit; color: inherit; }
 .at-finger { position: absolute; width: 40px; height: 40px; margin: -20px 0 0 -20px; border-radius: 50%; background: rgba(255, 255, 255, .85); box-shadow: 0 0 0 7px rgba(255, 255, 255, .18), 0 4px 14px rgba(0, 0, 0, .35); pointer-events: none; }
 .at-finger.tap { animation: atTap 1.8s ease-in-out .4s infinite both; }
 .at-finger.hold { animation: atHold 2.4s ease-in-out .4s infinite both; }
-.at-card { position: absolute; left: 12px; right: 12px; padding: 12px 14px 12px; border-radius: 16px; background: #fff; color: #1c1c1e; box-shadow: 0 18px 40px -10px rgba(0, 0, 0, .6); animation: atCard .5s cubic-bezier(.2, .9, .25, 1.15) .12s both; }
-.at-card.free { bottom: 14px; transform-origin: 50% 100%; }
+/* Carte = fenêtre Windows 7 (classes w7-*, tour-dots, tour-btns, y2k-btn, linkish du site), avec une pointe vitrée. */
+.at-card { position: absolute; left: 8px; right: 8px; animation: atCard .45s cubic-bezier(.2, .9, .3, 1.2) .12s both; }
+.at-card .w7-win { width: 100%; }
+.at-card .w7-body { padding: 10px 12px 9px; }
+.at-card .tour-btns { margin-top: 10px; }
+.at-card .tour-dots { margin-top: 8px; }
+.at-text { margin: 0; font: 13px/1.45 var(--w7-font); color: #333; }
+.at-card.free { bottom: 12px; transform-origin: 50% 100%; }
 .at-card.below { transform-origin: var(--ax) 0; }
 .at-card.above { transform-origin: var(--ax) 100%; }
-.at-card.below::before, .at-card.above::before { content: ""; position: absolute; left: var(--ax); width: 14px; height: 14px; background: #fff; rotate: 45deg; margin-left: -7px; }
-.at-card.below::before { top: -6px; }
-.at-card.above::before { bottom: -6px; }
-.at-progress { display: flex; gap: 4px; margin-bottom: 9px; }
-.at-progress i { flex: 1; height: 3px; border-radius: 2px; background: #e3e3e8; transition: background .3s; }
-.at-progress i.on { background: #2a7ad0; }
-.at-card p { margin: 0 0 10px; font-weight: 600; font-size: 15px; }
-.at-btns { display: flex; gap: 8px; justify-content: flex-end; }
-.at-btns button { min-height: 38px; padding: 0 16px; border: 0; border-radius: 10px; background: #2a7ad0; color: #fff; font: bold 14px var(--ios-font); }
-.at-btns button.skip { background: none; color: #8e8e93; font-weight: normal; margin-right: auto; padding: 0 4px; }
+.at-card.below::before, .at-card.above::before { content: ""; position: absolute; left: var(--ax); width: 14px; height: 14px; margin-left: -7px; rotate: 45deg;
+  background: #c5dbf2; border: 1px solid rgba(20, 45, 80, .75); }
+.at-card.below::before { top: -7px; border-right: 0; border-bottom: 0; }
+.at-card.above::before { bottom: -7px; border-left: 0; border-top: 0; background: #b3cfee; }
 @keyframes atFade { from { opacity: 0; } }
 @keyframes atCard { from { opacity: 0; transform: scale(.85); } }
 @keyframes atPulse { from { opacity: 1; transform: scale(1); } to { opacity: 0; transform: scale(1.12); } }

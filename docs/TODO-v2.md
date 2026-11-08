@@ -35,6 +35,13 @@
   fléchée avec progression, « Suivant » / « Passer ». Étapes propres à chaque app ; les étapes « @ »
   attendent leur sous-écran (ex. fil de Messages) ; sans cible visible, carte en bas d'écran ;
   aucune visite pour Appareil photo, FaceTime, Shazam.
+  Cartes au style Windows 7 de la visite d'accueil (composant `Win`, sorti dans `v2/src/site/Win.tsx`).
+- [x] **Dates avec un jour précis** : dans le formulaire « Modifier » (toutes les apps), les champs
+  date/time/due/posted qui contiennent une vraie date ont un calendrier (+ l'heure si la date en a une) ;
+  le choix est réécrit dans le format d'origine (`parseDateField` / `formatDateField`, `v2/src/lib/loreTime.ts`,
+  vérifié par `node v2/scripts/check-dates.mjs` et sur les 1 480 dates des données). Calendrier : jour/mois/année
+  → un seul sélecteur. Messages › Heure : sélecteur date + heure. Les textes relatifs (« Hier »,
+  « 4 hours ago », « Today · 3:02pm ») et les heures seules restent en texte.
 - [x] Pousser les commits locaux sur GitHub (`git push origin main`).
 
 ## À vérifier dans les données

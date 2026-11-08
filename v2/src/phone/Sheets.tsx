@@ -43,8 +43,8 @@ export function Callout({ x, y, items, onClose }: { x: number; y: number; items:
 }
 
 /** Fenêtre de saisie façon UIAlertView (titre + champ + Annuler / OK). */
-export function PromptAlert({ title, message, initial, placeholder, onOk, onClose, validate }: {
-  title: string; message?: ReactNode; initial: string; placeholder?: string;
+export function PromptAlert({ title, message, initial, placeholder, onOk, onClose, validate, type = "text", min, max }: {
+  title: string; message?: ReactNode; initial: string; placeholder?: string; type?: string; min?: string; max?: string;
   onOk: (v: string) => void; onClose: () => void; validate?: (v: string) => boolean;
 }) {
   const input = useRef<HTMLInputElement>(null);
@@ -59,7 +59,7 @@ export function PromptAlert({ title, message, initial, placeholder, onOk, onClos
       <form className="alert" onClick={(e) => e.stopPropagation()} onSubmit={(e) => { e.preventDefault(); submit(); }}>
         <div className="alert-title">{title}</div>
         {message && <div className="alert-msg">{message}</div>}
-        <input ref={input} defaultValue={initial} placeholder={placeholder} onInput={(e) => e.currentTarget.classList.remove("bad")} />
+        <input ref={input} type={type} min={min} max={max} defaultValue={initial} placeholder={placeholder} onInput={(e) => e.currentTarget.classList.remove("bad")} />
         <div className="alert-btns">
           <button type="button" onClick={onClose}>Annuler</button>
           <button type="submit" className="ok">OK</button>

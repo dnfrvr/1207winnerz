@@ -7,7 +7,7 @@ import { Route, Routes, useNavigate, useParams } from "react-router-dom";
 import { useCanEdit, useData, useValue, useWriter } from "../data/hooks";
 import { orderBetween } from "../data/order";
 import type { Json, Patches } from "../data/store";
-import { clockLabel, dayLabel, inboxLabel, loreBetween, loreNowMs, loreToMs, msToLore, parseLore, stampLabel } from "../lib/loreTime";
+import { clockLabel, dayLabel, inboxLabel, loreBetween, loreNowMs, loreToMs, msToLore, parseDateField, stampLabel } from "../lib/loreTime";
 import { useOS } from "../phone/common";
 import { img } from "../lib/img";
 import { AppFrame, BackButton, LORE_DATE_DEFAULT } from "../phone/IOSChrome";
@@ -295,9 +295,11 @@ function Conversation({ pid }: { pid: string }) {
       {timeFor && (() => {
         const m = msgs.find(([id]) => id === timeFor)?.[1];
         return (
-          <PromptAlert title="Heure du message" message="Format : 6 oct, 2:30pm" initial={m?.time ?? ""}
-            validate={(v) => !!parseLore(v)} onClose={() => setTimeFor(null)}
-            onOk={(v) => write({ [`${base}/${timeFor}/time`]: v.trim() })} />
+          // Sélecteur date + heure (2012) ; enregistré au format lore « 6 oct, 2:30pm » que les Messages savent trier.
+          <PromptAlert title="Heure du message" type="datetime-local" min="2012-01-01T00:00" max="2012-12-31T23:59"
+            initial={parseDateField(m?.time ?? "")?.value || "2012-10-06T12:00"}
+            validate={(v) => !!v} onClose={() => setTimeFor(null)}
+            onOk={(v) => write({ [`${base}/${timeFor}/time`]: msToLore(new Date(v).getTime()) })} />
         );
       })()}
     </AppFrame>
