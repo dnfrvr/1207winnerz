@@ -1,11 +1,11 @@
 // Téléphone complet (iOS 6 ou Android 4 selon le perso) : cadre, écran à proportions fixes,
 // couches accueil/app animées, boutons physiques.
 import { Glyph } from "../kit/glyph";
-import { mdiApplication, mdiHome, mdiSwapHorizontal } from "@mdi/js";
+import { mdiApplication, mdiChevronLeft, mdiChevronRight, mdiHelpCircleOutline, mdiHome, mdiSwapHorizontal } from "@mdi/js";
 import { Suspense, useEffect, useRef, useState, type CSSProperties } from "react";
 import { Link, Route, Routes, useLocation, useNavigate, useParams, type Location } from "react-router-dom";
 import { useCanEdit, useValue } from "../data/hooks";
-import { AppTips } from "./AppTips";
+import { AppTips, replayTips } from "./AppTips";
 import { AppFrame, BackButton, NavDirCtx, RingUnlock, SlideToUnlock, StatusBar, useClock, useLoreDate, type NavDir } from "./IOSChrome";
 import { OSCtx, useNow, type OS } from "./common";
 import { APP_META } from "../../../src/shared/app-meta.js";
@@ -53,7 +53,7 @@ export function Phone() {
       {/* Sur ordinateur, le téléphone est posé sur le même bureau que l'accueil (dégradé, reflets, étoiles). */}
       <div className={`stage-root ${fit ? "fullscreen" : "w7-desk"}`}>
         {!fit && <><div className="w7-bloom" aria-hidden /><Sparkles /></>}
-        <PhoneSwitcher pid={pid} compact={!!fit} />
+        <PhoneSwitcher pid={pid} compact={!!fit} canEdit={canEdit} />
         <div className="stage">
           {fit ? (
             <div className="fs-wrap">
@@ -89,18 +89,33 @@ function SwitchAvatar({ pid, current }: { pid: string; current: boolean }) {
   );
 }
 
-/** Ordinateur : barre flottante en haut à gauche. Plein écran : bouton ⇄ en bas à gauche qui ouvre la liste. */
-function PhoneSwitcher({ pid, compact }: { pid: string; compact: boolean }) {
+const SW_KEY = "uma-v2-switcher-folded";
+const readFolded = () => { try { return localStorage.getItem(SW_KEY) === "1"; } catch { return false; } };
+
+/** Ordinateur : barre flottante en haut à gauche, repliable. Plein écran : bouton ⇄ en bas à gauche qui ouvre la liste.
+ *  Dans une app modifiable, bouton « Tuto » pour revoir sa visite guidée. */
+function PhoneSwitcher({ pid, compact, canEdit }: { pid: string; compact: boolean; canEdit: boolean }) {
   const [open, setOpen] = useState(false);
+  const [folded, setFolded] = useState(readFolded);
+  const fold = (f: boolean) => { setFolded(f); try { localStorage.setItem(SW_KEY, f ? "1" : "0"); } catch { /* rien */ } };
   const loc = useLocation();
   useEffect(() => setOpen(false), [loc.pathname]);
+  const app = loc.pathname.split("/")[2];
+  const tips = canEdit && !!app && !!APPS[app];
   const list = (
     <nav className="sw-list" aria-label="Changer de téléphone">
       <Link to="/" className="sw-home" title="Accueil du site"><Glyph i={mdiHome} size={26} /><small>Accueil</small></Link>
       {ALL_PIDS.map((p) => <SwitchAvatar key={p} pid={p} current={p === pid} />)}
+      {tips && <button type="button" className="sw-home sw-tip" title="Revoir la prise en main de cette app" onClick={() => { setOpen(false); replayTips(app); }}>
+        <Glyph i={mdiHelpCircleOutline} size={26} /><small>Tuto</small></button>}
+      {!compact && <button type="button" className="sw-fold" title="Replier" aria-label="Replier la barre" onClick={() => fold(true)}><Glyph i={mdiChevronLeft} size={20} /></button>}
     </nav>
   );
-  if (!compact) return <div className="sw sw-desk">{list}</div>;
+  if (!compact) return (
+    <div className="sw sw-desk">
+      {folded ? <button type="button" className="sw-btn sw-unfold" title="Afficher les téléphones" aria-label="Afficher la barre des téléphones" onClick={() => fold(false)}><Glyph i={mdiChevronRight} size={20} /></button> : list}
+    </div>
+  );
   return (
     <div className={`sw sw-fs ${open ? "open" : ""}`}>
       {open && <div className="sw-pop">{list}</div>}

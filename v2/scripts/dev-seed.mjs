@@ -10,7 +10,12 @@ const ROOT = path.resolve(HERE, "../..");
 const live = path.join(ROOT, "migration/_out/v2-from-live.json");
 const out = path.join(HERE, "../src/dev/seed-v2.json");
 fs.mkdirSync(path.dirname(out), { recursive: true });
-if (fs.existsSync(live)) {
+if (process.env.VITE_FIREBASE_DATABASE_URL) {
+  // Build de déploiement (Netlify) : Firebase configuré → mode démo jamais affiché, et la migration
+  // n'y tourne pas (elle importe le code v1, dont les dépendances sont à la racine). Jeu vide = rien d'embarqué.
+  fs.writeFileSync(out, "{}");
+  console.log("Déploiement : mode démo désactivé (jeu de données vide)");
+} else if (fs.existsSync(live)) {
   fs.copyFileSync(live, out);
   console.log("Démo : vraies données migrées (migration/_out/v2-from-live.json)");
 } else {

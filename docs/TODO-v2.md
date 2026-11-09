@@ -2,7 +2,7 @@
 
 ## En attente (action de l'utilisateur·rice)
 
-- [ ] **Créer les comptes joueurs** (mis de côté le 2026-11-07)
+- [x] **Créer les comptes joueurs** — fait le 2026-11-08 (5 comptes, déjà fusionnés dans `v2-from-live.json`)
   `node v2/scripts/create-players.mjs glinda eoghan drew elias mdj` (connexion par identifiant ;
   `glinda=pseudo` ou `glinda=e-mail` possible)
   → mots de passe temporaires dans `migration/_out/comptes-joueurs.txt` (local, à supprimer après).
@@ -76,6 +76,7 @@
 - [x] Optimisation des images
 - [x] Envoi de vraies photos depuis l'appareil (bouton « Choisir une photo » sur les champs image ; actif dès que les clés Supabase sont là)
 - [ ] Déploiement Netlify de la v2 : créer un 2e site, « Base directory » = `v2` (config prête dans `v2/netlify.toml`), y mettre les variables VITE_FIREBASE_* et VITE_SUPABASE_*
+  (build vérifié le 2026-11-09 sur un clone propre : avec les variables Firebase, le mode démo est vide et la migration ne tourne pas)
 
 ## Liste du 2026-11-08 (en cours — reprendre ici)
 

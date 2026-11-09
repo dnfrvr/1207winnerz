@@ -70,6 +70,10 @@ const KEY = (app: string) => `uma-v2-tour-${app}`;
 const saved = (app: string) => { try { return Number(localStorage.getItem(KEY(app)) ?? 0) || 0; } catch { return Infinity; } };
 const save = (app: string, i: number) => { try { localStorage.setItem(KEY(app), String(i)); } catch { /* rien */ } };
 
+/** Relance la visite d'une app (bouton « Tuto » à côté du téléphone). */
+const REPLAY = "uma-v2-tour-replay";
+export const replayTips = (app: string) => { save(app, 0); window.dispatchEvent(new CustomEvent(REPLAY, { detail: app })); };
+
 type Box = { x: number; y: number; w: number; h: number; W: number; H: number };
 /** Première cible visible dans l'app, en coordonnées de la visite (le téléphone peut être mis à l'échelle). */
 // shortcut: lit les props React posées sur le nœud (clé interne __reactProps$…) ; à revoir si React change ce nom.
@@ -137,6 +141,11 @@ export function AppTips({ pid, app }: { pid: string; app: string }) {
     return () => clearInterval(h);
   }, [step, waits, steps, i]);
   useEffect(() => { if (steps && i > 0) save(app, i); }, [i, steps, app]);
+  useEffect(() => {
+    const on = (e: Event) => { if ((e as CustomEvent).detail === app) setI(0); };
+    window.addEventListener(REPLAY, on);
+    return () => window.removeEventListener(REPLAY, on);
+  }, [app]);
 
   // Étape « @ » sans sa cible à l'écran : rien d'affiché, mais l'élément reste monté pour la guetter.
   if (!step || !steps) return null;
