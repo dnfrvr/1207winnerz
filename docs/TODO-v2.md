@@ -79,8 +79,7 @@
   (site Netlify « alloleswinnerz », base `v2`, 6 variables VITE_*, publication auto à chaque push sur main)
 - [ ] Transmettre les mots de passe temporaires (`migration/_out/comptes-joueurs.txt`) puis supprimer ce fichier
 - [ ] Tester la connexion d'un vrai compte sur le site en ligne
-- [ ] Passer les comptes sur l'adresse de récupération : `node v2/scripts/set-recovery-email.mjs`
-  (glinda → bnl.dana+glinda@gmail.com… ; cliquer les liens de confirmation reçus si Firebase en envoie)
+- [x] Comptes passés sur l'adresse de récupération le 2026-11-09 (glinda → bnl.dana+glinda@gmail.com…)
 - [x] Règles v2 resserrées et publiées le 2026-11-09 : chacun ne modifie que ses messages / publications,
   date de lore et données partagées réservées au MDJ (testé dans le simulateur de la console)
 
