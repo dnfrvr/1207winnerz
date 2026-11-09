@@ -5,7 +5,7 @@ import { useContext, useRef, useState, type ReactNode } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useData, useValue } from "../data/hooks";
 import { img } from "../lib/img";
-import { ANDROID_APP_COLORS, ANDROID_LIGHT_BARS, NavDirCtx, useClock, useOS } from "./common";
+import { ANDROID_APP_COLORS, ANDROID_ICON_DEFAULTS, ANDROID_LIGHT_BARS, NavDirCtx, useClock, useOS } from "./common";
 
 export { LORE_DATE_DEFAULT, NavDirCtx, useClock, useLoreDate, type NavDir } from "./common";
 
@@ -81,7 +81,7 @@ export function AppFrame({ title, left, right, children, navStyle, bodyClass = "
 /** Icône de l'app dans la barre d'action Android (comme dans les apps Jelly Bean). */
 function AppGlyph({ app }: { app: string }) {
   const icons = useValue<Record<string, string>>("shared/androidIcons");
-  const src = icons?.[app];
+  const src = icons?.[app] ?? ANDROID_ICON_DEFAULTS[app];
   return src ? <span className="ab-icon"><img src={img(src)} alt="" draggable={false} /></span> : <span className="ab-icon-pad" />;
 }
 

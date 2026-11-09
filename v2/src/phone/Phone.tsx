@@ -7,7 +7,7 @@ import { Link, Route, Routes, useLocation, useNavigate, useParams, type Location
 import { useCanEdit, useValue } from "../data/hooks";
 import { AppTips, replayTips } from "./AppTips";
 import { AppFrame, BackButton, NavDirCtx, RingUnlock, SlideToUnlock, StatusBar, useClock, useLoreDate, type NavDir } from "./IOSChrome";
-import { OSCtx, useNow, type OS } from "./common";
+import { ANDROID_ICON_DEFAULTS, OSCtx, useNow, type OS } from "./common";
 import { APP_META } from "../../../src/shared/app-meta.js";
 import { APPS, preloadApps } from "../apps/registry";
 import { img } from "../lib/img";
@@ -337,11 +337,18 @@ function AppIcon({ pid, id, src, label, badge }: { pid: string; id: string; src?
 const PER_PAGE = { ios: 20, android: 20 };
 // Fichiers sur iOS : icône iCloud alu, la même sur les quatre iPhone.
 const IOS_FILES_ICON = "/assets/icons/files-ios.png";
+// Icônes iOS de repli quand le profil n'en définit pas (Passbook ajouté à Elias par le code).
+const IOS_ICON_DEFAULTS: Record<string, string> = { passbook: "/assets/seed/86c9eafcd0c35d63f68d13737a04ac4c.jpg" };
+
+// Apps ajoutées par le code (pas d'éditeur d'écran d'accueil) : Passbook / Wallet pour la carte étudiante.
+const EXTRA_APPS: Record<string, string[]> = { elias: ["passbook"], drew: ["passbook"] };
 
 function useHomeApps(pid: string) {
   const home = useValue<Home>(`phones/${pid}/home`) ?? {};
   const dock = home.dock ?? [];
-  const apps = (home.apps ?? []).filter((a) => !dock.includes(a));
+  const listed = home.apps ?? [];
+  const extra = (EXTRA_APPS[pid] ?? []).filter((a) => !listed.includes(a) && !dock.includes(a));
+  const apps = [...listed, ...extra].filter((a) => !dock.includes(a));
   return { dock, apps };
 }
 
@@ -362,7 +369,7 @@ function Springboard({ pid, profile }: { pid: string; profile: Profile }) {
   const { dock, apps } = useHomeApps(pid);
   useEffect(preloadApps, []);
   const icon = (id: string) => (
-    <AppIcon key={id} pid={pid} id={id} src={id === "files" ? IOS_FILES_ICON : profile.appIcons?.[id]} badge={profile.badges?.[id]}
+    <AppIcon key={id} pid={pid} id={id} src={id === "files" ? IOS_FILES_ICON : profile.appIcons?.[id] ?? IOS_ICON_DEFAULTS[id]} badge={profile.badges?.[id]}
       label={profile.appNames?.[id] || META[id]?.label || id} />
   );
   return (
@@ -413,7 +420,7 @@ function AndroidHome({ pid, profile }: { pid: string; profile: Profile }) {
   const icons = useValue<Record<string, string>>("shared/androidIcons") ?? {};
   useEffect(preloadApps, []);
   const icon = (id: string) => (
-    <AppIcon key={id} pid={pid} id={id} src={icons[id]} badge={profile.badges?.[id]}
+    <AppIcon key={id} pid={pid} id={id} src={icons[id] ?? ANDROID_ICON_DEFAULTS[id]} badge={profile.badges?.[id]}
       label={profile.appNames?.[id] || META[id]?.droidLabel || META[id]?.label || id} />
   );
   return (

@@ -88,6 +88,8 @@
 .pb-pass.open .pb-code { display: flex; }
 /* Carte étudiante : l'image est la carte (coins arrondis et ombre déjà dans le PNG) */
 .pb-card { min-height: 0; padding: 0; background: none; box-shadow: none; }
+.pb-wallet { background: #e9e9e9; }
+.pb-wallet .pb-pass:not(.pb-card) { box-shadow: 0 1px 3px rgba(0,0,0,.35); }
 .pb-card img { display: block; width: 100%; height: auto; filter: drop-shadow(0 -2px 4px rgba(0,0,0,.4)); }
 
 /* Rappels iOS 6 : papier ligné */

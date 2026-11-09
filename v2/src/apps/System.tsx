@@ -126,33 +126,46 @@ export function PassbookApp({ pid }: { pid: string }) {
   const ed = useEditor(pid);
   const { rows, long, seed } = useSeeded(path, DEFAULT_PASSES, ed);
   const [open, setOpen] = useState<string | null>(null);
+  const os = useOS();
   const fields = ["title", "subtitle", "detail", "color", "logo"];
   const card = ID_CARDS[pid];
   const all: [string, Pass][] = card ? [["uma-id", {}], ...rows] : rows;
+  const add = () => { seed(); ed.add(path, { title: "", subtitle: "", detail: "", color: "#555", logo: "" }, { title: "Pass", fields }); };
+  const stack = (
+    <div className="pb-stack">
+      {all.map(([id, p], i) => {
+        // La carte qui suit une carte ouverte se décale sous elle, sinon elle cache son code-barres.
+        const style = { zIndex: i, marginTop: i === 0 ? 0 : all[i - 1][0] === open ? 10 : -86 };
+        const toggle = () => setOpen(open === id ? null : id);
+        if (id === "uma-id") return (
+          <Press as="button" key={id} className="pb-pass pb-card" style={style} onClick={toggle}><img src={img(card)} alt="UMA Student ID" draggable={false} /></Press>
+        );
+        return (
+          <Press as="button" key={id} className={`pb-pass ${open === id ? "open" : ""}`} style={{ ...style, background: `linear-gradient(${p.color ?? "#555"}, color-mix(in srgb, ${p.color ?? "#555"} 70%, #000))` }}
+            onClick={toggle}
+            onLong={long(id, fields, p.title)}>
+            <span className="pb-head"><span className="pb-logo">{p.logo ? (/^(data:|https?:|\/)/.test(p.logo) ? <img src={img(p.logo)} alt="" /> : p.logo) : <Glyph i={mdiWallet} size={22} />}</span><b>{p.title}</b></span>
+            <span className="pb-body"><small>{p.subtitle}</small><b>{p.detail}</b></span>
+            <span className="pb-code" aria-hidden>{Array.from({ length: 30 }, (_, k) => <i key={k} style={{ width: (k * 5) % 3 + 1 }} />)}</span>
+          </Press>
+        );
+      })}
+    </div>
+  );
+  // Android : l'équivalent de 2012 est Google Wallet (cartes en liste sous une barre d'action Holo).
+  if (os === "android") return (
+    <AppFrame title="Wallet" left={<BackButton to={`/${pid}/home`} label="Accueil" />}
+      right={<AddButton show={ed.canEdit} onClick={add} />} bodyClass="pb pb-wallet">
+      {stack}
+      {ed.ui}
+    </AppFrame>
+  );
   return (
     <div className="app pb">
       <StatusBar />
       <div className="pb-top"><BarBack onClick={() => nav(`/${pid}/home`)} label="Accueil" /><span>Passbook</span>
-        {ed.canEdit ? <button onClick={() => { seed(); ed.add(path, { title: "", subtitle: "", detail: "", color: "#555", logo: "" }, { title: "Pass", fields }); }}>+</button> : <span />}</div>
-      <div className="pb-stack">
-        {all.map(([id, p], i) => {
-          // La carte qui suit une carte ouverte se décale sous elle, sinon elle cache son code-barres.
-          const style = { zIndex: i, marginTop: i === 0 ? 0 : all[i - 1][0] === open ? 10 : -86 };
-          const toggle = () => setOpen(open === id ? null : id);
-          if (id === "uma-id") return (
-            <Press as="button" key={id} className="pb-pass pb-card" style={style} onClick={toggle}><img src={img(card)} alt="UMA Student ID" draggable={false} /></Press>
-          );
-          return (
-            <Press as="button" key={id} className={`pb-pass ${open === id ? "open" : ""}`} style={{ ...style, background: `linear-gradient(${p.color ?? "#555"}, color-mix(in srgb, ${p.color ?? "#555"} 70%, #000))` }}
-              onClick={toggle}
-              onLong={long(id, fields, p.title)}>
-              <span className="pb-head"><span className="pb-logo">{p.logo ? (/^(data:|https?:|\/)/.test(p.logo) ? <img src={img(p.logo)} alt="" /> : p.logo) : <Glyph i={mdiWallet} size={22} />}</span><b>{p.title}</b></span>
-              <span className="pb-body"><small>{p.subtitle}</small><b>{p.detail}</b></span>
-              <span className="pb-code" aria-hidden>{Array.from({ length: 30 }, (_, k) => <i key={k} style={{ width: (k * 5) % 3 + 1 }} />)}</span>
-            </Press>
-          );
-        })}
-      </div>
+        {ed.canEdit ? <button onClick={add}>+</button> : <span />}</div>
+      {stack}
       {ed.ui}
     </div>
   );
