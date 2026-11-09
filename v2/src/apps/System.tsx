@@ -1,7 +1,7 @@
 // Apps système et utilitaires : Appareil photo (obturateur à iris d'iOS 6), Boussole, FaceTime,
 // Passbook, Rappels, Messenger.
 import { Glyph } from "../kit/glyph";
-import { mdiCamera, mdiCameraFlip, mdiCheck, mdiClose, mdiFlashAuto, mdiMicrophoneOff, mdiPlus, mdiSquareEditOutline, mdiVideo, mdiWallet, mdiDumbbell, mdiBookOpenPageVariant, mdiMicroscope, mdiChessKnight } from "@mdi/js";
+import { mdiCamera, mdiCameraFlip, mdiCheck, mdiClose, mdiFlashAuto, mdiMicrophoneOff, mdiPlus, mdiSquareEditOutline, mdiVideo, mdiWallet, mdiDumbbell, mdiBookOpenPageVariant, mdiMicroscope, mdiChessKnight, mdiSilverwareForkKnife } from "@mdi/js";
 import { useEffect, useState } from "react";
 import { Route, Routes, useNavigate, useParams } from "react-router-dom";
 import { useList, useValue } from "../data/hooks";
@@ -128,7 +128,10 @@ const LOYALTY_CARDS: Record<string, Pass[]> = {
     { title: "UMA Biology Club", subtitle: "Member · Fall 2012", detail: "Field trips: 4", color: "#2e7d32", glyph: mdiMicroscope },
     { title: "Augusta Chess Club", subtitle: "Rating", detail: "1812", color: "#263238", glyph: mdiChessKnight },
   ],
-  glinda: [{ title: "Augusta Chess Club", subtitle: "Member since", detail: "Sep 2012", color: "#263238", glyph: mdiChessKnight }],
+  glinda: [
+    { title: "Augusta Chess Club", subtitle: "Member since", detail: "Sep 2012", color: "#263238", glyph: mdiChessKnight },
+    { title: "Buckbury's Diner", subtitle: "Chicago, IL · Rewards", detail: "Punches: 7/10", color: "#00838f", glyph: mdiSilverwareForkKnife },
+  ],
 };
 // Drew et Elias n'ont pas de carte Starbucks.
 const NO_STARBUCKS = new Set(["drew", "elias"]);
