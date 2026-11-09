@@ -1,7 +1,7 @@
 // Apps système et utilitaires : Appareil photo (obturateur à iris d'iOS 6), Boussole, FaceTime,
 // Passbook, Rappels, Messenger.
 import { Glyph } from "../kit/glyph";
-import { mdiCamera, mdiCameraFlip, mdiCheck, mdiClose, mdiFlashAuto, mdiMicrophoneOff, mdiPlus, mdiSquareEditOutline, mdiVideo, mdiWallet } from "@mdi/js";
+import { mdiCamera, mdiCameraFlip, mdiCheck, mdiClose, mdiFlashAuto, mdiMicrophoneOff, mdiPlus, mdiSquareEditOutline, mdiVideo, mdiWallet, mdiDumbbell, mdiBookOpenPageVariant, mdiMicroscope, mdiChessKnight } from "@mdi/js";
 import { useEffect, useState } from "react";
 import { Route, Routes, useNavigate, useParams } from "react-router-dom";
 import { useList, useValue } from "../data/hooks";
@@ -110,7 +110,7 @@ export function FaceTimeApp({ pid }: { pid: string }) {
 }
 
 // ── Passbook ─────────────────────────────────────────────────────────────────
-type Pass = { title?: string; subtitle?: string; detail?: string; color?: string; logo?: string; order?: number; deleted?: boolean };
+type Pass = { glyph?: string; title?: string; subtitle?: string; detail?: string; color?: string; logo?: string; order?: number; deleted?: boolean };
 const DEFAULT_PASSES: Pass[] = [
   { title: "Starbucks Card", subtitle: "Balance", detail: "$14.30", color: "#00704a", logo: "" },
   { title: "AMC Theatres", subtitle: "Breaking Dawn – Part 2", detail: "Nov 16 · 10:00 PM", color: "#b71c1c", logo: "" },
@@ -122,13 +122,13 @@ const ID_CARDS: Record<string, string> = {
 };
 // Cartes de fidélité propres à chaque personnage, sous la carte étudiante (non modifiables).
 const LOYALTY_CARDS: Record<string, Pass[]> = {
-  eoghan: [{ title: "Kennebec Fitness", subtitle: "Member · Unlimited", detail: "Check-ins: 37", color: "#e65100", logo: "🏋️" }],
-  elias: [{ title: "Derry Public Library", subtitle: "Library Card", detail: "3 books out", color: "#4e342e", logo: "📚" }],
+  eoghan: [{ title: "Kennebec Fitness", subtitle: "Member · Unlimited", detail: "Check-ins: 37", color: "#e65100", glyph: mdiDumbbell }],
+  elias: [{ title: "Lithgow Public Library", subtitle: "Augusta, ME · Library Card", detail: "3 books out", color: "#4e342e", glyph: mdiBookOpenPageVariant }],
   drew: [
-    { title: "UMA Biology Club", subtitle: "Member · Fall 2012", detail: "Field trips: 4", color: "#2e7d32", logo: "🔬" },
-    { title: "Augusta Chess Club", subtitle: "Rating", detail: "1812", color: "#263238", logo: "♟️" },
+    { title: "UMA Biology Club", subtitle: "Member · Fall 2012", detail: "Field trips: 4", color: "#2e7d32", glyph: mdiMicroscope },
+    { title: "Augusta Chess Club", subtitle: "Rating", detail: "1812", color: "#263238", glyph: mdiChessKnight },
   ],
-  glinda: [{ title: "Augusta Chess Club", subtitle: "Member since", detail: "Sep 2012", color: "#263238", logo: "♟️" }],
+  glinda: [{ title: "Augusta Chess Club", subtitle: "Member since", detail: "Sep 2012", color: "#263238", glyph: mdiChessKnight }],
 };
 // Drew et Elias n'ont pas de carte Starbucks.
 const NO_STARBUCKS = new Set(["drew", "elias"]);
@@ -160,7 +160,7 @@ export function PassbookApp({ pid }: { pid: string }) {
           <Press as="button" key={id} className={`pb-pass ${open === id ? "open" : ""}`} style={{ ...style, background: `linear-gradient(${p.color ?? "#555"}, color-mix(in srgb, ${p.color ?? "#555"} 70%, #000))` }}
             onClick={toggle}
             onLong={id.startsWith("loyalty-") ? undefined : long(id, fields, p.title)}>
-            <span className="pb-head"><span className="pb-logo">{p.logo ? (/^(data:|https?:|\/)/.test(p.logo) ? <img src={img(p.logo)} alt="" /> : p.logo) : <Glyph i={mdiWallet} size={22} />}</span><b>{p.title}</b></span>
+            <span className="pb-head"><span className="pb-logo">{p.glyph ? <Glyph i={p.glyph} size={22} /> : p.logo ? (/^(data:|https?:|\/)/.test(p.logo) ? <img src={img(p.logo)} alt="" /> : p.logo) : <Glyph i={mdiWallet} size={22} />}</span><b>{p.title}</b></span>
             <span className="pb-body"><small>{p.subtitle}</small><b>{p.detail}</b></span>
             <span className="pb-code" aria-hidden>{Array.from({ length: 30 }, (_, k) => <i key={k} style={{ width: (k * 5) % 3 + 1 }} />)}</span>
           </Press>
