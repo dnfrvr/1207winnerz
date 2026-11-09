@@ -9,6 +9,7 @@ import { img } from "../lib/img";
 import { AppFrame, BackButton, BarBack, StatusBar } from "../phone/IOSChrome";
 import { Press } from "./social";
 import { useOS } from "../phone/common";
+import { balloons } from "../phone/balloons";
 import { AddButton, Avatar, Empty, useEditor, useSeeded } from "../kit/kit";
 import { Icon } from "../kit/icons";
 import "./system.css";
@@ -96,7 +97,7 @@ export function FaceTimeApp({ pid }: { pid: string }) {
         <div className="ft-call">
           <div className="ft-remote"><Avatar name={calling} size={110} round={false} /><b>{calling}</b><span>{t < 4 ? "FaceTime…" : "Connecting…"}</span></div>
           <div className="ft-pip" />
-          <div className="ft-bar"><button aria-label="Muet"><Glyph i={mdiMicrophoneOff} size={20} /></button><button className="end" onClick={() => setCalling(null)}>End</button><button aria-label="Changer de caméra"><Glyph i={mdiCameraFlip} size={20} /></button></div>
+          <div className="ft-bar"><button aria-label="Muet" onClick={(e) => balloons(e.currentTarget)}><Glyph i={mdiMicrophoneOff} size={20} /></button><button className="end" onClick={() => setCalling(null)}>End</button><button aria-label="Changer de caméra" onClick={(e) => balloons(e.currentTarget)}><Glyph i={mdiCameraFlip} size={20} /></button></div>
         </div>
       ) : (
         <div className="ft-list">

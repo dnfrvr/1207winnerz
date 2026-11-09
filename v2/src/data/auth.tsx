@@ -32,12 +32,24 @@ export function useFirebaseSession(config: Record<string, string>) {
 export const logout = (config: Record<string, string>) => signOut(getAuth(firebaseApp(config)));
 
 /**
- * Connexion par identifiant : sans « @ », l'identifiant devient une adresse fictive sur le
- * domaine réservé .invalid (jamais livrable). Même règle dans scripts/create-players.mjs.
+ * Connexion par identifiant : sans « @ », l'identifiant devient l'adresse de récupération du jeu
+ * avec un « +identifiant » (VITE_RECOVERY_EMAIL = a@b → a+glinda@b : tout arrive dans une seule boîte,
+ * qui reçoit les liens « mot de passe oublié »). Sans cette variable, ou pour les anciens comptes,
+ * adresse fictive sur le domaine réservé .invalid. Même règle dans scripts/create-players.mjs.
  */
 export const LOGIN_DOMAIN = "joueurs.invalid";
-export const loginToEmail = (login: string) => { const l = login.trim().toLowerCase(); return l.includes("@") ? l : `${l}@${LOGIN_DOMAIN}`; };
-export const emailToLogin = (email?: string | null) => (email ?? "").replace(`@${LOGIN_DOMAIN}`, "");
+const RECOVERY = (import.meta.env.VITE_RECOVERY_EMAIL as string | undefined)?.trim().toLowerCase();
+const [RUSER, RDOMAIN] = RECOVERY?.split("@") ?? [];
+const legacyEmail = (login: string) => `${login.trim().toLowerCase()}@${LOGIN_DOMAIN}`;
+export const loginToEmail = (login: string) => {
+  const l = login.trim().toLowerCase();
+  return l.includes("@") ? l : RDOMAIN ? `${RUSER}+${l}@${RDOMAIN}` : legacyEmail(l);
+};
+export const emailToLogin = (email?: string | null) => {
+  const e = (email ?? "").toLowerCase();
+  const pre = `${RUSER}+`, post = `@${RDOMAIN}`;
+  return RDOMAIN && e.startsWith(pre) && e.endsWith(post) ? e.slice(pre.length, -post.length) : e.replace(`@${LOGIN_DOMAIN}`, "");
+};
 
 /** Changement du mot de passe une fois connecté (les comptes à identifiant n'ont pas d'e-mail de réinitialisation). */
 export async function changePassword(config: Record<string, string>, next: string): Promise<string> {
@@ -60,13 +72,21 @@ export function LoginScreen({ config }: { config: Record<string, string> }) {
     e.preventDefault();
     setBusy(true); setError(null); setInfo(null);
     try { await signInWithEmailAndPassword(auth, loginToEmail(email), password); }
-    catch { setError("Identifiant ou mot de passe incorrect."); }
+    catch {
+      // Compte pas encore passé sur l'adresse de récupération : ancienne adresse fictive.
+      const old = !email.includes("@") && legacyEmail(email);
+      try { if (!old || old === loginToEmail(email)) throw 0; await signInWithEmailAndPassword(auth, old, password); }
+      catch { setError("Identifiant ou mot de passe incorrect."); }
+    }
     finally { setBusy(false); }
   };
   const reset = async () => {
     if (!email.trim()) { setError("Entre ton identifiant d'abord."); return; }
-    if (!email.includes("@")) { setInfo("Compte à identifiant : demande un nouveau mot de passe à la personne qui gère le jeu."); return; }
-    try { await sendPasswordResetEmail(auth, email.trim()); setInfo("E-mail de réinitialisation envoyé."); }
+    if (!email.includes("@") && !RDOMAIN) { setInfo("Compte à identifiant : demande un nouveau mot de passe à la personne qui gère le jeu."); return; }
+    try {
+      await sendPasswordResetEmail(auth, loginToEmail(email));
+      setInfo(email.includes("@") ? "E-mail de réinitialisation envoyé." : "Lien de réinitialisation envoyé à la personne qui gère le jeu : demande-lui ton nouveau mot de passe.");
+    }
     catch { setError("Impossible d'envoyer l'e-mail."); }
   };
 

@@ -20,6 +20,8 @@
 .ph-keys b { font: bold 30px/1 var(--ios-font); }
 .ph-keys small { font: bold 10px var(--ios-font); color: #555; letter-spacing: 1px; min-height: 12px; }
 .ph-keyrow { flex: 0 0 56px; display: grid; grid-template-columns: 1fr 2fr 1fr; gap: 1px; background: #3d3d3d; }
+/* Safari iOS n'étire pas toujours un <button> dans sa rangée de grille : hauteur imposée, sinon le fond gris apparaît dessous. */
+.ph-keys button, .ph-keyrow button { height: 100%; min-height: 0; padding: 0; -webkit-appearance: none; appearance: none; border-radius: 0; }
 .ph-keyrow button { display: flex; align-items: center; justify-content: center; gap: 8px; background: linear-gradient(#5a5f66, #33373c); color: #fff; font: bold 18px var(--ios-font); }
 .ph-keyrow button svg { filter: drop-shadow(0 -1px 0 rgba(0,0,0,.5)); }
 .ph-keyrow .ph-callbtn { background: linear-gradient(#7bd56d, #39a62b 50%, #2b9420 51%, #45ad35); text-shadow: 0 -1px 0 rgba(0,0,0,.4); font-size: 24px; }

@@ -30,8 +30,10 @@ const env = Object.fromEntries(
 const API_KEY = env.VITE_FIREBASE_API_KEY;
 if (!API_KEY) { console.error("VITE_FIREBASE_API_KEY introuvable dans v2/.env.local"); process.exit(1); }
 
+// Même règle que loginToEmail (src/data/auth.tsx) : identifiant → adresse de récupération +identifiant.
 const LOGIN_DOMAIN = "joueurs.invalid";
-const toEmail = (login) => { const l = login.trim().toLowerCase(); return l.includes("@") ? l : `${l}@${LOGIN_DOMAIN}`; };
+const [RUSER, RDOMAIN] = (env.VITE_RECOVERY_EMAIL ?? "").trim().toLowerCase().split("@");
+const toEmail = (login) => { const l = login.trim().toLowerCase(); return l.includes("@") ? l : RDOMAIN ? `${RUSER}+${l}@${RDOMAIN}` : `${l}@${LOGIN_DOMAIN}`; };
 const args = process.argv.slice(2).map((a) => { const [p, login = p] = a.split("="); return [p, toEmail(login)]; });
 const bad = args.find(([p, e]) => !PHONES.includes(p) || !/^[a-z0-9._-]+@[^@\s]+\.[^@\s]+$/.test(e));
 if (!args.length || bad) {

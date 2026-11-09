@@ -12,6 +12,7 @@ import {
   mdiAccountBox, mdiAccountPlus, mdiBackspace, mdiCallMade, mdiCallMissed, mdiCallReceived, mdiDialpad, mdiMicrophoneOff, mdiPencil, mdiPhone,
   mdiPhoneHangup, mdiPhoneOutgoing, mdiPlus, mdiVideo, mdiVolumeHigh,
 } from "@mdi/js";
+import { balloons } from "../phone/balloons";
 import "./phone.css";
 
 type Call = { contact?: string; type?: "missed" | "incoming" | "outgoing"; time?: string; duration?: string; order?: number; deleted?: boolean };
@@ -30,7 +31,7 @@ function CallScreen({ name, onEnd }: { name: string; onEnd: () => void }) {
       <div className="ph-call-top"><b>{name}</b><span>{status}</span></div>
       <div className="ph-call-mid">
         {os === "ios" ? (
-          <div className="ph-call-grid">{([["mute", mdiMicrophoneOff], ["keypad", mdiDialpad], ["speaker", mdiVolumeHigh], ["add call", mdiPlus], ["FaceTime", mdiVideo], ["contacts", mdiAccountBox]] as const).map(([l, g]) => <button key={l}><Glyph i={g} size={34} />{l}</button>)}</div>
+          <div className="ph-call-grid">{([["mute", mdiMicrophoneOff], ["keypad", mdiDialpad], ["speaker", mdiVolumeHigh], ["add call", mdiPlus], ["FaceTime", mdiVideo], ["contacts", mdiAccountBox]] as const).map(([l, g]) => <button key={l} onClick={(e) => balloons(e.currentTarget)}><Glyph i={g} size={34} />{l}</button>)}</div>
         ) : <Avatar name={name} size={140} round={false} />}
       </div>
       <button className="ph-end" onClick={onEnd}><Glyph i={mdiPhoneHangup} size={os === "ios" ? 30 : 32} />{os === "ios" ? "End" : ""}</button>
@@ -161,7 +162,7 @@ function Keypad({ onCall }: { onCall: (n: string) => void }) {
       </div>
       <div className="ph-keyrow">
         <button className="ph-addc" aria-label="Ajouter un contact"><Glyph i={mdiAccountPlus} size={26} /></button>
-        <button className="ph-callbtn" onClick={() => num && onCall(num)}><Glyph i={mdiPhone} size={26} />{os === "ios" && <span>Call</span>}</button>
+        <button className="ph-callbtn" onClick={(e) => { balloons(e.currentTarget); if (num) onCall(num); }}><Glyph i={mdiPhone} size={26} />{os === "ios" && <span>Call</span>}</button>
         <button className="ph-del" onClick={() => setNum((n) => n.slice(0, -1))} aria-label="Effacer"><Glyph i={mdiBackspace} size={26} /></button>
       </div>
     </div>

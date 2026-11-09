@@ -121,7 +121,7 @@ export function Lobby({ me, account, admin }: { me: string | null; account: Reac
         <div className="w7-me">
           <span className="dp big" style={{ ["--st" as string]: "#4ad94a" }}>{avatarOf(mine) ? <img src={img(avatarOf(mine)!)} alt="" /> : <span>{admin ? "MDJ" : "?"}</span>}</span>
           <span className="who">
-            <b>{mine?.name ?? (admin ? "Maître·sse du jeu" : "Invité·e")} <i className="st">(En ligne)</i></b>
+            <b>{mine?.name ?? (admin ? "Maître du jeu" : "Invité·e")} <i className="st">(En ligne)</i></b>
           </span>
         </div>
         <div className="w7-account">{account}</div>

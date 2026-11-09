@@ -43,6 +43,12 @@ textarea, input { font: inherit; color: inherit; }
 .screen { position: relative; width: 320px; height: 568px; overflow: clip; background: #000; /* clip : le focus d'un champ ne fait plus défiler l'écran */ box-shadow: 0 0 0 2px #000; }
 /* Pas de barres de défilement d'ordinateur dans le téléphone (iOS/Android 2012 : indicateurs fugaces). */
 .screen, .screen * { scrollbar-width: none; }
+/* Easter egg (phone/balloons.ts) : montée linéaire (pas de pause) + balancement gauche-droite. */
+.balloons { position: absolute; inset: 0; z-index: 90; pointer-events: none; overflow: hidden; }
+.balloons span { position: absolute; bottom: -60px; line-height: 1; animation: bRise linear both; will-change: transform, opacity; }
+.balloons i { display: inline-block; font-style: normal; animation: bWobble ease-in-out infinite; }
+@keyframes bRise { from { transform: translateY(0); opacity: 1; } to { transform: translateY(-720px); opacity: 0; } }
+@keyframes bWobble { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(var(--w)); } 75% { transform: translateX(calc(var(--w) * -1)); } }
 .screen ::-webkit-scrollbar { display: none; }
 
 /* Plein écran (mobile) : MÊMES proportions que le téléphone sur ordinateur (320×568, iPhone 5).

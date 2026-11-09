@@ -4,8 +4,7 @@
     ".write": false,
 
     "meta": {
-      ".write": "root.child('users/' + auth.uid + '/role').val() === 'mdj'",
-      "loreDate": { ".write": "auth != null && root.child('users/' + auth.uid).exists()" }
+      ".write": "root.child('users/' + auth.uid + '/role').val() === 'mdj'"
     },
 
     "users": {
@@ -21,7 +20,7 @@
 
     "threads": {
       "$tid": {
-        ".write": "root.child('users/' + auth.uid + '/role').val() === 'mdj' || (data.exists() ? data.child('members/' + root.child('users/' + auth.uid + '/phone').val()).val() === true : newData.child('members/' + root.child('users/' + auth.uid + '/phone').val()).val() === true)",
+        ".write": "root.child('users/' + auth.uid + '/role').val() === 'mdj' || (data.exists() ? (data.child('kind').val() === 'local' && data.child('members/' + root.child('users/' + auth.uid + '/phone').val()).val() === true) : newData.child('members/' + root.child('users/' + auth.uid + '/phone').val()).val() === true)",
         ".validate": "newData.exists() || root.child('users/' + auth.uid + '/role').val() === 'mdj'"
       }
     },
@@ -29,7 +28,7 @@
     "threadMessages": {
       "$tid": {
         "$mid": {
-          ".write": "root.child('users/' + auth.uid + '/role').val() === 'mdj' || root.child('threads/' + $tid + '/members/' + root.child('users/' + auth.uid + '/phone').val()).val() === true",
+          ".write": "root.child('users/' + auth.uid + '/role').val() === 'mdj' || (root.child('threads/' + $tid + '/members/' + root.child('users/' + auth.uid + '/phone').val()).val() === true && (root.child('threads/' + $tid + '/kind').val() === 'local' || (newData.child('from').val() === root.child('users/' + auth.uid + '/phone').val() && (!data.exists() || data.child('from').val() === root.child('users/' + auth.uid + '/phone').val()))))",
           ".validate": "newData.exists() || root.child('users/' + auth.uid + '/role').val() === 'mdj'"
         }
       }
@@ -38,14 +37,19 @@
     "feeds": {
       "$feed": {
         "$id": {
-          ".write": "root.child('users/' + auth.uid + '/role').val() === 'mdj' || (!data.exists() && root.child('users/' + auth.uid).exists()) || data.child('author').val() === root.child('users/' + auth.uid + '/phone').val()",
+          ".write": "root.child('users/' + auth.uid + '/role').val() === 'mdj' || (newData.child('author').val() === root.child('users/' + auth.uid + '/phone').val() && (!data.exists() || data.child('author').val() === root.child('users/' + auth.uid + '/phone').val()))",
           ".validate": "newData.exists() || root.child('users/' + auth.uid + '/role').val() === 'mdj'"
         }
       }
     },
 
     "shared": {
-      "$name": { ".write": "auth != null && root.child('users/' + auth.uid).exists()" }
+      "$name": { ".write": "root.child('users/' + auth.uid + '/role').val() === 'mdj'" },
+      "twitterUsers": {
+        "$key": {
+          ".write": "root.child('users/' + auth.uid + '/role').val() === 'mdj' || (data.child('char').val() === root.child('users/' + auth.uid + '/phone').val() && newData.child('char').val() === root.child('users/' + auth.uid + '/phone').val())"
+        }
+      }
     },
 
     "history": {
