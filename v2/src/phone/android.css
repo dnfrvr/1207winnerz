@@ -123,11 +123,12 @@
 .sw-av.on { background: rgba(255,255,255,.22); }
 .sw-av.on img, .sw-av.on > span { box-shadow: 0 0 0 2px #4ad94a; }
 .sw-fs { left: 10px; bottom: 8px; }
+.sw-fs .sw-list { flex-wrap: wrap; width: max-content; max-width: calc(100vw - 20px); }
 .sw-tip { border-left: 1px solid rgba(255,255,255,.25); border-radius: 0 7px 7px 0; cursor: pointer; }
 .sw-tip:hover { background: rgba(255,255,255,.15); }
 .sw-fold { align-self: stretch; width: 22px; display: grid; place-items: center; color: #fff; opacity: .7; border-radius: 6px; cursor: pointer; }
 .sw-fold:hover { opacity: 1; background: rgba(255,255,255,.15); }
-.sw-unfold { display: grid; place-items: center; background: rgba(20, 40, 70, .55); }
-.sw-btn { width: 36px; height: 36px; border-radius: 50%; color: #ddd; font-size: 17px; background: rgba(255,255,255,.1); box-shadow: inset 0 0 0 1px rgba(255,255,255,.2); }
+.sw-unfold { background: rgba(20, 40, 70, .55); }
+.sw-btn { width: 36px; height: 36px; padding: 0; display: grid; place-items: center; border-radius: 50%; color: #ddd; font-size: 17px; background: rgba(255,255,255,.1); box-shadow: inset 0 0 0 1px rgba(255,255,255,.2); }
 .sw-fs.open .sw-btn { background: rgba(255,255,255,.25); }
 .sw-pop { position: absolute; left: 0; bottom: 44px; animation: fade .15s; }
