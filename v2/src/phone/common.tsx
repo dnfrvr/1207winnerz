@@ -40,7 +40,11 @@ export const ANDROID_APP_COLORS: Record<string, string> = {
   settings: "#222", phone: "#222", contacts: "#222", camera: "#212121", gallery: "#222",
   weather: "#222", music: "#222", clock: "#222", vpn: "#455a64", wikipedia: "#000000",
   kindle: "#232f3e", inaturalist: "#74ac00", grindr: "#f7931e", files: "#455a64",
+  passbook: "#f2f2f2",
 };
 
+/** Icônes Android fournies par le code, quand la base n'en définit pas (shared/androidIcons). */
+export const ANDROID_ICON_DEFAULTS: Record<string, string> = { passbook: "/assets/icons/wallet-android.png" };
+
 /** Apps dont la barre d'action est claire (Holo Light : Gmail, Google Maps) → texte et icônes sombres. */
-export const ANDROID_LIGHT_BARS = new Set(["gmail", "maps"]);
+export const ANDROID_LIGHT_BARS = new Set(["gmail", "maps", "passbook"]);

@@ -38,7 +38,7 @@ export const APP_META = {
   facetime: {label:"FaceTime",       iosIcon:"📹"},
   camera: {label:"Camera",  iosIcon:"📷", droidLabel:"Camera"},
   compass: {label:"Compass",        iosIcon:"🧭"},
-  passbook: {label:"Passbook",        iosIcon:"🎫"},
+  passbook: {label:"Passbook",        iosIcon:"🎫", droidLabel:"Wallet"},
   reminders: {label:"Reminders",         iosIcon:"✅"},
   messenger: {label:"Messenger",       iosIcon:"💬", droidLabel:"Messenger"},
   candycrush: {label:"Candy Crush",     iosIcon:"🍬", droidLabel:"Candy Crush"},
