@@ -91,7 +91,7 @@ export default function CalendarApp({ pid }: { pid: string }) {
         <div className="cal-list full">
           <div className="cal-dayhead">
             <button onClick={() => { const d = new Date(sel.y, sel.m - 1, sel.d - 1); setSel({ y: d.getFullYear(), m: d.getMonth() + 1, d: d.getDate() }); }} aria-label="Jour précédent"><Glyph i={android ? mdiChevronLeft : mdiMenuLeft} size={android ? 24 : 34} /></button>
-            <b>{selDate.toLocaleDateString(android ? "fr-FR" : "en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" })}</b>
+            <b>{selDate.toLocaleDateString(android ? "fr-FR" : "en-GB", { weekday: "long", month: "long", day: "numeric", year: "numeric" })}</b>
             <button onClick={() => { const d = new Date(sel.y, sel.m - 1, sel.d + 1); setSel({ y: d.getFullYear(), m: d.getMonth() + 1, d: d.getDate() }); }} aria-label="Jour suivant"><Glyph i={android ? mdiChevronRight : mdiMenuRight} size={android ? 24 : 34} /></button>
           </div>
           <Plain>{selected.map(row)}{selected.length === 0 && <div className="cal-none">{android ? "Aucun évènement" : "No Events"}</div>}</Plain>
@@ -102,7 +102,7 @@ export default function CalendarApp({ pid }: { pid: string }) {
             const prev = sortedAll[i - 1]?.[1];
             const head = !prev || prev.day !== e[1].day || prev.month !== e[1].month;
             const d = new Date(e[1].year ?? 2012, (e[1].month ?? 1) - 1, e[1].day ?? 1);
-            return <div key={e[0]}>{head && <PlainHeader>{d.toLocaleDateString(android ? "fr-FR" : "en-US", { weekday: "short", month: "short", day: "numeric", year: "numeric" })}</PlainHeader>}{row(e)}</div>;
+            return <div key={e[0]}>{head && <PlainHeader>{d.toLocaleDateString(android ? "fr-FR" : "en-GB", { weekday: "short", month: "short", day: "numeric", year: "numeric" })}</PlainHeader>}{row(e)}</div>;
           })}
           {events.length === 0 && <Empty>No Events</Empty>}
         </Plain></div>

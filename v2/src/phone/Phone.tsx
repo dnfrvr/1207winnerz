@@ -319,7 +319,7 @@ function Lock({ pid, profile }: { pid: string; profile: Profile }) {
   const nav = useNavigate();
   const time = useClock(); // 24 h, comme le reste du téléphone
   const lore = useLoreDate();
-  const day = lore.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
+  const day = lore.toLocaleDateString("en-GB", { weekday: "long", month: "long", day: "numeric" });
   return (
     <div className="lock" style={bg(profile.wallpaper)}>
       <StatusBar variant="translucent" locked />
@@ -428,7 +428,7 @@ function AndroidLock({ pid, profile }: { pid: string; profile: Profile }) {
   const now = useNow();
   const lore = useLoreDate();
   const time = now.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
-  const day = lore.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
+  const day = lore.toLocaleDateString("en-GB", { weekday: "long", month: "long", day: "numeric" });
   return (
     <div className="and-lock" style={bg(profile.wallpaper)}>
       <StatusBar variant="clear" />

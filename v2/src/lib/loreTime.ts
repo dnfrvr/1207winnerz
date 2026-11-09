@@ -104,20 +104,20 @@ export const inboxLabel = (ms: number | null, todayMs: number) => {
   const y = new Date(todayMs - 86_400_000);
   if (sameDay(d, y)) return "Yesterday";
   if (todayMs - ms < 6 * 86_400_000 && ms < todayMs) return DAYS_EN[d.getDay()];
-  return `${d.getMonth() + 1}/${d.getDate()}/${String(d.getFullYear()).slice(2)}`;
+  return `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}/${String(d.getFullYear()).slice(2)}`; // format européen : 27/10/12
 };
 
-/** Libellé de jour (pastille Android) : "October 6". */
+/** Libellé de jour (pastille Android) : "6 October". */
 export const dayLabel = (ms: number) => {
   if (!ms) return "";
   const d = new Date(ms);
-  return `${FULL_EN[d.getMonth() + 1]} ${d.getDate()}`;
+  return `${d.getDate()} ${FULL_EN[d.getMonth() + 1]}`;
 };
 
-/** En-tête horodaté au-dessus des bulles, comme iOS 6 : "Oct 6, 2012 2:30 PM". */
+/** En-tête horodaté au-dessus des bulles, comme iOS 6 : "6 Oct 2012 2:30 PM". */
 export const stampLabel = (ms: number) => {
   const d = new Date(ms);
-  return `${FULL_EN[d.getMonth() + 1].slice(0, 3)} ${d.getDate()}, ${d.getFullYear()} ${clockLabel(ms)}`;
+  return `${d.getDate()} ${FULL_EN[d.getMonth() + 1].slice(0, 3)} ${d.getFullYear()} ${clockLabel(ms)}`;
 };
 
 // ─── Sélecteur de date ─────────────────────────────────────────────────────
