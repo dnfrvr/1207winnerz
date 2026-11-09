@@ -2,6 +2,7 @@
 // sens de navigation.
 import { createContext, useContext, useEffect, useState } from "react";
 import { useValue } from "../data/hooks";
+import { loreNowMs, msToLore } from "../lib/loreTime";
 
 export type OS = "ios" | "android";
 export const OSCtx = createContext<OS>("ios");
@@ -29,6 +30,11 @@ export function useClock() {
 export function useLoreDate() {
   const d = useValue<string>("meta/loreDate") || LORE_DATE_DEFAULT;
   return new Date(`${d}T12:00:00`);
+}
+
+/** « Maintenant » dans la fiction, au format lore (« 17 oct, 11:12pm ») : date par défaut d'un nouvel élément. */
+export function useLoreStamp() {
+  return msToLore(loreNowMs(useValue<string>("meta/loreDate") || LORE_DATE_DEFAULT));
 }
 
 // Couleurs de la barre d'action Android par app. Apps système de Jelly Bean : barre holo

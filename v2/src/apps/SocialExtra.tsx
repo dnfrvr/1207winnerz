@@ -60,7 +60,7 @@ function KikList({ pid }: { pid: string }) {
   const os = useOS();
   const nav = useNavigate();
   const path = `phones/${pid}/data/kik`;
-  const chats = useList<KikChat>(path);
+  const chats = useList<KikChat>(path, { newest: "time" });
   const ed = useEditor(pid);
   const template = { name: "", avatar: "", time: "", unread: 0 };
   const newChat = () => ed.add(path, template, { atStart: true, title: "Nouvelle discussion", fields: CHAT_FIELDS });
@@ -163,7 +163,7 @@ export function VineApp({ pid }: { pid: string }) {
   const nav = useNavigate();
   const chars = useChars();
   const path = `phones/${pid}/data/vine`;
-  const posts = useList<VinePost>(path);
+  const posts = useList<VinePost>(path, { newest: "time" });
   const prof = useValue<VineProfile>(`phones/${pid}/data/vineProfile`) ?? {};
   const ed = useEditor(pid);
   const [tab, setTab] = useState<"home" | "popular" | "profile">("home");

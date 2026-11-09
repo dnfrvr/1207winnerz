@@ -48,7 +48,7 @@ export function AskFmApp({ pid }: { pid: string }) {
   const ed = useEditor(pid);
   const path = `phones/${pid}/data/askfm`;
   const profPath = `phones/${pid}/data/askfmProfile`;
-  const list = useList<QA>(path);
+  const list = useList<QA>(path, { newest: "time" });
   const prof = useValue<AskProfile>(profPath) ?? {};
   const me = chars[pid];
   const name = prof.name ?? me?.name ?? pid;

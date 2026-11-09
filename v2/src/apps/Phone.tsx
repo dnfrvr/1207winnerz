@@ -5,7 +5,7 @@ import { Route, Routes, useNavigate, useParams } from "react-router-dom";
 import { useList, useValue } from "../data/hooks";
 import { inboxLabel, loreNowMs, loreToMs } from "../lib/loreTime";
 import { AppFrame, BackButton, StatusBar } from "../phone/IOSChrome";
-import { LORE_DATE_DEFAULT, useOS } from "../phone/common";
+import { LORE_DATE_DEFAULT, useLoreStamp, useOS } from "../phone/common";
 import { AddButton, Avatar, Cell, Empty, Grouped, Plain, PlainHeader, Section, Segmented, TabBar, useEditor, type Tab } from "../kit/kit";
 import { Glyph } from "../kit/glyph";
 import {
@@ -73,8 +73,9 @@ function PhoneHome({ pid }: { pid: string }) {
   useEffect(() => { try { sessionStorage.setItem("phone-tab", tab); } catch { /* rien */ } }, [tab]);
   const c = useCalling();
   const ed = useEditor(pid);
+  const stamp = useLoreStamp();
   const titles: Record<string, string> = { favorites: "Favorites", recents: "Recents", contacts: "All Contacts", keypad: os === "ios" ? "Keypad" : "Téléphone", voicemail: "Voicemail" };
-  const addCall = () => ed.add(`phones/${pid}/data/calls`, { contact: "", type: "missed", time: "6 oct, 12:00pm", duration: "" }, { atStart: true, title: "Nouvel appel", fields: ["contact", "type", "time", "duration"] });
+  const addCall = () => ed.add(`phones/${pid}/data/calls`, { contact: "", type: "missed", time: stamp, duration: "" }, { atStart: true, title: "Nouvel appel", fields: ["contact", "type", "time", "duration"] });
   return (
     <AppFrame title={titles[tab]} left={<BackButton to={`/${pid}/home`} label="Accueil" />}
       right={tab === "recents" ? <AddButton show={ed.canEdit} onClick={addCall} /> : tab === "contacts" ? <AddButton show={ed.canEdit} onClick={() => ed.add(`phones/${pid}/data/contacts`, { name: "", phone: "", photo: "" }, { title: "Nouveau contact", fields: ["name", "phone", "photo"] })} /> : undefined}
@@ -95,10 +96,10 @@ function PhoneHome({ pid }: { pid: string }) {
 
 function Recents({ pid, onCall, ed }: { pid: string; onCall: (n: string) => void; ed: ReturnType<typeof useEditor> }) {
   const os = useOS();
-  const calls = useList<Call>(`phones/${pid}/data/calls`);
+  const calls = useList<Call>(`phones/${pid}/data/calls`, { newest: "time" });
   const lore = useValue<string>("meta/loreDate") || LORE_DATE_DEFAULT;
   const [filter, setFilter] = useState("all");
-  const rows = [...calls].sort((a, b) => (loreToMs(b[1].time) ?? 0) - (loreToMs(a[1].time) ?? 0)).filter(([, c]) => filter === "all" || c.type === "missed");
+  const rows = calls.filter(([, c]) => filter === "all" || c.type === "missed");
   return (
     <>
       <Segmented items={[{ id: "all", label: os === "ios" ? "All" : "Tous" }, { id: "missed", label: os === "ios" ? "Missed" : "Manqués" }]} value={filter} onChange={setFilter} />
@@ -129,7 +130,7 @@ function Favorites({ pid, onCall }: { pid: string; onCall: (n: string) => void }
 }
 
 function Voicemails({ pid, ed }: { pid: string; ed: ReturnType<typeof useEditor> }) {
-  const vms = useList<Voicemail>(`phones/${pid}/data/voicemails`);
+  const vms = useList<Voicemail>(`phones/${pid}/data/voicemails`, { newest: "time" });
   const [open, setOpen] = useState<string | null>(null);
   return (
     <Plain>

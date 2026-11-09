@@ -130,7 +130,7 @@ export function NikeApp({ pid }: { pid: string }) {
   const nav = useNavigate();
   const base = `phones/${pid}/data/nikeplus`;
   const n = useValue<Nike>(base) ?? {};
-  const runs = useList<Run>(`${base}/runs`);
+  const runs = useList<Run>(`${base}/runs`, { newest: "date" });
   const weekly = useList<{ d?: string; km?: number }>(`${base}/weekly`);
   const ed = useEditor(pid);
   const [running, setRunning] = useState(false);
@@ -178,7 +178,7 @@ export function SoundCloudApp({ pid }: { pid: string }) {
   const chars = useChars();
   const base = `phones/${pid}/data/soundcloud`;
   const me = useValue<SC>(base) ?? {};
-  const tracks = useList<Track>(`${base}/tracks`);
+  const tracks = useList<Track>(`${base}/tracks`, { newest: "posted" });
   const ed = useEditor(pid);
   const [tab, setTab] = useState<"stream" | "you">("stream");
   const [open, setOpen] = useState<string | null>(null);
@@ -280,7 +280,7 @@ export function INaturalistApp({ pid }: { pid: string }) {
   const os = useOS();
   const base = `phones/${pid}/data/inaturalist`;
   const me = useValue<INat>(base) ?? {};
-  const list = useList<Obs>(`${base}/list`);
+  const list = useList<Obs>(`${base}/list`, { newest: "date" });
   const ed = useEditor(pid);
   const [tab, setTab] = useState<"obs" | "me">("obs");
   const [open, setOpen] = useState<string | null>(null);
@@ -383,7 +383,7 @@ type Article = { title?: string; extract?: string; date?: string; order?: number
 export function WikipediaApp({ pid }: { pid: string }) {
   const nav = useNavigate();
   const path = `phones/${pid}/data/wikipedia`;
-  const list = useList<Article>(path);
+  const list = useList<Article>(path, { newest: "date" });
   const ed = useEditor(pid);
   const [q, setQ] = useState("");
   const [art, setArt] = useState<Article | null>(null);

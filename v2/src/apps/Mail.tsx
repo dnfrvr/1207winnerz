@@ -57,7 +57,7 @@ function Box({ pid, forced }: { pid: string; forced?: string }) {
   const os = useOS();
   const nav = useNavigate();
   const path = `phones/${pid}/data/mail/${box}`;
-  const list = useList<MailItem>(path);
+  const list = useList<MailItem>(path, { newest: "time" });
   const ed = useEditor(pid);
   const meta = BOXES.find((b) => b.id === box) ?? BOXES[0];
   const unread = list.filter(([, m]) => m.unread).length;

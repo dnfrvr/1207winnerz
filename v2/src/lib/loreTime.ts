@@ -36,8 +36,36 @@ export function parseLore(str?: string | null): LoreParts | null {
 
 export const loreToMs = (str?: string | null): number | null => {
   const p = parseLore(str);
-  return p ? new Date(p.year, p.month - 1, p.day, p.hour ?? 0, p.min).getTime() : null;
+  if (p) return new Date(p.year, p.month - 1, p.day, p.hour ?? 0, p.min).getTime();
+  // Autres formats saisis à la main (« Jul 13, 8pm », « Sept 30 2012 »…).
+  const f = str?.trim() ? parseDateField(str) : null;
+  return f ? new Date(f.value.length > 10 ? f.value : `${f.value}T00:00`).getTime() : null;
 };
+
+// Champs de date d'un élément (pas « due » : un rappel dans le futur est normal).
+const LORE_DATE_KEY = /(^|\/)(date|time|posted|when)$/;
+export const LORE_BUMP = "uma-lore-bump";
+
+/** Jour (YYYY-MM-DD) de la date la plus tardive écrite dans `patches`, si elle dépasse le jour de lore ; sinon null. */
+export function dateAfterLore(patches: Record<string, unknown>, lore: string): string | null {
+  const [y, mo, d] = lore.split("-").map(Number);
+  const end = new Date(y, mo - 1, d + 1).getTime();
+  let max = -Infinity;
+  const look = (key: string, v: unknown) => { if (typeof v === "string" && LORE_DATE_KEY.test(key)) max = Math.max(max, loreToMs(v) ?? -Infinity); };
+  for (const [path, v] of Object.entries(patches)) {
+    look(path, v);
+    if (v && typeof v === "object") for (const [k, x] of Object.entries(v)) look(k, x);
+  }
+  if (max < end) return null;
+  const t = new Date(max);
+  return `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, "0")}-${String(t.getDate()).padStart(2, "0")}`;
+}
+
+/** Plus récent d'abord ; ce qui n'a pas de date lisible reste à la fin, dans son ordre. */
+export const newestFirst = <T,>(list: T[], when: (x: T) => string | null | undefined): T[] =>
+  list.map((x) => [x, loreToMs(when(x)) ?? -Infinity] as const)
+    .sort((a, b) => (b[1] - a[1]) || 0)
+    .map(([x]) => x);
 
 export const msToLore = (ms: number): string => {
   const d = new Date(ms);

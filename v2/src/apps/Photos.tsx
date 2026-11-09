@@ -6,7 +6,7 @@ import { useList } from "../data/hooks";
 import { img } from "../lib/img";
 import { loreToMs } from "../lib/loreTime";
 import { AppFrame, BackButton, StatusBar } from "../phone/IOSChrome";
-import { useOS } from "../phone/common";
+import { useLoreStamp, useOS } from "../phone/common";
 import { AddButton, Empty, useEditor } from "../kit/kit";
 import { Icon } from "../kit/icons";
 import "./photos.css";
@@ -42,6 +42,7 @@ function Albums({ pid }: { pid: string }) {
   const nav = useNavigate();
   const { live, albums, pick, deletedCount } = usePhotos(pid);
   const ed = useEditor(pid);
+  const stamp = useLoreStamp();
   const rows = [
     { id: ROLL, name: os === "ios" ? "Camera Roll" : "Camera", n: live.length },
     ...albums.map((a) => ({ id: a, name: a, n: pick(a).length })),
@@ -50,7 +51,7 @@ function Albums({ pid }: { pid: string }) {
   const cover = (id: string) => { const l = pick(id); return l[l.length - 1]?.[1].src; };
   return (
     <AppFrame title={os === "ios" ? "Albums" : "Gallery"} left={<BackButton to={`/${pid}/home`} label="Accueil" />}
-      right={<AddButton show={ed.canEdit} onClick={() => ed.add(`phones/${pid}/data/gallery`, { src: "", date: "6 oct, 12:00pm", album: null, deleted: false }, { title: "Nouvelle photo", fields: ["src", "date", "album"] })} />}
+      right={<AddButton show={ed.canEdit} onClick={() => ed.add(`phones/${pid}/data/gallery`, { src: "", date: stamp, album: null, deleted: false }, { title: "Nouvelle photo", fields: ["src", "date", "album"] })} />}
       bodyClass={os === "ios" ? "ph-albums" : "ph-albums and"}>
       {os === "ios" ? (
         <ul className="ph-album-list">

@@ -5,7 +5,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { mdiAccount, mdiHeart, mdiHome, mdiMagnify, mdiPencil, mdiRepeat } from "@mdi/js";
 import { useList, useValue } from "../data/hooks";
-import { loreNowMs, msToLore } from "../lib/loreTime";
+import { loreNowMs, msToLore, newestFirst } from "../lib/loreTime";
 import { img } from "../lib/img";
 import { StatusBar, BarBack } from "../phone/IOSChrome";
 import { LORE_DATE_DEFAULT, useOS } from "../phone/common";
@@ -23,15 +23,15 @@ export default function TumblrApp({ pid }: { pid: string }) {
   const chars = useChars();
   const lore = useValue<string>("meta/loreDate") || LORE_DATE_DEFAULT;
   const blog = useValue<Blog>(`phones/${pid}/data/tumblr`) ?? {};
-  const own = useList<TPost>(`phones/${pid}/data/tumblr/posts`);
+  const own = useList<TPost>(`phones/${pid}/data/tumblr/posts`, { newest: "date" });
   const decor = useList<TPost>(`phones/${pid}/data/tumblr/feedPosts`);
   const shared = useList<TPost>("feeds/tumblrPosts");
   const [tab, setTab] = useState("dash");
   const ed = useEditor(pid);
-  const dash = [
+  const dash = newestFirst([
     ...shared.filter(([, p]) => p.author !== pid).map(([id, p]) => ({ key: `s${id}`, path: `feeds/tumblrPosts/${id}`, p })),
     ...decor.map(([id, p]) => ({ key: `d${id}`, path: `phones/${pid}/data/tumblr/feedPosts/${id}`, p })),
-  ];
+  ], (x) => x.p.date);
   const mine = own.map(([id, p]) => ({ key: `o${id}`, path: `phones/${pid}/data/tumblr/posts/${id}`, p }));
   const list = tab === "dash" ? dash : mine;
   const fields = ["username", "title", "body", "img", "date", "notes", "tags"];

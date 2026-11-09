@@ -4,7 +4,10 @@
     ".write": false,
 
     "meta": {
-      ".write": "root.child('users/' + auth.uid + '/role').val() === 'mdj'"
+      ".write": "root.child('users/' + auth.uid + '/role').val() === 'mdj'",
+      "loreDate": {
+        ".write": "root.child('users/' + auth.uid + '/phone').exists() && newData.isString() && newData.val().matches(/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/) && (!data.exists() || newData.val() > data.val())"
+      }
     },
 
     "users": {

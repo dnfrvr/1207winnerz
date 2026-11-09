@@ -4,8 +4,11 @@ import { Glyph } from "../kit/glyph";
 import { mdiApplication, mdiChevronLeft, mdiChevronRight, mdiHelpCircleOutline, mdiHome, mdiSwapHorizontal } from "@mdi/js";
 import { Suspense, useEffect, useRef, useState, type CSSProperties } from "react";
 import { Link, Route, Routes, useLocation, useNavigate, useParams, type Location } from "react-router-dom";
-import { useCanEdit, useValue } from "../data/hooks";
+import { useCanEdit, useValue, useWriter } from "../data/hooks";
 import { AppTips, replayTips } from "./AppTips";
+import { PromptAlert } from "./Sheets";
+import { LORE_BUMP, loreToMs, msToLore } from "../lib/loreTime";
+import { LORE_DATE_DEFAULT } from "./common";
 import { AppFrame, BackButton, NavDirCtx, RingUnlock, SlideToUnlock, StatusBar, useClock, useLoreDate, type NavDir } from "./IOSChrome";
 import { ANDROID_ICON_DEFAULTS, OSCtx, useNow, type OS } from "./common";
 import { APP_META } from "../../../src/shared/app-meta.js";
@@ -43,6 +46,7 @@ export function Phone() {
     <div className="screen-fit" style={{ width: scr.w * (scale ?? 1), height: scr.h * (scale ?? 1) }}>
       <div className={`screen os-${os}`} style={{ width: scr.w, height: scr.h, transform: scale ? `scale(${scale})` : undefined, ["--accent" as string]: profile.accentColor ?? "#33b5e5" }}>
         <PhoneScreen pid={pid} profile={profile} os={os} />
+        {canEdit && <LoreBump pid={pid} />}
         {!canEdit && <div className="readonly-tag">Lecture seule · téléphone de {profile.name ?? pid}</div>}
       </div>
     </div>
@@ -72,6 +76,25 @@ export function Phone() {
         </div>
       </div>
     </OSCtx.Provider>
+  );
+}
+
+/** Un élément daté après « aujourd'hui » dans la fiction : proposer d'avancer la date de lore pour tout le monde. */
+function LoreBump({ pid }: { pid: string }) {
+  const lore = useValue<string>("meta/loreDate") || LORE_DATE_DEFAULT;
+  const { set } = useWriter(pid);
+  const [day, setDay] = useState<string | null>(null);
+  useEffect(() => {
+    const on = (e: Event) => setDay((e as CustomEvent<string>).detail);
+    window.addEventListener(LORE_BUMP, on);
+    return () => window.removeEventListener(LORE_BUMP, on);
+  }, []);
+  if (!day || day <= lore) return null;
+  const label = (iso: string) => msToLore(loreToMs(iso.split("-").reverse().join("/")) ?? 0).split(",")[0];
+  return (
+    <PromptAlert title="Date dans le futur" type="date" initial={day} min={day} max="2013-12-31"
+      message={<>Cette date est après aujourd'hui dans la fiction ({label(lore)}). Avancer la date pour tout le monde au {label(day)} ou plus loin ?</>}
+      validate={(v) => !!v && v >= day} onClose={() => setDay(null)} onOk={(v) => set("meta/loreDate", v)} />
   );
 }
 
@@ -106,7 +129,7 @@ function PhoneSwitcher({ pid, compact, canEdit }: { pid: string; compact: boolea
     <nav className="sw-list" aria-label="Changer de téléphone">
       <Link to="/" className="sw-home" title="Accueil du site"><Glyph i={mdiHome} size={26} /><small>Accueil</small></Link>
       {ALL_PIDS.map((p) => <SwitchAvatar key={p} pid={p} current={p === pid} />)}
-      {tips && <button type="button" className="sw-home sw-tip" title="Revoir la prise en main de cette app" onClick={() => { setOpen(false); replayTips(app); }}>
+      {tips && !compact && <button type="button" className="sw-home sw-tip" title="Revoir la prise en main de cette app" onClick={() => { setOpen(false); replayTips(app); }}>
         <Glyph i={mdiHelpCircleOutline} size={26} /><small>Tuto</small></button>}
       {!compact && <button type="button" className="sw-fold" title="Replier" aria-label="Replier la barre" onClick={() => fold(true)}><Glyph i={mdiChevronLeft} size={20} /></button>}
     </nav>
@@ -120,6 +143,7 @@ function PhoneSwitcher({ pid, compact, canEdit }: { pid: string; compact: boolea
     <div className={`sw sw-fs ${open ? "open" : ""}`}>
       {open && <div className="sw-pop">{list}</div>}
       <button className="sw-btn" aria-expanded={open} aria-label="Changer de téléphone" onClick={() => setOpen((o) => !o)}><Glyph i={mdiSwapHorizontal} size={20} /></button>
+      {tips && <button type="button" className="sw-btn sw-tip-fs" title="Revoir la prise en main de cette app" aria-label="Revoir le tuto de cette app" onClick={() => { setOpen(false); replayTips(app); }}><Glyph i={mdiHelpCircleOutline} size={20} /></button>}
     </div>
   );
 }

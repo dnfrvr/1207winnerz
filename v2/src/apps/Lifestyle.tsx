@@ -5,7 +5,7 @@ import { useState } from "react";
 import { Route, Routes, useNavigate, useParams } from "react-router-dom";
 import { useList, useValue } from "../data/hooks";
 import { AppFrame, BackButton, StatusBar, BarBack } from "../phone/IOSChrome";
-import { useOS } from "../phone/common";
+import { useLoreStamp, useOS } from "../phone/common";
 import { AddButton, Avatar, Cell, Empty, Plain, PlainHeader, TabBar, useEditor, type Tab } from "../kit/kit";
 import { Icon } from "../kit/icons";
 import { img } from "../lib/img";
@@ -17,7 +17,7 @@ type Snap = { contact?: string; opened?: boolean; sent?: boolean; video?: boolea
 export function SnapchatApp({ pid }: { pid: string }) {
   const nav = useNavigate();
   const path = `phones/${pid}/data/snaps`;
-  const snaps = useList<Snap>(path);
+  const snaps = useList<Snap>(path, { newest: "time" });
   const ed = useEditor(pid);
   const [viewing, setViewing] = useState<{ id: string; s: Snap } | null>(null);
   const [left, setLeft] = useState(0);
@@ -75,7 +75,7 @@ export function GroupMeApp({ pid }: { pid: string }) {
 function GroupMeList({ pid }: { pid: string }) {
   const nav = useNavigate();
   const path = `phones/${pid}/data/groupmeGroups`;
-  const groups = useList<Group>(path);
+  const groups = useList<Group>(path, { newest: "time" });
   const ed = useEditor(pid);
   return (
     <>
@@ -175,7 +175,7 @@ const SB_TABS: Tab[] = [
 export function StarbucksApp({ pid }: { pid: string }) {
   const base = `phones/${pid}/data/starbucks`;
   const sb = useValue<SB>(base) ?? {};
-  const recents = useList<Recent>(`${base}/recents`);
+  const recents = useList<Recent>(`${base}/recents`, { newest: "date" });
   const stores = useList<Store>(`${base}/favorites`);
   const name = useValue<string>(`phones/${pid}/profile/name`) ?? pid;
   const ed = useEditor(pid);
@@ -255,11 +255,12 @@ function FilesList({ pid }: { pid: string }) {
   const root = `phones/${pid}/data/files`;
   const folders = useList<Folder>(`${root}/folders`);
   const filesPath = folder ? `${root}/folders/${folder}/files` : `${root}/rootFiles`;
-  const files = useList<FileItem>(filesPath);
+  const files = useList<FileItem>(filesPath, { newest: "date" });
+  const stamp = useLoreStamp().split(",")[0];
   const title = folder ? (folders.find(([id]) => id === folder)?.[1].name ?? "Dossier") : (os === "ios" ? "Fichiers" : "Mes fichiers");
   return (
     <AppFrame title={title} left={<BackButton to={folder ? `/${pid}/files` : `/${pid}/home`} label={folder ? "Fichiers" : "Accueil"} />}
-      right={<AddButton show={ed.canEdit} onClick={() => ed.add(filesPath, { name: "Nouveau.pdf", ext: "pdf", size: "1 MB", date: "6 oct" }, { title: "Fichier", fields: FILE_FIELDS })} />}>
+      right={<AddButton show={ed.canEdit} onClick={() => ed.add(filesPath, { name: "Nouveau.pdf", ext: "pdf", size: "1 MB", date: stamp }, { title: "Fichier", fields: FILE_FIELDS })} />}>
       <Plain>
         {!folder && folders.map(([id, f]) => (
           <Cell key={id} icon={<span className="fl-folder"><Glyph i={mdiFolder} size={28} /></span>} title={f.name} subtitle={`${Object.keys(f.files ?? {}).length} éléments`} chevron onClick={() => nav(id)}

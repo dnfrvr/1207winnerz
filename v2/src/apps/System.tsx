@@ -236,7 +236,7 @@ export function MessengerApp({ pid }: { pid: string }) {
 function MessengerList({ pid }: { pid: string }) {
   const nav = useNavigate();
   const path = `phones/${pid}/data/messenger`;
-  const list = useList<Conv>(path);
+  const list = useList<Conv>(path, { newest: "time" });
   const ed = useEditor(pid);
   return (
     <>

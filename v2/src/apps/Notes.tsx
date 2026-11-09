@@ -46,7 +46,7 @@ const Torn = () => <div className="nt-torn" aria-hidden><i /></div>;
 // ── Liste ────────────────────────────────────────────────────────────────────
 function NoteList({ pid }: { pid: string }) {
   const os = useOS();
-  const notes = useList<Note>(`phones/${pid}/data/notes`);
+  const notes = useList<Note>(`phones/${pid}/data/notes`, { newest: "date" });
   const canEdit = useCanEdit(pid);
   const nav = useNavigate();
   const add = useAdd(pid);

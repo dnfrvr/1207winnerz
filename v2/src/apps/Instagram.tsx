@@ -4,6 +4,7 @@
 import { useState } from "react";
 import { Route, Routes, useNavigate, useParams } from "react-router-dom";
 import { useList, useValue } from "../data/hooks";
+import { newestFirst } from "../lib/loreTime";
 import { img } from "../lib/img";
 import { StatusBar, BarBack } from "../phone/IOSChrome";
 import { useOS } from "../phone/common";
@@ -41,12 +42,12 @@ function Bar({ title, left, right }: { title?: string; left?: React.ReactNode; r
 
 /** Toutes les publications visibles sur ce téléphone : les siennes + celles des autres persos qui l'identifient. */
 function useTimeline(pid: string) {
-  const mine = useList<Post>(`phones/${pid}/data/instagram/posts`);
-  const others = PIDS.filter((p) => p !== pid).map((p) => [p, useList<Post>(`phones/${p}/data/instagram/posts`)] as const);
+  const mine = useList<Post>(`phones/${pid}/data/instagram/posts`, { newest: "date" });
+  const others = PIDS.filter((p) => p !== pid).map((p) => [p, useList<Post>(`phones/${p}/data/instagram/posts`, { newest: "date" })] as const);
   const tagged = others.flatMap(([p, list]) => list.filter(([, x]) => x.taggedWith === pid).map(([id, x]) => ({ owner: p, id, post: x })));
   const own = mine.filter(([, x]) => !x.archived).map(([id, x]) => ({ owner: pid, id, post: x }));
-  const feed = [...own, ...others.flatMap(([p, list]) => list.filter(([, x]) => !x.archived).slice(-3).map(([id, x]) => ({ owner: p, id, post: x })))];
-  return { own, tagged, feed: feed.reverse() };
+  const feed = [...own, ...others.flatMap(([p, list]) => list.filter(([, x]) => !x.archived).slice(0, 3).map(([id, x]) => ({ owner: p, id, post: x })))];
+  return { own, tagged, feed: newestFirst(feed, (f) => f.post.date) };
 }
 
 function Shell({ pid }: { pid: string }) {

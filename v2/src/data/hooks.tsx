@@ -1,5 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { byOrder, orderBetween, type Ordered } from "./order";
+import { dateAfterLore, LORE_BUMP, newestFirst } from "../lib/loreTime";
+import { LORE_DATE_DEFAULT } from "../phone/common";
 import { join, type Json, type Patches, type Store } from "./store";
 
 // ─── Contexte : store + identité du joueur ───────────────────────────────────
@@ -41,12 +43,13 @@ export function useValue<T = Json>(path: string | null): T | undefined {
 }
 
 /** Liste triée (map { id: item } → [[id, item]…]), éléments supprimés (corbeille) exclus. */
-export function useList<T extends object = Record<string, unknown>>(path: string, { withDeleted = false } = {}): [string, T][] {
+export function useList<T extends object = Record<string, unknown>>(path: string, { withDeleted = false, newest }: { withDeleted?: boolean; newest?: keyof T & string } = {}): [string, T][] {
   const map = useValue<Record<string, T & Ordered & { deleted?: boolean }>>(path);
   return useMemo(() => {
-    const entries = Object.entries(map ?? {}).filter(([, it]) => it && typeof it === "object" && (withDeleted || !it.deleted));
-    return entries.sort(byOrder) as [string, T][];
-  }, [map, withDeleted]);
+    const entries = Object.entries(map ?? {}).filter(([, it]) => it && typeof it === "object" && (withDeleted || !it.deleted)).sort(byOrder) as [string, T][];
+    // Listes datées (appels, mails, posts…) : du plus récent au plus ancien, un ajout se place selon sa date.
+    return newest ? newestFirst(entries, ([, it]) => it[newest] as string | undefined) : entries;
+  }, [map, withDeleted, newest]);
 }
 
 // ─── Écriture (toujours champ par champ, avec historique) ────────────────────
@@ -61,6 +64,9 @@ export function useWriter(pid: string) {
         path, before: store.peek(path) ?? null, after: after ?? null, at, uid: session.uid,
       };
     }
+    // Date saisie après « aujourd'hui » dans la fiction → proposer d'avancer la date de lore (popup dans le téléphone).
+    const later = dateAfterLore(patches, (store.peek("meta/loreDate") as string | undefined) || LORE_DATE_DEFAULT);
+    if (later) window.dispatchEvent(new CustomEvent(LORE_BUMP, { detail: later }));
     return track(store.update(all));
   }, [store, session.uid, pid, track]);
 
