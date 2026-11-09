@@ -75,8 +75,10 @@
 - [x] Portage des 51 apps (iOS 6 + Android 4.1), édition universelle (appui long / clic droit)
 - [x] Optimisation des images
 - [x] Envoi de vraies photos depuis l'appareil (bouton « Choisir une photo » sur les champs image ; actif dès que les clés Supabase sont là)
-- [ ] Déploiement Netlify de la v2 : créer un 2e site, « Base directory » = `v2` (config prête dans `v2/netlify.toml`), y mettre les variables VITE_FIREBASE_* et VITE_SUPABASE_*
-  (build vérifié le 2026-11-09 sur un clone propre : avec les variables Firebase, le mode démo est vide et la migration ne tourne pas)
+- [x] Déploiement Netlify de la v2 — en ligne le 2026-11-09 : https://alloleswinnerz.netlify.app
+  (site Netlify « alloleswinnerz », base `v2`, 6 variables VITE_*, publication auto à chaque push sur main)
+- [ ] Transmettre les mots de passe temporaires (`migration/_out/comptes-joueurs.txt`) puis supprimer ce fichier
+- [ ] Tester la connexion d'un vrai compte sur le site en ligne
 
 ## Liste du 2026-11-08 (en cours — reprendre ici)
 
