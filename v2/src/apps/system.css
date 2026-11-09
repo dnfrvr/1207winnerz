@@ -86,6 +86,9 @@
 .pb-code { display: none; gap: 2px; height: 44px; padding: 6px; margin-top: 8px; background: #fff; border-radius: 3px; align-self: center; }
 .pb-code i { display: block; background: #111; }
 .pb-pass.open .pb-code { display: flex; }
+/* Carte étudiante : l'image est la carte (coins arrondis et ombre déjà dans le PNG) */
+.pb-card { min-height: 0; padding: 0; background: none; box-shadow: none; }
+.pb-card img { display: block; width: 100%; height: auto; filter: drop-shadow(0 -2px 4px rgba(0,0,0,.4)); }
 
 /* Rappels iOS 6 : papier ligné */
 .rm-paper { min-height: 100%; background: repeating-linear-gradient(#fff 0 43px, #d9dde2 43px 44px); }

@@ -335,6 +335,8 @@ function AppIcon({ pid, id, src, label, badge }: { pid: string; id: string; src?
 }
 
 const PER_PAGE = { ios: 20, android: 20 };
+// Fichiers sur iOS : icône iCloud alu, la même sur les quatre iPhone.
+const IOS_FILES_ICON = "/assets/icons/files-ios.png";
 
 function useHomeApps(pid: string) {
   const home = useValue<Home>(`phones/${pid}/home`) ?? {};
@@ -360,7 +362,7 @@ function Springboard({ pid, profile }: { pid: string; profile: Profile }) {
   const { dock, apps } = useHomeApps(pid);
   useEffect(preloadApps, []);
   const icon = (id: string) => (
-    <AppIcon key={id} pid={pid} id={id} src={profile.appIcons?.[id]} badge={profile.badges?.[id]}
+    <AppIcon key={id} pid={pid} id={id} src={id === "files" ? IOS_FILES_ICON : profile.appIcons?.[id]} badge={profile.badges?.[id]}
       label={profile.appNames?.[id] || META[id]?.label || id} />
   );
   return (

@@ -113,9 +113,13 @@ export function FaceTimeApp({ pid }: { pid: string }) {
 type Pass = { title?: string; subtitle?: string; detail?: string; color?: string; logo?: string; order?: number; deleted?: boolean };
 const DEFAULT_PASSES: Pass[] = [
   { title: "Starbucks Card", subtitle: "Balance", detail: "$14.30", color: "#00704a", logo: "" },
-  { title: "UMA Student ID", subtitle: "Fall 2012", detail: "#2012-4471", color: "#0f4499", logo: "" },
   { title: "AMC Theatres", subtitle: "Breaking Dawn – Part 2", detail: "Nov 16 · 10:00 PM", color: "#b71c1c", logo: "" },
 ];
+// Carte étudiante UMA de chaque personnage : toujours en tête de pile, non modifiable.
+const ID_CARDS: Record<string, string> = {
+  drew: "/assets/passbook/drew.png", elias: "/assets/passbook/elias.png",
+  eoghan: "/assets/passbook/eoghan.png", glinda: "/assets/passbook/glinda.png",
+};
 export function PassbookApp({ pid }: { pid: string }) {
   const nav = useNavigate();
   const path = `phones/${pid}/data/passbook`;
@@ -123,22 +127,31 @@ export function PassbookApp({ pid }: { pid: string }) {
   const { rows, long, seed } = useSeeded(path, DEFAULT_PASSES, ed);
   const [open, setOpen] = useState<string | null>(null);
   const fields = ["title", "subtitle", "detail", "color", "logo"];
+  const card = ID_CARDS[pid];
+  const all: [string, Pass][] = card ? [["uma-id", {}], ...rows] : rows;
   return (
     <div className="app pb">
       <StatusBar />
       <div className="pb-top"><BarBack onClick={() => nav(`/${pid}/home`)} label="Accueil" /><span>Passbook</span>
         {ed.canEdit ? <button onClick={() => { seed(); ed.add(path, { title: "", subtitle: "", detail: "", color: "#555", logo: "" }, { title: "Pass", fields }); }}>+</button> : <span />}</div>
       <div className="pb-stack">
-        {rows.map(([id, p], i) => (
+        {all.map(([id, p], i) => {
           // La carte qui suit une carte ouverte se décale sous elle, sinon elle cache son code-barres.
-          <Press as="button" key={id} className={`pb-pass ${open === id ? "open" : ""}`} style={{ background: `linear-gradient(${p.color ?? "#555"}, color-mix(in srgb, ${p.color ?? "#555"} 70%, #000))`, zIndex: i, marginTop: i === 0 ? 0 : rows[i - 1][0] === open ? 10 : -86 }}
-            onClick={() => setOpen(open === id ? null : id)}
-            onLong={long(id, fields, p.title)}>
-            <span className="pb-head"><span className="pb-logo">{p.logo ? (/^(data:|https?:|\/)/.test(p.logo) ? <img src={img(p.logo)} alt="" /> : p.logo) : <Glyph i={mdiWallet} size={22} />}</span><b>{p.title}</b></span>
-            <span className="pb-body"><small>{p.subtitle}</small><b>{p.detail}</b></span>
-            <span className="pb-code" aria-hidden>{Array.from({ length: 30 }, (_, k) => <i key={k} style={{ width: (k * 5) % 3 + 1 }} />)}</span>
-          </Press>
-        ))}
+          const style = { zIndex: i, marginTop: i === 0 ? 0 : all[i - 1][0] === open ? 10 : -86 };
+          const toggle = () => setOpen(open === id ? null : id);
+          if (id === "uma-id") return (
+            <Press as="button" key={id} className="pb-pass pb-card" style={style} onClick={toggle}><img src={img(card)} alt="UMA Student ID" draggable={false} /></Press>
+          );
+          return (
+            <Press as="button" key={id} className={`pb-pass ${open === id ? "open" : ""}`} style={{ ...style, background: `linear-gradient(${p.color ?? "#555"}, color-mix(in srgb, ${p.color ?? "#555"} 70%, #000))` }}
+              onClick={toggle}
+              onLong={long(id, fields, p.title)}>
+              <span className="pb-head"><span className="pb-logo">{p.logo ? (/^(data:|https?:|\/)/.test(p.logo) ? <img src={img(p.logo)} alt="" /> : p.logo) : <Glyph i={mdiWallet} size={22} />}</span><b>{p.title}</b></span>
+              <span className="pb-body"><small>{p.subtitle}</small><b>{p.detail}</b></span>
+              <span className="pb-code" aria-hidden>{Array.from({ length: 30 }, (_, k) => <i key={k} style={{ width: (k * 5) % 3 + 1 }} />)}</span>
+            </Press>
+          );
+        })}
       </div>
       {ed.ui}
     </div>
