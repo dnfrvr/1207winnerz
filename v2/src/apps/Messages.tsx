@@ -19,7 +19,8 @@ import "./messages.css";
 
 const PIDS = ["glinda", "eoghan", "drew", "elias"];
 // Contacts sur Android en 2012 → bulles vertes (SMS) plutôt que bleues (iMessage).
-const ANDROID_CONTACTS = ["drew", "gwen", "nils", "abby", "hector", "matthew", "louis", "vicky", "james", "harry", "asra", "nayati", "sophie"];
+const ANDROID_CONTACTS = ["drew", "gwen", "nils", "abby", "hector", "matthew", "louis", "vicky", "james", "harry", "asra", "nayati", "sophie",
+  "zoe", "tyrone", "ilya", "morgane"];
 
 type Msg = { from: string; npcName?: string | null; text?: string; img?: string; time?: string; ts?: number; order?: number; deleted?: boolean };
 type Thread = { kind: "pair" | "group" | "local"; members?: Record<string, boolean>; name?: string; contact?: string | null };
@@ -82,7 +83,8 @@ const contactOf = (pid: string, e: InboxEntry, t: Thread | undefined, names: Rec
 
 const isSms = (contact: string, t: Thread | undefined, pid: string, names: Record<string, { os?: string }>) => {
   if (t?.kind === "pair") return Object.keys(t.members ?? {}).some((m) => m !== pid && names[m]?.os === "android");
-  if (t?.kind === "group") return false;
+  // Groupe avec au moins un Android (Drew) : iOS 6 passe tout le groupe en SMS/MMS → vert.
+  if (t?.kind === "group") return Object.keys(t.members ?? {}).some((m) => m !== pid && names[m]?.os === "android");
   const c = contact.toLowerCase();
   return ANDROID_CONTACTS.some((n) => c.includes(n));
 };
