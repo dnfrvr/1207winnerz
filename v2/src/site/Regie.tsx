@@ -230,7 +230,7 @@ function LiveThread({ tab, onGone }: { tab: Tab; onGone: () => void }) {
     write(patches);
     setText(""); setPhoto(null);
   };
-  const nudge = () => write(notifPatch(pid, { app: "messages", title: contact, body: notifBody(msgs[msgs.length - 1]?.[1].text), ...(msgs[msgs.length - 1]?.[1].img ? { attach: 1 } : {}), link: `messages/${tid}`, thread: tid }));
+  const nudge = () => write(notifPatch(pid, { app: "messages", title: contact, body: notifBody(msgs[msgs.length - 1]?.[1].text), ...(msgs[msgs.length - 1]?.[1].img ? { attach: 1 } : {}), link: `messages/${tid}`, thread: tid, ...(lastId ? { msg: lastId } : {}) }));
 
   // Annuler l'envoi : supprime définitivement le dernier message du PNJ et sa notif. Fil vidé → la conversation
   // disparaît du téléphone (fil, entrée de la boîte, notifs). Uniquement pour les fils PNJ.
@@ -252,10 +252,20 @@ function LiveThread({ tab, onGone }: { tab: Tab; onGone: () => void }) {
       for (const [id] of mine) patch[`phones/${pid}/notifs/${id}`] = null;
     } else {
       patch[`threadMessages/${tid}/${lastNpc[0]}`] = null;
-      if (mine[0]) patch[`phones/${pid}/notifs/${mine[0][0]}`] = null;
+      // La notif de ce message ; anciennes notifs (sans lien vers le message) : la plus récente non liée.
+      const linked = mine.filter(([, n]) => n.msg === lastNpc[0]);
+      for (const [id] of linked.length ? linked : mine.filter(([, n]) => !n.msg).slice(0, 1)) patch[`phones/${pid}/notifs/${id}`] = null;
     }
     write(patch);
     if (empty) onGone();
+  };
+
+  // Ménage : retire les notifs en attente de ce fil (les messages restent).
+  const pendingNotifs = Object.entries(notifs ?? {}).filter(([, n]) => n?.thread === tid && !n.seen);
+  const clearNotifs = () => {
+    const patch: Patches = {};
+    for (const [id] of pendingNotifs) patch[`phones/${pid}/notifs/${id}`] = null;
+    write(patch);
   };
 
   return (
@@ -286,6 +296,7 @@ function LiveThread({ tab, onGone }: { tab: Tab; onGone: () => void }) {
       </form>
       <div className="regie-actions">
         <button className="linkish" onClick={nudge}>Renvoyer une notif</button>
+        {pendingNotifs.length > 0 && <button className="linkish" onClick={clearNotifs}>Effacer les notifs ({pendingNotifs.length})</button>}
         {thread?.kind === "local" && lastNpc && <button className="linkish danger" onClick={undo}>Annuler l'envoi du dernier message</button>}
       </div>
     </div>

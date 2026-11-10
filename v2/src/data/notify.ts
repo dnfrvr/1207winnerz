@@ -11,6 +11,7 @@ export type Notif = {
   attach?: number;    // nombre de photos jointes (« Attachment: 1 Image »)
   link: string;       // route dans le téléphone, sans le pid (« messages/t_… »)
   thread?: string;
+  msg?: string;       // message qui a déclenché la notif (pour « Annuler l'envoi »)
   at: number;         // horodatage réel (ms)
   seen?: boolean;
 };
@@ -75,8 +76,9 @@ export function npcMessagePatches(opts: {
   const { time, order } = nextSlot(opts.msgs, lore);
   const msg: Record<string, Json> = { from: "npc", npcName: contact, text, time, order };
   if (img) msg.img = img;
-  patches[`threadMessages/${tid}/${makeId("m")}`] = msg;
-  Object.assign(patches, notifPatch(pid, { app: "messages", title: contact, body: notifBody(text), ...(img ? { attach: 1 } : {}), link: `messages/${tid}`, thread: tid }));
+  const mid = makeId("m");
+  patches[`threadMessages/${tid}/${mid}`] = msg;
+  Object.assign(patches, notifPatch(pid, { app: "messages", title: contact, body: notifBody(text), ...(img ? { attach: 1 } : {}), link: `messages/${tid}`, thread: tid, msg: mid }));
   return { patches, tid };
 }
 

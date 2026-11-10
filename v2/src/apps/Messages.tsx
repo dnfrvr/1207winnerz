@@ -239,7 +239,7 @@ function Conversation({ pid }: { pid: string }) {
     const id = `m_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
     // MDJ qui écrit au nom du contact, à la fin du fil : le joueur reçoit aussi une notif (bannière, écran verrouillé).
     const notif = mdj && sender !== pid && !insertAfter
-      ? { ...notifPatch(pid, { app: "messages", title: senderLabel, body: notifBody(text), link: `messages/${tid}`, thread: tid }), [`phones/${pid}/inbox/${tid}/unread`]: true }
+      ? { ...notifPatch(pid, { app: "messages", title: senderLabel, body: notifBody(text), link: `messages/${tid}`, thread: tid, msg: id }), [`phones/${pid}/inbox/${tid}/unread`]: true }
       : {};
     write({ [`${base}/${id}`]: { ...from, text, time, order: orderBetween(prev?.order, next?.order) } as Json, ...notif });
     if (insertAfter) setInsertAfter(id);
