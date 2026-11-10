@@ -58,7 +58,8 @@ function useTimeline(pid: string) {
 function Shell({ pid }: { pid: string }) {
   const os = useOS();
   const nav = useNavigate();
-  const [tab, setTab] = useState(() => sessionStorage.getItem("ig-tab") ?? "home");
+  // ?tab=news : une notif d'activité ouvre directement l'onglet Activité.
+  const [tab, setTab] = useState(() => new URLSearchParams(location.search).get("tab") ?? sessionStorage.getItem("ig-tab") ?? "home");
   const go = (t: string) => { setTab(t); try { sessionStorage.setItem("ig-tab", t); } catch { /* rien */ } };
   return (
     <div className={`app ig ${os}`}>

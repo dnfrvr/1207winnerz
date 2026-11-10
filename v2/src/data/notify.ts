@@ -19,7 +19,7 @@ export type Notif = {
 export type Thread = { kind: "pair" | "group" | "local"; members?: Record<string, boolean>; name?: string; contact?: string | null };
 export type InboxEntry = { contact?: string; threadId?: string; unread?: boolean; deleted?: boolean; order?: number };
 export type Msg = { from: string; npcName?: string | null; text?: string; img?: string; time?: string; order?: number; deleted?: boolean;
-  pair?: string /* photo et texte envoyés ensemble = 2 messages liés */ };
+  pair?: string /* photo et texte envoyés ensemble = 2 messages liés */; byMdj?: boolean };
 
 const norm = (s?: string | null) => (s ?? "").trim().toLowerCase().normalize("NFKC");
 
@@ -98,4 +98,50 @@ export function notifLines(n: Notif, os: "ios" | "android") {
   const attach = !count ? null : os === "android" ? (count > 1 ? `${count} pictures` : "Picture")
     : `Attachment: ${count} Image${count > 1 ? "s" : ""}`;
   return { text, attach, oneLine: text || attach || "" };
+}
+
+// ─── Conversations de groupe (fils partagés entre plusieurs téléphones) ─────────
+export type GroupSender = { pid: string } | { npc: string };
+
+/** Groupes partagés (au moins 3 membres) : [{ tid, name, members }]. */
+export function sharedGroups(threads: Record<string, Thread> | undefined, inboxes: Record<string, Record<string, InboxEntry> | undefined>) {
+  return Object.entries(threads ?? {})
+    .filter(([, t]) => t && t.kind === "group" && Object.keys(t.members ?? {}).length >= 3)
+    .map(([tid, t]) => {
+      const members = Object.keys(t.members ?? {});
+      const name = t.name || members.map((m) => inboxes[m]?.[tid]?.contact).find(Boolean) || tid;
+      return { tid, name, members };
+    });
+}
+
+/**
+ * Message dans un groupe partagé, au nom d'un PNJ ou d'un joueur : notif + « non lu » chez chaque
+ * membre sauf l'expéditeur. Photo + texte = deux bulles liées (comme en 1-à-1). `byMdj` marque les
+ * messages écrits depuis la régie (« Annuler l'envoi » ne touche qu'à ceux-là).
+ */
+export function groupMessagePatches(o: {
+  tid: string; name: string; members: string[]; sender: GroupSender; senderLabel: string;
+  text: string; img?: string; lore: string; msgs: Record<string, Msg> | undefined;
+}): Patches {
+  const { time, order } = nextSlot(o.msgs, o.lore);
+  const base: Record<string, Json> = "pid" in o.sender ? { from: o.sender.pid, time, byMdj: true } : { from: "npc", npcName: o.sender.npc, time, byMdj: true };
+  const patches: Patches = {};
+  const mid = makeId("m");
+  const text = o.text.trim();
+  if (o.img && text) {
+    const m2 = makeId("m");
+    patches[`threadMessages/${o.tid}/${m2}`] = { ...base, img: o.img, order, pair: mid };
+    patches[`threadMessages/${o.tid}/${mid}`] = { ...base, text, order: order + 500, pair: m2 };
+  } else {
+    patches[`threadMessages/${o.tid}/${mid}`] = o.img ? { ...base, img: o.img, order } : { ...base, text, order };
+  }
+  const who = "pid" in o.sender ? o.senderLabel.split(" ")[0] : o.senderLabel; // joueur : prénom ; PNJ : nom complet
+  for (const m of o.members) {
+    if ("pid" in o.sender && o.sender.pid === m) continue;
+    patches[`phones/${m}/inbox/${o.tid}/unread`] = true;
+    patches[`phones/${m}/inbox/${o.tid}/deleted`] = null;
+    Object.assign(patches, notifPatch(m, { app: "messages", title: o.name, body: text ? `${who}: ${text}` : `${who}:`, ...(o.img ? { attach: 1 } : {}),
+      link: `messages/${o.tid}`, thread: o.tid, msg: mid }));
+  }
+  return patches;
 }
