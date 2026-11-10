@@ -6,7 +6,7 @@ import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useData, useValue, useWriter } from "../data/hooks";
 import type { Patches } from "../data/store";
-import { findNpcThread, notifBody, notifPatch, npcContacts, npcMessagePatches, type InboxEntry, type Msg, type Notif, type Thread } from "../data/notify";
+import { findNpcThread, notifBody, notifLines, notifPatch, npcContacts, npcMessagePatches, type InboxEntry, type Msg, type Notif, type Thread } from "../data/notify";
 import { Glyph } from "../kit/glyph";
 import { img } from "../lib/img";
 import { loreToMs } from "../lib/loreTime";
@@ -230,7 +230,7 @@ function LiveThread({ tab, onGone }: { tab: Tab; onGone: () => void }) {
     write(patches);
     setText(""); setPhoto(null);
   };
-  const nudge = () => write(notifPatch(pid, { app: "messages", title: contact, body: notifBody(msgs[msgs.length - 1]?.[1].text) || "Nouveau message", link: `messages/${tid}`, thread: tid }));
+  const nudge = () => write(notifPatch(pid, { app: "messages", title: contact, body: notifBody(msgs[msgs.length - 1]?.[1].text), ...(msgs[msgs.length - 1]?.[1].img ? { attach: 1 } : {}), link: `messages/${tid}`, thread: tid }));
 
   // Annuler l'envoi : supprime définitivement le dernier message du PNJ et sa notif. Fil vidé → la conversation
   // disparaît du téléphone (fil, entrée de la boîte, notifs). Uniquement pour les fils PNJ.
@@ -312,7 +312,7 @@ export function PlayerTray({ pid }: { pid: string }) {
   return (
     <button className="tray-balloon" onClick={() => { shift(); nav(`/${pid}`); }}>
       {av && <img src={img(av)} alt="" />}
-      <span className="txt"><b>{n.title}</b><span>{n.body}</span><small>Nouveau message sur ton téléphone — clique pour l'ouvrir</small></span>
+      <span className="txt"><b>{n.title}</b><span>{notifLines(n, "ios").oneLine}</span><small>Nouveau message sur ton téléphone — clique pour l'ouvrir</small></span>
     </button>
   );
 }

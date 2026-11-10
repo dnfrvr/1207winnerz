@@ -15,7 +15,7 @@ import { APP_META } from "../../../src/shared/app-meta.js";
 import { APPS, preloadApps } from "../apps/registry";
 import { img } from "../lib/img";
 import { Sparkles } from "../site/Win";
-import { LockNotifs, NotifBanner, SeenOnOpen, useNotifBadges } from "./Notifs";
+import { LockNotifs, NotifBanner, SeenOnOpen, useNotifBadges, useOpenNotif, useUnseenNotifs } from "./Notifs";
 import "./android.css";
 
 type Profile = {
@@ -334,13 +334,17 @@ function Lock({ pid, profile }: { pid: string; profile: Profile }) {
   const time = useClock(); // 24 h, comme le reste du téléphone
   const lore = useLoreDate();
   const day = lore.toLocaleDateString("en-GB", { weekday: "long", month: "long", day: "numeric" });
+  // Message en attente : comme iOS 6, glisser ouvre directement la conversation (« slide to reply »).
+  const pending = useUnseenNotifs(pid)[0];
+  const openNotif = useOpenNotif(pid);
   return (
     <div className="lock" style={bg(profile.wallpaper)}>
       <StatusBar variant="translucent" locked />
       <div className="lock-clock"><div className="t">{time}</div><div className="d">{day}</div></div>
       <LockNotifs pid={pid} os="ios" />
       <div className="lock-bottom">
-        <SlideToUnlock onUnlock={() => nav(`/${pid}/home`)} />
+        <SlideToUnlock label={pending ? (pending[1].app === "messages" ? "slide to reply" : "slide to view") : undefined}
+          onUnlock={() => (pending ? openNotif(pending[0], pending[1]) : nav(`/${pid}/home`))} />
         <button className="lock-cam" aria-label="Appareil photo" onClick={() => nav(`/${pid}/camera`)}>
           <svg width="22" height="17" viewBox="0 0 22 17" aria-hidden><path d="M7 1h8l1.6 2.4H20a1.5 1.5 0 0 1 1.5 1.5v9.6A1.5 1.5 0 0 1 20 16H2A1.5 1.5 0 0 1 .5 14.5V4.9A1.5 1.5 0 0 1 2 3.4h3.4z" fill="#d8d8d8" /><circle cx="11" cy="9.4" r="4" fill="#3a3a3a" /><circle cx="11" cy="9.4" r="2.6" fill="#777" /></svg>
         </button>

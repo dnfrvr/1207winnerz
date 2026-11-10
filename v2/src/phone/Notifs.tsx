@@ -4,7 +4,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useData, useValue, useWriter } from "../data/hooks";
-import type { Notif } from "../data/notify";
+import { notifLines, type Notif } from "../data/notify";
 import type { Patches } from "../data/store";
 import { img } from "../lib/img";
 import { ANDROID_ICON_DEFAULTS, type OS } from "./common";
@@ -68,6 +68,13 @@ function useMarkSeen(pid: string) {
   };
 }
 
+/** Ouvrir une notif : marquée vue, puis l'app à la bonne page. */
+export function useOpenNotif(pid: string) {
+  const nav = useNavigate();
+  const markSeen = useMarkSeen(pid);
+  return (id: string, n: Notif) => { markSeen([id], n.thread); nav(`/${pid}/${n.link}`); };
+}
+
 /** Son « tri-tone » d'iOS / petit « ding » d'Android, synthétisé (aucun fichier). */
 function ding(os: OS) {
   try {
@@ -111,50 +118,75 @@ export function NotifBanner({ pid, os }: { pid: string; os: OS }) {
   const [id, n] = current;
   const open = () => { markSeen([id], n.thread); shift(); nav(`/${pid}/${n.link}`); };
   const src = icon(n.app);
+  const { oneLine } = notifLines(n, os);
   if (os === "android") return (
     <button key={id} className="and-ticker" onClick={open}>
       {src && <img src={img(src)} alt="" />}
-      <span className="txt"><b>{n.title} :</b> {n.body}</span>
+      <span className="txt"><b>{n.title}:</b> {oneLine}</span>
     </button>
   );
   return (
     <button key={id} className="ios-banner" onClick={open}>
       {src && <img src={img(src)} alt="" />}
-      <span className="txt"><b>{n.title}</b><span>{n.body}</span></span>
+      <span className="txt"><b>{n.title}</b><span>{oneLine}</span></span>
     </button>
   );
 }
 
 const ago = (at: number, now: number) => {
   const m = Math.floor((now - at) / 60_000);
-  return m < 1 ? "maintenant" : m < 60 ? `il y a ${m} min` : `il y a ${Math.floor(m / 60)} h`;
+  if (m < 1) return "now";
+  if (m < 60) return `${m}m ago`;
+  return new Date(at).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
 };
 
-/** Liste des notifs en attente sur l'écran verrouillé. */
+/** Écran verrouillé. iOS 6 : carte sombre au centre (bande grise en haut, icône à gauche, texte sur plusieurs lignes).
+ *  Android 4.1 : lignes façon volet de notifications. */
 export function LockNotifs({ pid, os }: { pid: string; os: OS }) {
   const list = useUnseenNotifs(pid);
-  const nav = useNavigate();
   const icon = useAppIcon(pid, os);
-  const markSeen = useMarkSeen(pid);
+  const open = useOpenNotif(pid);
   const [now, setNow] = useState(Date.now);
   useEffect(() => { const t = setInterval(() => setNow(Date.now()), 30_000); return () => clearInterval(t); }, []);
-  if (!list.length) return null;
-  return (
-    <ul className={os === "android" ? "and-lock-notifs" : "lock-notifs"}>
+  if (!list.length) return os === "ios" ? <div className="lock-alert-wrap" /> : null;
+  if (os === "android") return (
+    <ul className="and-lock-notifs">
       {list.slice(0, 4).map(([id, n]) => {
         const src = icon(n.app);
+        const { text, attach } = notifLines(n, os);
         return (
           <li key={id}>
-            <button onClick={() => { markSeen([id], n.thread); nav(`/${pid}/${n.link}`); }}>
-              {src ? <img src={img(src)} alt="" /> : <i />}
-              <span className="txt"><b>{n.title}</b><span>{n.body}</span></span>
+            <button onClick={() => open(id, n)}>
+              <span className="ico">{src ? <img src={img(src)} alt="" /> : <i />}</span>
+              <span className="txt"><b>{n.title}</b><span>{text || attach}</span>{text && attach && <span className="att">{attach}</span>}</span>
               <small>{ago(n.at, now)}</small>
             </button>
           </li>
         );
       })}
-      {list.length > 4 && <li className="more">+ {list.length - 4} autres</li>}
+      {list.length > 4 && <li className="more">+{list.length - 4}</li>}
     </ul>
+  );
+  return (
+    <div className="lock-alert-wrap">
+      <div className="lock-alert">
+        <div className="lock-alert-top" aria-hidden />
+        <ul>
+          {list.map(([id, n]) => {
+            const src = icon(n.app);
+            const { text, attach } = notifLines(n, os);
+            return (
+              <li key={id}>
+                <button onClick={() => open(id, n)}>
+                  <span className="ico">{src ? <img src={img(src)} alt="" /> : <i />}</span>
+                  <span className="txt"><b>{n.title}</b>{text && <span>{text}</span>}{attach && <span className="att">{attach}</span>}</span>
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      </div>
+    </div>
   );
 }
 

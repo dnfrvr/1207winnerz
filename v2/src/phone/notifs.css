@@ -1,14 +1,16 @@
 /* ─── Notifications ──────────────────────────────────────────────────────── */
 
-/* iOS 6 : bannière noire qui recouvre la barre d'état, glisse depuis le haut */
-.ios-banner { position: absolute; z-index: 40; top: 0; left: 0; right: 0; height: 40px; display: flex; align-items: center; gap: 8px;
-  padding: 0 8px; border: 0; text-align: left; cursor: pointer; color: #fff; font-family: var(--ios-font);
-  background: linear-gradient(#4a4a4a, #1c1c1c 50%, #000 51%, #111); box-shadow: 0 1px 0 rgba(255,255,255,.12) inset, 0 2px 6px rgba(0,0,0,.5);
+/* iOS 6 : bannière claire (dégradé gris perle) qui recouvre la barre d'état et glisse depuis le haut */
+.ios-banner { position: absolute; z-index: 40; top: 0; left: 0; right: 0; height: 40px; display: flex; align-items: center; gap: 9px;
+  padding: 0 9px; border: 0; text-align: left; cursor: pointer; color: #000; font-family: "Helvetica Neue", var(--ios-font);
+  background: linear-gradient(#fdfdfd, #ececec 50%, #e0e0e0 51%, #d4d4d4);
+  border-bottom: 1px solid #7d7d7d; box-shadow: inset 0 1px 0 #fff, 0 1px 4px rgba(0,0,0,.45);
   animation: banner-in .35s cubic-bezier(.2,.8,.3,1), banner-out .35s ease-in 4.65s forwards; }
-.ios-banner img { width: 22px; height: 22px; border-radius: 5px; flex: 0 0 auto; }
-.ios-banner .txt { min-width: 0; display: flex; flex-direction: column; line-height: 1.15; }
-.ios-banner b { font: bold 13px var(--ios-font); }
-.ios-banner .txt span { font: 13px var(--ios-font); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ios-banner img { width: 21px; height: 21px; border-radius: 5px; flex: 0 0 auto; box-shadow: 0 1px 1px rgba(0,0,0,.35); }
+.ios-banner .txt { min-width: 0; display: flex; flex-direction: column; line-height: 1.2; text-shadow: 0 1px 0 rgba(255,255,255,.8); }
+.ios-banner b { font: bold 14px "Helvetica Neue", var(--ios-font); color: #000; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ios-banner .txt span { font: 13px "Helvetica Neue", var(--ios-font); color: #3a3a3a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ios-banner:active { background: linear-gradient(#ececec, #d8d8d8); }
 @keyframes banner-in { from { transform: translateY(-100%); } }
 @keyframes banner-out { to { transform: translateY(-100%); } }
 
@@ -21,26 +23,37 @@
 @keyframes ticker-in { from { transform: translateY(-100%); } }
 @keyframes ticker-roll { 0%, 25% { transform: translateX(0); } 100% { transform: translateX(min(0px, calc(-100% + 240px))); } }
 
-/* iOS 6 : notifs sur l'écran verrouillé, sous l'horloge */
-.lock-notifs { list-style: none; margin: 0; padding: 0; background: rgba(0,0,0,.55); border-bottom: 1px solid rgba(0,0,0,.6); }
-.lock-notifs li { border-top: 1px solid rgba(255,255,255,.12); }
-.lock-notifs button { width: 100%; display: flex; align-items: center; gap: 9px; padding: 8px 10px; border: 0; background: none; color: #fff; text-align: left; cursor: pointer; }
-.lock-notifs button:active { background: rgba(255,255,255,.12); }
-.lock-notifs img, .lock-notifs i { width: 29px; height: 29px; border-radius: 6px; flex: 0 0 auto; background: #555; }
-.lock-notifs .txt { flex: 1; min-width: 0; display: flex; flex-direction: column; font: 13px/1.25 var(--ios-font); text-shadow: 0 -1px 0 rgba(0,0,0,.8); }
-.lock-notifs .txt b { font-weight: bold; }
-.lock-notifs .txt span { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-.lock-notifs small { align-self: flex-start; font: 11px var(--ios-font); color: rgba(255,255,255,.6); white-space: nowrap; }
-.lock-notifs .more { padding: 6px 10px; font: 12px var(--ios-font); color: rgba(255,255,255,.7); text-align: center; }
+/* iOS 6 : carte d'alerte au centre de l'écran verrouillé */
+.lock-alert-wrap { flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; padding: 12px 0; }
+.lock-alert { width: 274px; max-height: 100%; display: flex; flex-direction: column; overflow: hidden; border-radius: 9px;
+  background: linear-gradient(rgba(58,58,58,.94), rgba(22,22,22,.94) 60px, rgba(18,18,18,.94));
+  border: 1px solid rgba(0,0,0,.85); box-shadow: inset 0 0 0 1px rgba(255,255,255,.08), 0 3px 10px rgba(0,0,0,.6); }
+.lock-alert-top { flex: 0 0 18px; background: linear-gradient(#e6e6e6, #b9b9b9 50%, #a6a6a6 51%, #9a9a9a);
+  border-bottom: 1px solid #2a2a2a; box-shadow: inset 0 1px 0 rgba(255,255,255,.7); }
+.lock-alert ul { list-style: none; margin: 0; padding: 0; overflow-y: auto; max-height: 230px; }
+.lock-alert li + li { border-top: 1px solid rgba(0,0,0,.7); box-shadow: inset 0 1px 0 rgba(255,255,255,.07); }
+.lock-alert button { width: 100%; display: flex; align-items: center; gap: 10px; padding: 8px 12px 10px 10px; border: 0; background: none;
+  color: #fff; text-align: left; cursor: pointer; }
+.lock-alert button:active { background: rgba(255,255,255,.08); }
+.lock-alert .ico { flex: 0 0 auto; align-self: center; }
+.lock-alert .ico img, .lock-alert .ico i { display: block; width: 29px; height: 29px; border-radius: 6px; background: #555; box-shadow: 0 1px 2px rgba(0,0,0,.6); }
+.lock-alert .txt { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; text-shadow: 0 -1px 0 rgba(0,0,0,.9);
+  font: 15px/1.28 "Helvetica Neue", var(--ios-font); overflow-wrap: anywhere; }
+.lock-alert .txt b { font: bold 16px/1.3 "Helvetica Neue", var(--ios-font); }
+.lock-alert .txt span { display: -webkit-box; -webkit-line-clamp: 5; -webkit-box-orient: vertical; overflow: hidden; }
+.lock-alert .txt .att { color: #c9c9c9; font-size: 14px; }
 
-/* Android 4.1 : cartes sombres sous l'horloge */
-.and-lock-notifs { list-style: none; margin: 14px 10px 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
-.and-lock-notifs button { width: 100%; display: flex; align-items: center; gap: 10px; padding: 8px 10px; border: 0; background: rgba(0,0,0,.6); color: #fff; text-align: left; cursor: pointer; }
+/* Android 4.1 : lignes façon volet de notifications, sous l'horloge */
+.and-lock-notifs { list-style: none; margin: 14px 8px 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+.and-lock-notifs button { width: 100%; display: flex; align-items: stretch; gap: 0; padding: 0; border: 0; background: rgba(0,0,0,.78); color: #fff; text-align: left; cursor: pointer; min-height: 56px; }
 .and-lock-notifs button:active { background: rgba(51,181,229,.45); }
-.and-lock-notifs img, .and-lock-notifs i { width: 28px; height: 28px; flex: 0 0 auto; }
-.and-lock-notifs .txt { flex: 1; min-width: 0; display: flex; flex-direction: column; font: 13px/1.25 var(--and-font); }
-.and-lock-notifs .txt span { color: rgba(255,255,255,.75); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.and-lock-notifs small { font: 11px var(--and-font); color: rgba(255,255,255,.55); white-space: nowrap; }
-.and-lock-notifs .more { font: 12px var(--and-font); color: rgba(255,255,255,.7); text-align: center; }
+.and-lock-notifs .ico { flex: 0 0 56px; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,.07); }
+.and-lock-notifs .ico img, .and-lock-notifs .ico i { width: 34px; height: 34px; }
+.and-lock-notifs .txt { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center; padding: 6px 10px; font: 14px/1.3 var(--and-font); }
+.and-lock-notifs .txt b { font: 400 16px var(--and-font); }
+.and-lock-notifs .txt span { color: #a9a9a9; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.and-lock-notifs .txt .att { color: #33b5e5; }
+.and-lock-notifs small { align-self: flex-start; padding: 7px 8px 0 0; font: 12px var(--and-font); color: #8a8a8a; white-space: nowrap; }
+.and-lock-notifs .more { font: 12px var(--and-font); color: rgba(255,255,255,.75); text-align: center; }
 
 @media (prefers-reduced-motion: reduce) { .ios-banner, .and-ticker, .and-ticker .txt { animation: none; } }

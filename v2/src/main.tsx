@@ -10,9 +10,11 @@ import { Phone } from "./phone/Phone";
 import { Lobby, PIDS } from "./site/Site";
 import { PlayerTray, Regie } from "./site/Regie";
 import { installTouchContextMenu } from "./phone/touchContextMenu";
+import { installAutoUpdate } from "./lib/autoUpdate";
 import "./styles.css";
 
 installTouchContextMenu();
+installAutoUpdate();
 
 const LS_ME = "uma-v2-me";
 

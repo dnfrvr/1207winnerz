@@ -117,7 +117,7 @@ export function BarBack({ onClick, label = "Retour", tone = "dark" }: { onClick:
 }
 
 /** Curseur « slide to unlock » (glisser au doigt ou à la souris). */
-export function SlideToUnlock({ onUnlock }: { onUnlock: () => void }) {
+export function SlideToUnlock({ onUnlock, label = "slide to unlock" }: { onUnlock: () => void; label?: string }) {
   const track = useRef<HTMLDivElement>(null);
   const [x, setX] = useState(0);
   const start = useRef<number | null>(null);
@@ -135,7 +135,7 @@ export function SlideToUnlock({ onUnlock }: { onUnlock: () => void }) {
         else setX(0);
       }}
     >
-      <div className="label" style={{ opacity: 1 - x / max() }}>slide to unlock</div>
+      <div className="label" style={{ opacity: 1 - x / max() }}>{label}</div>
       <div className="knob" style={{ transform: `translateX(${x}px)`, transition: start.current === null ? "transform .25s" : "none" }}>
         <svg width="28" height="22" viewBox="0 0 28 22" aria-hidden><path d="M2 8h14V2l10 9-10 9v-6H2z" fill="url(#stu)" stroke="#7d7d7d" strokeWidth=".8" /><defs><linearGradient id="stu" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#9a9a9a" /><stop offset="1" stopColor="#c8c8c8" /></linearGradient></defs></svg>
       </div>

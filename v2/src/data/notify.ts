@@ -7,7 +7,8 @@ import { makeId, type Json, type Patches } from "./store";
 export type Notif = {
   app: string;        // id de l'app (« messages »)
   title: string;      // expéditeur affiché
-  body: string;       // aperçu
+  body: string;       // aperçu (texte seul ; peut être vide si photo seule)
+  attach?: number;    // nombre de photos jointes (« Attachment: 1 Image »)
   link: string;       // route dans le téléphone, sans le pid (« messages/t_… »)
   thread?: string;
   at: number;         // horodatage réel (ms)
@@ -46,7 +47,7 @@ export function nextSlot(msgs: Record<string, Msg> | undefined, lore: string) {
   return { time: msToLore(Math.max(loreNowMs(lore), lastMs + 60_000)), order: maxOrder + 1000 };
 }
 
-export const notifBody = (text?: string, img?: string) => text?.trim() || (img ? "📷 Photo" : "");
+export const notifBody = (text?: string) => text?.trim() ?? "";
 
 /** Patch de la notif seule (réponse du MDJ dans un fil existant). */
 export const notifPatch = (pid: string, n: Omit<Notif, "at">): Patches => ({
@@ -75,6 +76,17 @@ export function npcMessagePatches(opts: {
   const msg: Record<string, Json> = { from: "npc", npcName: contact, text, time, order };
   if (img) msg.img = img;
   patches[`threadMessages/${tid}/${makeId("m")}`] = msg;
-  Object.assign(patches, notifPatch(pid, { app: "messages", title: contact, body: notifBody(text, img), link: `messages/${tid}`, thread: tid }));
+  Object.assign(patches, notifPatch(pid, { app: "messages", title: contact, body: notifBody(text), ...(img ? { attach: 1 } : {}), link: `messages/${tid}`, thread: tid }));
   return { patches, tid };
+}
+
+/** Lignes à afficher : texte + mention de pièce jointe, dans la langue du téléphone (anglais, 2012). */
+export function notifLines(n: Notif, os: "ios" | "android") {
+  // Anciennes notifs : la photo était écrite « 📷 Photo » dans le texte.
+  const legacy = n.body === "📷 Photo";
+  const text = legacy ? "" : n.body;
+  const count = n.attach ?? (legacy ? 1 : 0);
+  const attach = !count ? null : os === "android" ? (count > 1 ? `${count} pictures` : "Picture")
+    : `Attachment: ${count} Image${count > 1 ? "s" : ""}`;
+  return { text, attach, oneLine: text || attach || "" };
 }
