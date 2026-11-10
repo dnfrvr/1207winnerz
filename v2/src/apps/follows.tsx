@@ -38,6 +38,12 @@ export type Who = { key: string; name: string; handle: string; avatar?: string; 
 type Decor = { path: (pid: string) => string; key: (p: FPost) => string | undefined; seed: (p: FPost) => Acc; postFields: string[] };
 type Cfg = { label: string; accLabel: string; listTitle: string; accFields: string[]; postFields: string[]; dateKey: "time" | "date"; post: (now: number) => Record<string, Json>; decor?: Decor };
 
+/** « nouveau compte » / « nouvelle page » (avec article si demandé). */
+const newAcc = (cfg: Cfg, article = false) => {
+  const fem = cfg.accLabel === "Page";
+  return `${article ? (fem ? "une " : "un ") : ""}${fem ? "nouvelle" : "nouveau"} ${cfg.accLabel.toLowerCase()}`;
+};
+
 const urlOrEmpty = (s?: string) => (s && s.length > 2 ? s : "");
 
 export const NETS: Record<Net, Cfg> = {
@@ -274,15 +280,15 @@ export function FollowList({ pid, net }: { pid: string; net: Net }) {
   const f = useFollows(pid, net);
   const ed = useEditor(pid);
   const { cfg } = f;
-  const create = () => ed.add(f.base, ACC_TEMPLATE[net], { atStart: true, title: `Nouveau ${cfg.accLabel.toLowerCase()}`, fields: cfg.accFields });
+  const create = () => ed.add(f.base, ACC_TEMPLATE[net], { atStart: true, title: `${newAcc(cfg)[0].toUpperCase()}${newAcc(cfg).slice(1)}`, fields: cfg.accFields });
   const adopt = useAdopt(pid, net);
   return (
     <div className={`app ${APP_CLASS[net]} fo ${os}`}>
       <StatusBar />
       <NetBar net={net} title={cfg.listTitle} onBack={() => nav(root)} backLabel={cfg.label}
-        action={ed.canEdit ? { label: `Suivre un nouveau ${cfg.accLabel.toLowerCase()}`, icon: mdiAccountPlus, onClick: create } : undefined} />
+        action={ed.canEdit ? { label: `Suivre ${newAcc(cfg, true)}`, icon: mdiAccountPlus, onClick: create } : undefined} />
       <div className="fo-scroll">
-        {ed.canEdit && <button className="fo-new" onClick={create}><Glyph i={mdiPlus} size={18} />Suivre un nouveau {cfg.accLabel.toLowerCase()}</button>}
+        {ed.canEdit && <button className="fo-new" onClick={create}><Glyph i={mdiPlus} size={18} />Suivre {newAcc(cfg, true)}</button>}
         {f.entries.map((e) => {
           const who = f.whoOf(e);
           const count = Object.values(e.acc.posts ?? {}).filter((p) => p && !p.deleted).length + e.decorPosts.length;
