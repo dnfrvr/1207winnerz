@@ -111,21 +111,30 @@ export function useFollows(pid: string, net: Net) {
     const entries: Entry[] = [];
     for (const [id, acc] of accs) {
       const e: Entry = { key: id, id, path: `${base}/${id}`, match: acc.match, acc, decorPosts: [] };
-      if (acc.match) byMatch.set(norm(acc.match), e);
-      if (!acc.deleted) entries.push(e);
+      // Un compte décor adopté (match) garde sa place d'origine dans la liste : on le range
+      // au moment où son premier post décor apparaît, plus bas.
+      if (acc.match && cfg.decor) byMatch.set(norm(acc.match), e);
+      else if (!acc.deleted) entries.push(e);
     }
+    const placed = new Set<Entry>();
     const implicit = new Map<string, Entry>();
     if (cfg.decor) {
       for (const [id, p] of decor) {
         const k = cfg.decor.key(p);
         if (!k) continue;
         const owner = byMatch.get(norm(k));
-        if (owner) { owner.decorPosts.push([id, p]); continue; }
+        if (owner) {
+          if (!placed.has(owner)) { placed.add(owner); if (!owner.acc.deleted) entries.push(owner); }
+          owner.decorPosts.push([id, p]);
+          continue;
+        }
         let e = implicit.get(norm(k));
         if (!e) { e = { key: implicitKey(k), match: k, acc: cfg.decor.seed(p), decorPosts: [] }; implicit.set(norm(k), e); entries.push(e); }
         else if (!e.acc.color && p.avatarBg) e.acc = { ...e.acc, color: p.avatarBg };
         e.decorPosts.push([id, p]);
       }
+      // Comptes adoptés dont les posts décor ont disparu : en fin de liste.
+      for (const e of byMatch.values()) if (!placed.has(e) && !e.acc.deleted) entries.push(e);
     }
     const whoOf = (e: Entry): Who => ({ key: e.key, name: e.acc.name || e.acc.handle || "", handle: e.acc.handle ?? "", avatar: e.acc.avatar || undefined, color: e.acc.color || undefined });
     /** Posts des vrais comptes (non supprimés), pour les fils. */
