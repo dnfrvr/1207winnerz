@@ -224,8 +224,19 @@ function useFullscreenFit(scr: { w: number; h: number }): number | null {
     return Math.min(w / scr.w, (h - KEYBAR) / scr.h);
   };
   const [fit, setFit] = useState(compute);
+  const last = useRef({ w: 0, h: 0 });
   useEffect(() => {
-    const on = () => setFit(compute());
+    const on = () => {
+      const vv = window.visualViewport;
+      const w = vv?.width ?? window.innerWidth, h = vv?.height ?? window.innerHeight;
+      // Clavier virtuel ouvert : la hauteur baisse sans que la largeur change → on garde l'échelle,
+      // le clavier passe par-dessus l'écran au lieu de le rétrécir.
+      const el = document.activeElement as HTMLElement | null;
+      const editing = !!el && (el.tagName === "INPUT" || el.tagName === "TEXTAREA" || el.isContentEditable);
+      if (editing && Math.abs(w - last.current.w) < 2 && h < last.current.h) return;
+      last.current = { w, h };
+      setFit(compute());
+    };
     on();
     window.addEventListener("resize", on);
     window.visualViewport?.addEventListener("resize", on);
