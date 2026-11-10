@@ -9,6 +9,7 @@ import {
   mdiWeatherPartlyCloudy, mdiWeatherPartlyRainy, mdiWeatherRainy, mdiWeatherSnowy, mdiWeatherSunny, mdiWeatherWindy,
 } from "@mdi/js";
 import { useList, useValue } from "../data/hooks";
+import { useDragPages } from "../phone/useDragPages";
 import { AppFrame, BackButton, StatusBar } from "../phone/IOSChrome";
 import { useNow, useOS } from "../phone/common";
 import { Glyph } from "../kit/glyph";
@@ -60,6 +61,7 @@ export default function WeatherApp({ pid }: { pid: string }) {
   const unit = useValue<string>(`phones/${pid}/data/weather/unit`) === "F" ? "F" : "C";
   const [page, setPage] = useState(0);
   const [flipped, setFlipped] = useState(false);
+  const drag = useDragPages();
   const ed = useEditor(pid);
   const nav = useNavigate();
   const now = useNow();
@@ -69,7 +71,7 @@ export default function WeatherApp({ pid }: { pid: string }) {
   const addCity = () => ed.add(path, { name: "", current: 15, condition: "Sunny", condIcon: "☀️", updated: "10/6/12 3:00 PM" }, { title: "Nouvelle ville", fields: ["name", "current", "condition", "condIcon"], choices: { condIcon: CHOICES } });
 
   const pages = (
-    <div className="wx-pages" onScroll={(e) => setPage(Math.round(e.currentTarget.scrollLeft / e.currentTarget.clientWidth))}>
+    <div className="wx-pages" {...drag} onScroll={(e) => setPage(Math.round(e.currentTarget.scrollLeft / e.currentTarget.clientWidth))}>
       {cities.map(([id, c]) => {
         const days = Object.entries(c.forecast ?? {}).sort((a, b) => (a[1].order ?? 0) - (b[1].order ?? 0));
         const hi = days[0]?.[1].hi, lo = days[0]?.[1].lo;

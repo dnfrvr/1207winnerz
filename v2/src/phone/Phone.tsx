@@ -5,6 +5,7 @@ import { mdiApplication, mdiChevronLeft, mdiChevronRight, mdiHelpCircleOutline, 
 import { Suspense, useEffect, useRef, useState, type CSSProperties } from "react";
 import { Link, Route, Routes, useLocation, useNavigate, useParams, type Location } from "react-router-dom";
 import { useCanEdit, useValue, useWriter } from "../data/hooks";
+import { useDragPages } from "./useDragPages";
 import { AppTips, replayTips } from "./AppTips";
 import { PromptAlert } from "./Sheets";
 import { LORE_BUMP, loreToMs, msToLore } from "../lib/loreTime";
@@ -400,9 +401,10 @@ function useHomeApps(pid: string) {
 function Pages({ ids, per, render }: { ids: string[]; per: number; render: (id: string) => React.ReactNode }) {
   const pages = Array.from({ length: Math.max(1, Math.ceil(ids.length / per)) }, (_, i) => ids.slice(i * per, (i + 1) * per));
   const [page, setPage] = useState(0);
+  const drag = useDragPages();
   return (
     <>
-      <div className="pages" onScroll={(e) => setPage(Math.round(e.currentTarget.scrollLeft / e.currentTarget.clientWidth))}>
+      <div className="pages" {...drag} onScroll={(e) => setPage(Math.round(e.currentTarget.scrollLeft / e.currentTarget.clientWidth))}>
         {pages.map((p, i) => <div className="page" key={i}>{p.map(render)}</div>)}
       </div>
       {pages.length > 1 && <div className="dots">{pages.map((_, i) => <i key={i} className={i === page ? "on" : ""} />)}</div>}
