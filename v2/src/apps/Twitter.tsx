@@ -3,10 +3,11 @@
 // Android : barre d'action Holo claire (oiseau bleu) + onglets à icônes sous la barre.
 // Le fil mêle les tweets des 4 persos (partagés) et le fil « décor » propre au téléphone.
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Route, Routes, useNavigate } from "react-router-dom";
 import { mdiAccount, mdiAt, mdiFeather, mdiHome, mdiMagnify, mdiPound, mdiRepeat, mdiReply, mdiStar } from "@mdi/js";
 import { useList, useValue } from "../data/hooks";
 import { loreNowMs, loreToMs, msToLore } from "../lib/loreTime";
+import { AccountPage, ago, FollowList, useFollows, type Who } from "./follows";
 import { StatusBar, BarBack } from "../phone/IOSChrome";
 import { LORE_DATE_DEFAULT, useOS } from "../phone/common";
 import { Avatar, Empty, useEditor } from "../kit/kit";
@@ -17,13 +18,6 @@ import "./social.css";
 type Tweet = { author?: string; name?: string; h?: string; av?: string; text?: string; time?: string; rt?: number; fav?: number; rp?: number; order?: number; deleted?: boolean };
 type TwUser = { char?: string; h?: string; name?: string; av?: string; bannerImg?: string; bio?: string; followers?: number; following?: number };
 
-const ago = (time: string | undefined, now: number) => {
-  const t = loreToMs(time);
-  if (t === null) return time ?? "";
-  const m = Math.max(0, Math.round((now - t) / 60000));
-  return m < 60 ? `${m}m` : m < 1440 ? `${Math.round(m / 60)}h` : `${Math.round(m / 1440)}d`;
-};
-
 const TABS = [
   { id: "home", icon: mdiHome, label: "Home" },
   { id: "connect", icon: mdiAt, label: "Connect" },
@@ -32,6 +26,16 @@ const TABS = [
 ];
 
 export default function TwitterApp({ pid }: { pid: string }) {
+  return (
+    <Routes>
+      <Route index element={<TwitterMain pid={pid} />} />
+      <Route path="f" element={<FollowList pid={pid} net="twitter" />} />
+      <Route path="f/:key" element={<AccountPage pid={pid} net="twitter" />} />
+    </Routes>
+  );
+}
+
+function TwitterMain({ pid }: { pid: string }) {
   const os = useOS();
   const nav = useNavigate();
   const chars = useChars();
@@ -40,18 +44,29 @@ export default function TwitterApp({ pid }: { pid: string }) {
   const shared = useList<Tweet>("feeds/tweets");
   const decor = useList<Tweet>(`phones/${pid}/data/homeBaseTweets`);
   const users = useValue<Record<string, TwUser>>("shared/twitterUsers") ?? {};
-  const [tab, setTab] = useState("home");
+  const fol = useFollows(pid, "twitter");
+  const [tab, setTabRaw] = useState(() => sessionStorage.getItem("tw-tab") ?? "home");
+  const setTab = (t: string) => { setTabRaw(t); try { sessionStorage.setItem("tw-tab", t); } catch { /* rien */ } };
+  const openAcc = (key: string) => nav(`/${pid}/twitter/f/${encodeURIComponent(key)}`);
   const [compose, setCompose] = useState(false);
   const ed = useEditor(pid);
   const me = chars[pid];
   const myKey = Object.keys(users).find((k) => users[k]?.char === pid);
   const myUser = myKey ? users[myKey] : undefined;
 
-  const who = (t: Tweet): { name: string; h: string; av?: string } => {
+  type Item = { id: string; t: Tweet; path: string; acc?: Who; adopted?: boolean };
+  const who = (t: Tweet, acc?: Who): { name: string; h: string; av?: string } => {
+    if (acc) return { name: acc.name, h: acc.handle && !acc.handle.startsWith("@") ? `@${acc.handle}` : acc.handle, av: acc.avatar };
     if (t.author && chars[t.author]) { const c: CharInfo = chars[t.author]; return { name: c.twName ?? c.name, h: c.tw ?? `@${c.first.toLowerCase()}`, av: pickLocal(c.twAv, c.avatar) }; }
     return { name: t.name ?? "", h: t.h ?? "", av: t.av && t.av.length > 2 ? t.av : undefined };
   };
-  const all = [...shared.map(([id, t]) => ({ id, t, path: `feeds/tweets/${id}` })), ...decor.map(([id, t]) => ({ id, t, path: `phones/${pid}/data/homeBaseTweets/${id}` }))]
+  const decorItems: Item[] = decor.flatMap(([id, t]) => {
+    const owner = fol.decorOwner(t);
+    if (owner === null) return []; // compte désabonné
+    return [{ id, t, path: `phones/${pid}/data/homeBaseTweets/${id}`, acc: owner ? fol.whoOf(owner) : undefined, adopted: !!owner?.id }];
+  });
+  const all: Item[] = [...shared.map(([id, t]) => ({ id, t, path: `feeds/tweets/${id}` })), ...decorItems,
+    ...fol.posts.map((x) => ({ id: x.key, t: x.post as Tweet, path: x.path, acc: x.who, adopted: true }))]
     .sort((a, b) => (loreToMs(b.t.time) ?? 0) - (loreToMs(a.t.time) ?? 0));
   const handle = (me?.tw ?? "").toLowerCase();
   const list = tab === "home" ? all : tab === "connect" ? all.filter(({ t }) => handle && (t.text ?? "").toLowerCase().includes(handle)) : tab === "me" ? all.filter(({ t }) => t.author === pid) : [];
@@ -89,12 +104,12 @@ export default function TwitterApp({ pid }: { pid: string }) {
               </Cover>
               <div className="tw-counts">
                 <span><b>{list.length}</b>TWEETS</span>
-                <span><b>{compact(myUser?.following ?? 312)}</b>FOLLOWING</span>
+                <button type="button" className="fo-count" onClick={(e) => { e.stopPropagation(); nav(`/${pid}/twitter/f`); }}><b>{compact(myUser?.following ?? 312)}</b>FOLLOWING</button>
                 <span><b>{compact(myUser?.followers ?? 1204)}</b>FOLLOWERS</span>
               </div>
             </Press>
             <div className="tw-menu">
-              <div>Direct Messages<i>›</i></div><div>Lists<i>›</i></div><div>Drafts<i>›</i></div>
+              <div className="fo-link" onClick={() => nav(`/${pid}/twitter/f`)}>Following<i>›</i></div><div>Direct Messages<i>›</i></div><div>Lists<i>›</i></div><div>Drafts<i>›</i></div>
             </div>
           </>
         )}
@@ -104,14 +119,16 @@ export default function TwitterApp({ pid }: { pid: string }) {
             <div className="tw-th">Trends · United States</div>
             {["#GameDay", "#UMAmoose", "Hurricane Sandy", "#Gangnam", "Call Me Maybe", "#Debates2012", "One Direction", "#TwilightBreakingDawn"].map((t) => <div key={t} className="tw-trend">{t}</div>)}
           </div>
-        ) : list.map(({ t, path }) => {
-          const w = who(t);
+        ) : list.map(({ t, path, acc, adopted }) => {
+          const w = who(t, acc);
           const editable = ed.canEdit && (t.author === pid || path.startsWith("phones/"));
+          const open = acc ? () => openAcc(acc.key) : undefined;
+          const whoBtn = (child: React.ReactNode, cls = "") => open ? <button type="button" className={`fo-who ${cls}`} onClick={(e) => { e.stopPropagation(); open(); }}>{child}</button> : child;
           return (
-            <Press key={path} className="tw-tweet" onLong={editable ? () => ed.edit({ path, fields: t.author ? ["text", "time", "rp", "rt", "fav"] : ["name", "h", "av", "text", "time", "rp", "rt", "fav"], title: "Tweet" }) : undefined}>
-              <Avatar src={w.av} name={w.name} size={48} round={false} />
+            <Press key={path} className="tw-tweet" onLong={editable ? () => ed.edit({ path, fields: t.author || adopted ? ["text", "time", "rp", "rt", "fav"] : ["name", "h", "av", "text", "time", "rp", "rt", "fav"], title: "Tweet" }) : undefined}>
+              {whoBtn(<Avatar src={w.av} name={w.name} size={48} round={false} />)}
               <div className="tw-body">
-                <div className="tw-head"><b>{w.name}</b><span>{w.h}</span><i>{ago(t.time, now)}</i></div>
+                <div className="tw-head">{whoBtn(<b>{w.name}</b>, "inline")}<span>{w.h}</span><i>{ago(t.time, now)}</i></div>
                 <p>{t.text}</p>
                 <div className="tw-acts">
                   <span><Glyph i={mdiReply} size={15} />{t.rp || ""}</span>

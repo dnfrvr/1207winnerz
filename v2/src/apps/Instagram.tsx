@@ -14,6 +14,9 @@ import { Glyph } from "../kit/glyph";
 import { mdiCommentOutline, mdiDotsHorizontal, mdiHeart, mdiPlus } from "@mdi/js";
 import { Press } from "./social";
 import { PIDS, num, useChars } from "./social";
+import { AccountPage, FollowList, FollowPost, useFollows } from "./follows";
+import { loreNowMs } from "../lib/loreTime";
+import { LORE_DATE_DEFAULT } from "../phone/common";
 import "./instagram.css";
 
 type Comment = { user?: string; text?: string; time?: string; authorKey?: string; replies?: Record<string, Comment>; order?: number; deleted?: boolean };
@@ -26,6 +29,8 @@ export default function InstagramApp({ pid }: { pid: string }) {
     <Routes>
       <Route index element={<Shell pid={pid} />} />
       <Route path="p/:owner/:id" element={<PostPage pid={pid} />} />
+      <Route path="f" element={<FollowList pid={pid} net="instagram" />} />
+      <Route path="f/:key" element={<AccountPage pid={pid} net="instagram" />} />
     </Routes>
   );
 }
@@ -75,14 +80,27 @@ function Shell({ pid }: { pid: string }) {
 
 function Feed({ pid }: { pid: string }) {
   const nav = useNavigate();
-  const { feed } = useTimeline(pid);
+  const { feed: chars } = useTimeline(pid);
+  const fol = useFollows(pid, "instagram");
+  const ed = useEditor(pid);
+  const now = loreNowMs(useValue<string>("meta/loreDate") || LORE_DATE_DEFAULT);
+  // Fil : les persos + les comptes suivis (Cynthia, marques, stars…).
+  type Item = { owner: string; id: string; post: Post; follow?: (typeof fol.posts)[number] };
+  const feed = newestFirst<Item>([...chars, ...fol.posts.map((x) => ({ owner: "", id: x.key, post: x.post as Post, follow: x }))], (f) => f.post.date);
   return (
     <>
       <Bar left={<BarBack onClick={() => nav(`/${pid}/home`)} label="Accueil" />} right={<button className="ig-btn"><Icon name="refresh" size={16} /></button>} />
       <div className="ig-scroll">
-        {feed.map((f) => <PostCard key={`${f.owner}/${f.id}`} pid={pid} owner={f.owner} id={f.id} post={f.post} />)}
+        {feed.map((f) => {
+          const x = f.follow;
+          if (!x) return <PostCard key={`${f.owner}/${f.id}`} pid={pid} owner={f.owner} id={f.id} post={f.post} />;
+          const cut = x.path.lastIndexOf("/");
+          return <FollowPost key={`a/${f.id}`} net="instagram" who={x.who} post={x.post} now={now} onWho={() => nav(`/${pid}/insta/f/${encodeURIComponent(x.who.key)}`)}
+            onLong={ed.itemLong(x.path.slice(0, cut), x.path.slice(cut + 1), { fields: ["src", "caption", "location", "date", "likes"], label: "Publication" })} />;
+        })}
         {feed.length === 0 && <Empty>Aucune publication</Empty>}
       </div>
+      {ed.ui}
     </>
   );
 }
@@ -169,7 +187,7 @@ function ProfileView({ pid }: { pid: string }) {
         <div className="ig-prof">
           <Avatar src={prof.avatar} name={prof.displayName} size={76} round={false} />
           <div className="ig-stats">
-            <div className="nums"><span><b>{own.length}</b>photos</span><span><b>{num(prof.followers)}</b>followers</span><span><b>{num(prof.following)}</b>following</span></div>
+            <div className="nums"><span><b>{own.length}</b>photos</span><span><b>{num(prof.followers)}</b>followers</span><button type="button" className="fo-igcount" onClick={() => nav(`/${pid}/insta/f`)}><b>{num(prof.following)}</b>following</button></div>
             <button className="ig-edit" onClick={ed.canEdit ? () => ed.edit({ path: `phones/${pid}/data/instagram`, fields: ["handle", "displayName", "bio", "link", "avatar", "followers", "following"], title: "Edit Your Profile" }) : undefined}>
               {ed.canEdit ? "Edit Your Profile" : "Following"}
             </button>

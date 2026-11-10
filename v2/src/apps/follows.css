@@ -1,0 +1,61 @@
+/* Comptes suivis (liste + page de compte), commun à Twitter / Facebook / Instagram / Tumblr. */
+.fo-scroll { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding-bottom: 12px; }
+.fo-title { flex: 1; min-width: 0; text-align: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 0 4px; }
+.fo-fb { font: bold 17px var(--ios-font) !important; color: #fff; }
+.fo-back { font: 28px/1 var(--ios-font); padding-bottom: 3px; }
+.fo-spacer { width: 38px; flex: 0 0 38px; }
+.fo-who { all: unset; cursor: pointer; display: inline-flex; flex: 0 0 auto; }
+.fo-who.inline { display: inline; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fo-who.grow { flex: 1; }
+.fo-who.sticky { position: sticky; top: 4px; align-self: flex-start; }
+.fo-who.sticky .k-avatar { border-radius: 3px; }
+.fo-who:focus-visible { outline: 2px solid #4a90e2; outline-offset: 1px; }
+
+/* Liste */
+.fo-new { display: flex; align-items: center; justify-content: center; gap: 6px; width: calc(100% - 16px); margin: 8px; min-height: 40px; border-radius: 6px;
+  font: bold 14px var(--ios-font); color: #2b8be0; background: #fff; border: 1px dashed #9fb3c8; }
+.fo-row { display: flex; align-items: center; gap: 10px; min-height: 60px; padding: 8px 10px; background: #fff; border-bottom: 1px solid #e3e6e9; cursor: pointer; }
+.fo-row .k-avatar { border-radius: 5px; flex: 0 0 auto; }
+.fo-txt { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.fo-txt b { font: bold 15px var(--ios-font); color: #292f33; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fo-txt small { font: 13px var(--ios-font); color: #8899a6; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fo-chev { color: #b8c1ca; flex: 0 0 auto; }
+.fb .fo-row, .tb .fo-row { margin: 6px 6px 0; border: 1px solid #c4cde0; border-radius: 4px; }
+.fb .fo-txt b { color: #3b5998; }
+.ig .fo-txt b { color: #3f729b; }
+.tb .fo-row { border-color: transparent; }
+.tb .fo-new { background: rgba(255,255,255,.1); color: #fff; border-color: rgba(255,255,255,.4); }
+
+/* Page de compte */
+.fo-head { background: #fff; border-bottom: 1px solid #d8dde2; }
+.fb .fo-head, .tb .fo-head { margin: 8px 6px 0; border-radius: 6px; overflow: hidden; border: 0; }
+.fo-cover { height: 160px; }
+.fo-cover .so-cover-in { align-items: center; justify-content: center; text-align: center; gap: 2px; padding: 10px 14px; }
+.fo-cover .k-avatar { border: 3px solid #fff; border-radius: 5px; box-shadow: 0 1px 3px rgba(0,0,0,.5); }
+.fo-cover b { margin-top: 5px; font: bold 17px var(--ios-font); max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fo-cover span { font: 13px var(--ios-font); opacity: .9; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fo-bio { padding: 10px 12px 0; font: 13px/1.4 var(--ios-font); color: #444; white-space: pre-wrap; word-wrap: break-word; }
+.fo-stats { display: flex; padding: 8px 0; }
+.fo-stats span { flex: 1; display: flex; flex-direction: column; align-items: center; font: bold 9px var(--ios-font); color: #8899a6; letter-spacing: .3px; text-transform: uppercase; }
+.fo-stats span + span { border-left: 1px solid #e1e5e9; }
+.fo-stats b { font: bold 15px var(--ios-font); color: #292f33; letter-spacing: 0; }
+.fo-tools { display: flex; gap: 8px; padding: 0 10px 10px; }
+.fo-tools button { flex: 1; min-height: 34px; display: flex; align-items: center; justify-content: center; gap: 5px; border-radius: 5px;
+  font: bold 12px var(--ios-font); color: #4b5b6b; background: linear-gradient(#fefefe, #e6e9ec); border: 1px solid #b6bfc8; }
+.fo-tools button.main { color: #fff; background: linear-gradient(#5db6f0, #1d84d4); border-color: #156aac; }
+.fb .fo-tools button.main { background: linear-gradient(#6d84b4, #4a64a1); border-color: #2c4373; }
+.ig .fo-tools button.main { background: linear-gradient(#6a9cc6, #3f729b); border-color: #2d5677; }
+.tb .fo-tools button.main { background: linear-gradient(#56769b, #36465d); border-color: #1f2c3b; }
+.fo-tools button:disabled { opacity: .5; }
+.ig .fo-head + div { margin-top: 10px; }
+.fo-tb-list { padding-right: 8px; }
+
+.android .fo-txt b, .android .fo-new, .android .fo-tools button { font-family: var(--and-font); }
+.fo-count { all: unset; cursor: pointer; flex: 1; display: flex; flex-direction: column; align-items: center; padding: 7px 0 6px; font: bold 9px var(--ios-font); color: #2b8be0; letter-spacing: .3px; border-left: 1px solid #e1e5e9; }
+.fo-count b { font: bold 15px var(--ios-font); color: #292f33; }
+.fo-link { cursor: pointer; }
+.tw-counts .fo-count + span { border-left: 1px solid #e1e5e9; }
+.fo-igcount { all: unset; cursor: pointer; flex: 1; display: flex; flex-direction: column; align-items: center; padding: 4px 0; font: 11px var(--ios-font); color: #3f729b; border-left: 1px solid #d6d6d6; }
+.fo-igcount b { font: bold 15px var(--ios-font); color: #333; }
+.fo-tbcount { all: unset; cursor: pointer; flex: 1; display: flex; flex-direction: column; align-items: center; font: 11px var(--ios-font); color: #529ecc; border-left: 1px solid #eee; }
+.fo-tbcount b { font: bold 15px var(--ios-font); color: #444; }

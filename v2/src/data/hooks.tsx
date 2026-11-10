@@ -43,7 +43,7 @@ export function useValue<T = Json>(path: string | null): T | undefined {
 }
 
 /** Liste triée (map { id: item } → [[id, item]…]), éléments supprimés (corbeille) exclus. */
-export function useList<T extends object = Record<string, unknown>>(path: string, { withDeleted = false, newest }: { withDeleted?: boolean; newest?: keyof T & string } = {}): [string, T][] {
+export function useList<T extends object = Record<string, unknown>>(path: string | null, { withDeleted = false, newest }: { withDeleted?: boolean; newest?: keyof T & string } = {}): [string, T][] {
   const map = useValue<Record<string, T & Ordered & { deleted?: boolean }>>(path);
   return useMemo(() => {
     const entries = Object.entries(map ?? {}).filter(([, it]) => it && typeof it === "object" && (withDeleted || !it.deleted)).sort(byOrder) as [string, T][];

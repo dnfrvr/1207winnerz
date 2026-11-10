@@ -2,21 +2,32 @@
 // de cartes (publications des 4 persos + pages suivies par ce téléphone).
 // Android (2012) : barre bleue plate, bouton menu + trois « jewels », police Roboto.
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Route, Routes, useNavigate } from "react-router-dom";
 import { useList, useValue } from "../data/hooks";
 import { loreNowMs, loreToMs, msToLore } from "../lib/loreTime";
 import { StatusBar } from "../phone/IOSChrome";
 import { LORE_DATE_DEFAULT, useOS } from "../phone/common";
 import { img } from "../lib/img";
 import { Avatar, Empty, useEditor } from "../kit/kit";
-import { mdiAccountMultiple, mdiCamera, mdiCommentOutline, mdiEarth, mdiMapMarker, mdiMenu, mdiMessageText, mdiPencil, mdiThumbUp } from "@mdi/js";
+import { mdiAccountMultiple, mdiFlag, mdiCamera, mdiCommentOutline, mdiEarth, mdiMapMarker, mdiMenu, mdiMessageText, mdiPencil, mdiThumbUp } from "@mdi/js";
 import { Glyph } from "../kit/glyph";
 import { num, Press, useChars } from "./social";
+import { AccountPage, FollowList, FollowPost, useFollows, type Who } from "./follows";
 import "./social.css";
 
 type FbPost = { author?: string; name?: string; text?: string; time?: string; likes?: number; comments?: number; img?: string; order?: number; deleted?: boolean };
 
 export default function FacebookApp({ pid }: { pid: string }) {
+  return (
+    <Routes>
+      <Route index element={<FacebookMain pid={pid} />} />
+      <Route path="f" element={<FollowList pid={pid} net="facebook" />} />
+      <Route path="f/:key" element={<AccountPage pid={pid} net="facebook" />} />
+    </Routes>
+  );
+}
+
+function FacebookMain({ pid }: { pid: string }) {
   const os = useOS();
   const nav = useNavigate();
   const chars = useChars();
@@ -27,9 +38,18 @@ export default function FacebookApp({ pid }: { pid: string }) {
   const [text, setText] = useState("");
   const [liked, setLiked] = useState<Record<string, boolean>>({});
   const ed = useEditor(pid);
-  const feed = [
+  const fol = useFollows(pid, "facebook");
+  const now = loreNowMs(lore);
+  const openAcc = (key: string) => nav(`/${pid}/facebook/f/${encodeURIComponent(key)}`);
+  type Item = { key: string; path: string; p: FbPost; page: boolean; acc?: Who; follow?: boolean };
+  const feed: Item[] = [
     ...posts.map(([id, p]) => ({ key: `f/${id}`, path: `feeds/facebookPosts/${id}`, p, page: false })),
-    ...pages.map(([id, p]) => ({ key: `p/${id}`, path: `phones/${pid}/data/facebookPages/${pid}/${id}`, p, page: true })),
+    ...pages.flatMap(([id, p]) => {
+      const owner = fol.decorOwner(p);
+      if (owner === null) return []; // page qu'on ne suit plus
+      return [{ key: `p/${id}`, path: `phones/${pid}/data/facebookPages/${pid}/${id}`, p, page: true, acc: owner ? fol.whoOf(owner) : undefined }];
+    }),
+    ...fol.posts.map((x) => ({ key: `a/${x.key}`, path: x.path, p: x.post as FbPost, page: true, acc: x.who, follow: true })),
   ].sort((a, b) => (loreToMs(b.p.time) ?? 0) - (loreToMs(a.p.time) ?? 0));
   const post = () => {
     if (!text.trim()) return;
@@ -45,7 +65,7 @@ export default function FacebookApp({ pid }: { pid: string }) {
           // Facebook pour Android (2012) : pas de logo, les trois « jewels » au centre.
           <div className="fb-jewels"><Glyph i={mdiAccountMultiple} size={22} /><Glyph i={mdiMessageText} size={20} /><Glyph i={mdiEarth} size={21} /></div>
         ) : <h1>facebook</h1>}
-        <button className="fb-btn" aria-label="Discussions"><Glyph i={mdiAccountMultiple} size={20} /></button>
+        <button className="fb-btn" aria-label="Pages" title="Pages" onClick={() => nav(`/${pid}/facebook/f`)}><Glyph i={mdiFlag} size={20} /></button>
       </div>
       <div className="fb-scroll">
         <div className="fb-publisher">
@@ -57,7 +77,11 @@ export default function FacebookApp({ pid }: { pid: string }) {
             <div><button onClick={() => setStatus(false)}>Cancel</button><button className="post" onClick={post}>Post</button></div>
           </div>
         )}
-        {feed.map(({ key, path, p, page }) => {
+        {feed.map(({ key, path, p, page, acc, follow }) => {
+          if (acc) return (
+            <FollowPost key={key} net="facebook" who={acc} post={p} now={now} onWho={() => openAcc(acc.key)}
+              onLong={ed.canEdit ? () => ed.edit({ path, fields: follow ? ["text", "img", "time", "likes", "comments"] : ["text", "time", "likes", "comments", "img"], title: "Publication" }) : undefined} />
+          );
           const c = p.author ? chars[p.author] : undefined;
           const mine = p.author === pid || page;
           return (

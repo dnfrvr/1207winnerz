@@ -41,6 +41,9 @@ phones/{pid}/
   inbox/{threadId}            { contact, unread, isGroup, order, … }   (vue « Messages » du tel)
   data/{section}              toutes les autres apps (notes, gallery, music, calls, grindr…),
                               listes converties en maps { id: { …, order } }
+  data/follows/{net}/{acc}    comptes/pages suivis (net = twitter | facebook | instagram | tumblr) :
+                              { name, handle, avatar, bio, bannerImg, followers, match?, posts/{id} }
+                              `match` = pseudo/nom d'un ancien compte « décor » repris (ses vieux posts suivent)
 threads/{threadId}            { kind: "pair" | "group" | "local", members: {pid:true}, name?, contact? }
 threadMessages/{threadId}/{msgId}
                               { from: pid | "npc", npcName?, text, time, ts, order }

@@ -178,6 +178,7 @@ const LABELS: Record<string, string> = {
   lines: "Lignes (une par info)", coords: "Coordonnées", q: "Question", a: "Réponse", league: "Ligue", home: "Domicile", away: "Extérieur",
   hs: "Score domicile", as: "Score extérieur", status: "Statut", subtitle: "Sous-titre", detail: "Détail", color: "Couleur", logo: "Logo",
   depth: "Niveau (0 = réponse au post)", me: "Envoyé par moi", archived: "Archivé", pinned: "Épinglé", tall: "Grand format", label: "Libellé", subreddit: "Subreddit", score: "Score", points: "Points",
+  bannerImg: "Bannière", tags: "Tags",
 };
 const IMAGE_KEYS = /^(src|img|photo|cover|thumbImg|avatar|av|image|bannerImg|chAvatarImg|wallpaper)$/;
 const VIDEO_KEYS = /^(video|cameraVideo)$/;
@@ -197,7 +198,7 @@ const fieldsOf = (item: Record<string, Json>, only?: string[]): FieldSpec[] => {
     if (dmy && key === "day") return { key, label: "Date", kind: "dmy" as const };
     const v = item[key];
     const kind: FieldSpec["kind"] = IMAGE_KEYS.test(key) ? "image" : VIDEO_KEYS.test(key) ? "video" : isDate(key, v) ? "date" : typeof v === "boolean" ? "bool" : typeof v === "number" ? "number"
-      : typeof v === "string" && (v.length > 40 || v.includes("\n")) ? "long" : "text";
+      : typeof v === "string" && (v.length > 40 || v.includes("\n") || key === "bio") ? "long" : "text";
     return { key, label: LABELS[key] ?? key, kind };
   });
 };
