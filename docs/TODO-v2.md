@@ -108,6 +108,14 @@ Reste :
 ## Pistes d'amélioration (réalisme et personnalisation)
 
 Réalisme :
+- [x] **Régie MDJ** (2026-11-10, `v2/src/site/Regie.tsx`) : bouton « Régie » en bas à droite (MDJ seulement).
+  Choix du téléphone, contact PNJ (existant ou nouveau), texte, photo → vrai SMS dans Messages
+  (`npcMessagePatches`, `v2/src/data/notify.ts`) + notif `phones/{pid}/notifs/{id}`. Un onglet par conversation
+  suivie en direct : le MDJ répond au nom du PNJ, signal quand le joueur répond, « Vu » quand la notif est ouverte.
+  Côté téléphone (`v2/src/phone/Notifs.tsx`) : bannière iOS 6 / bandeau Android + son, liste sur l'écran verrouillé,
+  pastille sur l'icône, bulle « nouveau message » si le joueur est ailleurs sur le site. Une réponse du MDJ écrite
+  directement dans le téléphone (au nom du contact) envoie aussi une notif. Mode démo : synchro entre onglets.
+  Reste : étendre à Messenger / GroupMe / Mail / Snapchat ; tester sur le site en ligne avec un vrai compte joueur.
 - [ ] Notifications : bannières iOS 6 / barre de notif Android qui tombent quand un autre joueur écrit
 - [ ] Centre de notifications (iOS 6) et volet déroulant (Android) avec l'historique des notifs
 - [ ] Écran verrouillé : notifications en attente, photo de verrouillage distincte, code PIN par perso

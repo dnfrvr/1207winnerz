@@ -8,6 +8,7 @@ import { changePassword, emailToLogin, LoginScreen, logout, useFirebaseSession, 
 import type { Json, Store } from "./data/store";
 import { Phone } from "./phone/Phone";
 import { Lobby, PIDS } from "./site/Site";
+import { PlayerTray, Regie } from "./site/Regie";
 import { installTouchContextMenu } from "./phone/touchContextMenu";
 import "./styles.css";
 
@@ -33,6 +34,8 @@ function Shell({ store, session, account, children }: { store: Store; session: S
             <Route path="/:pid/*" element={<PhoneRoute />} />
           </Routes>
         </Suspense>
+        {session.role === "mdj" && <Regie />}
+        {session.role !== "mdj" && session.phone && <PlayerTray pid={session.phone} />}
       </BrowserRouter>
       {children}
     </DataProvider>

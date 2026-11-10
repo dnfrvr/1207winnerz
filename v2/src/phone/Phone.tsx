@@ -15,6 +15,7 @@ import { APP_META } from "../../../src/shared/app-meta.js";
 import { APPS, preloadApps } from "../apps/registry";
 import { img } from "../lib/img";
 import { Sparkles } from "../site/Win";
+import { LockNotifs, NotifBanner, SeenOnOpen, useNotifBadges } from "./Notifs";
 import "./android.css";
 
 type Profile = {
@@ -46,6 +47,8 @@ export function Phone() {
     <div className="screen-fit" style={{ width: scr.w * (scale ?? 1), height: scr.h * (scale ?? 1) }}>
       <div className={`screen os-${os}`} style={{ width: scr.w, height: scr.h, transform: scale ? `scale(${scale})` : undefined, ["--accent" as string]: profile.accentColor ?? "#33b5e5" }}>
         <PhoneScreen pid={pid} profile={profile} os={os} />
+        <NotifBanner pid={pid} os={os} />
+        <SeenOnOpen pid={pid} />
         {canEdit && <LoreBump pid={pid} />}
         {!canEdit && <div className="readonly-tag">Lecture seule · téléphone de {profile.name ?? pid}</div>}
       </div>
@@ -335,6 +338,7 @@ function Lock({ pid, profile }: { pid: string; profile: Profile }) {
     <div className="lock" style={bg(profile.wallpaper)}>
       <StatusBar variant="translucent" locked />
       <div className="lock-clock"><div className="t">{time}</div><div className="d">{day}</div></div>
+      <LockNotifs pid={pid} os="ios" />
       <div className="lock-bottom">
         <SlideToUnlock onUnlock={() => nav(`/${pid}/home`)} />
         <button className="lock-cam" aria-label="Appareil photo" onClick={() => nav(`/${pid}/camera`)}>
@@ -402,9 +406,10 @@ function Pages({ ids, per, render }: { ids: string[]; per: number; render: (id: 
 
 function Springboard({ pid, profile }: { pid: string; profile: Profile }) {
   const { dock, apps } = useHomeApps(pid);
+  const live = useNotifBadges(pid);
   useEffect(preloadApps, []);
   const icon = (id: string) => (
-    <AppIcon key={id} pid={pid} id={id} src={id === "files" ? IOS_FILES_ICON : profile.appIcons?.[id] ?? IOS_ICON_DEFAULTS[id]} badge={profile.badges?.[id]}
+    <AppIcon key={id} pid={pid} id={id} src={id === "files" ? IOS_FILES_ICON : profile.appIcons?.[id] ?? IOS_ICON_DEFAULTS[id]} badge={(profile.badges?.[id] ?? 0) + (live[id] ?? 0)}
       label={profile.appNames?.[id] || META[id]?.label || id} />
   );
   return (
@@ -444,6 +449,7 @@ function AndroidLock({ pid, profile }: { pid: string; profile: Profile }) {
     <div className="and-lock" style={bg(profile.wallpaper)}>
       <StatusBar variant="clear" />
       <div className="and-lock-clock"><div className="t">{time}</div><div className="d">{day}</div></div>
+      <LockNotifs pid={pid} os="android" />
       <RingUnlock onUnlock={() => nav(`/${pid}/home`)} />
       <div className="carrier">AT&amp;T</div>
     </div>
@@ -452,10 +458,11 @@ function AndroidLock({ pid, profile }: { pid: string; profile: Profile }) {
 
 function AndroidHome({ pid, profile }: { pid: string; profile: Profile }) {
   const { dock, apps } = useHomeApps(pid);
+  const live = useNotifBadges(pid);
   const icons = useValue<Record<string, string>>("shared/androidIcons") ?? {};
   useEffect(preloadApps, []);
   const icon = (id: string) => (
-    <AppIcon key={id} pid={pid} id={id} src={icons[id] ?? ANDROID_ICON_DEFAULTS[id]} badge={profile.badges?.[id]}
+    <AppIcon key={id} pid={pid} id={id} src={icons[id] ?? ANDROID_ICON_DEFAULTS[id]} badge={(profile.badges?.[id] ?? 0) + (live[id] ?? 0)}
       label={profile.appNames?.[id] || META[id]?.droidLabel || META[id]?.label || id} />
   );
   return (

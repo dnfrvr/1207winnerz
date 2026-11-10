@@ -1,0 +1,75 @@
+/* ─── Régie du MDJ : fenêtre Aero flottante, en bas à droite ─────────────── */
+.regie-fab { position: fixed; z-index: 60; right: 12px; bottom: 52px; display: flex; align-items: center; gap: 6px; padding: 7px 12px;
+  border-radius: 4px; font: 600 13px var(--w7-font); color: #10304f; cursor: pointer;
+  background: linear-gradient(#f2f9ff, #d9ecfb 45%, #bfdcf5 50%, #d4eaf9); border: 1px solid #3c7fb1;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.8), 0 4px 14px rgba(0, 20, 60, .45); }
+.regie-fab .dot, .regie-tab .dot { width: 9px; height: 9px; border-radius: 50%; background: #e8492c; box-shadow: 0 0 0 2px #fff; display: inline-block; margin-left: 4px; }
+.regie-fab.ping { animation: regie-ping 1s ease-in-out 3; }
+@keyframes regie-ping { 50% { transform: translateY(-4px); } }
+
+.regie.w7-win { position: fixed; z-index: 61; right: 12px; bottom: 92px; width: min(380px, calc(100vw - 24px)); font-family: var(--w7-font); }
+.regie .w7-body { display: flex; flex-direction: column; max-height: min(560px, calc(100dvh - 150px)); }
+.regie-x { width: 30px; height: 20px; align-self: flex-start; display: flex; align-items: center; justify-content: center; color: #fff; cursor: pointer;
+  border: 1px solid rgba(0,0,0,.55); border-top: 0; border-radius: 0 0 4px 4px; background: linear-gradient(#e8a493, #d0573c 50%, #b5310f 51%, #d96d4f); }
+
+.regie-tabs { display: flex; gap: 2px; padding: 6px 6px 0; overflow-x: auto; flex: 0 0 auto; border-bottom: 1px solid #a9c6e4; background: linear-gradient(#e4eefa, #f4f8fd); }
+.regie-tabs > button, .regie-tab { flex: 0 0 auto; display: flex; align-items: center; gap: 4px; padding: 4px 8px; font: 12px var(--w7-font); color: var(--w7-ink);
+  border: 1px solid #a9c6e4; border-bottom: 0; border-radius: 3px 3px 0 0; background: linear-gradient(#f4f8fd, #dde9f6); cursor: pointer; white-space: nowrap; }
+.regie-tab { padding: 0 2px 0 0; }
+.regie-tab > button:first-child { padding: 4px 4px 4px 8px; display: flex; align-items: center; }
+.regie-tab .close { padding: 2px; border-radius: 2px; display: flex; }
+.regie-tab .close:hover { background: #f3c1b5; }
+.regie-tabs .on { background: #fff; font-weight: 600; margin-bottom: -1px; padding-bottom: 5px; }
+
+.regie-form { display: flex; flex-direction: column; gap: 4px; padding: 10px 12px 12px; overflow-y: auto; }
+.regie-form .lbl { font: 600 12px var(--w7-font); margin-top: 6px; }
+.regie-form input, .regie-form select, .regie-compose textarea { font: 13px var(--w7-font); padding: 5px 7px; border: 1px solid #abadb3; border-top-color: #e3e9ef; border-radius: 2px; background: #fff; color: #000; }
+.regie-form input:focus, .regie-compose textarea:focus { outline: 0; border-color: #3d7bad; box-shadow: 0 0 0 1px #c7e0f4; }
+.regie-form > .y2k-btn { margin-top: 10px; }
+.regie .hint { font: 11px var(--w7-font); color: #5a6f89; margin: 0; }
+
+.regie-players { display: flex; gap: 6px; flex-wrap: wrap; }
+.regie-players button { display: flex; align-items: center; gap: 6px; padding: 3px 9px 3px 3px; border-radius: 20px; font: 12px var(--w7-font); color: var(--w7-ink);
+  border: 1px solid #b7cde3; background: #fff; cursor: pointer; }
+.regie-players button.on { border-color: #3c7fb1; background: linear-gradient(#e5f3fd, #c4e1f7); font-weight: 600; }
+.regie-players .dp.sm { width: 26px; height: 26px; padding: 2px; border-radius: 50%; }
+.regie-players .dp.sm img, .regie-players .dp.sm > span { border-radius: 50%; font-size: 12px; }
+
+.regie-compose { display: flex; gap: 6px; align-items: stretch; }
+.regie-compose textarea { flex: 1; min-width: 0; resize: vertical; }
+.regie-compose .y2k-btn { padding: 0 12px; }
+.regie-photo { position: relative; flex: 0 0 38px; display: flex; align-items: center; justify-content: center; border: 1px dashed #8fb0d2; border-radius: 3px; cursor: pointer; color: #3c6a96; background: #f6faff; }
+.regie-photo.has { border-style: solid; padding: 0; overflow: hidden; }
+.regie-photo img { width: 100%; height: 100%; object-fit: cover; }
+.regie-photo .rm { position: absolute; top: 1px; right: 1px; width: 14px; height: 14px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,.6); color: #fff; }
+.regie-photo .spin { position: absolute; width: 14px; height: 14px; border-radius: 50%; border: 2px solid #c7e0f4; border-top-color: #3c7fb1; animation: spin .8s linear infinite; }
+
+.regie-live { display: flex; flex-direction: column; min-height: 0; flex: 1; padding: 0 10px 8px; }
+.regie-live-head { display: flex; align-items: center; gap: 6px; padding: 8px 0; font: 13px var(--w7-font); border-bottom: 1px solid #d5e3f1; }
+.regie-live-head .linkish { margin-left: auto; display: inline-flex; align-items: center; gap: 3px; }
+.regie-msgs { flex: 1; min-height: 160px; max-height: 320px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; padding: 8px 2px; }
+.regie-msg { max-width: 82%; display: flex; flex-direction: column; gap: 2px; }
+.regie-msg > span { padding: 6px 10px; border-radius: 12px; font: 13px/1.3 var(--w7-font); white-space: pre-wrap; overflow-wrap: anywhere; }
+.regie-msg img { max-width: 160px; border-radius: 8px; }
+.regie-msg small { font: 10px var(--w7-font); color: #6b7f96; }
+.regie-msg.player { align-self: flex-start; }
+.regie-msg.player > span { background: #e5e5ea; color: #000; border-bottom-left-radius: 3px; }
+.regie-msg.npc { align-self: flex-end; align-items: flex-end; }
+.regie-msg.npc > span { background: linear-gradient(#5fb0f5, #2c7fd6); color: #fff; border-bottom-right-radius: 3px; }
+.regie-msg .seen { color: #3a8a2a; }
+.regie-nudge { align-self: flex-start; margin-top: 6px; }
+
+@media (max-width: 520px) {
+  .regie-fab { right: 10px; padding: 5px 9px; }
+  .regie.w7-win { left: 8px; right: 8px; bottom: 8px; width: auto; }
+  .regie .w7-body { max-height: calc(100dvh - 70px); }
+}
+
+/* Joueur hors de son téléphone : bulle de la zone de notification (Windows 7) */
+.tray-balloon { position: fixed; z-index: 62; right: 12px; bottom: 52px; width: min(300px, calc(100vw - 24px)); display: flex; gap: 10px; align-items: center;
+  padding: 10px 12px; border-radius: 6px; text-align: left; cursor: pointer; font: 12px/1.35 var(--w7-font); color: #1e395b;
+  background: linear-gradient(#fff, #e9f1fa); border: 1px solid #6d8fb3; box-shadow: 0 6px 20px rgba(0, 20, 60, .45); animation: w7-open .3s ease-out; }
+.tray-balloon img { width: 32px; height: 32px; border-radius: 7px; flex: 0 0 auto; }
+.tray-balloon b { display: block; font-size: 13px; }
+.tray-balloon .txt { min-width: 0; }
+.tray-balloon .txt span { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }

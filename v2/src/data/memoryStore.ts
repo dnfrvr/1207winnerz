@@ -21,6 +21,15 @@ export function createMemoryStore(seed: Json): Store {
 
   const subs = new Set<{ path: string; cb: (v: Json | undefined) => void }>();
 
+  // Autre onglet du même navigateur (ex. MDJ + joueur côte à côte) : on recharge l'arbre et on prévient tout le monde.
+  try {
+    window.addEventListener("storage", (e) => {
+      if (e.key !== LS_KEY || !e.newValue) return;
+      try { tree = JSON.parse(e.newValue); } catch { return; }
+      for (const s of subs) s.cb(getIn(tree, s.path));
+    });
+  } catch { /* hors navigateur */ }
+
   const persist = () => {
     try { localStorage.setItem(LS_KEY, JSON.stringify(tree ?? null)); } catch { /* quota / privé */ }
   };
