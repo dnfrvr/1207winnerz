@@ -5,6 +5,7 @@ import { mdiBullhorn, mdiCamera, mdiClose, mdiOpenInNew, mdiPlus } from "@mdi/js
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useData, useValue, useWriter } from "../data/hooks";
+import type { Patches } from "../data/store";
 import { findNpcThread, notifBody, notifPatch, npcContacts, npcMessagePatches, type InboxEntry, type Msg, type Notif, type Thread } from "../data/notify";
 import { Glyph } from "../kit/glyph";
 import { img } from "../lib/img";
@@ -77,7 +78,7 @@ export function Regie() {
             </nav>
             {active === null
               ? <NewNotif onSent={openTab} />
-              : (() => { const t = tabs.find((x) => x.tid === active); return t ? <LiveThread key={t.tid} tab={t} /> : null; })()}
+              : (() => { const t = tabs.find((x) => x.tid === active); return t ? <LiveThread key={t.tid} tab={t} onGone={() => closeTab(t.tid)} /> : null; })()}
           </div>
         </section>
       )}
@@ -203,10 +204,11 @@ function NewNotif({ onSent }: { onSent: (t: Tab) => void }) {
 }
 
 /** Conversation suivie en direct : le MDJ répond au nom du PNJ. */
-function LiveThread({ tab }: { tab: Tab }) {
+function LiveThread({ tab, onGone }: { tab: Tab; onGone: () => void }) {
   const { pid, tid } = tab;
   const contact = useContact(tab);
   const raw = useValue<Record<string, Msg>>(`threadMessages/${tid}`);
+  const thread = useValue<Thread>(`threads/${tid}`);
   const notifs = useValue<Record<string, Notif>>(`phones/${pid}/notifs`);
   const lore = useValue<string>("meta/loreDate") || LORE_DATE_DEFAULT;
   const p = useValue<Profile>(`phones/${pid}/profile`);
@@ -229,6 +231,32 @@ function LiveThread({ tab }: { tab: Tab }) {
     setText(""); setPhoto(null);
   };
   const nudge = () => write(notifPatch(pid, { app: "messages", title: contact, body: notifBody(msgs[msgs.length - 1]?.[1].text) || "Nouveau message", link: `messages/${tid}`, thread: tid }));
+
+  // Annuler l'envoi : supprime définitivement le dernier message du PNJ et sa notif. Fil vidé → la conversation
+  // disparaît du téléphone (fil, entrée de la boîte, notifs). Uniquement pour les fils PNJ.
+  const lastNpc = [...msgs].reverse().find(([, m]) => m.from === "npc");
+  const undo = () => {
+    if (!lastNpc || thread?.kind !== "local") return;
+    const all = sorted(raw);
+    const empty = all.length === 1;
+    const preview = (lastNpc[1].text || "photo").slice(0, 60);
+    if (!confirm(empty
+      ? `Supprimer définitivement « ${preview} » ? C'est le seul message : la conversation avec ${contact} disparaît du téléphone de ${first(p, pid)}, notifs comprises. Impossible d'annuler.`
+      : `Supprimer définitivement « ${preview} » du téléphone de ${first(p, pid)}, avec sa notif ? Impossible d'annuler.`)) return;
+    const mine = Object.entries(notifs ?? {}).filter(([, n]) => n?.thread === tid).sort((a, b) => b[1].at - a[1].at);
+    const patch: Patches = {};
+    if (empty) {
+      for (const id of Object.keys(raw ?? {})) patch[`threadMessages/${tid}/${id}`] = null;
+      patch[`threads/${tid}`] = null;
+      patch[`phones/${pid}/inbox/${tid}`] = null;
+      for (const [id] of mine) patch[`phones/${pid}/notifs/${id}`] = null;
+    } else {
+      patch[`threadMessages/${tid}/${lastNpc[0]}`] = null;
+      if (mine[0]) patch[`phones/${pid}/notifs/${mine[0][0]}`] = null;
+    }
+    write(patch);
+    if (empty) onGone();
+  };
 
   return (
     <div className="regie-live">
@@ -256,7 +284,10 @@ function LiveThread({ tab }: { tab: Tab }) {
         <PhotoPick pid={pid} value={photo} onChange={setPhoto} />
         <button className="y2k-btn" disabled={!text.trim() && !photo}>Envoyer</button>
       </form>
-      <button className="linkish regie-nudge" onClick={nudge}>Renvoyer une notif (sans nouveau message)</button>
+      <div className="regie-actions">
+        <button className="linkish" onClick={nudge}>Renvoyer une notif</button>
+        {thread?.kind === "local" && lastNpc && <button className="linkish danger" onClick={undo}>Annuler l'envoi du dernier message</button>}
+      </div>
     </div>
   );
 }
