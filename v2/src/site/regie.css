@@ -60,10 +60,22 @@
 .regie-actions { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 10px; margin-top: 6px; }
 .regie-actions .danger { color: #b5310f; }
 
+.regie-min { width: 28px; height: 20px; align-self: flex-start; display: flex; align-items: center; justify-content: center; color: #fff; cursor: pointer;
+  border: 1px solid rgba(0,0,0,.55); border-top: 0; border-right: 0; border-radius: 0 0 0 4px;
+  background: linear-gradient(rgba(255,255,255,.55), rgba(255,255,255,.15) 50%, rgba(0,0,0,.05) 51%, rgba(255,255,255,.25)); text-shadow: 0 0 3px #000; }
+.regie-min + .regie-x { border-radius: 0 0 4px 0; }
+.regie.min { padding-bottom: 0; }
+.regie.min h2 { cursor: pointer; }
+.regie .w7-title h2 { flex: 1; }
+
+/* Téléphone : panneau en bas, moins haut, pour garder l'écran du perso visible au-dessus */
 @media (max-width: 520px) {
   .regie-fab { right: 10px; padding: 5px 9px; }
-  .regie.w7-win { left: 8px; right: 8px; bottom: 8px; width: auto; }
-  .regie .w7-body { max-height: calc(100dvh - 70px); }
+  .regie.w7-win { left: 6px; right: 6px; bottom: 6px; width: auto; }
+  .regie .w7-body { max-height: 52dvh; }
+  .regie .regie-msgs { min-height: 90px; max-height: 24dvh; }
+  /* Réduite : coin bas droit, hors du bouton principal (au centre) */
+  .regie.w7-win.min { left: auto; width: 150px; }
 }
 
 /* Joueur hors de son téléphone : bulle de la zone de notification (Windows 7) */

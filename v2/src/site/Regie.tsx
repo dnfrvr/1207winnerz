@@ -2,7 +2,7 @@
 // écrit pour de vrai dans le téléphone (Messages, Messenger, GroupMe, Kik, Grindr, Mail, Snapchat,
 // appel manqué, activité Instagram) ; pour les apps de discussion, le joueur peut répondre et le MDJ
 // suit et alimente la conversation en direct depuis cette fenêtre (un onglet par conversation).
-import { mdiBullhorn, mdiCamera, mdiClose, mdiOpenInNew, mdiPlus } from "@mdi/js";
+import { mdiBullhorn, mdiCamera, mdiClose, mdiOpenInNew, mdiPlus, mdiWindowMaximize, mdiWindowMinimize } from "@mdi/js";
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useData, useValue, useWriter } from "../data/hooks";
@@ -25,6 +25,7 @@ const tkey = (t: Tab) => `${t.app ?? "messages"}:${t.pid}:${t.tid}`;
 
 const LS_TABS = "uma-v2-regie-tabs";
 const LS_OPEN = "uma-v2-regie-open";
+const LS_MIN = "uma-v2-regie-min";
 const readLS = <T,>(k: string, d: T): T => { try { const v = localStorage.getItem(k); return v ? (JSON.parse(v) as T) : d; } catch { return d; } };
 const writeLS = (k: string, v: unknown) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch { /* rien */ } };
 
@@ -49,6 +50,9 @@ export function Regie() {
   const [tabs, setTabs] = useState<Tab[]>(() => readLS(LS_TABS, []));
   const [active, setActive] = useState<string | null>(null); // tid, null = « Nouvelle notif »
   const [unread, setUnread] = useState<Record<string, boolean>>({});
+  // Réduite : seule la barre de titre reste (sur téléphone, on voit l'écran du perso derrière).
+  const [min, setMin] = useState(() => readLS(LS_MIN, false));
+  useEffect(() => writeLS(LS_MIN, min), [min]);
   useEffect(() => writeLS(LS_TABS, tabs), [tabs]);
   useEffect(() => writeLS(LS_OPEN, open), [open]);
 
@@ -57,9 +61,12 @@ export function Regie() {
     setActive(tkey(t));
   };
   const closeTab = (k: string) => { setTabs((l) => l.filter((t) => tkey(t) !== k)); if (active === k) setActive(null); };
-  const onReply = (tid: string) => {
+  // Les écouteurs gardent la fonction du moment où ils ont été montés : on lit l'état à jour dans une ref.
+  const view = useRef({ open, active });
+  view.current = { open, active };
+  const onReply = (k: string) => {
     pop();
-    if (!(open && active === tid)) setUnread((u) => ({ ...u, [tid]: true }));
+    if (!(view.current.open && view.current.active === k)) setUnread((u) => ({ ...u, [k]: true }));
   };
   useEffect(() => { if (open && active) setUnread((u) => (u[active] ? { ...u, [active]: false } : u)); }, [open, active]);
   const anyUnread = Object.values(unread).some(Boolean);
@@ -73,10 +80,13 @@ export function Regie() {
         <Glyph i={mdiBullhorn} size={16} /> Régie{anyUnread && <i className="dot" aria-label="Nouvelle réponse" />}
       </button>
       {open && (
-        <section className="regie w7-win" aria-label="Régie du MDJ">
-          <header className="w7-title"><span className="w7-ico" aria-hidden><Glyph i={mdiBullhorn} size={15} /></span><h2>Régie MDJ — notifs en direct</h2>
+        <section className={`regie w7-win ${min ? "min" : ""}`} aria-label="Régie du MDJ">
+          <header className="w7-title"><span className="w7-ico" aria-hidden><Glyph i={mdiBullhorn} size={15} /></span>
+            <h2 onClick={() => min && setMin(false)}>Régie MDJ{anyUnread && min ? " — nouvelle réponse" : ""}</h2>
+            <button className="regie-min" onClick={() => setMin((m) => !m)} aria-label={min ? "Agrandir la régie" : "Réduire la régie"} aria-expanded={!min}>
+              <Glyph i={min ? mdiWindowMaximize : mdiWindowMinimize} size={13} /></button>
             <button className="regie-x" onClick={() => setOpen(false)} aria-label="Fermer la régie"><Glyph i={mdiClose} size={14} /></button></header>
-          <div className="w7-body">
+          {!min && <div className="w7-body">
             <nav className="regie-tabs" role="tablist">
               <button role="tab" aria-selected={active === null} className={active === null ? "on" : ""} onClick={() => setActive(null)}><Glyph i={mdiPlus} size={14} /> Nouvelle</button>
               {tabs.map((t) => <TabButton key={tkey(t)} tab={t} on={active === tkey(t)} dot={!!unread[tkey(t)]} onClick={() => setActive(tkey(t))} onClose={() => closeTab(tkey(t))} />)}
@@ -87,7 +97,7 @@ export function Regie() {
                   if (t.app === "group") return <GroupLive key={tkey(t)} tab={t} />;
                   const ch = channelOf(t.app);
                   return ch ? <ChannelLive key={tkey(t)} tab={t} ch={ch} onGone={() => closeTab(tkey(t))} /> : <LiveThread key={tkey(t)} tab={t} onGone={() => closeTab(tkey(t))} />; })()}
-          </div>
+          </div>}
         </section>
       )}
     </>
