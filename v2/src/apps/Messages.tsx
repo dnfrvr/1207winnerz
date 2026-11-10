@@ -313,11 +313,14 @@ function Conversation({ pid }: { pid: string }) {
 
 function Bubble({ m, mine, sms, selected, onLong }: { m: Msg; mine: boolean; sms: boolean; selected: boolean; onLong?: (x: number, y: number) => void }) {
   const lp = useLongPress((x, y) => onLong?.(x, y));
+  const cls = `bubble ${mine ? `me ${sms ? "sms" : "imsg"}` : "them"} ${selected ? "selected" : ""}`;
+  const handlers = onLong ? lp.handlers : {};
+  // Comme sur iOS, la photo a sa propre bulle (au-dessus du texte s'il y en a).
   return (
-    <div className={`bubble ${mine ? `me ${sms ? "sms" : "imsg"}` : "them"} ${selected ? "selected" : ""}`} {...(onLong ? lp.handlers : {})}>
-      {m.img && <img src={img(m.img)} alt="" loading="lazy" />}
-      {m.text}
-    </div>
+    <>
+      {m.img && <div className={`${cls} photo`} {...handlers}><img src={img(m.img)} alt="" loading="lazy" /></div>}
+      {(m.text || !m.img) && <div className={cls} {...handlers}>{m.text}</div>}
+    </>
   );
 }
 

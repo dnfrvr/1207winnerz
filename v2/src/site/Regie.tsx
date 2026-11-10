@@ -238,11 +238,13 @@ function LiveThread({ tab, onGone }: { tab: Tab; onGone: () => void }) {
   const undo = () => {
     if (!lastNpc || thread?.kind !== "local") return;
     const all = sorted(raw);
-    const empty = all.length === 1;
-    const preview = (lastNpc[1].text || "photo").slice(0, 60);
+    // Photo + texte envoyés ensemble : on annule les deux bulles.
+    const ids = [lastNpc[0], ...(lastNpc[1].pair && raw?.[lastNpc[1].pair] ? [lastNpc[1].pair] : [])];
+    const empty = all.length <= ids.length;
+    const what = `« ${(lastNpc[1].text || "photo").slice(0, 60)} »${ids.length > 1 ? " et sa photo" : ""}`;
     if (!confirm(empty
-      ? `Supprimer définitivement « ${preview} » ? C'est le seul message : la conversation avec ${contact} disparaît du téléphone de ${first(p, pid)}, notifs comprises. Impossible d'annuler.`
-      : `Supprimer définitivement « ${preview} » du téléphone de ${first(p, pid)}, avec sa notif ? Impossible d'annuler.`)) return;
+      ? `Supprimer définitivement ${what} ? C'est le seul message : la conversation avec ${contact} disparaît du téléphone de ${first(p, pid)}, notifs comprises. Impossible d'annuler.`
+      : `Supprimer définitivement ${what} du téléphone de ${first(p, pid)}, avec sa notif ? Impossible d'annuler.`)) return;
     const mine = Object.entries(notifs ?? {}).filter(([, n]) => n?.thread === tid).sort((a, b) => b[1].at - a[1].at);
     const patch: Patches = {};
     if (empty) {
@@ -251,9 +253,9 @@ function LiveThread({ tab, onGone }: { tab: Tab; onGone: () => void }) {
       patch[`phones/${pid}/inbox/${tid}`] = null;
       for (const [id] of mine) patch[`phones/${pid}/notifs/${id}`] = null;
     } else {
-      patch[`threadMessages/${tid}/${lastNpc[0]}`] = null;
+      for (const id of ids) patch[`threadMessages/${tid}/${id}`] = null;
       // La notif de ce message ; anciennes notifs (sans lien vers le message) : la plus récente non liée.
-      const linked = mine.filter(([, n]) => n.msg === lastNpc[0]);
+      const linked = mine.filter(([, n]) => !!n.msg && ids.includes(n.msg));
       for (const [id] of linked.length ? linked : mine.filter(([, n]) => !n.msg).slice(0, 1)) patch[`phones/${pid}/notifs/${id}`] = null;
     }
     write(patch);

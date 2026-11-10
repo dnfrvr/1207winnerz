@@ -18,7 +18,8 @@ export type Notif = {
 
 export type Thread = { kind: "pair" | "group" | "local"; members?: Record<string, boolean>; name?: string; contact?: string | null };
 export type InboxEntry = { contact?: string; threadId?: string; unread?: boolean; deleted?: boolean; order?: number };
-export type Msg = { from: string; npcName?: string | null; text?: string; img?: string; time?: string; order?: number; deleted?: boolean };
+export type Msg = { from: string; npcName?: string | null; text?: string; img?: string; time?: string; order?: number; deleted?: boolean;
+  pair?: string /* photo et texte envoyés ensemble = 2 messages liés */ };
 
 const norm = (s?: string | null) => (s ?? "").trim().toLowerCase().normalize("NFKC");
 
@@ -74,10 +75,16 @@ export function npcMessagePatches(opts: {
     patches[`phones/${pid}/inbox/${tid}/deleted`] = null;
   }
   const { time, order } = nextSlot(opts.msgs, lore);
-  const msg: Record<string, Json> = { from: "npc", npcName: contact, text, time, order };
-  if (img) msg.img = img;
+  const base = { from: "npc", npcName: contact, time };
+  // Comme sur iOS : une photo avec du texte part en deux bulles, la photo d'abord.
   const mid = makeId("m");
-  patches[`threadMessages/${tid}/${mid}`] = msg;
+  if (img && text) {
+    const pid2 = makeId("m");
+    patches[`threadMessages/${tid}/${pid2}`] = { ...base, img, order, pair: mid };
+    patches[`threadMessages/${tid}/${mid}`] = { ...base, text, order: order + 500, pair: pid2 };
+  } else {
+    patches[`threadMessages/${tid}/${mid}`] = img ? { ...base, img, order } : { ...base, text, order };
+  }
   Object.assign(patches, notifPatch(pid, { app: "messages", title: contact, body: notifBody(text), ...(img ? { attach: 1 } : {}), link: `messages/${tid}`, thread: tid, msg: mid }));
   return { patches, tid };
 }

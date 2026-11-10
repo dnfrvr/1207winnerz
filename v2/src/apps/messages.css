@@ -42,6 +42,10 @@
 .bubble.editing::before { display: none; }
 .bubble.selected { filter: brightness(.82); }
 .bubble img { display: block; max-width: 100%; border-radius: 12px; }
+/* Bulle photo : fin liseré de la couleur de la bulle autour de l'image, queue conservée */
+.bubble.photo { padding: 3px; max-width: 62%; line-height: 0; }
+.bubble.photo img { border-radius: 14px; max-height: 240px; object-fit: cover; }
+.bubble.photo + .bubble { margin-top: 4px; }
 .bubble.editing { padding: 0; background: #fff; border: 2px solid #4f8fe0; color: #000; text-shadow: none; }
 .bubble textarea { display: block; width: 210px; min-height: 60px; padding: 6px 12px; border: 0; outline: none; resize: none; background: transparent; font: 16px/20px var(--ios-font); border-radius: 15px; }
 .edit-actions { display: flex; gap: 6px; padding: 4px 2px; }
@@ -118,3 +122,6 @@
 .os-android .to-field, .os-android .suggest li button { font-family: var(--and-font); }
 .os-android .edit-actions button { border-radius: 2px; background: #e0e0e0; border: 0; font: 500 12px var(--and-font); text-transform: uppercase; }
 .os-android .edit-actions button.ok { background: var(--holo); }
+
+.os-android .bubble.photo { padding: 3px; }
+.os-android .bubble.photo img { border-radius: 1px; }
