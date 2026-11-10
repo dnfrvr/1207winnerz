@@ -97,3 +97,19 @@
 .regie-senders select, .regie-senders input { font: 13px var(--w7-font); padding: 4px 6px; border: 1px solid #abadb3; border-radius: 2px; background: #fff; min-width: 0; }
 .regie-senders input { flex: 1; }
 .regie-compose-group { flex-direction: column; gap: 4px; }
+
+.regie-check { display: flex; align-items: center; gap: 4px; padding: 3px 9px; border-radius: 20px; border: 1px solid #b7cde3; background: #fff; font: 12px var(--w7-font); cursor: pointer; }
+.regie-check.on { border-color: #3c7fb1; background: linear-gradient(#e5f3fd, #c4e1f7); font-weight: 600; }
+
+.regie-call { display: flex; flex-direction: column; gap: 4px; padding: 14px 4px; font: 14px var(--w7-font); }
+.regie-call b { display: flex; align-items: center; gap: 8px; }
+.regie-call .dot-state { width: 10px; height: 10px; border-radius: 50%; background: #999; }
+.regie-call.ringing .dot-state { background: #f2b324; animation: regie-blink 1s infinite; }
+.regie-call.active .dot-state { background: #3fb12c; }
+.regie-call.ended .dot-state { background: #c41a1a; }
+.regie-call { flex-direction: row; flex-wrap: wrap; align-items: center; }
+.regie-call small { flex-basis: 100%; padding-left: 18px; }
+.regie-hang { background: linear-gradient(#f9c6c6, #e88 45%, #d55 50%, #e77) !important; border-color: #a33 !important; color: #fff !important; padding: 6px 18px !important; }
+.regie-actions .y2k-btn { padding: 6px 18px; }
+@keyframes regie-blink { 50% { opacity: .3; } }
+.tray-balloon.ring { border-color: #3fb12c; animation: w7-open .3s ease-out, regie-ping 1s ease-in-out infinite; }

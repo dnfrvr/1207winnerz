@@ -1,0 +1,40 @@
+/* ─── Appel entrant (par-dessus tout le téléphone) ─────────────────────────── */
+.incall { position: absolute; inset: 0; z-index: 45; display: flex; flex-direction: column; color: #fff; animation: incall-in .2s;
+  background: linear-gradient(#2c3540, #0b0e12); background-size: cover; background-position: center; }
+.incall-top { padding: 18px 10px 14px; text-align: center; display: flex; flex-direction: column; gap: 3px;
+  background: linear-gradient(rgba(70,80,96,.85), rgba(20,26,36,.9)); border-bottom: 1px solid rgba(255,255,255,.2); }
+.incall-top b { font: bold 26px "Helvetica Neue", var(--ios-font); text-shadow: 0 -1px 0 #000; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.incall-top span { font: 15px "Helvetica Neue", var(--ios-font); color: #ccc; }
+.incall-mid { flex: 1; display: flex; align-items: center; justify-content: center; }
+.incall-grid { width: 270px; display: grid; grid-template-columns: repeat(3, 1fr); border-radius: 10px; overflow: hidden; border: 1px solid rgba(255,255,255,.3); background: rgba(255,255,255,.08); }
+.incall-grid button { height: 76px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; color: #fff; font: bold 11px var(--ios-font);
+  border: 0; border-right: 1px solid rgba(255,255,255,.2); border-bottom: 1px solid rgba(255,255,255,.2); background: none; }
+/* Barre du bas : verre noir comme l'écran verrouillé */
+.incall-bottom { display: flex; gap: 10px; padding: 22px 14px 26px;
+  background: linear-gradient(rgba(255,255,255,.16), rgba(255,255,255,.04) 50%, rgba(0,0,0,.1) 51%, rgba(0,0,0,.25)), rgba(0,0,0,.6);
+  border-top: 1px solid rgba(255,255,255,.2); }
+.incall-bottom .slider { flex: 1; }
+.incall-bottom button { flex: 1; height: 48px; display: flex; align-items: center; justify-content: center; gap: 8px; border-radius: 10px; cursor: pointer;
+  font: bold 20px "Helvetica Neue", var(--ios-font); color: #fff; text-shadow: 0 -1px 0 rgba(0,0,0,.45); }
+.incall-bottom .decline, .incall-bottom .end { background: linear-gradient(#f59b9b, #d43030 50%, #c41a1a 51%, #d84343); border: 1px solid #5a0000; }
+.incall-bottom .answer { background: linear-gradient(#9be58b, #3fb12c 50%, #2b9a1a 51%, #4bb63a); border: 1px solid #0d4a00; }
+.incall.ios.locked .incall-top { background: linear-gradient(rgba(255,255,255,.2), rgba(255,255,255,.06) 50%, rgba(0,0,0,.1) 51%, rgba(0,0,0,.25)), rgba(0,0,0,.55); }
+
+/* Android 4.1 */
+.incall.and { background: #000; }
+.incall.and .incall-top { background: #111; border-bottom: 2px solid var(--holo, #33b5e5); }
+.incall.and .incall-top b { font: 300 28px var(--and-font); text-shadow: none; }
+.incall.and .incall-top span { font: 13px var(--and-font); color: var(--holo, #33b5e5); text-transform: uppercase; letter-spacing: .5px; }
+.incall-photo { flex: 1; display: flex; align-items: center; justify-content: center; background: linear-gradient(#1b1b1b, #000); }
+.incall-photo span { width: 150px; height: 150px; display: flex; align-items: center; justify-content: center; font: 300 80px var(--and-font); color: #aaa; background: #2a2a2a; }
+.incall-ring { display: flex; align-items: center; justify-content: space-between; padding: 22px 26px 34px; background: rgba(0,0,0,.85); }
+.incall-ring button { width: 70px; height: 70px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff; cursor: pointer; border: 2px solid rgba(255,255,255,.25); }
+.incall-ring .no { background: #cc0000; }
+.incall-ring .yes { background: #669900; animation: incall-pulse 1.2s ease-in-out infinite; }
+.incall-ring .hint { font: 12px var(--and-font); color: #888; }
+@keyframes incall-pulse { 50% { box-shadow: 0 0 0 10px rgba(153, 204, 0, .25); } }
+.incall-end { height: 64px; border: 0; border-top: 1px solid #ff4444; background: #cc0000; color: #fff; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+.incall button:disabled { cursor: default; }
+@media (prefers-reduced-motion: reduce) { .incall-ring .yes { animation: none; } }
+
+@keyframes incall-in { from { opacity: 0; } }

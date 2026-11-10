@@ -103,10 +103,10 @@ export function notifLines(n: Notif, os: "ios" | "android") {
 // ─── Conversations de groupe (fils partagés entre plusieurs téléphones) ─────────
 export type GroupSender = { pid: string } | { npc: string };
 
-/** Groupes partagés (au moins 3 membres) : [{ tid, name, members }]. */
+/** Groupes partagés entre au moins 2 téléphones (y compris ceux créés plus tard) : [{ tid, name, members }]. */
 export function sharedGroups(threads: Record<string, Thread> | undefined, inboxes: Record<string, Record<string, InboxEntry> | undefined>) {
   return Object.entries(threads ?? {})
-    .filter(([, t]) => t && t.kind === "group" && Object.keys(t.members ?? {}).length >= 3)
+    .filter(([, t]) => t && t.kind === "group" && Object.keys(t.members ?? {}).length >= 2)
     .map(([tid, t]) => {
       const members = Object.keys(t.members ?? {});
       const name = t.name || members.map((m) => inboxes[m]?.[tid]?.contact).find(Boolean) || tid;

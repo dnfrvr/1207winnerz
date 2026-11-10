@@ -7,7 +7,7 @@ import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useData, useValue, useWriter } from "../data/hooks";
 import type { Patches } from "../data/store";
-import { findNpcThread, groupMessagePatches, notifBody, notifLines, notifPatch, npcContacts, npcMessagePatches, sharedGroups, type InboxEntry, type Msg, type Notif, type Thread } from "../data/notify";
+import { findNpcThread, groupMessagePatches, type GroupSender, notifBody, notifLines, notifPatch, npcContacts, npcMessagePatches, sharedGroups, type InboxEntry, type Msg, type Notif, type Thread } from "../data/notify";
 import { Glyph } from "../kit/glyph";
 import { img } from "../lib/img";
 import { loreToMs } from "../lib/loreTime";
@@ -15,6 +15,7 @@ import { canUpload, uploadImage } from "../lib/upload";
 import { LORE_DATE_DEFAULT } from "../phone/common";
 import { useIncomingNotifs } from "../phone/Notifs";
 import { PIDS } from "./Site";
+import { callPath, duration, endCallPatches, RING_MS, startCallPatches, type LiveCall } from "../data/call";
 import { CHANNELS, channelOf, INSTA_ACTIONS, type Channel, type Field, type LiveMsg } from "../data/channels";
 import "./regie.css";
 
@@ -74,7 +75,7 @@ export function Regie() {
   return (
     <>
       {/* Les écouteurs restent montés même fenêtre fermée : on sait quand un joueur répond. */}
-      {tabs.map((t) => (t.app === "group" ? <GroupReplyWatch key={tkey(t)} tab={t} onReply={() => onReply(tkey(t))} />
+      {tabs.map((t) => (t.app === "call" ? <CallWatch key={tkey(t)} tab={t} onReply={() => onReply(tkey(t))} /> : t.app === "group" ? <GroupReplyWatch key={tkey(t)} tab={t} onReply={() => onReply(tkey(t))} />
         : channelOf(t.app) ? <ChannelReplyWatch key={tkey(t)} tab={t} ch={channelOf(t.app)!} onReply={() => onReply(tkey(t))} /> : <ReplyWatch key={tkey(t)} tab={t} onReply={() => onReply(tkey(t))} />))}
       <button className={`regie-fab ${anyUnread ? "ping" : ""}`} onClick={() => setOpen((o) => !o)} aria-expanded={open}>
         <Glyph i={mdiBullhorn} size={16} /> Régie{anyUnread && <i className="dot" aria-label="Nouvelle réponse" />}
@@ -95,6 +96,7 @@ export function Regie() {
               ? <NewNotif onSent={openTab} />
               : (() => { const t = tabs.find((x) => tkey(x) === active); if (!t) return null;
                   if (t.app === "group") return <GroupLive key={tkey(t)} tab={t} />;
+                  if (t.app === "call") return <CallLive key={tkey(t)} tab={t} onSent={openTab} />;
                   const ch = channelOf(t.app);
                   return ch ? <ChannelLive key={tkey(t)} tab={t} ch={ch} onGone={() => closeTab(tkey(t))} /> : <LiveThread key={tkey(t)} tab={t} onGone={() => closeTab(tkey(t))} />; })()}
           </div>}
@@ -131,7 +133,10 @@ function TabButton({ tab, on, dot, onClick, onClose }: { tab: Tab; on: boolean; 
   const ch = channelOf(tab.app);
   const item = useValue<Record<string, never>>(ch ? `${ch.listPath(tab.pid)}/${tab.tid}` : null);
   const npc = useContact(tab);
-  const contact = ch ? `${ch.label.split(" ")[0]} · ${ch.titleOf(item).slice(0, 24)}` : tab.app === "group" ? `👥 ${npc}` : npc;
+  const callLog = useValue<{ contact?: string }>(tab.app === "call" ? `phones/${tab.pid}/data/calls/call_${tab.tid}` : null);
+  const liveCall = useValue<LiveCall>(tab.app === "call" ? callPath(tab.pid) : null);
+  const contact = ch ? `${ch.label.split(" ")[0]} · ${ch.titleOf(item).slice(0, 24)}` : tab.app === "group" ? `👥 ${npc}`
+    : tab.app === "call" ? `📞 ${(liveCall?.id === tab.tid ? liveCall.contact : callLog?.contact) ?? "Appel"}` : npc;
   const p = useValue<Profile>(`phones/${tab.pid}/profile`);
   return (
     <span className={`regie-tab ${on ? "on" : ""}`} role="tab" aria-selected={on}>
@@ -217,9 +222,11 @@ function NewNotif({ onSent }: { onSent: (t: Tab) => void }) {
       <select id="regie-app" value={app} onChange={(e) => setApp(e.target.value)}>
         <option value="messages">Messages (SMS)</option>
         {groups.map((g) => <option key={g.tid} value={`group:${g.tid}`}>Messages — groupe « {g.name} » (tous)</option>)}
+        <option value="group:new">Messages — nouveau groupe…</option>
+        {installed.has("phone") && <option value="call">Téléphone — appel entrant</option>}
         {available.map((c) => <option key={c.app} value={c.app}>{c.label}</option>)}
       </select>
-      {group ? <GroupForm key={group.tid} group={group} onSent={onSent} /> : ch ? <ChannelForm key={`${pid}-${app}`} pid={pid} ch={ch} onSent={onSent} /> : <form className="regie-sub" onSubmit={submit}>
+      {app === "call" ? <CallForm key={pid} pid={pid} onSent={onSent} /> : app === "group:new" ? <NewGroup onCreated={(tid) => setApp(`group:${tid}`)} /> : group ? <GroupForm key={group.tid} group={group} onSent={onSent} /> : ch ? <ChannelForm key={`${pid}-${app}`} pid={pid} ch={ch} onSent={onSent} /> : <form className="regie-sub" onSubmit={submit}>
       <label className="lbl" htmlFor="regie-contact">De la part de</label>
       <input id="regie-contact" list="regie-contacts" value={contact} onChange={(e) => setContact(e.target.value)} placeholder="ex. Jeongguk" autoComplete="off" required />
       <datalist id="regie-contacts">{contacts.map((c) => <option key={c.tid} value={c.contact} />)}</datalist>
@@ -352,6 +359,13 @@ export function PlayerTray({ pid }: { pid: string }) {
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [current?.[0], onMine]);
+  const call = useValue<LiveCall>(callPath(pid));
+  const ringing = !!call && call.state === "ringing" && Date.now() - call.startedAt < RING_MS + 15_000;
+  if (ringing && !onMine) return (
+    <button className="tray-balloon ring" onClick={() => nav(`/${pid}`)}>
+      <span className="txt"><b>📞 Appel entrant : {call.contact}</b><small>Ton téléphone sonne — clique pour répondre</small></span>
+    </button>
+  );
   if (!current || onMine) return null;
   const [, n] = current;
   const av = avatarOf(p);
@@ -568,50 +582,59 @@ function useMembersNotifs() {
   return useMemo(() => ({ [PIDS[0]]: n0, [PIDS[1]]: n1, [PIDS[2]]: n2, [PIDS[3]]: n3 }) as Record<string, Record<string, Notif> | undefined>, [n0, n1, n2, n3]);
 }
 
-/** Choix de l'expéditeur : un PNJ (nom libre, ceux déjà présents dans le fil sont proposés) ou un membre. */
+/** Expéditeur dans un groupe : "pid" (joueur), "npc:Nom" (PNJ déjà présent dans le fil) ou "npc" (autre PNJ, nom libre). */
+const senderOf = (v: string, npc: string): GroupSender | null =>
+  v.startsWith("npc:") ? { npc: v.slice(4) } : v === "npc" ? (npc.trim() ? { npc: npc.trim() } : null) : { pid: v };
+
+/** PNJ qui ont déjà écrit dans le fil (dans l'ordre d'apparition). */
+const npcsOf = (msgs: Record<string, Msg> | undefined) =>
+  [...new Set(Object.values(msgs ?? {}).sort((a, b) => (a?.order ?? 0) - (b?.order ?? 0)).filter((m) => m?.from === "npc" && m.npcName).map((m) => (m.npcName as string).trim()))];
+
 function SenderPick({ group, names, msgs, value, onChange, npc, onNpc }: {
   group: Group; names: Record<string, string>; msgs: Record<string, Msg> | undefined;
   value: string; onChange: (v: string) => void; npc: string; onNpc: (v: string) => void;
 }) {
-  const npcs = useMemo(() => [...new Set(Object.values(msgs ?? {}).filter((m) => m?.from === "npc" && m.npcName).map((m) => m.npcName as string))], [msgs]);
-  const id = `regie-npcs-${group.tid}`;
+  const npcs = useMemo(() => npcsOf(msgs), [msgs]);
   return (
     <div className="regie-senders">
       <select value={value} onChange={(e) => onChange(e.target.value)} aria-label="Qui écrit">
-        <option value="npc">PNJ…</option>
-        {group.members.map((m) => <option key={m} value={m}>{names[m] ?? m}</option>)}
+        {npcs.length > 0 && <optgroup label="PNJ du groupe">{npcs.map((n) => <option key={n} value={`npc:${n}`}>{n}</option>)}</optgroup>}
+        <optgroup label="Membres">{group.members.map((m) => <option key={m} value={m}>{names[m] ?? m}</option>)}</optgroup>
+        <option value="npc">Autre PNJ…</option>
       </select>
-      {value === "npc" && <>
-        <input list={id} value={npc} onChange={(e) => onNpc(e.target.value)} placeholder="Nom du PNJ" aria-label="Nom du PNJ" autoComplete="off" />
-        <datalist id={id}>{npcs.map((n) => <option key={n} value={n} />)}</datalist>
-      </>}
+      {value === "npc" && <input value={npc} onChange={(e) => onNpc(e.target.value)} placeholder="Nom du PNJ" aria-label="Nom du PNJ" autoComplete="off" autoFocus />}
     </div>
   );
 }
+
+/** Valeur par défaut : le premier PNJ du fil, sinon « Autre PNJ ». */
+const defaultSender = (msgs: Record<string, Msg> | undefined) => { const n = npcsOf(msgs)[0]; return n ? `npc:${n}` : "npc"; };
 
 function GroupForm({ group, onSent }: { group: Group; onSent: (t: Tab) => void }) {
   const names = useFirstNames();
   const msgs = useValue<Record<string, Msg>>(`threadMessages/${group.tid}`);
   const lore = useValue<string>("meta/loreDate") || LORE_DATE_DEFAULT;
   const { write } = useWriter(group.members[0]);
-  const [sender, setSender] = useState("npc");
+  const [sender, setSender] = useState<string | null>(null);
+  const value = sender ?? defaultSender(msgs);
   const [npc, setNpc] = useState("");
   const [text, setText] = useState("");
   const [photo, setPhoto] = useState<string | null>(null);
-  const label = sender === "npc" ? npc.trim() : names[sender] ?? sender;
-  const ok = !!label && (!!text.trim() || !!photo);
-  const told = group.members.filter((m) => m !== sender).map((m) => names[m] ?? m);
+  const who = senderOf(value, npc);
+  const label = !who ? "" : "npc" in who ? who.npc : names[who.pid] ?? who.pid;
+  const ok = !!who && (!!text.trim() || !!photo);
+  const told = group.members.filter((m) => !(who && "pid" in who && who.pid === m)).map((m) => names[m] ?? m);
   const submit = (e: FormEvent) => {
     e.preventDefault();
-    if (!ok) return;
-    write(groupMessagePatches({ ...group, sender: sender === "npc" ? { npc: npc.trim() } : { pid: sender }, senderLabel: label, text, img: photo ?? undefined, lore, msgs }));
+    if (!ok || !who) return;
+    write(groupMessagePatches({ ...group, sender: who, senderLabel: label, text, img: photo ?? undefined, lore, msgs }));
     setText(""); setPhoto(null);
     onSent({ pid: group.members[0], tid: group.tid, app: "group" });
   };
   return (
     <form className="regie-sub" onSubmit={submit}>
       <span className="lbl">Qui écrit</span>
-      <SenderPick group={group} names={names} msgs={msgs} value={sender} onChange={setSender} npc={npc} onNpc={setNpc} />
+      <SenderPick group={group} names={names} msgs={msgs} value={value} onChange={setSender} npc={npc} onNpc={setNpc} />
       <label className="lbl" htmlFor="regie-gr-text">Message</label>
       <div className="regie-compose">
         <textarea id="regie-gr-text" rows={3} value={text} onChange={(e) => setText(e.target.value)} placeholder={`Message dans « ${group.name} »`} onKeyDown={enterSends} />
@@ -651,8 +674,10 @@ function GroupLive({ tab }: { tab: Tab }) {
   const lore = useValue<string>("meta/loreDate") || LORE_DATE_DEFAULT;
   const { write } = useWriter(tab.pid);
   const lastMdj = [...all].reverse().find(([, m]) => m.byMdj);
-  const [sender, setSender] = useState(() => (lastMdj?.[1].from && lastMdj[1].from !== "npc" ? lastMdj[1].from : "npc"));
-  const [npc, setNpc] = useState(() => lastMdj?.[1].npcName ?? "");
+  // Par défaut : le dernier expéditeur utilisé depuis la régie, sinon le premier PNJ du fil.
+  const [sender, setSender] = useState<string | null>(null);
+  const value = sender ?? (lastMdj ? (lastMdj[1].from === "npc" ? `npc:${lastMdj[1].npcName ?? ""}` : lastMdj[1].from) : defaultSender(raw));
+  const [npc, setNpc] = useState("");
   const [text, setText] = useState("");
   const [photo, setPhoto] = useState<string | null>(null);
   const box = useRef<HTMLDivElement>(null);
@@ -668,11 +693,12 @@ function GroupLive({ tab }: { tab: Tab }) {
   const seenBy = forLast.filter((x) => x.n.seen).map((x) => names[x.m] ?? x.m);
   const notYet = forLast.filter((x) => !x.n.seen).map((x) => names[x.m] ?? x.m);
 
-  const label = sender === "npc" ? npc.trim() : names[sender] ?? sender;
+  const who = senderOf(value, npc);
+  const label = !who ? "" : "npc" in who ? who.npc : names[who.pid] ?? who.pid;
   const send = (e: FormEvent) => {
     e.preventDefault();
-    if (!label || (!text.trim() && !photo)) return;
-    write(groupMessagePatches({ ...group, sender: sender === "npc" ? { npc: npc.trim() } : { pid: sender }, senderLabel: label, text, img: photo ?? undefined, lore, msgs: raw }));
+    if (!who || (!text.trim() && !photo)) return;
+    write(groupMessagePatches({ ...group, sender: who, senderLabel: label, text, img: photo ?? undefined, lore, msgs: raw }));
     setText(""); setPhoto(null);
   };
   const clearNotifs = () => { const pt: Patches = {}; for (const x of pending) pt[`phones/${x.m}/notifs/${x.id}`] = null; write(pt); };
@@ -704,7 +730,7 @@ function GroupLive({ tab }: { tab: Tab }) {
         ))}
       </div>
       <form className="regie-compose regie-compose-group" onSubmit={send}>
-        <SenderPick group={group} names={names} msgs={raw} value={sender} onChange={setSender} npc={npc} onNpc={setNpc} />
+        <SenderPick group={group} names={names} msgs={raw} value={value} onChange={setSender} npc={npc} onNpc={setNpc} />
         <div className="regie-compose">
           <textarea rows={2} value={text} onChange={(e) => setText(e.target.value)} placeholder={`Écrire en tant que ${label || "…"}…`} aria-label="Message dans le groupe" onKeyDown={enterSends} />
           <PhotoPick pid={tab.pid} value={photo} onChange={setPhoto} />
@@ -714,6 +740,125 @@ function GroupLive({ tab }: { tab: Tab }) {
       <div className="regie-actions">
         {pending.length > 0 && <button className="linkish" onClick={clearNotifs}>Effacer les notifs ({pending.length})</button>}
         {lastMdj && <button className="linkish danger" onClick={undo}>Annuler l'envoi du dernier message</button>}
+      </div>
+    </div>
+  );
+}
+
+/** Créer un groupe partagé : un fil « group » et son entrée dans la boîte de chaque membre. */
+function NewGroup({ onCreated }: { onCreated: (tid: string) => void }) {
+  const names = useFirstNames();
+  const { store } = useData();
+  const { write } = useWriter(PIDS[0]);
+  const [name, setName] = useState("");
+  const [members, setMembers] = useState<string[]>([...PIDS]);
+  const ok = !!name.trim() && members.length >= 2;
+  const submit = (e: FormEvent) => {
+    e.preventDefault();
+    if (!ok) return;
+    const tid = store.newId("group");
+    const patches: Patches = { [`threads/${tid}`]: { kind: "group", name: name.trim(), members: Object.fromEntries(members.map((m) => [m, true])) } };
+    for (const m of members) patches[`phones/${m}/inbox/${tid}`] = { threadId: tid, contact: name.trim(), isGroup: true, order: Date.now() };
+    write(patches).then(() => onCreated(tid));
+  };
+  return (
+    <form className="regie-sub" onSubmit={submit}>
+      <label className="lbl" htmlFor="regie-ng-name">Nom du groupe</label>
+      <input id="regie-ng-name" value={name} onChange={(e) => setName(e.target.value)} placeholder="ex. Les Ratés 🎈" autoComplete="off" required />
+      <span className="lbl">Membres</span>
+      <div className="regie-players">
+        {PIDS.map((m) => (
+          <label key={m} className={`regie-check ${members.includes(m) ? "on" : ""}`}>
+            <input type="checkbox" checked={members.includes(m)} onChange={(e) => setMembers((l) => (e.target.checked ? [...l, m] : l.filter((x) => x !== m)))} /> {names[m] ?? m}
+          </label>
+        ))}
+      </div>
+      <small className="hint">Le groupe apparaît dans Messages chez chaque membre. Les PNJ n'ont pas besoin d'être membres : choisis « Autre PNJ… » pour écrire à leur nom.</small>
+      <button className="y2k-btn" disabled={!ok}>Créer le groupe</button>
+    </form>
+  );
+}
+
+// ─── Appel entrant ───────────────────────────────────────────────────────────
+function CallForm({ pid, onSent }: { pid: string; onSent: (t: Tab) => void }) {
+  const calls = useValue<Record<string, { contact?: string; deleted?: boolean }>>(`phones/${pid}/data/calls`);
+  const call = useValue<LiveCall>(callPath(pid));
+  const p = useValue<Profile>(`phones/${pid}/profile`);
+  const { write } = useWriter(pid);
+  const [contact, setContact] = useState("");
+  const names = useMemo(() => [...new Set(Object.values(calls ?? {}).filter((c) => c && !c.deleted && c.contact).map((c) => c.contact as string))], [calls]);
+  const busy = !!call && call.state !== "ended" && Date.now() - call.startedAt < RING_MS + 15_000;
+  const submit = (e: FormEvent) => {
+    e.preventDefault();
+    if (!contact.trim() || busy) return;
+    const { patches, id } = startCallPatches(pid, contact.trim());
+    write(patches);
+    onSent({ pid, tid: id, app: "call" });
+  };
+  return (
+    <form className="regie-sub" onSubmit={submit}>
+      <label className="lbl" htmlFor="regie-call-contact">Qui appelle</label>
+      <input id="regie-call-contact" list="regie-call-names" value={contact} onChange={(e) => setContact(e.target.value)} placeholder="ex. Maman" autoComplete="off" required />
+      <datalist id="regie-call-names">{names.map((n) => <option key={n} value={n} />)}</datalist>
+      <small className="hint">{busy ? `Un appel est déjà en cours chez ${first(p, pid)}.` : `Le téléphone de ${first(p, pid)} sonne 30 s ; sans réponse, c'est un appel manqué.`}</small>
+      <button className="y2k-btn" disabled={!contact.trim() || busy}>Appeler {first(p, pid)}</button>
+    </form>
+  );
+}
+
+/** Suit un appel lancé depuis la régie : signal quand le joueur décroche, appel manqué au bout de 30 s. */
+function CallWatch({ tab, onReply }: { tab: Tab; onReply: () => void }) {
+  const call = useValue<LiveCall>(callPath(tab.pid));
+  const lore = useValue<string>("meta/loreDate") || LORE_DATE_DEFAULT;
+  const { write } = useWriter(tab.pid);
+  const mine = call?.id === tab.tid ? call : undefined;
+  const prev = useRef(mine?.state);
+  useEffect(() => {
+    if (prev.current && prev.current !== mine?.state && mine?.state === "active") onReply();
+    prev.current = mine?.state;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mine?.state]);
+  useEffect(() => {
+    if (mine?.state !== "ringing") return;
+    // Un peu après le téléphone (qui s'en charge s'il est ouvert) : la régie termine l'appel elle-même.
+    const t = setTimeout(() => write(endCallPatches(tab.pid, mine, "missed", lore)), Math.max(0, RING_MS + 3000 - (Date.now() - mine.startedAt)));
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mine?.state, mine?.id]);
+  return null;
+}
+
+function CallLive({ tab, onSent }: { tab: Tab; onSent: (t: Tab) => void }) {
+  const { pid, tid } = tab;
+  const call = useValue<LiveCall>(callPath(pid));
+  const log = useValue<{ contact?: string; type?: string; duration?: string; time?: string }>(`phones/${pid}/data/calls/call_${tid}`);
+  const notif = useValue<Notif>(`phones/${pid}/notifs/n_${tid}`);
+  const lore = useValue<string>("meta/loreDate") || LORE_DATE_DEFAULT;
+  const p = useValue<Profile>(`phones/${pid}/profile`);
+  const { write } = useWriter(pid);
+  const [now, setNow] = useState(Date.now);
+  useEffect(() => { const h = setInterval(() => setNow(Date.now()), 500); return () => clearInterval(h); }, []);
+  const mine = call?.id === tid ? call : undefined;
+  const contact = mine?.contact ?? log?.contact ?? "?";
+  const state = mine?.state ?? (log ? "ended" : "ringing");
+  const status = state === "ringing" ? `Ça sonne… ${duration(now - (mine?.startedAt ?? now))}`
+    : state === "active" ? `En ligne · ${duration(now - (mine?.answeredAt ?? now))}`
+    : log?.type === "missed" ? (mine?.result === "declined" ? "Refusé par le joueur" : "Pas de réponse : appel manqué") : `Terminé · ${log?.duration ?? ""}`;
+  const hangUp = () => mine && mine.state !== "ended" && write(endCallPatches(pid, mine, "ended", lore));
+  const again = () => { const { patches, id } = startCallPatches(pid, contact); write(patches); onSent({ pid, tid: id, app: "call" }); };
+  const busy = !!call && call.id !== tid && call.state !== "ended";
+  return (
+    <div className="regie-live">
+      <div className="regie-live-head"><b>Appel</b> · {contact} → {first(p, pid)}
+        <Link to={`/${pid}`} className="linkish" title="Ouvrir le téléphone"><Glyph i={mdiOpenInNew} size={13} /> Voir le téléphone</Link></div>
+      <div className={`regie-call ${state}`}>
+        <span className="dot-state" aria-hidden />
+        <b>{status}</b>
+        {state === "ended" && notif && <small className="seen">{notif.seen ? "Notif « Missed Call » ouverte" : "Notif « Missed Call » envoyée"}</small>}
+      </div>
+      <div className="regie-actions">
+        {state !== "ended" ? <button className="y2k-btn regie-hang" onClick={hangUp}>Raccrocher</button>
+          : <button className="y2k-btn" onClick={again} disabled={busy}>Rappeler</button>}
       </div>
     </div>
   );
