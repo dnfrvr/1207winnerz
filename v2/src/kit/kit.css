@@ -111,7 +111,7 @@
 .k-form-bar button { height: 30px; padding: 0 10px; border-radius: 5px; font: bold 12px var(--ios-font); color: #fff; border: 1px solid rgba(0,0,0,.45);
   background: linear-gradient(rgba(255,255,255,.25), rgba(255,255,255,0) 50%), linear-gradient(#8fa2bd, #5b7393); text-shadow: 0 -1px 0 rgba(0,0,0,.45); }
 .k-form-bar button.ok { background: linear-gradient(rgba(255,255,255,.25), rgba(255,255,255,0) 50%), linear-gradient(var(--ios-blue-btn-top), var(--ios-blue-btn-bottom)); }
-.k-form-body { flex: 1; overflow-y: auto; }
+.k-form-body { flex: 1; overflow-y: auto; padding-bottom: var(--kb, 0px); }
 .k-field { display: flex; flex-direction: column; gap: 3px; padding: 7px 10px; border-bottom: 1px solid #e0e0e0; background: #fff; }
 .k-field.bool { flex-direction: row; align-items: center; justify-content: space-between; }
 .k-field-label { font: bold 13px var(--ios-font); color: #385487; }

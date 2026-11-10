@@ -221,6 +221,33 @@ function HardwareKeys({ pid, os, inline = false }: { pid: string; os: OS; inline
   );
 }
 
+/**
+ * Hauteur de l'écran du téléphone masquée par le clavier virtuel, en px logiques de l'écran (--kb).
+ * Les formulaires s'en servent comme marge basse : le clavier recouvre l'écran sans le rétrécir,
+ * et le dernier champ reste atteignable en faisant défiler.
+ */
+function setKeyboardInset(editing: boolean) {
+  const vv = window.visualViewport, scr = document.querySelector<HTMLElement>(".screen");
+  let kb = 0;
+  if (editing && vv && scr) {
+    const r = scr.getBoundingClientRect(), k = r.width / (scr.offsetWidth || r.width);
+    kb = Math.max(0, (r.bottom - (vv.offsetTop + vv.height)) / k);
+  }
+  document.documentElement.style.setProperty("--kb", `${Math.round(kb)}px`);
+}
+
+/** Centre le champ dans son conteneur défilant le plus proche, sans faire bouger la page ni le téléphone. */
+function scrollIntoBox(t: HTMLElement) {
+  let box = t.parentElement;
+  while (box && !(box.scrollHeight > box.clientHeight && /auto|scroll/.test(getComputedStyle(box).overflowY))) box = box.parentElement;
+  if (!box || box === document.body || box === document.documentElement) return;
+  const k = box.getBoundingClientRect().height / (box.offsetHeight || 1);
+  const kb = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--kb")) || 0;
+  const visible = box.clientHeight - kb;
+  const top = (t.getBoundingClientRect().top - box.getBoundingClientRect().top) / k + box.scrollTop;
+  box.scrollTo({ top: Math.max(0, top - (visible - t.offsetHeight) / 2), behavior: "smooth" });
+}
+
 /** En plein écran : échelle qui fait tenir l'écran (+ la barre de boutons) sans déformer. */
 function useFullscreenFit(scr: { w: number; h: number }): number | null {
   const compute = () => {
@@ -239,14 +266,29 @@ function useFullscreenFit(scr: { w: number; h: number }): number | null {
       // le clavier passe par-dessus l'écran au lieu de le rétrécir.
       const el = document.activeElement as HTMLElement | null;
       const editing = !!el && (el.tagName === "INPUT" || el.tagName === "TEXTAREA" || el.isContentEditable);
+      setKeyboardInset(editing);
       if (editing && Math.abs(w - last.current.w) < 2 && h < last.current.h) return;
       last.current = { w, h };
       setFit(compute());
     };
+    // Champ touché : une fois le clavier ouvert, on fait défiler son formulaire pour le garder visible.
+    const onFocus = (e: FocusEvent) => {
+      const t = e.target as HTMLElement;
+      if (t.matches?.("input, textarea, [contenteditable]")) setTimeout(() => { setKeyboardInset(true); scrollIntoBox(t); }, 350);
+    };
+    const onBlur = () => setTimeout(() => {
+      const a = document.activeElement as HTMLElement | null;
+      if (!a?.matches?.("input, textarea, [contenteditable]")) setKeyboardInset(false);
+    }, 50);
     on();
     window.addEventListener("resize", on);
     window.visualViewport?.addEventListener("resize", on);
-    return () => { window.removeEventListener("resize", on); window.visualViewport?.removeEventListener("resize", on); };
+    document.addEventListener("focusin", onFocus);
+    document.addEventListener("focusout", onBlur);
+    return () => {
+      window.removeEventListener("resize", on); window.visualViewport?.removeEventListener("resize", on);
+      document.removeEventListener("focusin", onFocus); document.removeEventListener("focusout", onBlur);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [scr.w, scr.h]);
   return fit;
