@@ -48,7 +48,7 @@ export function useIncomingNotifs(pid: string | null) {
   return { current: queue[0] ?? null, shift };
 }
 
-function useAppIcon(pid: string, os: OS) {
+export function useAppIcon(pid: string, os: OS) {
   const profile = useValue<Profile>(`phones/${pid}/profile`);
   const droid = useValue<Record<string, string>>("shared/androidIcons");
   return (app: string) => (os === "android" ? droid?.[app] ?? ANDROID_ICON_DEFAULTS[app] : profile?.appIcons?.[app]);

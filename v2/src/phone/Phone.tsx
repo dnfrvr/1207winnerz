@@ -17,6 +17,7 @@ import { APPS, preloadApps } from "../apps/registry";
 import { img } from "../lib/img";
 import { Sparkles } from "../site/Win";
 import { IncomingCall } from "./Call";
+import { NotifCenter } from "./NotifCenter";
 import { LockNotifs, NotifBanner, SeenOnOpen, useNotifBadges, useOpenNotif, useUnseenNotifs } from "./Notifs";
 import "./android.css";
 
@@ -50,6 +51,7 @@ export function Phone() {
       <div className={`screen os-${os}`} style={{ width: scr.w, height: scr.h, transform: scale ? `scale(${scale})` : undefined, ["--accent" as string]: profile.accentColor ?? "#33b5e5" }}>
         <PhoneScreen pid={pid} profile={profile} os={os} />
         <NotifBanner pid={pid} os={os} />
+        <NotifCenter pid={pid} os={os} />
         <IncomingCall pid={pid} os={os} />
         <SeenOnOpen pid={pid} />
         {canEdit && <LoreBump pid={pid} />}

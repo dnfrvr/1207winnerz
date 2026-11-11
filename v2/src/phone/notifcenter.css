@@ -1,0 +1,54 @@
+/* ─── Centre de notifications iOS 6 / volet Android 4.1 ─────────────────────── */
+/* Zone de prise : la barre d'état (sous la bannière, z 40, qui reste cliquable) */
+.nc-pull { position: absolute; z-index: 38; top: 0; left: 0; right: 0; height: 20px; touch-action: none; cursor: grab; }
+.os-android .nc-pull { height: 24px; }
+.nc { position: absolute; z-index: 39; inset: 0; display: flex; flex-direction: column; will-change: transform; background-clip: content-box !important; }
+.nc.anim { transition: transform .3s cubic-bezier(.2,.8,.3,1), visibility .3s; }
+.nc-body { flex: 1; min-height: 0; overflow-y: auto; }
+.nc-grab { flex: none; display: grid; place-items: center; touch-action: none; cursor: grab; }
+.nc-empty { padding: 30px 16px; text-align: center; list-style: none; }
+
+/* iOS 6 : lin gris foncé, sections par app, poignée à trois traits en bas */
+.nc.ios { padding-top: 20px; color: #fff; font-family: "Helvetica Neue", var(--ios-font);
+  background:
+    repeating-linear-gradient(0deg, rgba(255,255,255,.025) 0 1px, transparent 1px 3px),
+    repeating-linear-gradient(90deg, rgba(0,0,0,.18) 0 1px, transparent 1px 2px),
+    #3a3c41; box-shadow: 0 2px 8px rgba(0,0,0,.6); }
+.nc.ios .nc-sec { margin: 8px 0 0; }
+.nc.ios header { display: flex; align-items: center; gap: 7px; height: 26px; padding: 0 8px;
+  background: linear-gradient(#5d6067, #45474d); border-top: 1px solid #6d7077; border-bottom: 1px solid #23252a; }
+.nc.ios header img, .nc.ios header i { width: 18px; height: 18px; border-radius: 4px; background: #777; }
+.nc.ios header b { flex: 1; font: bold 14px "Helvetica Neue", var(--ios-font); text-shadow: 0 -1px 0 #000; }
+.nc.ios header button { display: grid; place-items: center; width: 20px; height: 20px; border: 0; border-radius: 50%; color: #c8c9cc;
+  background: linear-gradient(#2c2e33, #1d1f22); box-shadow: 0 1px 0 rgba(255,255,255,.18), inset 0 1px 2px #000; }
+.nc-item { display: flex; flex-direction: column; gap: 1px; width: 100%; padding: 7px 10px 8px 33px; border: 0; border-bottom: 1px solid #26282c;
+  background: transparent; color: #fff; text-align: left; box-shadow: 0 1px 0 rgba(255,255,255,.06); }
+.nc-item:active { background: rgba(255,255,255,.08); }
+.nc-item .top { display: flex; align-items: baseline; gap: 6px; }
+.nc-item .top b { flex: 1; font-size: 14px; text-shadow: 0 -1px 0 #000; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.nc-item small { font-size: 11px; color: #a6a9ae; }
+.nc-item .body { font-size: 13px; line-height: 1.25; color: #d9dadc; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.nc-item .att { color: #a6a9ae; }
+.nc.ios .nc-empty { font: 14px "Helvetica Neue", var(--ios-font); color: #a6a9ae; text-shadow: 0 -1px 0 #000; }
+.nc.ios .nc-grab { height: 24px; background: linear-gradient(#45474d, #2c2e33); border-top: 1px solid #6d7077; }
+.nc.ios .nc-grab i { width: 34px; height: 9px; background: repeating-linear-gradient(#9da0a6 0 2px, transparent 2px 4px); opacity: .8; }
+
+/* Android 4.1 : volet noir, en-tête heure + date, bouton « tout effacer », poignée bleue */
+.nc.android { padding-top: 24px; background: rgba(0,0,0,.94); color: #fff; font-family: var(--and-font); }
+.nc-and-head { position: relative; display: flex; flex-direction: column; padding: 8px 14px 9px; border-bottom: 1px solid #33b5e5; }
+.nc-and-head b { font: 300 34px/1 var(--and-font); }
+.nc-and-head span { font-size: 11px; color: #bbb; margin-top: 3px; }
+.nc-and-head button { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); border: 0; background: none; color: #fff; padding: 6px; }
+.nc-and-list { margin: 0; padding: 0; list-style: none; }
+.nc-and-list li { border-bottom: 1px solid #222; }
+.nc-and-list li.new { background: #161616; }
+.nc-and-list button { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 64px; padding: 6px 10px; border: 0; background: none; color: #fff; text-align: left; }
+.nc-and-list button:active { background: #33b5e5; }
+.nc-and-list .ico img, .nc-and-list .ico i { display: block; width: 40px; height: 40px; background: #333; }
+.nc-and-list .txt { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.nc-and-list .txt b { font: 16px var(--and-font); }
+.nc-and-list .txt span { font-size: 13px; color: #aaa; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.nc-and-list small { font-size: 11px; color: #aaa; align-self: flex-start; margin-top: 6px; }
+.nc.android .nc-empty { color: #888; font-size: 14px; }
+.nc.android .nc-grab { height: 18px; background: #000; border-top: 1px solid #33b5e5; }
+.nc.android .nc-grab i { width: 22px; height: 3px; background: #33b5e5; }
