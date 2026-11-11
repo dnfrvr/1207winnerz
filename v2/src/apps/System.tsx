@@ -4,11 +4,13 @@ import { Glyph } from "../kit/glyph";
 import { mdiCamera, mdiCameraFlip, mdiCheck, mdiClose, mdiFlashAuto, mdiMicrophoneOff, mdiPlus, mdiSquareEditOutline, mdiVideo, mdiWallet, mdiDumbbell, mdiBookOpenPageVariant, mdiMicroscope, mdiChessKnight, mdiSilverwareForkKnife } from "@mdi/js";
 import { useEffect, useState } from "react";
 import { Route, Routes, useNavigate, useParams } from "react-router-dom";
-import { useList, useValue } from "../data/hooks";
+import { useList, useValue, useWriter } from "../data/hooks";
+import type { Json } from "../data/store";
+import { loreNowMs, parseDateField } from "../lib/loreTime";
 import { img } from "../lib/img";
 import { AppFrame, BackButton, BarBack, StatusBar } from "../phone/IOSChrome";
 import { Press } from "./social";
-import { useOS } from "../phone/common";
+import { LORE_DATE_DEFAULT, useOS } from "../phone/common";
 import { balloons } from "../phone/balloons";
 import { AddButton, Avatar, Empty, useEditor, useSeeded } from "../kit/kit";
 import { Icon } from "../kit/icons";
@@ -191,27 +193,109 @@ export function PassbookApp({ pid }: { pid: string }) {
 }
 
 // ── Rappels ──────────────────────────────────────────────────────────────────
-type Reminder = { title?: string; done?: boolean; due?: string; order?: number; deleted?: boolean };
+// iOS 6 : plusieurs listes (bouton « Lists », points de page), échéance sous le titre (rouge si dépassée),
+// ligne vide en bas pour écrire un rappel directement, rappels faits rangés sous « Completed ».
+type Reminder = { title?: string; done?: boolean; due?: string; list?: string; order?: number; deleted?: boolean };
+type RList = { name?: string; order?: number; deleted?: boolean };
+const RM_FIELDS = ["title", "due", "done"];
+
+/** Échéance → [ms, libellé « 06/10/12 14:00 »] ; une date sans heure compte jusqu'au soir. */
+const dueOf = (due?: string): [number, string] | null => {
+  const v = due ? parseDateField(due)?.value : "";
+  if (!v) return null;
+  const d = new Date(v.length === 10 ? `${v}T23:59` : v);
+  const p2 = (n: number) => String(n).padStart(2, "0");
+  return [d.getTime(), `${p2(d.getDate())}/${p2(d.getMonth() + 1)}/${String(d.getFullYear()).slice(2)}${v.length > 10 ? ` ${p2(d.getHours())}:${p2(d.getMinutes())}` : ""}`];
+};
+
 export function RemindersApp({ pid }: { pid: string }) {
-  const path = `phones/${pid}/data/reminders`;
-  const list = useList<Reminder>(path);
+  const path = `phones/${pid}/data/reminders`, lpath = `phones/${pid}/data/reminderLists`;
+  const all = useList<Reminder>(path);
+  const lists = useList<RList>(lpath);
   const ed = useEditor(pid);
-  const fields = ["title", "due", "done"];
-  return (
-    <AppFrame title="Reminders" left={<BackButton to={`/${pid}/home`} label="Accueil" />}
-      right={<AddButton show={ed.canEdit} onClick={() => ed.add(path, { title: "", due: "", done: false }, { title: "Rappel", fields })} />}
-      navStyle={{ background: "linear-gradient(#8a8f96, #5d636b)", borderBottomColor: "#3a3e44" }} bodyClass="rm">
+  const { insert } = useWriter(pid);
+  const lore = useValue<string>("meta/loreDate") || LORE_DATE_DEFAULT;
+  const now = loreNowMs(lore);
+  const [cur, setCur] = useState(() => sessionStorage.getItem(`rm-${pid}`) ?? "");
+  const [showLists, setShowLists] = useState(false);
+  const [showDone, setShowDone] = useState(false);
+  // Sans liste créée : une liste implicite « Reminders » ; un rappel sans liste va dans la première.
+  const names: [string, RList][] = lists.length ? lists : [["", { name: "Reminders" }]];
+  const idx = Math.max(0, names.findIndex(([id]) => id === cur));
+  const [lid, l] = names[idx];
+  const listOf = (r: Reminder) => (r.list && names.some(([id]) => id === r.list) ? r.list : names[0][0]);
+  const select = (id: string) => { setCur(id); setShowLists(false); try { sessionStorage.setItem(`rm-${pid}`, id); } catch { /* rien */ } };
+
+  const addList = (name: string) => {
+    const p: Record<string, Json> = {};
+    let order = (lists[lists.length - 1]?.[1].order ?? 0) + 1;
+    if (!lists.length) p[`${lpath}/default`] = { name: "Reminders", order: order++ }; // l'implicite devient réelle
+    const id = `l_${Date.now().toString(36)}`;
+    p[`${lpath}/${id}`] = { name, order };
+    ed.write(p);
+    select(id);
+  };
+
+  const mine = all.filter(([, r]) => listOf(r) === lid);
+  const todo = mine.filter(([, r]) => !r.done), done = mine.filter(([, r]) => r.done);
+  const row = ([id, r]: [string, Reminder]) => {
+    const due = dueOf(r.due);
+    return (
+      <div key={id} className={`rm-row ${r.done ? "done" : ""}`} onContextMenu={(e) => { e.preventDefault(); ed.itemLong(path, id, { fields: RM_FIELDS, label: r.title })?.(); }}>
+        <button className="rm-check" onClick={() => ed.canEdit && ed.write({ [`${path}/${id}/done`]: !r.done })}>{r.done ? <Glyph i={mdiCheck} size={14} /> : ""}</button>
+        <span><b>{r.title}</b>{r.due && <small className={due && !r.done && due[0] < now ? "late" : ""}>{due?.[1] ?? r.due}</small>}</span>
+      </div>
+    );
+  };
+
+  if (showLists) return (
+    <AppFrame title="Lists" left={<button className="barbtn" onClick={() => setShowLists(false)}>Done</button>}
+      navStyle={RM_NAV} bodyClass="rm">
       <div className="rm-paper">
-        {list.map(([id, r]) => (
-          <div key={id} className={`rm-row ${r.done ? "done" : ""}`} onContextMenu={(e) => { e.preventDefault(); ed.itemLong(path, id, { fields, label: r.title })?.(); }}>
-            <button className="rm-check" onClick={() => ed.canEdit && ed.write({ [`${path}/${id}/done`]: !r.done })}>{r.done ? <Glyph i={mdiCheck} size={14} /> : ""}</button>
-            <span><b>{r.title}</b>{r.due && <small>{r.due}</small>}</span>
-          </div>
-        ))}
-        {list.length === 0 && <div className="rm-empty">{ed.canEdit ? "Touchez + pour ajouter un rappel" : "No Reminders"}</div>}
+        {names.map(([id, x]) => {
+          const n = all.filter(([, r]) => !r.done && listOf(r) === id).length;
+          return (
+            <div key={id || "implicit"} className={`rm-row rm-list ${id === lid ? "cur" : ""}`}
+              onContextMenu={(e) => { e.preventDefault(); if (id) ed.itemLong(lpath, id, { fields: ["name"], label: x.name })?.(); }}>
+              <button onClick={() => select(id)}><b>{x.name || "Sans titre"}</b><small>{n || ""}</small></button>
+            </div>
+          );
+        })}
+        {ed.canEdit && <InlineAdd placeholder="Create New List…" onAdd={addList} />}
       </div>
       {ed.ui}
     </AppFrame>
+  );
+
+  return (
+    <AppFrame title={l.name || "Reminders"} left={<button className="barbtn" onClick={() => setShowLists(true)}>Lists</button>}
+      right={<AddButton show={ed.canEdit} onClick={() => ed.add(path, { title: "", due: "", done: false, ...(lid ? { list: lid } : {}) }, { title: "Rappel", fields: RM_FIELDS })} />}
+      navStyle={RM_NAV} bodyClass="rm">
+      {names.length > 1 && (
+        <div className="rm-dots">{names.map(([id]) => <button key={id} className={id === lid ? "on" : ""} onClick={() => select(id)} aria-label="Liste" />)}</div>
+      )}
+      <div className="rm-paper">
+        {todo.map(row)}
+        {ed.canEdit && <InlineAdd onAdd={(title) => insert(path, { title, done: false, ...(lid ? { list: lid } : {}) })} />}
+        {!ed.canEdit && todo.length === 0 && <div className="rm-empty">No Reminders</div>}
+        {done.length > 0 && <button className="rm-done-toggle" onClick={() => setShowDone((v) => !v)}>{showDone ? "Hide Completed" : `Show Completed (${done.length})`}</button>}
+        {showDone && done.map(row)}
+      </div>
+      {ed.ui}
+    </AppFrame>
+  );
+}
+const RM_NAV = { background: "linear-gradient(#8a8f96, #5d636b)", borderBottomColor: "#3a3e44" };
+
+/** Ligne vide du bloc-notes : on tape, Entrée ajoute. */
+function InlineAdd({ onAdd, placeholder = "" }: { onAdd: (t: string) => void; placeholder?: string }) {
+  const [v, setV] = useState("");
+  const add = () => { const t = v.trim(); if (t) onAdd(t); setV(""); };
+  return (
+    <form className="rm-row rm-new" onSubmit={(e) => { e.preventDefault(); add(); }}>
+      <span className="rm-check ghost" />
+      <input value={v} onChange={(e) => setV(e.target.value)} onBlur={add} placeholder={placeholder} aria-label={placeholder || "Nouveau rappel"} />
+    </form>
   );
 }
 
