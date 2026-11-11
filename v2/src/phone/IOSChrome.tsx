@@ -68,7 +68,7 @@ export function AppFrame({ title, left, right, children, navStyle, bodyClass = "
   return (
     <div className={`app ${mountDir}`}>
       <StatusBar />
-      <div className="navbar" style={navStyle}>
+      <div className={`navbar ${navStyle ? "tinted" : ""}`} style={navStyle}>
         {left && <div className="side l">{left}</div>}
         <h1>{title}</h1>
         {right && <div className="side r">{right}</div>}

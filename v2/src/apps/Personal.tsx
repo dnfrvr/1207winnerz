@@ -13,9 +13,9 @@ import { Brand, Glyph } from "../kit/glyph";
 import { Press, compact, pickLocal, useChars } from "./social";
 import "./personal.css";
 
-const Bar = ({ cls, title, onBack, right, backLabel = "Accueil" }: { cls: string; title: React.ReactNode; onBack: () => void; right?: React.ReactNode; backLabel?: string }) => (
+const Bar = ({ cls, title, onBack, right, backLabel = "Accueil", tone }: { cls: string; title: React.ReactNode; onBack: () => void; right?: React.ReactNode; backLabel?: string; tone?: "dark" | "light" }) => (
   <div className={`pb-bar ${cls}`}>
-    <BarBack onClick={onBack} label={backLabel} />
+    <BarBack onClick={onBack} label={backLabel} tone={tone} />
     <h1>{title}</h1>
     <span className="pb-r">{right}</span>
   </div>
@@ -391,7 +391,7 @@ export function WikipediaApp({ pid }: { pid: string }) {
   return (
     <div className="app wk">
       <StatusBar />
-      <Bar cls="wk-bar" title={<span className="wk-logo">W<small>IKIPEDIA</small></span>} onBack={() => art ? setArt(null) : nav(`/${pid}/home`)}
+      <Bar cls="wk-bar" tone="light" title={<span className="wk-logo">W<small>IKIPEDIA</small></span>} onBack={() => art ? setArt(null) : nav(`/${pid}/home`)}
         right={ed.canEdit ? <button onClick={() => ed.add(path, { title: "", extract: "", date: "6 oct 2012" }, { atStart: true, title: "Article", fields: af })}>＋</button> : undefined} />
       {art ? (
         <div className="wk-scroll wk-article"><h1>{art.title}</h1><div className="wk-from">From Wikipedia, the free encyclopedia</div><p>{art.extract}</p></div>
