@@ -1,6 +1,6 @@
 // Apps propres à certains persos : Grindr, Nike+ Running, SoundCloud, iNaturalist, Kindle,
 // Wikipédia, Reddit (Alien Blue), VPN — chacune dans son look de 2012.
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { mdiAccount, mdiBinoculars, mdiCamera, mdiCommentOutline, mdiHeart, mdiLeaf, mdiMicrophone, mdiPause, mdiPencil, mdiPlay, mdiPlus, mdiPlusCircle, mdiRepeat, mdiShieldAlert, mdiShieldCheck, mdiStar, mdiStop, mdiSwapHorizontal, mdiWaveform } from "@mdi/js";
 import { Route, Routes, useNavigate, useParams } from "react-router-dom";
 import { useList, useValue } from "../data/hooks";
@@ -134,8 +134,12 @@ export function NikeApp({ pid }: { pid: string }) {
   const weekly = useList<{ d?: string; km?: number }>(`${base}/weekly`);
   const ed = useEditor(pid);
   const [running, setRunning] = useState(false);
+  const [detail, setDetail] = useState<string | null>(null);
   const max = Math.max(1, ...weekly.map(([, w]) => w.km ?? 0));
   const rf = ["date", "distance", "time", "pace", "cal", "route", "note"];
+  const shown = runs.find(([id]) => id === detail);
+  if (shown) return <RunDetail id={shown[0]} r={shown[1]} onBack={() => setDetail(null)}
+    onEdit={ed.canEdit ? () => ed.itemLong(`${base}/runs`, shown[0], { fields: rf, label: shown[1].date })?.() : undefined} ui={ed.ui} />;
   return (
     <div className="app nk">
       <StatusBar />
@@ -151,7 +155,7 @@ export function NikeApp({ pid }: { pid: string }) {
         <div className="nk-week">{weekly.map(([id, w]) => <span key={id}><i style={{ height: `${((w.km ?? 0) / max) * 100}%` }} /><b>{w.d}</b></span>)}</div>
         <div className="nk-h">ACTIVITY</div>
         {runs.map(([id, r]) => (
-          <button key={id} className="nk-run" onContextMenu={(e) => { e.preventDefault(); ed.itemLong(`${base}/runs`, id, { fields: rf, label: r.date, template: { date: "", distance: "5.00 km", time: "25:00", pace: "5:00 /km" } })?.(); }}>
+          <button key={id} className="nk-run" onClick={() => setDetail(id)} onContextMenu={(e) => { e.preventDefault(); ed.itemLong(`${base}/runs`, id, { fields: rf, label: r.date, template: { date: "", distance: "5.00 km", time: "25:00", pace: "5:00 /km" } })?.(); }}>
             <span className="nk-km">{r.distance}</span>
             <span className="nk-meta"><b>{r.date} · {r.route}</b><span>{r.time} · {r.pace} · {r.cal} cal</span>{r.note && <i>{r.note}</i>}</span>
           </button>
@@ -159,6 +163,53 @@ export function NikeApp({ pid }: { pid: string }) {
         {runs.length === 0 && <Empty>No runs yet</Empty>}
       </div>
       {ed.ui}
+    </div>
+  );
+}
+
+// Détail d'une course (Nike+ 2012) : tracé coloré selon l'allure (vert = rapide, rouge = lent),
+// totaux, temps par km. Le parcours et les écarts d'allure sont tirés de l'id : toujours les mêmes.
+const secsOf = (s?: string) => { const m = (s ?? "").match(/(\d+):(\d{2})(?::(\d{2}))?/); return m ? (m[3] ? +m[1] * 3600 + +m[2] * 60 + +m[3] : +m[1] * 60 + +m[2]) : 0; };
+function rand(seed: string) { let h = 2166136261; for (const c of seed) h = Math.imul(h ^ c.charCodeAt(0), 16777619); return () => { h = Math.imul(h ^ (h >>> 15), 2246822507); h = Math.imul(h ^ (h >>> 13), 3266489909); return ((h ^= h >>> 16) >>> 0) / 4294967296; }; }
+
+function RunDetail({ id, r, onBack, onEdit, ui }: { id: string; r: Run; onBack: () => void; onEdit?: () => void; ui: ReactNode }) {
+  const km = parseFloat((r.distance ?? "").replace(",", ".")) || 0;
+  const total = secsOf(r.time);
+  const pace = secsOf(r.pace) || (km ? total / km : 300);
+  const rnd = rand(id);
+  const n = Math.max(1, Math.ceil(km));
+  const splits = Array.from({ length: n }, () => pace * (0.9 + rnd() * 0.2));
+  const fast = Math.min(...splits), slow = Math.max(...splits);
+  const color = (s: number) => `hsl(${120 - ((s - fast) / (slow - fast || 1)) * 120}, 75%, 45%)`;
+  // Boucle irrégulière autour du centre, un segment par km.
+  const pts: [number, number][] = [];
+  for (let i = 0; i <= n * 6; i++) { const a = (i / (n * 6)) * Math.PI * 2, rr = 70 + rnd() * 30; pts.push([150 + Math.cos(a) * rr * 1.2, 100 + Math.sin(a) * rr * 0.75]); }
+  return (
+    <div className="app nk">
+      <StatusBar />
+      <Bar cls="nk-bar" title={<span className="nk-logo">NIKE<b>+</b> RUNNING</span>} onBack={onBack}
+        right={onEdit ? <button onClick={onEdit}><Glyph i={mdiPencil} size={20} /></button> : undefined} />
+      <div className="nk-scroll">
+        <svg className="nk-map" viewBox="0 0 300 200" aria-hidden>
+          <rect width="300" height="200" fill="#20232a" />
+          {[40, 90, 140].map((y) => <path key={y} d={`M0 ${y} L300 ${y + 12}`} stroke="#2e323b" strokeWidth="6" />)}
+          {[60, 150, 240].map((x) => <path key={x} d={`M${x} 0 L${x + 14} 200`} stroke="#2e323b" strokeWidth="6" />)}
+          {splits.map((s, k) => <polyline key={k} points={pts.slice(k * 6, k * 6 + 7).map((p) => p.join(",")).join(" ")} fill="none" stroke={color(s)} strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />)}
+          <circle cx={pts[0][0]} cy={pts[0][1]} r="5" fill="#fff" />
+        </svg>
+        <div className="nk-detail-head"><b>{r.distance}</b><span>{r.date}{r.route ? ` · ${r.route}` : ""}</span></div>
+        <div className="nk-stats">
+          <span><b>{r.time}</b><small>TIME</small></span>
+          <span><b>{mmss(pace)}</b><small>AVG PACE /KM</small></span>
+          <span><b>{r.cal ?? "—"}</b><small>CALORIES</small></span>
+        </div>
+        <div className="nk-h">SPLITS</div>
+        {splits.map((s, k) => (
+          <div key={k} className="nk-split"><span>KM {k + 1}</span><i style={{ width: `${(s / slow) * 100}%`, background: color(s) }} /><b>{mmss(s)}</b></div>
+        ))}
+        {r.note && <p className="nk-note">{r.note}</p>}
+      </div>
+      {ui}
     </div>
   );
 }

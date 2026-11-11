@@ -170,7 +170,7 @@ const LABELS: Record<string, string> = {
   author: "Auteur", desc: "Description", board: "Tableau", pinner: "Épinglé par", repins: "Repins", views: "Vues", ch: "Chaîne", age: "Âge",
   distance: "Distance", online: "En ligne", connected: "Connecté", current: "Actuel", secured: "Sécurisé", day: "Jour", month: "Mois",
   year: "Année", condition: "Conditions", hi: "Max", lo: "Min", pct: "Progression (%)", latin: "Nom latin", common: "Nom commun",
-  rating: "Étoiles (0 à 5)", secs: "Secondes", screenshot: "Capture d'écran", wallpaper: "Fond d'écran", lockWallpaper: "Fond de l'écran verrouillé", cameraVideo: "Vidéo de l'appareil photo", place: "Lieu", note: "Note", notes: "Notes", grade: "Qualité", members: "Membres", last: "Dernier message", handle: "Identifiant",
+  rating: "Étoiles (0 à 5)", number: "Numéro", back: "Dos de la carte (une ligne « Libellé: valeur » par info)", secs: "Secondes", screenshot: "Capture d'écran", wallpaper: "Fond d'écran", lockWallpaper: "Fond de l'écran verrouillé", cameraVideo: "Vidéo de l'appareil photo", place: "Lieu", note: "Note", notes: "Notes", grade: "Qualité", members: "Membres", last: "Dernier message", handle: "Identifiant",
   displayName: "Nom affiché", bio: "Bio", followers: "Abonnés", following: "Abonnements", size: "Taille", ext: "Extension",
   opened: "Ouvert", sent: "Envoyé", rt: "Retweets", fav: "Favoris", rp: "Réponses", h: "Identifiant", av: "Avatar", route: "Parcours",
   pace: "Allure", cal: "Calories", plays: "Écoutes", reposts: "Reposts", tag: "Tags", posted: "Publié", headline: "Accroche", about: "À propos",
