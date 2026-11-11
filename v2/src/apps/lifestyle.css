@@ -93,3 +93,9 @@
 .fl-ic { flex-shrink: 0; width: 30px; height: 36px; border-radius: 2px 8px 2px 2px; display: flex; align-items: flex-end; justify-content: center; padding-bottom: 4px; color: #fff; font: bold 8px var(--ios-font); box-shadow: 0 1px 2px rgba(0,0,0,.3); }
 .fl-folder { font-size: 26px; }
 .fl-add { color: #2470d8; }
+
+/* Snapchat 2012 : photo plein écran, bande de légende noire translucide, capture d'écran signalée */
+.sc-row { touch-action: pan-y; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
+.sc-img { width: 100%; height: 100%; object-fit: cover; pointer-events: none; }
+.sc-caption { position: absolute; left: 0; right: 0; top: 55%; padding: 5px 10px; background: rgba(0,0,0,.55); color: #fff; font: 17px var(--ios-font); text-align: center; }
+.sc-shot { font-style: normal; color: #e74c3c; font-weight: bold; }
