@@ -112,7 +112,7 @@ export function FaceTimeApp({ pid }: { pid: string }) {
 }
 
 // ── Passbook ─────────────────────────────────────────────────────────────────
-type Pass = { glyph?: string; title?: string; subtitle?: string; detail?: string; color?: string; logo?: string; order?: number; deleted?: boolean };
+type Pass = { glyph?: string; title?: string; subtitle?: string; detail?: string; color?: string; logo?: string; number?: string; back?: string; order?: number; deleted?: boolean };
 const DEFAULT_PASSES: Pass[] = [
   { title: "Starbucks Card", subtitle: "Balance", detail: "$14.30", color: "#00704a", logo: "" },
   { title: "AMC Theatres", subtitle: "Breaking Dawn – Part 2", detail: "Nov 16 · 10:00 PM", color: "#b71c1c", logo: "" },
@@ -135,6 +135,19 @@ const LOYALTY_CARDS: Record<string, Pass[]> = {
     { title: "Buckbury's Diner", subtitle: "Chicago, IL · Rewards", detail: "Punches: 7/10", color: "#00838f", glyph: mdiSilverwareForkKnife },
   ],
 };
+/** Dos de carte iOS 6 : lignes « Libellé: valeur » du champ back (sinon les infos de la carte), « Done ». */
+function PassBack({ p, onDone }: { p: Pass; onDone: () => void }) {
+  const lines = (p.back?.trim() ? p.back.split("\n") : [`${p.subtitle ?? ""}: ${p.detail ?? ""}`, ...(p.number ? [`Card Number: ${p.number}`] : []), "Terms and Conditions: Not transferable. Valid for the 2012–2013 school year."])
+    .filter((l) => l.trim()).map((l) => { const i = l.indexOf(":"); return i > 0 ? [l.slice(0, i).trim(), l.slice(i + 1).trim()] : ["", l.trim()]; });
+  return (
+    <span className="pb-back" onClick={(e) => e.stopPropagation()}>
+      <span className="pb-back-top"><b>{p.title}</b><button onClick={onDone}>Done</button></span>
+      <span className="pb-back-sw"><span>Automatic Updates</span><i className="on" /></span>
+      {lines.map(([k, v], i) => <span key={i} className="pb-back-row">{k && <small>{k}</small>}<span>{v}</span></span>)}
+    </span>
+  );
+}
+
 // Drew et Elias n'ont pas de carte Starbucks.
 const NO_STARBUCKS = new Set(["drew", "elias"]);
 export function PassbookApp({ pid }: { pid: string }) {
@@ -146,8 +159,9 @@ export function PassbookApp({ pid }: { pid: string }) {
   const { long, seed } = seeded;
   const rows = NO_STARBUCKS.has(pid) ? seeded.rows.filter(([, r]) => r.title !== "Starbucks Card") : seeded.rows;
   const [open, setOpen] = useState<string | null>(null);
+  const [back, setBack] = useState<string | null>(null);
   const os = useOS();
-  const fields = ["title", "subtitle", "detail", "color", "logo"];
+  const fields = ["title", "subtitle", "detail", "color", "logo", "number", "back"];
   const card = ID_CARDS[pid];
   const fixed: [string, Pass][] = [...(card ? [["uma-id", {}] as [string, Pass]] : []), ...(LOYALTY_CARDS[pid] ?? []).map((c, i): [string, Pass] => [`loyalty-${i}`, c])];
   const all: [string, Pass][] = [...fixed, ...rows];
@@ -157,17 +171,21 @@ export function PassbookApp({ pid }: { pid: string }) {
       {all.map(([id, p], i) => {
         // La carte qui suit une carte ouverte se décale sous elle, sinon elle cache son code-barres.
         const style = { zIndex: i, marginTop: i === 0 ? 0 : all[i - 1][0] === open ? 10 : -86 };
-        const toggle = () => setOpen(open === id ? null : id);
+        const toggle = () => { setBack(null); setOpen(open === id ? null : id); };
         if (id === "uma-id") return (
           <Press as="button" key={id} className="pb-pass pb-card" style={style} onClick={toggle}><img src={img(card)} alt="UMA Student ID" draggable={false} /></Press>
         );
         return (
           <Press as="button" key={id} className={`pb-pass ${open === id ? "open" : ""}`} style={{ ...style, background: `linear-gradient(${p.color ?? "#555"}, color-mix(in srgb, ${p.color ?? "#555"} 70%, #000))` }}
-            onClick={toggle}
+            onClick={back === id ? undefined : toggle}
             onLong={id.startsWith("loyalty-") ? undefined : long(id, fields, p.title)}>
+            {back === id ? <PassBack p={p} onDone={() => setBack(null)} /> : <>
             <span className="pb-head"><span className="pb-logo">{p.glyph ? <Glyph i={p.glyph} size={22} /> : p.logo ? (/^(data:|https?:|\/)/.test(p.logo) ? <img src={img(p.logo)} alt="" /> : p.logo) : <Glyph i={mdiWallet} size={22} />}</span><b>{p.title}</b></span>
             <span className="pb-body"><small>{p.subtitle}</small><b>{p.detail}</b></span>
             <span className="pb-code" aria-hidden>{Array.from({ length: 30 }, (_, k) => <i key={k} style={{ width: (k * 5) % 3 + 1 }} />)}</span>
+            {p.number && <span className="pb-num">{p.number}</span>}
+            {open === id && os === "ios" && <span role="button" className="pb-i" aria-label="Retourner la carte" onClick={(e) => { e.stopPropagation(); setBack(id); }}>i</span>}
+            </>}
           </Press>
         );
       })}
