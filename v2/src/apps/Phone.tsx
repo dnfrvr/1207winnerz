@@ -69,7 +69,7 @@ export default function PhoneApp({ pid }: { pid: string }) {
 
 function PhoneHome({ pid }: { pid: string }) {
   const os = useOS();
-  const [tab, setTab] = useState(() => sessionStorage.getItem("phone-tab") ?? "recents");
+  const [tab, setTab] = useState(() => new URLSearchParams(location.search).get("tab") ?? sessionStorage.getItem("phone-tab") ?? "recents");
   useEffect(() => { try { sessionStorage.setItem("phone-tab", tab); } catch { /* rien */ } }, [tab]);
   const c = useCalling();
   const ed = useEditor(pid);

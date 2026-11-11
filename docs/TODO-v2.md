@@ -115,7 +115,14 @@ Réalisme :
   Côté téléphone (`v2/src/phone/Notifs.tsx`) : bannière iOS 6 / bandeau Android + son, liste sur l'écran verrouillé,
   pastille sur l'icône, bulle « nouveau message » si le joueur est ailleurs sur le site. Une réponse du MDJ écrite
   directement dans le téléphone (au nom du contact) envoie aussi une notif. Mode démo : synchro entre onglets.
-  Reste : étendre à Messenger / GroupMe / Mail / Snapchat ; tester sur le site en ligne avec un vrai compte joueur.
+  Reste : tester sur le site en ligne avec un vrai compte joueur.
+- [x] **Régie, outils** (2026-11-11, `v2/src/site/RegieTools.tsx`) : onglets Scénarios (étapes préparées sous
+  `meta/regie/cues`, lancées une par une), Joueurs (en ligne / app ouverte via `phones/{pid}/presence`, notifs non lues,
+  réseau et batterie scénarisés → `phones/{pid}/status`, lus par la barre d'état iOS / Android), PNJ (fiches
+  `meta/regie/npcs`, proposées dans tous les champs « De la part de »), Journal (`meta/regie/log`, rempli
+  automatiquement par `useRegieWriter`, export .txt). Envoi « Aussi à » plusieurs joueurs. Nouveaux canaux : tweet,
+  publication de page Facebook, post Tumblr (comptes suivis, créés si besoin), message vocal.
+  Reste : photo dans les étapes de scénario ; avatar sur les fiches PNJ ; posts Instagram.
 - [ ] Notifications : bannières iOS 6 / barre de notif Android qui tombent quand un autre joueur écrit
 - [ ] Centre de notifications (iOS 6) et volet déroulant (Android) avec l'historique des notifs
 - [ ] Écran verrouillé : notifications en attente, photo de verrouillage distincte, code PIN par perso

@@ -53,17 +53,21 @@ export function useList<T extends object = Record<string, unknown>>(path: string
 }
 
 // ─── Écriture (toujours champ par champ, avec historique) ────────────────────
+/** Ajoute aux écritures leur trace dans `history/{pid}` (valeur avant / après). */
+export function withHistory(store: Store, uid: string, pid: string, patches: Patches): Patches {
+  const at = Date.now();
+  const all: Patches = { ...patches };
+  for (const [path, after] of Object.entries(patches)) {
+    all[join("history", pid, store.newId("h"))] = { path, before: store.peek(path) ?? null, after: after ?? null, at, uid };
+  }
+  return all;
+}
+
 export function useWriter(pid: string) {
   const { store, session, track } = useData();
 
   const write = useCallback((patches: Patches) => {
-    const at = Date.now();
-    const all: Patches = { ...patches };
-    for (const [path, after] of Object.entries(patches)) {
-      all[join("history", pid, store.newId("h"))] = {
-        path, before: store.peek(path) ?? null, after: after ?? null, at, uid: session.uid,
-      };
-    }
+    const all = withHistory(store, session.uid, pid, patches);
     // Date saisie après « aujourd'hui » dans la fiction → proposer d'avancer la date de lore (popup dans le téléphone).
     const later = dateAfterLore(patches, (store.peek("meta/loreDate") as string | undefined) || LORE_DATE_DEFAULT);
     if (later) window.dispatchEvent(new CustomEvent(LORE_BUMP, { detail: later }));

@@ -31,6 +31,10 @@ export type Channel = {
   messages?: (item: Item | undefined) => [string, LiveMsg][];
   msgPath?: (pid: string, key: string, mid: string) => string;
   titleOf: (item: Item | undefined) => string;
+  /** App qui doit être sur le téléphone (par défaut `app`). */
+  needs?: string;
+  /** App des notifs envoyées (par défaut `app`). */
+  notifApp?: string;
 };
 
 const norm = (s?: unknown) => String(s ?? "").trim().toLowerCase().normalize("NFKC");
@@ -219,6 +223,62 @@ export const CHANNELS: Channel[] = [
     titleOf: (n) => `${n?.title ?? "?"} ${n?.text ?? ""}`,
   },
 ];
+
+/**
+ * Publication d'un compte suivi (Twitter, page Facebook, blog Tumblr) : l'élément est le post,
+ * clé « {compte}/posts/{id} » sous `phones/{pid}/data/follows/{net}`. Compte inconnu → créé, avec
+ * `match` = le nom tapé, pour récupérer les anciens posts « décor » du même nom.
+ */
+function postChannel(app: "twitter" | "facebook" | "tumblr", label: string, contactLabel: string, contactHint: string,
+  post: (i: SendInput, lore: string) => Item, title: (p: Item | undefined) => string): Channel {
+  const base = (pid: string) => `phones/${pid}/data/follows/${app}`;
+  return {
+    app, label, fields: app === "twitter" ? ["contact", "text"] : ["contact", "text", "img"], contactLabel, contactHint,
+    listPath: base,
+    names: (list) => [...new Set(alive(list).map(([, a]) => String(a.name || a.handle || "")).filter(Boolean))],
+    send: (pid, i, list, lore) => {
+      const found = alive(list).find(([, a]) => norm(a.name) === norm(i.contact) || norm(a.handle) === norm(i.contact))?.[0];
+      const acc = found ?? makeId("f");
+      const pidKey = makeId("p");
+      const key = `${acc}/posts/${pidKey}`;
+      const p = post(i, lore);
+      const patches: Patches = found ? { [`${base(pid)}/${key}`]: p as Json }
+        : { [`${base(pid)}/${acc}`]: { name: i.contact, handle: app === "facebook" ? "" : i.contact.replace(/\s+/g, "").toLowerCase(), avatar: "", bio: "", followers: 0,
+            match: i.contact, order: minOrder(list), posts: { [pidKey]: p } } as Json };
+      const name = found ? String(list![found].name || list![found].handle) : i.contact;
+      return { key, patches: { ...patches, ...notifPatch(pid, { app, title: name, body: title(p), ...(i.img ? { attach: 1 } : {}), link: `${app}/f/${acc}`, msg: key }) } };
+    },
+    link: (key) => `${app}/f/${key.split("/")[0]}`,
+    titleOf: title,
+  };
+}
+
+CHANNELS.push(
+  postChannel("twitter", "Twitter (tweet d'un compte)", "Compte", "ex. Taylor Swift",
+    (i, lore) => ({ text: i.text.trim(), time: msToLore(loreNowMs(lore)), rp: 0, rt: 0, fav: 0 }), (p) => String(p?.text ?? "")),
+  postChannel("facebook", "Facebook (publication d'une page)", "Page", "ex. Sephora Augusta",
+    (i, lore) => ({ text: i.text.trim(), img: i.img ?? "", time: msToLore(loreNowMs(lore)), likes: 0, comments: 0 }), (p) => String(p?.text || "📷")),
+  postChannel("tumblr", "Tumblr (post d'un blog)", "Blog", "ex. fuckyeah-1d",
+    (i, lore) => ({ title: "", body: i.text.trim(), img: i.img ?? "", date: msToLore(loreNowMs(lore)).split(",")[0], notes: 0, tags: "" }), (p) => String(p?.body || p?.title || "📷")),
+  {
+    app: "voicemail", needs: "phone", notifApp: "phone", label: "Téléphone (message vocal)", fields: ["contact", "text"],
+    contactLabel: "De la part de", contactHint: "ex. Maman",
+    listPath: (pid) => `phones/${pid}/data/voicemails`,
+    names: (list) => [...new Set(alive(list).map(([, v]) => String(v.contact ?? "")).filter(Boolean))],
+    send: (pid, i, list, lore) => {
+      const key = makeId("v");
+      const text = i.text.trim();
+      // Durée vraisemblable d'après la longueur du texte (≈ 2,5 mots par seconde).
+      const s = Math.max(4, Math.round(text.split(/\s+/).filter(Boolean).length / 2.5));
+      return { key, patches: {
+        [`phones/${pid}/data/voicemails/${key}`]: { contact: i.contact, time: msToLore(loreNowMs(lore)), duration: `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`, transcript: text, order: minOrder(list) },
+        ...notifPatch(pid, { app: "phone", title: "Voicemail", body: i.contact, link: "phone?tab=voicemail", msg: key }),
+      } };
+    },
+    link: () => "phone?tab=voicemail",
+    titleOf: (v) => `Message vocal · ${v?.contact ?? "?"}`,
+  },
+);
 
 export const channelOf = (app?: string) => CHANNELS.find((c) => c.app === app);
 

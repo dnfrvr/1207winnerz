@@ -10,34 +10,55 @@ import { ANDROID_APP_COLORS, ANDROID_ICON_DEFAULTS, ANDROID_LIGHT_BARS, NavDirCt
 export { LORE_DATE_DEFAULT, NavDirCtx, useClock, useLoreDate, type NavDir } from "./common";
 
 /** `locked` : écran verrouillé d'iOS 6 — un cadenas remplace l'heure (déjà affichée en grand). */
+/** Réseau et batterie scénarisés par la régie (`phones/{pid}/status`) ; absent = affichage d'origine. */
+export type PhoneStatus = { net?: "wifi" | "3g" | "e" | "none" | "airplane"; battery?: number };
+const WIFI = "M0.5 6.5 Q10 -1.5 19.5 6.5 L17 9 Q10 3.5 3 9 Z M4 10 Q10 5.5 16 10 L13.5 12.5 Q10 9 6.5 12.5 Z M7 13 Q10 10.5 13 13 L11.2 14.8 Q10 13.5 8.8 14.8 Z";
+const PLANE = "M20.56 3.91c.59.59.59 1.54 0 2.12l-3.89 3.89 2.12 9.19-1.41 1.42-3.88-7.43-3.9 3.89.36 2.47-1.07 1.06-1.76-3.18-3.19-1.77 1.06-1.07 2.48.37 3.89-3.89-7.43-3.9 1.42-1.41 9.19 2.12 3.89-3.89c.56-.58 1.56-.58 2.12 0z";
+function usePhoneStatus(): PhoneStatus {
+  const { pid = "" } = useParams();
+  return useValue<PhoneStatus>(pid ? `phones/${pid}/status` : null) ?? {};
+}
+
 export function StatusBar({ variant = "opaque", locked = false }: { variant?: "opaque" | "translucent" | "clear"; locked?: boolean }) {
   const os = useOS();
   const time = useClock();
   const { saving } = useData();
-  if (os === "android") return <AndroidStatusBar variant={variant} saving={saving > 0} time={time} />;
+  const st = usePhoneStatus();
+  if (os === "android") return <AndroidStatusBar variant={variant} saving={saving > 0} time={time} st={st} />;
+  const bat = st.battery ?? 80;
   return (
     <div className={`ios-status ${variant}`}>
       <div className="left">
-        <span className="bars">{[4, 6, 8, 10].map((h) => <i key={h} style={{ height: h }} />)}</span>
-        <span>AT&amp;T</span>
+        {st.net === "airplane" ? <svg width="13" height="13" viewBox="0 0 24 24" aria-label="Mode avion"><path d={PLANE} fill="currentColor" /></svg>
+          : st.net === "none" ? <span>No Service</span>
+          : <><span className="bars">{[4, 6, 8, 10].map((h) => <i key={h} style={{ height: h }} />)}</span>
+            <span>AT&amp;T</span>
+            {st.net === "wifi" ? <svg width="13" height="11" viewBox="0 0 20 16" aria-label="Wi-Fi"><path d={WIFI} fill="currentColor" /><circle cx="10" cy="16" r="1.8" fill="currentColor" /></svg>
+              : st.net ? <span>{st.net === "e" ? "E" : "3G"}</span> : null}</>}
         {saving > 0 && <span className="spinner" title="Enregistrement…" />}
       </div>
       <div className="time">{locked
         ? <svg width="9" height="12" viewBox="0 0 9 12" aria-label="Verrouillé"><path d="M2 5V3.5a2.5 2.5 0 0 1 5 0V5" fill="none" stroke="#fff" strokeWidth="1.4" /><rect x=".5" y="5" width="8" height="6.5" rx="1" fill="#fff" /></svg>
         : time}</div>
-      <div className="right"><span className="battery"><b style={{ width: "80%" }} /></span></div>
+      <div className="right"><span className="battery"><b style={{ width: `${bat}%`, ...(bat <= 20 ? { background: "#e0301e" } : {}) }} /></span></div>
     </div>
   );
 }
 
-function AndroidStatusBar({ variant, saving, time }: { variant: string; saving: boolean; time: string }) {
+function AndroidStatusBar({ variant, saving, time, st }: { variant: string; saving: boolean; time: string; st: PhoneStatus }) {
+  const bat = st.battery ?? 80, h = (9 * bat) / 100;
+  const air = st.net === "airplane", none = st.net === "none";
   return (
     <div className={`and-status ${variant}`}>
       <div className="left">{saving && <span className="and-sync" title="Synchronisation…" />}</div>
       <div className="right">
-        <svg width="15" height="12" viewBox="0 0 20 16" aria-hidden><path d="M0.5 6.5 Q10 -1.5 19.5 6.5 L17 9 Q10 3.5 3 9 Z M4 10 Q10 5.5 16 10 L13.5 12.5 Q10 9 6.5 12.5 Z M7 13 Q10 10.5 13 13 L11.2 14.8 Q10 13.5 8.8 14.8 Z" fill="#33b5e5" /><circle cx="10" cy="16" r="1.8" fill="#33b5e5" /></svg>
-        <svg width="14" height="12" viewBox="0 0 16 13" aria-hidden><rect x="0" y="10" width="3.2" height="3" fill="#33b5e5" /><rect x="4.3" y="7" width="3.2" height="6" fill="#33b5e5" /><rect x="8.5" y="4" width="3.2" height="9" fill="#33b5e5" /><rect x="12.8" y="1" width="3.2" height="12" fill="rgba(255,255,255,.3)" /></svg>
-        <svg width="8" height="13" viewBox="0 0 8 13" aria-hidden><rect x="2.5" y="0" width="3" height="1.5" fill="#fff" /><rect x="0.5" y="1.5" width="7" height="11" rx="1" fill="none" stroke="#fff" /><rect x="1.5" y="4" width="5" height="7.5" fill="#33b5e5" /></svg>
+        {air ? <svg width="13" height="13" viewBox="0 0 24 24" aria-label="Mode avion"><path d={PLANE} fill="#fff" /></svg> : <>
+          {(st.net ?? "wifi") === "wifi" ? <svg width="15" height="12" viewBox="0 0 20 16" aria-hidden><path d={WIFI} fill="#33b5e5" /><circle cx="10" cy="16" r="1.8" fill="#33b5e5" /></svg>
+            : !none && <span style={{ color: "#33b5e5", fontSize: 10, fontWeight: 700 }}>{st.net === "e" ? "E" : "3G"}</span>}
+          <svg width="14" height="12" viewBox="0 0 16 13" aria-label={none ? "Pas de service" : undefined}>{[[0, 10, 3], [4.3, 7, 6], [8.5, 4, 9], [12.8, 1, 12]].map(([x, y, hh], i) =>
+            <rect key={x} x={x} y={y} width="3.2" height={hh} fill={none || i === 3 ? "rgba(255,255,255,.3)" : "#33b5e5"} />)}</svg>
+        </>}
+        <svg width="8" height="13" viewBox="0 0 8 13" aria-hidden><rect x="2.5" y="0" width="3" height="1.5" fill="#fff" /><rect x="0.5" y="1.5" width="7" height="11" rx="1" fill="none" stroke="#fff" /><rect x="1.5" y={11.5 - h} width="5" height={h} fill={bat <= 15 ? "#e0301e" : "#33b5e5"} /></svg>
         <span className="t">{time}</span>
       </div>
     </div>

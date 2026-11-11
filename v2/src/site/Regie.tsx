@@ -5,7 +5,7 @@
 import { mdiBullhorn, mdiCamera, mdiClose, mdiOpenInNew, mdiPlus, mdiWindowMaximize, mdiWindowMinimize } from "@mdi/js";
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { useData, useValue, useWriter } from "../data/hooks";
+import { useData, useValue } from "../data/hooks";
 import type { Patches } from "../data/store";
 import { findNpcThread, groupMessagePatches, type GroupSender, notifBody, notifLines, notifPatch, npcContacts, npcMessagePatches, sharedGroups, type InboxEntry, type Msg, type Notif, type Thread } from "../data/notify";
 import { Glyph } from "../kit/glyph";
@@ -17,6 +17,7 @@ import { useIncomingNotifs } from "../phone/Notifs";
 import { PIDS } from "./Site";
 import { callPath, duration, endCallPatches, RING_MS, startCallPatches, type LiveCall } from "../data/call";
 import { CHANNELS, channelOf, INSTA_ACTIONS, type Channel, type Field, type LiveMsg } from "../data/channels";
+import { AlsoPick, Cues, Journal, NpcBook, NpcHint, NpcOptions, Overview, useFirstNames, usePresence, useRegieWriter, useSendAlso } from "./RegieTools";
 import "./regie.css";
 
 type Profile = { name?: string; avatar?: string | { src?: string } };
@@ -25,6 +26,8 @@ type Tab = { pid: string; tid: string; app?: string }; // app absente = Messages
 const tkey = (t: Tab) => `${t.app ?? "messages"}:${t.pid}:${t.tid}`;
 
 const LS_TABS = "uma-v2-regie-tabs";
+/** Onglets fixes de la régie, après « Nouvelle ». */
+const TOOLS: [string, string][] = [["tool:cues", "Scénarios"], ["tool:players", "Joueurs"], ["tool:npcs", "PNJ"], ["tool:log", "Journal"]];
 const LS_OPEN = "uma-v2-regie-open";
 const LS_MIN = "uma-v2-regie-min";
 const readLS = <T,>(k: string, d: T): T => { try { const v = localStorage.getItem(k); return v ? (JSON.parse(v) as T) : d; } catch { return d; } };
@@ -57,9 +60,10 @@ export function Regie() {
   useEffect(() => writeLS(LS_TABS, tabs), [tabs]);
   useEffect(() => writeLS(LS_OPEN, open), [open]);
 
-  const openTab = (t: Tab) => {
+  /** `focus` = false : l'onglet s'ajoute sans quitter la vue en cours (scénarios). */
+  const openTab = (t: Tab, focus = true) => {
     setTabs((list) => (list.some((x) => tkey(x) === tkey(t)) ? list : [...list, t]));
-    setActive(tkey(t));
+    if (focus) setActive(tkey(t));
   };
   const closeTab = (k: string) => { setTabs((l) => l.filter((t) => tkey(t) !== k)); if (active === k) setActive(null); };
   // Les écouteurs gardent la fonction du moment où ils ont été montés : on lit l'état à jour dans une ref.
@@ -90,10 +94,15 @@ export function Regie() {
           {!min && <div className="w7-body">
             <nav className="regie-tabs" role="tablist">
               <button role="tab" aria-selected={active === null} className={active === null ? "on" : ""} onClick={() => setActive(null)}><Glyph i={mdiPlus} size={14} /> Nouvelle</button>
+              {TOOLS.map(([k, label]) => <button key={k} role="tab" aria-selected={active === k} className={active === k ? "on" : ""} onClick={() => setActive(k)}>{label}</button>)}
               {tabs.map((t) => <TabButton key={tkey(t)} tab={t} on={active === tkey(t)} dot={!!unread[tkey(t)]} onClick={() => setActive(tkey(t))} onClose={() => closeTab(tkey(t))} />)}
             </nav>
             {active === null
               ? <NewNotif onSent={openTab} />
+              : active === "tool:npcs" ? <NpcBook />
+              : active === "tool:cues" ? <Cues onSent={(t) => openTab(t, false)} />
+              : active === "tool:players" ? <Overview />
+              : active === "tool:log" ? <Journal />
               : (() => { const t = tabs.find((x) => tkey(x) === active); if (!t) return null;
                   if (t.app === "group") return <GroupLive key={tkey(t)} tab={t} />;
                   if (t.app === "call") return <CallLive key={tkey(t)} tab={t} onSent={openTab} />;
@@ -187,11 +196,13 @@ function NewNotif({ onSent }: { onSent: (t: Tab) => void }) {
   const [app, setApp] = useState("messages");
   const home = useValue<{ apps?: string[]; dock?: string[] }>(`phones/${pid}/home`);
   const installed = new Set([...(home?.apps ?? []), ...(home?.dock ?? [])]);
-  const available = CHANNELS.filter((c) => installed.has(c.app));
+  const available = CHANNELS.filter((c) => installed.has(c.needs ?? c.app));
   const ch = channelOf(app);
   const groups = useSharedGroups();
   const group = app.startsWith("group:") ? groups.find((g) => `group:${g.tid}` === app) : undefined;
-  useEffect(() => { if (ch && !installed.has(app)) setApp("messages"); }); // app absente de ce téléphone
+  useEffect(() => { if (ch && !installed.has(ch.needs ?? app)) setApp("messages"); }); // app absente de ce téléphone
+  const [also, setAlso] = useState<string[]>([]);
+  const sendAlso = useSendAlso();
   const [contact, setContact] = useState("");
   const [text, setText] = useState("");
   const [photo, setPhoto] = useState<string | null>(null);
@@ -201,7 +212,7 @@ function NewNotif({ onSent }: { onSent: (t: Tab) => void }) {
   const contacts = useMemo(() => npcContacts(pid, threads, inbox), [pid, threads, inbox]);
   const tid = contact.trim() ? findNpcThread(pid, contact, threads, inbox) : null;
   const msgs = useValue<Record<string, Msg>>(tid ? `threadMessages/${tid}` : null);
-  const { write } = useWriter(pid);
+  const { write } = useRegieWriter(pid);
   const p = useValue<Profile>(`phones/${pid}/profile`);
 
   const submit = (e: FormEvent) => {
@@ -210,6 +221,7 @@ function NewNotif({ onSent }: { onSent: (t: Tab) => void }) {
     if (!c || (!text.trim() && !photo)) return;
     const { patches, tid: t } = npcMessagePatches({ pid, contact: c, text: text.trim(), img: photo ?? undefined, lore, tid, msgs });
     write(patches);
+    if (also.length) sendAlso(also, { app: "messages", contact: c, text: text.trim(), img: photo ?? undefined });
     setText(""); setPhoto(null);
     onSent({ pid, tid: t });
   };
@@ -226,10 +238,12 @@ function NewNotif({ onSent }: { onSent: (t: Tab) => void }) {
         {installed.has("phone") && <option value="call">Téléphone — appel entrant</option>}
         {available.map((c) => <option key={c.app} value={c.app}>{c.label}</option>)}
       </select>
-      {app === "call" ? <CallForm key={pid} pid={pid} onSent={onSent} /> : app === "group:new" ? <NewGroup onCreated={(tid) => setApp(`group:${tid}`)} /> : group ? <GroupForm key={group.tid} group={group} onSent={onSent} /> : ch ? <ChannelForm key={`${pid}-${app}`} pid={pid} ch={ch} onSent={onSent} /> : <form className="regie-sub" onSubmit={submit}>
+      {(app === "messages" || ch) && <AlsoPick pid={pid} value={also} onChange={setAlso} />}
+      {app === "call" ? <CallForm key={pid} pid={pid} onSent={onSent} /> : app === "group:new" ? <NewGroup onCreated={(tid) => setApp(`group:${tid}`)} /> : group ? <GroupForm key={group.tid} group={group} onSent={onSent} /> : ch ? <ChannelForm key={`${pid}-${app}`} pid={pid} ch={ch} also={also} onSent={onSent} /> : <form className="regie-sub" onSubmit={submit}>
       <label className="lbl" htmlFor="regie-contact">De la part de</label>
       <input id="regie-contact" list="regie-contacts" value={contact} onChange={(e) => setContact(e.target.value)} placeholder="ex. Jeongguk" autoComplete="off" required />
-      <datalist id="regie-contacts">{contacts.map((c) => <option key={c.tid} value={c.contact} />)}</datalist>
+      <datalist id="regie-contacts">{contacts.map((c) => <option key={c.tid} value={c.contact} />)}<NpcOptions known={contacts.map((c) => c.contact)} /></datalist>
+      <NpcHint name={contact} />
       <small className="hint">{!contact.trim() ? `${contacts.length} contacts dans le téléphone de ${first(p, pid)}.` : tid ? "Conversation existante : le message s'ajoute à la suite." : "Nouveau contact : une conversation est créée."}</small>
       <label className="lbl" htmlFor="regie-text">Message</label>
       <div className="regie-compose">
@@ -237,7 +251,7 @@ function NewNotif({ onSent }: { onSent: (t: Tab) => void }) {
           onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); e.currentTarget.form?.requestSubmit(); } }} />
         <PhotoPick pid={pid} value={photo} onChange={setPhoto} />
       </div>
-      <button className="y2k-btn" disabled={!contact.trim() || (!text.trim() && !photo)}>Envoyer la notif à {first(p, pid)}</button>
+      <button className="y2k-btn" disabled={!contact.trim() || (!text.trim() && !photo)}>Envoyer la notif à {first(p, pid)}{also.length ? ` (+${also.length})` : ""}</button>
       </form>}
     </div>
   );
@@ -252,7 +266,7 @@ function LiveThread({ tab, onGone }: { tab: Tab; onGone: () => void }) {
   const notifs = useValue<Record<string, Notif>>(`phones/${pid}/notifs`);
   const lore = useValue<string>("meta/loreDate") || LORE_DATE_DEFAULT;
   const p = useValue<Profile>(`phones/${pid}/profile`);
-  const { write } = useWriter(pid);
+  const { write } = useRegieWriter(pid);
   const [text, setText] = useState("");
   const [photo, setPhoto] = useState<string | null>(null);
   const msgs = useMemo(() => sorted(raw).slice(-40), [raw]);
@@ -352,6 +366,7 @@ export function PlayerTray({ pid }: { pid: string }) {
   const nav = useNavigate();
   const p = useValue<Profile>(`phones/${pid}/profile`);
   const onMine = loc.pathname === `/${pid}` || loc.pathname.startsWith(`/${pid}/`);
+  usePresence(pid, onMine ? loc.pathname : "");
   useEffect(() => {
     if (!current) return;
     if (onMine) { shift(); return; } // le téléphone affiche sa propre bannière
@@ -383,11 +398,12 @@ const enterSends = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
 };
 
 /** Formulaire d'une app : champs propres à l'app (expéditeur, membre du groupe, objet, action…). */
-function ChannelForm({ pid, ch, onSent }: { pid: string; ch: Channel; onSent: (t: Tab) => void }) {
+function ChannelForm({ pid, ch, also, onSent }: { pid: string; ch: Channel; also: string[]; onSent: (t: Tab) => void }) {
+  const sendAlso = useSendAlso();
   const list = useValue<Record<string, Record<string, never>>>(ch.listPath(pid));
   const lore = useValue<string>("meta/loreDate") || LORE_DATE_DEFAULT;
   const p = useValue<Profile>(`phones/${pid}/profile`);
-  const { write } = useWriter(pid);
+  const { write } = useRegieWriter(pid);
   const [contact, setContact] = useState("");
   const [sender, setSender] = useState("");
   const [subject, setSubject] = useState("");
@@ -405,6 +421,7 @@ function ChannelForm({ pid, ch, onSent }: { pid: string; ch: Channel; onSent: (t
     if (!ok) return;
     const { patches, key } = ch.send(pid, { contact: contact.trim(), text, img: photo ?? undefined, sender, subject, action }, list, lore);
     write(patches);
+    if (also.length) sendAlso(also, { app: ch.app, contact: contact.trim(), text, img: photo ?? undefined, sender, subject, action });
     setText(""); setPhoto(null); setSubject("");
     onSent({ pid, tid: key, app: ch.app });
   };
@@ -413,7 +430,8 @@ function ChannelForm({ pid, ch, onSent }: { pid: string; ch: Channel; onSent: (t
     <form className="regie-sub" onSubmit={submit}>
       <label className="lbl" htmlFor="regie-ch-contact">{ch.contactLabel}</label>
       <input id="regie-ch-contact" list="regie-ch-names" value={contact} onChange={(e) => setContact(e.target.value)} placeholder={ch.contactHint} autoComplete="off" required />
-      <datalist id="regie-ch-names">{names.map((n) => <option key={n} value={n} />)}</datalist>
+      <datalist id="regie-ch-names">{names.map((n) => <option key={n} value={n} />)}<NpcOptions known={names} /></datalist>
+      <NpcHint name={contact} />
       {ch.messages && <small className="hint">{!contact.trim() ? `${names.length} conversations dans ${ch.label.split(" ")[0]} chez ${first(p, pid)}.` : exists ? "Conversation existante : le message s'ajoute à la suite." : "Nouvelle conversation créée."}</small>}
       {has("sender") && <>
         <label className="lbl" htmlFor="regie-ch-sender">Membre qui écrit</label>
@@ -439,7 +457,9 @@ function ChannelForm({ pid, ch, onSent }: { pid: string; ch: Channel; onSent: (t
       </>}
       {ch.app === "snapchat" && <small className="hint">Un snap non ouvert apparaît dans Snapchat, avec la notif « vous a envoyé un Snap 👻 ».</small>}
       {ch.app === "phone" && <small className="hint">Un appel manqué s'ajoute aux récents, avec la notif « Missed Call ».</small>}
-      <button className="y2k-btn" disabled={!ok}>Envoyer la notif à {first(p, pid)}</button>
+      {ch.app === "voicemail" && <small className="hint">Le texte devient la transcription du message vocal (onglet Voicemail), avec la notif « Voicemail ».</small>}
+      {ch.listPath(pid).includes("/follows/") && <small className="hint">Le post s'ajoute à la page du compte et au fil d'actualité ; compte inconnu : il est créé et suivi.</small>}
+      <button className="y2k-btn" disabled={!ok}>Envoyer la notif à {first(p, pid)}{also.length ? ` (+${also.length})` : ""}</button>
     </form>
   );
 }
@@ -467,11 +487,11 @@ function ChannelLive({ tab, ch, onGone }: { tab: Tab; ch: Channel; onGone: () =>
   const { pid, tid } = tab;
   const listPath = ch.listPath(pid);
   const list = useValue<Record<string, Record<string, never>>>(listPath);
-  const item = list?.[tid];
+  const item = useValue<Record<string, never>>(`${listPath}/${tid}`); // clé imbriquée possible (posts)
   const notifs = useValue<Record<string, Notif>>(`phones/${pid}/notifs`);
   const lore = useValue<string>("meta/loreDate") || LORE_DATE_DEFAULT;
   const p = useValue<Profile>(`phones/${pid}/profile`);
-  const { write } = useWriter(pid);
+  const { write } = useRegieWriter(pid);
   const [text, setText] = useState("");
   const [photo, setPhoto] = useState<string | null>(null);
   const msgs: [string, LiveMsg][] = ch.messages ? ch.messages(item).slice(-40) : [];
@@ -483,7 +503,7 @@ function ChannelLive({ tab, ch, onGone }: { tab: Tab; ch: Channel; onGone: () =>
 
   // Notifs de cet onglet : celles qui annoncent un de ses messages (ou l'élément lui-même).
   const ids = new Set([tid, ...msgs.map(([id]) => id)]);
-  const mine = Object.entries(notifs ?? {}).filter(([, n]) => n && n.app === ch.app && !!n.msg && ids.has(n.msg));
+  const mine = Object.entries(notifs ?? {}).filter(([, n]) => n && n.app === (ch.notifApp ?? ch.app) && !!n.msg && ids.has(n.msg));
   const pending = mine.filter(([, n]) => !n.seen);
   const lastNotif = mine.map(([, n]) => n).sort((a, b) => b.at - a.at)[0];
   const lastNpc = [...msgs].reverse().find(([, m]) => m.npc);
@@ -568,13 +588,6 @@ function useSharedGroups(): Group[] {
   return useMemo(() => sharedGroups(threads, { [PIDS[0]]: i0, [PIDS[1]]: i1, [PIDS[2]]: i2, [PIDS[3]]: i3 }), [threads, i0, i1, i2, i3]);
 }
 
-/** Prénoms des 4 persos. */
-function useFirstNames() {
-  const p0 = useValue<Profile>(`phones/${PIDS[0]}/profile`), p1 = useValue<Profile>(`phones/${PIDS[1]}/profile`);
-  const p2 = useValue<Profile>(`phones/${PIDS[2]}/profile`), p3 = useValue<Profile>(`phones/${PIDS[3]}/profile`);
-  return useMemo(() => Object.fromEntries([p0, p1, p2, p3].map((p, i) => [PIDS[i], first(p, PIDS[i])])) as Record<string, string>, [p0, p1, p2, p3]);
-}
-
 /** Notifs des membres d'un groupe (pour « Vu par… », effacer, annuler). */
 function useMembersNotifs() {
   const n0 = useValue<Record<string, Notif>>(`phones/${PIDS[0]}/notifs`), n1 = useValue<Record<string, Notif>>(`phones/${PIDS[1]}/notifs`);
@@ -614,7 +627,7 @@ function GroupForm({ group, onSent }: { group: Group; onSent: (t: Tab) => void }
   const names = useFirstNames();
   const msgs = useValue<Record<string, Msg>>(`threadMessages/${group.tid}`);
   const lore = useValue<string>("meta/loreDate") || LORE_DATE_DEFAULT;
-  const { write } = useWriter(group.members[0]);
+  const { write } = useRegieWriter(group.members[0]);
   const [sender, setSender] = useState<string | null>(null);
   const value = sender ?? defaultSender(msgs);
   const [npc, setNpc] = useState("");
@@ -672,7 +685,7 @@ function GroupLive({ tab }: { tab: Tab }) {
   const msgs = all.slice(-40);
   const notifs = useMembersNotifs();
   const lore = useValue<string>("meta/loreDate") || LORE_DATE_DEFAULT;
-  const { write } = useWriter(tab.pid);
+  const { write } = useRegieWriter(tab.pid);
   const lastMdj = [...all].reverse().find(([, m]) => m.byMdj);
   // Par défaut : le dernier expéditeur utilisé depuis la régie, sinon le premier PNJ du fil.
   const [sender, setSender] = useState<string | null>(null);
@@ -749,7 +762,7 @@ function GroupLive({ tab }: { tab: Tab }) {
 function NewGroup({ onCreated }: { onCreated: (tid: string) => void }) {
   const names = useFirstNames();
   const { store } = useData();
-  const { write } = useWriter(PIDS[0]);
+  const { write } = useRegieWriter(PIDS[0]);
   const [name, setName] = useState("");
   const [members, setMembers] = useState<string[]>([...PIDS]);
   const ok = !!name.trim() && members.length >= 2;
@@ -784,7 +797,7 @@ function CallForm({ pid, onSent }: { pid: string; onSent: (t: Tab) => void }) {
   const calls = useValue<Record<string, { contact?: string; deleted?: boolean }>>(`phones/${pid}/data/calls`);
   const call = useValue<LiveCall>(callPath(pid));
   const p = useValue<Profile>(`phones/${pid}/profile`);
-  const { write } = useWriter(pid);
+  const { write } = useRegieWriter(pid);
   const [contact, setContact] = useState("");
   const names = useMemo(() => [...new Set(Object.values(calls ?? {}).filter((c) => c && !c.deleted && c.contact).map((c) => c.contact as string))], [calls]);
   const busy = !!call && call.state !== "ended" && Date.now() - call.startedAt < RING_MS + 15_000;
@@ -799,7 +812,7 @@ function CallForm({ pid, onSent }: { pid: string; onSent: (t: Tab) => void }) {
     <form className="regie-sub" onSubmit={submit}>
       <label className="lbl" htmlFor="regie-call-contact">Qui appelle</label>
       <input id="regie-call-contact" list="regie-call-names" value={contact} onChange={(e) => setContact(e.target.value)} placeholder="ex. Maman" autoComplete="off" required />
-      <datalist id="regie-call-names">{names.map((n) => <option key={n} value={n} />)}</datalist>
+      <datalist id="regie-call-names">{names.map((n) => <option key={n} value={n} />)}<NpcOptions known={names} /></datalist>
       <small className="hint">{busy ? `Un appel est déjà en cours chez ${first(p, pid)}.` : `Le téléphone de ${first(p, pid)} sonne 30 s ; sans réponse, c'est un appel manqué.`}</small>
       <button className="y2k-btn" disabled={!contact.trim() || busy}>Appeler {first(p, pid)}</button>
     </form>
@@ -810,7 +823,7 @@ function CallForm({ pid, onSent }: { pid: string; onSent: (t: Tab) => void }) {
 function CallWatch({ tab, onReply }: { tab: Tab; onReply: () => void }) {
   const call = useValue<LiveCall>(callPath(tab.pid));
   const lore = useValue<string>("meta/loreDate") || LORE_DATE_DEFAULT;
-  const { write } = useWriter(tab.pid);
+  const { write } = useRegieWriter(tab.pid);
   const mine = call?.id === tab.tid ? call : undefined;
   const prev = useRef(mine?.state);
   useEffect(() => {
@@ -835,7 +848,7 @@ function CallLive({ tab, onSent }: { tab: Tab; onSent: (t: Tab) => void }) {
   const notif = useValue<Notif>(`phones/${pid}/notifs/n_${tid}`);
   const lore = useValue<string>("meta/loreDate") || LORE_DATE_DEFAULT;
   const p = useValue<Profile>(`phones/${pid}/profile`);
-  const { write } = useWriter(pid);
+  const { write } = useRegieWriter(pid);
   const [now, setNow] = useState(Date.now);
   useEffect(() => { const h = setInterval(() => setNow(Date.now()), 500); return () => clearInterval(h); }, []);
   const mine = call?.id === tid ? call : undefined;
