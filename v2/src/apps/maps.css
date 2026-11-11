@@ -61,3 +61,6 @@
 .mp-card-btns { display: flex; gap: 8px; margin-top: 12px; }
 .mp-card-btns button { flex: 1; padding: 10px 4px; border-radius: 9px; background: #fff; border: 1px solid #a8adb3; font: bold 13px var(--ios-font); color: #3d5687; }
 .mp-card-edit { display: block; margin: 16px auto 0; font: 13px var(--ios-font); color: #50668f; }
+/* Noms de rues avec halo blanc, comme Plans */
+.mp-labels text { paint-order: stroke; stroke: rgba(255,255,255,.85); stroke-width: 2px; font-family: "Helvetica Neue", Arial, sans-serif; }
+.mp-legal { position: absolute; left: 6px; bottom: 4px; font: 9px "Helvetica Neue", Arial, sans-serif; color: #7a7466; text-shadow: 0 1px 0 rgba(255,255,255,.8); pointer-events: none; }
