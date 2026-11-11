@@ -17,7 +17,7 @@ import { useIncomingNotifs } from "../phone/Notifs";
 import { PIDS } from "./Site";
 import { callPath, duration, endCallPatches, RING_MS, startCallPatches, type LiveCall } from "../data/call";
 import { CHANNELS, channelOf, INSTA_ACTIONS, type Channel, type Field, type LiveMsg } from "../data/channels";
-import { AlsoPick, Cues, Journal, NpcBook, NpcHint, NpcOptions, Overview, useFirstNames, usePresence, useRegieWriter, useSendAlso } from "./RegieTools";
+import { AlsoPick, Cues, Journal, NpcBook, NpcHint, NpcOptions, StatusForm, useFirstNames, useRegieWriter, useSendAlso } from "./RegieTools";
 import "./regie.css";
 
 type Profile = { name?: string; avatar?: string | { src?: string } };
@@ -27,7 +27,7 @@ const tkey = (t: Tab) => `${t.app ?? "messages"}:${t.pid}:${t.tid}`;
 
 const LS_TABS = "uma-v2-regie-tabs";
 /** Onglets fixes de la régie, après « Nouvelle ». */
-const TOOLS: [string, string][] = [["tool:cues", "Scénarios"], ["tool:players", "Joueurs"], ["tool:npcs", "PNJ"], ["tool:log", "Journal"]];
+const TOOLS: [string, string][] = [["tool:cues", "Scénarios"], ["tool:npcs", "PNJ"], ["tool:log", "Journal"]];
 const LS_OPEN = "uma-v2-regie-open";
 const LS_MIN = "uma-v2-regie-min";
 const LS_BIG = "uma-v2-regie-big";
@@ -106,7 +106,6 @@ export function Regie() {
               ? <NewNotif onSent={openTab} />
               : active === "tool:npcs" ? <NpcBook />
               : active === "tool:cues" ? <Cues onSent={(t) => openTab(t, false)} />
-              : active === "tool:players" ? <Overview />
               : active === "tool:log" ? <Journal />
               : (() => { const t = tabs.find((x) => tkey(x) === active); if (!t) return null;
                   if (t.app === "group") return <GroupLive key={tkey(t)} tab={t} />;
@@ -241,10 +240,11 @@ function NewNotif({ onSent }: { onSent: (t: Tab) => void }) {
         {groups.map((g) => <option key={g.tid} value={`group:${g.tid}`}>Messages — groupe « {g.name} » (tous)</option>)}
         <option value="group:new">Messages — nouveau groupe…</option>
         {installed.has("phone") && <option value="call">Téléphone — appel entrant</option>}
+        <option value="status">Réseau / batterie du téléphone</option>
         {available.map((c) => <option key={c.app} value={c.app}>{c.label}</option>)}
       </select>
       {(app === "messages" || ch) && <AlsoPick pid={pid} value={also} onChange={setAlso} />}
-      {app === "call" ? <CallForm key={pid} pid={pid} onSent={onSent} /> : app === "group:new" ? <NewGroup onCreated={(tid) => setApp(`group:${tid}`)} /> : group ? <GroupForm key={group.tid} group={group} onSent={onSent} /> : ch ? <ChannelForm key={`${pid}-${app}`} pid={pid} ch={ch} also={also} onSent={onSent} /> : <form className="regie-sub" onSubmit={submit}>
+      {app === "status" ? <StatusForm pid={pid} /> : app === "call" ? <CallForm key={pid} pid={pid} onSent={onSent} /> : app === "group:new" ? <NewGroup onCreated={(tid) => setApp(`group:${tid}`)} /> : group ? <GroupForm key={group.tid} group={group} onSent={onSent} /> : ch ? <ChannelForm key={`${pid}-${app}`} pid={pid} ch={ch} also={also} onSent={onSent} /> : <form className="regie-sub" onSubmit={submit}>
       <label className="lbl" htmlFor="regie-contact">De la part de</label>
       <input id="regie-contact" list="regie-contacts" value={contact} onChange={(e) => setContact(e.target.value)} placeholder="ex. Jeongguk" autoComplete="off" required />
       <datalist id="regie-contacts">{contacts.map((c) => <option key={c.tid} value={c.contact} />)}<NpcOptions known={contacts.map((c) => c.contact)} /></datalist>
@@ -371,7 +371,6 @@ export function PlayerTray({ pid }: { pid: string }) {
   const nav = useNavigate();
   const p = useValue<Profile>(`phones/${pid}/profile`);
   const onMine = loc.pathname === `/${pid}` || loc.pathname.startsWith(`/${pid}/`);
-  usePresence(pid, onMine ? loc.pathname : "");
   useEffect(() => {
     if (!current) return;
     if (onMine) { shift(); return; } // le téléphone affiche sa propre bannière

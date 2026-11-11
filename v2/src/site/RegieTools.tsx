@@ -1,17 +1,14 @@
 // Outils de la régie du MDJ, à côté des envois : fiches PNJ, scénarios (envois préparés lancés étape
-// par étape), vue d'ensemble des joueurs (présence, notifs non lues, réseau / batterie) et journal de
-// séance. Tout ce que la régie écrit dans un téléphone passe par `useRegieWriter`, qui ajoute une
-// ligne au journal. Données de la régie sous `meta/regie/` (écriture réservée au MDJ).
-import { mdiDelete, mdiDownload, mdiOpenInNew, mdiPlay, mdiRestore } from "@mdi/js";
+// par étape), journal de séance, réseau / batterie. Tout ce que la régie écrit dans un téléphone
+// passe par `useRegieWriter`, qui ajoute une ligne au journal. Données de la régie sous `meta/regie/` (écriture réservée au MDJ).
+import { mdiDelete, mdiDownload, mdiPlay, mdiRestore } from "@mdi/js";
 import { useEffect, useMemo, useState, type FormEvent } from "react";
-import { Link } from "react-router-dom";
 import { useData, useValue, withHistory } from "../data/hooks";
 import type { Json, Patches, Store } from "../data/store";
-import { findNpcThread, npcMessagePatches, type InboxEntry, type Msg, type Notif, type Thread } from "../data/notify";
+import { findNpcThread, npcMessagePatches, type InboxEntry, type Msg, type Thread } from "../data/notify";
 import { startCallPatches } from "../data/call";
 import { CHANNELS, channelOf } from "../data/channels";
 import { Glyph } from "../kit/glyph";
-import { img } from "../lib/img";
 import { LORE_DATE_DEFAULT } from "../phone/common";
 import type { PhoneStatus } from "../phone/IOSChrome";
 import { PIDS } from "./Site";
@@ -23,12 +20,9 @@ export type Npc = { name: string; note?: string; order?: number };
 export type Step = { pid: string; app: string; contact: string; text?: string; img?: string; sender?: string; subject?: string; action?: string; order?: number; done?: number };
 type Cue = { title: string; order?: number; steps?: Record<string, Step> };
 type LogEntry = { at: number; lore?: string; pids: string[]; app: string; title: string; body: string };
-/** Écrit par le téléphone du joueur toutes les minutes tant qu'il est ouvert. */
-export type Presence = { at: number; path?: string };
 type Tab = { pid: string; tid: string; app?: string };
 
 const first = (p?: Profile, pid = "") => (p?.name ?? pid).split(" ")[0];
-const avatarOf = (p?: Profile) => (typeof p?.avatar === "string" ? p.avatar : p?.avatar?.src);
 const hhmm = (ms: number) => new Date(ms).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
 const loreFr = (lore?: string) => (lore ? lore.split("-").reverse().join("/") : "");
 const byOrder = <T extends { order?: number }>(m: Record<string, T> | undefined) =>
@@ -304,50 +298,25 @@ function StepForm({ onAdd }: { onAdd: (s: Step) => void }) {
   );
 }
 
-// ─── Vue d'ensemble des joueurs ──────────────────────────────────────────────
-const ONLINE_MS = 2.5 * 60_000;
-
-export function Overview() {
-  const [, tick] = useState(0);
-  useEffect(() => { const h = setInterval(() => tick((n) => n + 1), 30_000); return () => clearInterval(h); }, []);
-  return (
-    <div className="regie-form">
-      <p className="hint">Qui a le téléphone ouvert, ce qu'il n'a pas encore lu, et le réseau / la batterie affichés sur son téléphone.</p>
-      {PIDS.map((p) => <PlayerRow key={p} pid={p} />)}
-    </div>
-  );
-}
-
-function PlayerRow({ pid }: { pid: string }) {
+// ─── Réseau et batterie ──────────────────────────────────────────────────────
+/** Réseau / batterie affichés dans la barre d'état du téléphone (`phones/{pid}/status`). */
+export function StatusForm({ pid }: { pid: string }) {
   const p = useValue<Profile>(`phones/${pid}/profile`);
-  const pres = useValue<Presence>(`phones/${pid}/presence`);
-  const notifs = useValue<Record<string, Notif>>(`phones/${pid}/notifs`);
   const st = useValue<PhoneStatus>(`phones/${pid}/status`) ?? {};
   const { write } = useRegieWriter(pid);
-  const unseen = Object.values(notifs ?? {}).filter((n) => n && !n.seen).sort((a, b) => b.at - a.at);
-  const av = avatarOf(p);
-  const online = !!pres && Date.now() - pres.at < ONLINE_MS;
-  const where = pres?.path?.split("/")[2];
-  const ago = pres ? Math.round((Date.now() - pres.at) / 60_000) : null;
   return (
-    <div className="regie-player">
-      <div className="who">
-        <span className="dp sm">{av ? <img src={img(av)} alt="" /> : <span>{first(p, pid)[0]}</span>}</span>
-        <b>{first(p, pid)}</b>
-        <span className={`presence ${online ? "on" : ""}`}>{online ? `En ligne${where ? ` · ${where}` : " · écran d'accueil"}` : ago == null ? "Pas encore vu" : ago < 60 ? `Vu il y a ${ago} min` : `Vu le ${new Date(pres!.at).toLocaleString("fr-FR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}`}</span>
-        <Link to={`/${pid}`} className="linkish" title="Ouvrir son téléphone"><Glyph i={mdiOpenInNew} size={13} /></Link>
-      </div>
-      <small className="hint">{unseen.length === 0 ? "Tout est lu." : `${unseen.length} notif${unseen.length > 1 ? "s" : ""} pas encore ouverte${unseen.length > 1 ? "s" : ""} : ${unseen.slice(0, 3).map((n) => n.title).join(", ")}${unseen.length > 3 ? "…" : ""}`}</small>
-      <div className="regie-compose">
-        <select value={st.net ?? ""} onChange={(e) => write({ [`phones/${pid}/status/net`]: e.target.value || null })} aria-label={`Réseau de ${first(p, pid)}`}>
-          <option value="">Réseau d'origine</option>
-          {Object.entries(NET_LABEL).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
-        </select>
-        <select value={st.battery ?? ""} onChange={(e) => write({ [`phones/${pid}/status/battery`]: e.target.value ? Number(e.target.value) : null })} aria-label={`Batterie de ${first(p, pid)}`}>
-          <option value="">Batterie d'origine</option>
-          {[100, 80, 50, 30, 20, 10, 5, 1].map((b) => <option key={b} value={b}>{b} %</option>)}
-        </select>
-      </div>
+    <div className="regie-sub">
+      <label className="lbl" htmlFor="regie-net">Réseau</label>
+      <select id="regie-net" value={st.net ?? ""} onChange={(e) => write({ [`phones/${pid}/status/net`]: e.target.value || null })}>
+        <option value="">D'origine</option>
+        {Object.entries(NET_LABEL).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+      </select>
+      <label className="lbl" htmlFor="regie-bat">Batterie</label>
+      <select id="regie-bat" value={st.battery ?? ""} onChange={(e) => write({ [`phones/${pid}/status/battery`]: e.target.value ? Number(e.target.value) : null })}>
+        <option value="">D'origine</option>
+        {[100, 80, 50, 30, 20, 10, 5, 1].map((b) => <option key={b} value={b}>{b} %</option>)}
+      </select>
+      <small className="hint">S'applique tout de suite à la barre d'état du téléphone de {first(p, pid)}.</small>
     </div>
   );
 }
@@ -389,16 +358,4 @@ export function Journal() {
       {rows.length > 0 && !who && <button className="linkish danger" onClick={() => confirm("Vider tout le journal de la régie ? Pense à l'exporter avant. Impossible d'annuler.") && put({ [`${REGIE}/log`]: null })}>Vider le journal</button>}
     </div>
   );
-}
-
-/** Téléphone du joueur : signale à la régie qu'il est ouvert (et sur quelle app), toutes les minutes. */
-export function usePresence(pid: string, path: string) {
-  const { store } = useData();
-  useEffect(() => {
-    const beat = () => { if (document.visibilityState === "visible") store.update({ [`phones/${pid}/presence`]: { at: Date.now(), path } }).catch(() => {}); };
-    beat();
-    const h = setInterval(beat, 60_000);
-    document.addEventListener("visibilitychange", beat);
-    return () => { clearInterval(h); document.removeEventListener("visibilitychange", beat); };
-  }, [store, pid, path]);
 }
