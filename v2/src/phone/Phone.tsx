@@ -17,11 +17,13 @@ import { APPS, preloadApps } from "../apps/registry";
 import { img } from "../lib/img";
 import { Sparkles } from "../site/Win";
 import { IncomingCall } from "./Call";
+import { NotifCenter } from "./NotifCenter";
+import { SystemSounds } from "./sounds";
 import { LockNotifs, NotifBanner, SeenOnOpen, useNotifBadges, useOpenNotif, useUnseenNotifs } from "./Notifs";
 import "./android.css";
 
 type Profile = {
-  name?: string; os?: string; wallpaper?: string; appIcons?: Record<string, string>; appNames?: Record<string, string>;
+  name?: string; os?: string; wallpaper?: string; lockWallpaper?: string; brightness?: number; appIcons?: Record<string, string>; appNames?: Record<string, string>;
   badges?: Record<string, number>; phoneColor?: string; chassisPng?: string; accentColor?: string;
   screenInset?: { top: number; left: number; right: number; bottom: number };
 };
@@ -50,8 +52,12 @@ export function Phone() {
       <div className={`screen os-${os}`} style={{ width: scr.w, height: scr.h, transform: scale ? `scale(${scale})` : undefined, ["--accent" as string]: profile.accentColor ?? "#33b5e5" }}>
         <PhoneScreen pid={pid} profile={profile} os={os} />
         <NotifBanner pid={pid} os={os} />
+        <NotifCenter pid={pid} os={os} />
+        <SystemSounds pid={pid} />
         <IncomingCall pid={pid} os={os} />
         <SeenOnOpen pid={pid} />
+        {/* Luminosité (Réglages) : voile noir par-dessus tout l'écran */}
+        {(profile.brightness ?? 1) < 1 && <div className="screen-dim" style={{ opacity: (1 - (profile.brightness ?? 1)) * 0.85 }} />}
         {canEdit && <LoreBump pid={pid} />}
         {!canEdit && <div className="readonly-tag">Lecture seule · téléphone de {profile.name ?? pid}</div>}
       </div>
@@ -383,7 +389,7 @@ function Lock({ pid, profile }: { pid: string; profile: Profile }) {
   const pending = useUnseenNotifs(pid)[0];
   const openNotif = useOpenNotif(pid);
   return (
-    <div className="lock" style={bg(profile.wallpaper)}>
+    <div className="lock" style={bg(profile.lockWallpaper || profile.wallpaper)}>
       <StatusBar variant="translucent" locked />
       <div className="lock-clock"><div className="t">{time}</div><div className="d">{day}</div></div>
       <LockNotifs pid={pid} os="ios" />
@@ -492,7 +498,7 @@ function AndroidLock({ pid, profile }: { pid: string; profile: Profile }) {
   const time = now.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
   const day = lore.toLocaleDateString("en-GB", { weekday: "long", month: "long", day: "numeric" });
   return (
-    <div className="and-lock" style={bg(profile.wallpaper)}>
+    <div className="and-lock" style={bg(profile.lockWallpaper || profile.wallpaper)}>
       <StatusBar variant="clear" />
       <div className="and-lock-clock"><div className="t">{time}</div><div className="d">{day}</div></div>
       <LockNotifs pid={pid} os="android" />

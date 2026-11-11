@@ -52,11 +52,14 @@
   nom, « + » pour le message de quelqu'un d'autre), photo de groupe.
 - [x] **Messenger** (2026-11-08) : conversations cliquables, fil façon Messenger 2012 (bulles, photos, envoi, « + » pour un message reçu).
 - [x] **Reddit** (2026-11-08) : page de post (texte, image, votes) et commentaires en arbre, modifiables.
-- [ ] **Rappels** : une seule liste, pas de listes multiples ni de date d'échéance affichée façon iOS 6.
-- [ ] **Passbook** : pas de dos de carte (code-barres, détails).
-- [ ] **Nike+** : pas de détail de course (carte, allure par km).
-- [ ] **Snapchat** : pas d'histoires ni de discussion.
-- [ ] **Plans** : carte figée, pas d'itinéraire ni de fiche de lieu.
+- [x] **Rappels** (2026-11-11) : listes multiples (« Lists », points de page), échéance sous le titre (rouge si dépassée),
+  ligne vide pour écrire directement, « Show Completed » (`data/reminderLists` + champ `list`).
+- [x] **Passbook** (2026-11-11) : dos de carte iOS 6 (« i » sur la carte ouverte, champ `back`, « Done »).
+- [x] **Nike+** (2026-11-11) : détail de course (tracé coloré selon l'allure, temps par km).
+- [x] **Snapchat** (2026-11-11) : façon 2012 (les histoires et la discussion n'existaient pas encore) : maintenir pour voir,
+  photo + légende, minuteur, « Screenshot! », double-tap pour répondre.
+- [x] **Plans** (2026-11-11) : vraie carte d'Augusta tirée d'OpenStreetMap (`v2/src/apps/augustaMap.ts`, généré une fois),
+  position sur le campus de l'UMA, fiche de lieu, itinéraire avec étapes.
 - [ ] **Boussole, FaceTime, VPN, Wikipédia, Kindle, Polyvore, ESPN** : écrans uniques, à enrichir si besoin.
 
 ## À vérifier dans les données
@@ -123,19 +126,26 @@ Réalisme :
   publication de page Facebook, post Tumblr (comptes suivis, créés si besoin), message vocal.
   Reste : photo dans les étapes de scénario ; avatar sur les fiches PNJ ; posts Instagram.
 - [ ] Notifications : bannières iOS 6 / barre de notif Android qui tombent quand un autre joueur écrit
-- [ ] Centre de notifications (iOS 6) et volet déroulant (Android) avec l'historique des notifs
+- [x] Centre de notifications (iOS 6) et volet déroulant (Android) (2026-11-11, `v2/src/phone/NotifCenter.tsx`) : on tire la
+  barre d'état ; « × » par app / « tout effacer » (champ `cleared`).
 - [ ] Écran verrouillé : notifications en attente, photo de verrouillage distincte, code PIN par perso
+  (photo distincte faite le 2026-11-11 ; reste le code PIN)
 - [ ] Batterie / réseau qui varient (E, 3G, Wi-Fi) ; mode avion ; « Pas de service » scénarisable
 - [ ] Appels : écran d'appel entrant/sortant, journal d'appels, messagerie vocale (fichiers audio)
+  Fait le 2026-11-11 : journal iOS 6 (« Sophie (2) », fiche Info « i », Call Back) et appels passés depuis le téléphone
+  ajoutés au journal. Appel entrant de la régie déjà journalisé (répondu / manqué). Reste : audio de messagerie.
 - [ ] Clavier iOS 6 / Android dessiné, avec autocorrection de l'époque (option)
 - [ ] Recherche Spotlight (iOS) / Google Now (Android) sur le contenu du téléphone
 - [ ] App Store / Play Store avec les apps installées et leurs mises à jour
-- [ ] Indicateurs « Lu à 14:02 », « Distribué », « en train d'écrire… » dans Messages
-- [ ] Sons système (clic clavier, verrouillage, SMS « Tri-tone ») activables
+- [x] Indicateurs « Read 2:02 PM », « Delivered », « en train d'écrire… » dans Messages (2026-11-11, iMessage seulement,
+  comme en 2012 ; `inbox/{tid}/readAt` et `typing` ; PNJ : appui long « Lu » sur son dernier message)
+- [x] Sons système activables (2026-11-11, Réglages › Sounds : Text Tone, Lock Sounds, Keyboard Clicks ; `profile.sounds`)
 
 Personnalisation :
 - [ ] Réorganiser les icônes à l'appui long (mode « tremblement » iOS / glisser Android), dossiers
 - [ ] Choisir fond d'écran et sonnerie depuis Réglages (déjà en base : `profile.wallpaper`)
+  Fait le 2026-11-11 : fond verrouillé distinct (`profile.lockWallpaper`), « Camera Roll » → Set Lock / Home / Both,
+  luminosité (`profile.brightness`), sonnerie = n'importe quelle chanson Deezer (`profile.ringtone`).
 - [ ] Ajouter / retirer une app de l'écran d'accueil, renommer, changer l'icône
 - [ ] Widgets Android (horloge, météo, musique) sur l'écran d'accueil de Drew
 - [ ] Coques : couleur, étui, fissure d'écran, autocollants (comme les rayures d'Elias)

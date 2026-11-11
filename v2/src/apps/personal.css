@@ -247,3 +247,20 @@
 .inat-tabs button.on { color: #8cc63f; background: rgba(255,255,255,.08); }
 .inat-tabs button:disabled { opacity: .4; }
 .vp-shield { display: flex; justify-content: center; }
+
+/* Nike+ : détail de course (tracé coloré selon l'allure, temps par km) */
+.nk-run { cursor: pointer; }
+.nk-map { display: block; width: 100%; height: auto; }
+.nk-detail-head { display: flex; flex-direction: column; align-items: center; padding: 12px 0 6px; }
+.nk-detail-head b { font: 900 40px/1 "Helvetica Neue", var(--ios-font); color: #c6ff00; }
+.nk-detail-head span { font: bold 11px var(--ios-font); color: #999; letter-spacing: 1px; text-transform: uppercase; margin-top: 4px; }
+.nk-stats { display: flex; border-top: 1px solid #333; border-bottom: 1px solid #333; }
+.nk-stats span { flex: 1; display: flex; flex-direction: column; align-items: center; padding: 10px 0; }
+.nk-stats span + span { border-left: 1px solid #333; }
+.nk-stats b { font: bold 18px var(--ios-font); color: #fff; }
+.nk-stats small { font: bold 9px var(--ios-font); color: #888; letter-spacing: 1px; margin-top: 2px; }
+.nk-split { display: flex; align-items: center; gap: 8px; padding: 6px 12px; font: bold 12px var(--ios-font); color: #ccc; }
+.nk-split span { flex: 0 0 40px; color: #888; }
+.nk-split i { height: 10px; border-radius: 2px; }
+.nk-split b { margin-left: auto; color: #fff; }
+.nk-note { padding: 10px 12px; font: italic 13px var(--ios-font); color: #aaa; }

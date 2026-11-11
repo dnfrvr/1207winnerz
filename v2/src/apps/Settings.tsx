@@ -1,9 +1,12 @@
 // Réglages iOS 6 (tableau groupé avec icônes, Wi-Fi, Bluetooth, Général › Informations)
 // / Paramètres Android 4.1 (sections holo).
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Route, Routes, useNavigate } from "react-router-dom";
-import { useList, useValue } from "../data/hooks";
+import { useCanEdit, useList, useValue, useWriter } from "../data/hooks";
+import { deezerSearch, type DzTrack } from "../lib/deezer";
+import { soundOn, type Ringtone, type SoundPrefs } from "../phone/sounds";
 import { AppFrame, BackButton } from "../phone/IOSChrome";
+import { ActionSheet } from "../phone/Sheets";
 import { useOS } from "../phone/common";
 import { AddButton, Cell, Grouped, Section, Switch, useEditor } from "../kit/kit";
 import { Glyph } from "../kit/glyph";
@@ -29,30 +32,149 @@ export default function SettingsApp({ pid }: { pid: string }) {
       <Route path="bluetooth" element={<Bluetooth pid={pid} />} />
       <Route path="about" element={<About pid={pid} />} />
       <Route path="wallpaper" element={<Wallpaper pid={pid} />} />
+      <Route path="wallpaper/pick" element={<WallpaperPick pid={pid} />} />
+      <Route path="sounds" element={<Sounds pid={pid} />} />
+      <Route path="sounds/ringtone" element={<RingtonePick pid={pid} />} />
       <Route path="camera" element={<CameraSettings pid={pid} />} />
     </Routes>
   );
 }
 
-/** Luminosité et fond d'écran (iOS 6) / Affichage (Android). */
+/** Luminosité et fond d'écran (iOS 6) / Affichage (Android). Toucher un aperçu change ce fond-là ;
+ *  « Camera Roll » / « Galerie » : on choisit une photo du téléphone, puis écran verrouillé, accueil ou les deux. */
+type WpProfile = { wallpaper?: string; lockWallpaper?: string; brightness?: number };
 function Wallpaper({ pid }: { pid: string }) {
   const os = useOS();
+  const nav = useNavigate();
   const ed = useEditor(pid);
-  const prof = useValue<{ wallpaper?: string }>(`phones/${pid}/profile`) ?? {};
-  const edit = (field: string, title: string) => ed.edit({ path: `phones/${pid}/profile`, fields: [field], title });
-  const wp = prof.wallpaper ? img(prof.wallpaper) : undefined;
+  const prof = useValue<WpProfile>(`phones/${pid}/profile`) ?? {};
+  const edit = (field: string, title: string) => ed.canEdit && ed.edit({ path: `phones/${pid}/profile`, fields: [field], title });
+  const home = prof.wallpaper ? img(prof.wallpaper) : undefined;
+  const lock = prof.lockWallpaper ? img(prof.lockWallpaper) : home;
+  const ios = os === "ios";
   return (
-    <AppFrame title={os === "ios" ? "Brightness & Wallpaper" : "Display"} left={<BackButton to={`/${pid}/settings`} label={os === "ios" ? "Settings" : "Settings"} />} bodyClass={`st ${os}`}>
+    <AppFrame title={ios ? "Brightness & Wallpaper" : "Display"} left={<BackButton to={`/${pid}/settings`} label={ios ? "Settings" : "Settings"} />} bodyClass={`st ${os}`}>
       <Grouped>
-        <Section title={os === "ios" ? undefined : "Wallpaper"}>
+        <Section title={ios ? undefined : "Brightness"}>
+          <Brightness pid={pid} value={prof.brightness ?? 1} canEdit={ed.canEdit} />
+        </Section>
+        <Section title={ios ? undefined : "Wallpaper"}>
           <div className="st-wp">
-            <span className="st-wp-prev lock" style={{ backgroundImage: wp && `url(${wp})` }}><i /></span>
-            <span className="st-wp-prev" style={{ backgroundImage: wp && `url(${wp})` }}><b /></span>
+            <button className="st-wp-prev lock" style={{ backgroundImage: lock && `url(${lock})` }} aria-label="Lock Screen"
+              onClick={() => edit("lockWallpaper", "Fond de l'écran verrouillé")}><i /></button>
+            <button className="st-wp-prev" style={{ backgroundImage: home && `url(${home})` }} aria-label="Home Screen"
+              onClick={() => edit("wallpaper", "Fond d'écran")}><b /></button>
           </div>
-          {ed.canEdit && <Cell title={os === "ios" ? "Wallpaper" : "Wallpaper"} detail="Modifier" chevron onClick={() => edit("wallpaper", "Fond d'écran")} />}
+          {ed.canEdit && <Cell title={ios ? "Camera Roll" : "Gallery"} chevron onClick={() => nav("pick")} />}
         </Section>
       </Grouped>
       {ed.ui}
+    </AppFrame>
+  );
+}
+
+/** Curseur de luminosité ; enregistré au relâchement (une seule entrée d'historique). */
+function Brightness({ pid, value, canEdit }: { pid: string; value: number; canEdit: boolean }) {
+  const { set } = useWriter(pid);
+  const [v, setV] = useState<number | null>(null);
+  const save = () => { if (v !== null && v !== value) set(`phones/${pid}/profile/brightness`, v); setV(null); };
+  return (
+    <div className="st-bright">
+      <Glyph i={mdiBrightness6} size={16} />
+      <input type="range" min={0.25} max={1} step={0.01} value={v ?? value} disabled={!canEdit} aria-label="Brightness"
+        onChange={(e) => setV(Number(e.target.value))} onPointerUp={save} onKeyUp={save} onBlur={save} />
+      <Glyph i={mdiBrightness7} size={22} />
+    </div>
+  );
+}
+
+/** Pellicule du téléphone → « Set Lock Screen / Set Home Screen / Set Both ». */
+function WallpaperPick({ pid }: { pid: string }) {
+  const os = useOS();
+  const nav = useNavigate();
+  const photos = useList<{ src?: string }>(`phones/${pid}/data/gallery`).filter(([, p]) => p.src);
+  const { write } = useWriter(pid);
+  const [pick, setPick] = useState<string | null>(null);
+  const ios = os === "ios";
+  const apply = (fields: string[]) => { if (!pick) return; write(Object.fromEntries(fields.map((f) => [`phones/${pid}/profile/${f}`, pick]))); nav(`/${pid}/settings/wallpaper`); };
+  return (
+    <AppFrame title={ios ? "Camera Roll" : "Galerie"} left={<BackButton to={`/${pid}/settings/wallpaper`} label={ios ? "Wallpaper" : "Affichage"} />} bodyClass={`st ${os}`}>
+      <div className="st-pick">
+        {photos.map(([id, p]) => <button key={id} style={{ backgroundImage: `url(${img(p.src!)})` }} onClick={() => setPick(p.src!)} aria-label="Choisir cette photo" />)}
+        {photos.length === 0 && <p className="st-pick-empty">{ios ? "No Photos" : "Aucune photo"}</p>}
+      </div>
+      {pick && (
+        <ActionSheet onClose={() => setPick(null)} actions={[
+          { label: ios ? "Set Lock Screen" : "Lock screen", onPress: () => apply(["lockWallpaper"]) },
+          { label: ios ? "Set Home Screen" : "Home screen", onPress: () => apply(["wallpaper"]) },
+          // « Les deux » : le fond verrouillé suit l'accueil (champ vidé).
+          { label: ios ? "Set Both" : "Les deux", onPress: () => { apply(["wallpaper"]); write({ [`phones/${pid}/profile/lockWallpaper`]: null }); } },
+        ]} />
+      )}
+    </AppFrame>
+  );
+}
+
+/** Sounds (iOS 6) / Son (Android) : sonnerie (extrait Deezer), son des SMS, verrouillage, clavier. */
+function Sounds({ pid }: { pid: string }) {
+  const os = useOS();
+  const nav = useNavigate();
+  const { set } = useWriter(pid);
+  const canEdit = useCanEdit(pid);
+  const prof = useValue<{ sounds?: SoundPrefs; ringtone?: Ringtone }>(`phones/${pid}/profile`) ?? {};
+  const ios = os === "ios";
+  const sw = (k: keyof SoundPrefs, title: string) => (
+    <Cell title={title} accessory={<Switch on={soundOn(prof.sounds, k)} onChange={canEdit ? (v) => set(`phones/${pid}/profile/sounds/${k}`, v) : undefined} />} />
+  );
+  return (
+    <AppFrame title={ios ? "Sounds" : "Sound"} left={<BackButton to={`/${pid}/settings`} label={ios ? "Settings" : "Settings"} />} bodyClass={`st ${os}`}>
+      <Grouped>
+        <Section title={ios ? "Sounds and Vibration Patterns" : "Sonnerie et notifications"}>
+          <Cell title={ios ? "Ringtone" : "Phone ringtone"} detail={prof.ringtone?.title || (ios ? "Marimba" : "Default")} chevron onClick={() => nav("ringtone")} />
+          {sw("sms", ios ? "Text Tone" : "Son des notifications")}
+        </Section>
+        <Section title={ios ? undefined : "System"}>
+          {sw("lock", ios ? "Lock Sounds" : "Son du verrouillage")}
+          {sw("keys", ios ? "Keyboard Clicks" : "Sons des touches")}
+        </Section>
+      </Grouped>
+    </AppFrame>
+  );
+}
+
+/** Choix de la sonnerie : sonnerie d'origine ou n'importe quelle chanson du catalogue Deezer (extrait de 30 s). */
+function RingtonePick({ pid }: { pid: string }) {
+  const os = useOS();
+  const ios = os === "ios";
+  const { set } = useWriter(pid);
+  const canEdit = useCanEdit(pid);
+  const cur = useValue<Ringtone>(`phones/${pid}/profile/ringtone`);
+  const [q, setQ] = useState("");
+  const [res, setRes] = useState<DzTrack[] | null>(null);
+  const audio = useRef<HTMLAudioElement | null>(null);
+  useEffect(() => {
+    if (!q.trim()) { setRes(null); return; }
+    const h = setTimeout(() => { void deezerSearch(q, 15).then(setRes); }, 350);
+    return () => clearTimeout(h);
+  }, [q]);
+  useEffect(() => () => audio.current?.pause(), []);
+  const listen = (url: string) => { audio.current?.pause(); if (url) { audio.current = new Audio(url); void audio.current.play().catch(() => {}); } };
+  // Seuls titre et artiste sont enregistrés : l'URL de l'extrait est signée et expire.
+  const pick = (d: DzTrack | null) => { listen(d?.preview ?? ""); if (canEdit) set(`phones/${pid}/profile/ringtone`, d ? { title: d.title, artist: d.artist } : null); };
+  const check = <Glyph i={mdiCheck} size={18} />;
+  return (
+    <AppFrame title={ios ? "Ringtone" : "Sonnerie"} left={<BackButton to={`/${pid}/settings/sounds`} label={ios ? "Sounds" : "Sound"} />} bodyClass={`st ${os}`}>
+      <Grouped>
+        <Section>
+          <Cell title={ios ? "Marimba (Default)" : "Default ringtone"} accessory={!cur?.title ? check : undefined} onClick={() => pick(null)} />
+          {cur?.title && <Cell title={cur.title} subtitle={cur.artist} accessory={check} />}
+        </Section>
+        <Section title="Deezer">
+          <div className="st-dz"><Glyph i={mdiMusic} size={16} /><input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Chercher une chanson…" disabled={!canEdit} /></div>
+          {res?.map((d, i) => <Cell key={i} title={d.title} subtitle={d.artist} image={d.cover || null} detail={d.duration} onClick={() => pick(d)} />)}
+          {res && !res.length && <Cell title="No results" dim />}
+        </Section>
+      </Grouped>
     </AppFrame>
   );
 }
@@ -112,7 +234,7 @@ function Root({ pid }: { pid: string }) {
           <Cell icon={ic(mdiDotsHorizontal)} title="More…" />
         </Section>
         <Section title="Device">
-          <Cell icon={ic(mdiVolumeHigh)} title="Sound" /><Cell icon={ic(mdiBrightness6)} title="Display" onClick={() => nav("wallpaper")} />
+          <Cell icon={ic(mdiVolumeHigh)} title="Sound" onClick={() => nav("sounds")} /><Cell icon={ic(mdiBrightness6)} title="Display" onClick={() => nav("wallpaper")} />
           <Cell icon={ic(mdiCamera)} title="Camera" onClick={() => nav("camera")} />
           <Cell icon={ic(mdiDatabase)} title="Storage" /><Cell icon={ic(mdiBattery)} title="Battery" /><Cell icon={ic(mdiApps)} title="Apps" />
         </Section>
@@ -140,7 +262,7 @@ function Root({ pid }: { pid: string }) {
         <Section>
           <Cell icon={tile(RED, mdiFormatListBulleted)} title="Notifications" chevron />
           <Cell icon={tile(GREY, mdiCog)} title="General" chevron onClick={() => nav("about")} />
-          <Cell icon={tile(RED, mdiVolumeHigh)} title="Sounds" chevron />
+          <Cell icon={tile(RED, mdiVolumeHigh)} title="Sounds" chevron onClick={() => nav("sounds")} />
           <Cell icon={tile(BLUE, mdiBrightness7)} title="Brightness & Wallpaper" chevron onClick={() => nav("wallpaper")} />
           <Cell icon={tile(GREY, mdiHandBackRight)} title="Privacy" chevron />
         </Section>

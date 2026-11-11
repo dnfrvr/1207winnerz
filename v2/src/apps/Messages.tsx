@@ -22,7 +22,10 @@ const PIDS = ["glinda", "eoghan", "drew", "elias"];
 const ANDROID_CONTACTS = ["drew", "gwen", "nils", "abby", "hector", "matthew", "louis", "vicky", "james", "harry", "asra", "nayati", "sophie",
   "zoe", "tyrone", "ilya", "morgane"];
 
-type Msg = { from: string; npcName?: string | null; text?: string; img?: string; time?: string; ts?: number; order?: number; deleted?: boolean };
+type Msg = { from: string; npcName?: string | null; text?: string; img?: string; time?: string; ts?: number; order?: number; deleted?: boolean; readAt?: number };
+// Champs éphémères de l'entrée de boîte de chaque membre : lu jusqu'à (ms lore), en train d'écrire (ms réelles).
+type Presence = { readAt?: number; typing?: number; npcTyping?: number };
+const TYPING_MS = 12_000;
 type Thread = { kind: "pair" | "group" | "local"; members?: Record<string, boolean>; name?: string; contact?: string | null };
 type InboxEntry = { contact?: string; threadId: string; unread?: boolean; isGroup?: boolean; deleted?: boolean; order?: number };
 
@@ -59,6 +62,19 @@ function useLastMessages(tids: string[]) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [store, key]);
   return last;
+}
+
+/** Entrée de boîte de chaque membre du fil (accusés de lecture, « en train d'écrire »). */
+function usePresence(tid: string, members: string[]) {
+  const { store } = useData();
+  const [p, setP] = useState<Record<string, Presence>>({});
+  const key = members.join("|");
+  useEffect(() => {
+    const offs = members.map((m) => store.subscribe(`phones/${m}/inbox/${tid}`, (v) => setP((x) => ({ ...x, [m]: (v ?? {}) as Presence }))));
+    return () => offs.forEach((o) => o());
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [store, tid, key]);
+  return p;
 }
 
 /** Boîte de réception = entrées du téléphone + fils partagés où le perso est membre (même sans entrée). */
@@ -207,7 +223,8 @@ function Conversation({ pid }: { pid: string }) {
   const isGroup = thread?.kind === "group" || (!!entry?.isGroup && !isLocal);
   const sms = isSms(contact, thread, pid, names);
   // Le MDJ écrit et corrige au nom de n'importe quel membre, directement dans le téléphone.
-  const mdj = useData().session.role === "mdj";
+  const { store, session } = useData();
+  const mdj = session.role === "mdj";
   const canSend = canEditPhone && (isLocal || !!thread?.members?.[pid]);
   const canEditMsg = (m: Msg) => canEditPhone && (isLocal || m.from === pid || mdj);
 
@@ -224,6 +241,45 @@ function Conversation({ pid }: { pid: string }) {
   const scroller = useRef<HTMLDivElement>(null);
   const count = msgs.length;
   useEffect(() => { if (!insertAfter && !editing) scroller.current?.scrollTo({ top: 1e9 }); }, [count, tid, insertAfter, editing]);
+
+  // ── « Read 2:02 PM » / « Delivered » et « en train d'écrire » (iMessage seulement, comme en 2012).
+  const members = Object.keys(thread?.members ?? {});
+  const presence = usePresence(tid, isLocal ? [pid] : members);
+  const imsg = !sms && os === "ios";
+  const lastOther = useMemo(() => [...msgs].reverse().find(([, m]) => m.from !== pid)?.[1], [msgs, pid]);
+  const myReadAt = presence[pid]?.readAt ?? 0;
+  useEffect(() => {
+    // Seul le joueur qui ouvre son propre téléphone « lit » (le MDJ qui passe ne déclenche pas d'accusé).
+    if (session.phone !== pid || !lastOther?.ts || lastOther.ts <= myReadAt) return;
+    void store.update({ [`phones/${pid}/inbox/${tid}/readAt`]: Math.max(loreNowMs(lore), lastOther.ts) });
+  }, [session.phone, pid, tid, lastOther, myReadAt, lore, store]);
+
+  const lastMsg = msgs[msgs.length - 1];
+  const other = members.find((m) => m !== pid);
+  const readMs = lastMsg && (isLocal ? lastMsg[1].readAt : other ? presence[other]?.readAt : undefined);
+  const receipt = imsg && !isGroup && lastMsg?.[1].from === pid && editing !== lastMsg[0]
+    ? (readMs && readMs >= lastMsg[1].ts ? `Read ${clockLabel(readMs)}` : "Delivered") : null;
+
+  const [, tick] = useState(0);
+  const typers = isLocal ? [presence[pid]?.npcTyping] : members.filter((m) => m !== pid).map((m) => presence[m]?.typing);
+  const typingSeen = typers.some((t) => t && Date.now() - t < TYPING_MS);
+  useEffect(() => {
+    if (!typers.some(Boolean)) return;
+    const iv = setInterval(() => tick((n) => n + 1), 2000);
+    return () => clearInterval(iv);
+  }, [typers.join("|")]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { if (typingSeen) scroller.current?.scrollTo({ top: 1e9 }); }, [typingSeen]);
+
+  const typingPath = sender === "npc" ? `phones/${pid}/inbox/${tid}/npcTyping` : `phones/${sender}/inbox/${tid}/typing`;
+  const typingRef = useRef<{ path: string; at: number }>({ path: typingPath, at: 0 });
+  const setTyping = (on: boolean) => {
+    const r = typingRef.current, now = Date.now();
+    if (r.at && r.path !== typingPath) void store.update({ [r.path]: null }); // expéditeur changé en cours de frappe
+    if (on ? r.path === typingPath && now - r.at < 4000 : !r.at) return; // une écriture toutes les 4 s au plus
+    typingRef.current = { path: typingPath, at: on ? now : 0 };
+    void store.update({ [typingPath]: on ? now : null });
+  };
+  useEffect(() => () => { const r = typingRef.current; if (r.at) void store.update({ [r.path]: null }); }, [store, tid]);
 
   const base = `threadMessages/${tid}`;
   const senderOf = (m: Msg) => (m.from === "npc" ? (m.npcName || contact) : names[m.from]?.name ?? m.from);
@@ -254,6 +310,10 @@ function Conversation({ pid }: { pid: string }) {
     { label: "Modifier", onPress: () => setEditing(id) },
     { label: "Heure", onPress: () => setTimeFor(id) },
     { label: "Insérer après", onPress: () => setInsertAfter(id) },
+    // Conversation avec un PNJ : c'est au téléphone de dire si le contact a lu (« Read 2:02 PM »).
+    ...(isLocal && imsg && m.from === pid && id === lastMsg?.[0]
+      ? [{ label: m.readAt ? "Non lu" : "Lu", onPress: () => write({ [`${base}/${id}/readAt`]: m.readAt ? null : Math.max(loreNowMs(lore), loreToMs(m.time) ?? 0) }) }]
+      : []),
     { label: "Supprimer", destructive: true, onPress: () => write({ [`${base}/${id}/deleted`]: true }) },
   ].filter((a) => canEditMsg(m) || a.label === "Insérer après");
 
@@ -286,7 +346,9 @@ function Conversation({ pid }: { pid: string }) {
             </div>
           );
         })}
-        {msgs.length === 0 && <div className="msg-empty">No messages</div>}
+        {receipt && <div className="receipt">{receipt}</div>}
+        {imsg && typingSeen && <div className="line them"><div className="bubble them typing" aria-label="Typing"><i /><i /><i /></div></div>}
+        {msgs.length === 0 && <div className="msg-empty">Aucun message</div>}
       </div>
       {insertAfter && (
         <div className="insert-banner">
@@ -295,7 +357,7 @@ function Conversation({ pid }: { pid: string }) {
         </div>
       )}
       {canSend && (
-        <Composer sms={sms} onSend={send}
+        <Composer sms={sms} onSend={send} onTyping={imsg ? setTyping : undefined}
           who={senders.length > 1 ? senderLabel : null} onToggleWho={() => setSenderIdx((i) => (i + 1) % senders.length)} />
       )}
       {callout && (() => {
@@ -341,8 +403,11 @@ function BubbleEditor({ initial, onSave, onCancel }: { initial: string; onSave: 
   );
 }
 
-function Composer({ sms, onSend, who, onToggleWho }: { sms: boolean; onSend: (t: string) => void; who: string | null; onToggleWho: () => void }) {
-  const [text, setText] = useState("");
+function Composer({ sms, onSend, onTyping, who, onToggleWho }: {
+  sms: boolean; onSend: (t: string) => void; onTyping?: (on: boolean) => void; who: string | null; onToggleWho: () => void;
+}) {
+  const [text, setTextRaw] = useState("");
+  const setText = (t: string) => { setTextRaw(t); onTyping?.(!!t.trim()); };
   const ref = useRef<HTMLTextAreaElement>(null);
   const submit = () => { const t = text.trim(); if (!t) return; onSend(t); setText(""); ref.current?.focus(); };
   useEffect(() => { const el = ref.current; if (el) { el.style.height = "auto"; el.style.height = `${Math.min(el.scrollHeight, 96)}px`; } }, [text]);

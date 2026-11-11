@@ -8,6 +8,7 @@ import { notifLines, type Notif } from "../data/notify";
 import type { Patches } from "../data/store";
 import { img } from "../lib/img";
 import { ANDROID_ICON_DEFAULTS, iosIcon, type OS } from "./common";
+import { soundOn, type SoundPrefs } from "./sounds";
 import "./notifs.css";
 
 type Profile = { appIcons?: Record<string, string> };
@@ -48,7 +49,7 @@ export function useIncomingNotifs(pid: string | null) {
   return { current: queue[0] ?? null, shift };
 }
 
-function useAppIcon(pid: string, os: OS) {
+export function useAppIcon(pid: string, os: OS) {
   const profile = useValue<Profile>(`phones/${pid}/profile`);
   const droid = useValue<Record<string, string>>("shared/androidIcons");
   return (app: string) => (os === "android" ? droid?.[app] ?? ANDROID_ICON_DEFAULTS[app] : iosIcon(app, profile?.appIcons));
@@ -101,13 +102,14 @@ export function NotifBanner({ pid, os }: { pid: string; os: OS }) {
   const loc = useLocation();
   const icon = useAppIcon(pid, os);
   const markSeen = useMarkSeen(pid);
+  const sounds = useValue<SoundPrefs>(`phones/${pid}/profile/sounds`);
   const locked = !loc.pathname.split("/").filter(Boolean)[1];
   const here = !!current && loc.pathname === `/${pid}/${current[1].link}`;
 
   useEffect(() => {
     if (!current) return;
     if (here) { shift(); return; } // déjà dans la conversation : le message apparaît directement
-    ding(os);
+    if (soundOn(sounds, "sms")) ding(os); // Réglages › Sounds › Text Tone
     if (locked) { shift(); return; } // verrouillé : la notif s'ajoute à la liste de l'écran verrouillé
     const t = setTimeout(shift, BANNER_MS);
     return () => clearTimeout(t);

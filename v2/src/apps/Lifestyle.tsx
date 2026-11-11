@@ -1,7 +1,7 @@
 // Snapchat (2012), GroupMe (2012), Starbucks (2012), Fichiers (style Dropbox 2012).
 import { Glyph, Brand } from "../kit/glyph";
 import { mdiAccountMultiple, mdiFolder, mdiHeart, mdiHeartOutline, mdiMapMarker, mdiPlus, mdiSend, mdiStar } from "@mdi/js";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Route, Routes, useNavigate, useParams } from "react-router-dom";
 import { useList, useValue } from "../data/hooks";
 import { AppFrame, BackButton, StatusBar, BarBack } from "../phone/IOSChrome";
@@ -12,7 +12,11 @@ import { img } from "../lib/img";
 import "./lifestyle.css";
 
 // ── Snapchat ─────────────────────────────────────────────────────────────────
-type Snap = { contact?: string; opened?: boolean; sent?: boolean; video?: boolean; time?: string; order?: number; deleted?: boolean };
+// Comme en 2012 (ni histoires ni discussion à l'époque) : on maintient le doigt pour voir le snap
+// (photo + bande de légende, compte à rebours), lâcher = vu. Le snap reste dans la liste (« Opened »),
+// une capture d'écran se signale, double-tap = répondre (appareil photo).
+type Snap = { contact?: string; opened?: boolean; sent?: boolean; video?: boolean; time?: string; img?: string; caption?: string; secs?: number; screenshot?: boolean; order?: number; deleted?: boolean };
+const SNAP_FIELDS = ["contact", "time", "img", "caption", "secs", "opened", "sent", "screenshot", "video"];
 
 export function SnapchatApp({ pid }: { pid: string }) {
   const nav = useNavigate();
@@ -21,12 +25,29 @@ export function SnapchatApp({ pid }: { pid: string }) {
   const ed = useEditor(pid);
   const [viewing, setViewing] = useState<{ id: string; s: Snap } | null>(null);
   const [left, setLeft] = useState(0);
-  const fields = ["contact", "time", "opened", "sent", "video"];
-  const open = (id: string, s: Snap) => {
-    if (s.opened || s.sent) return;
-    setViewing({ id, s }); setLeft(5);
-    const h = setInterval(() => setLeft((n) => { if (n <= 1) { clearInterval(h); setViewing(null); if (ed.canEdit) ed.write({ [`${path}/${id}/opened`]: true }); } return n - 1; }), 1000);
+  const timer = useRef<ReturnType<typeof setInterval> | null>(null);
+  const lastTap = useRef<{ id: string; at: number } | null>(null);
+
+  const close = (id: string) => {
+    if (timer.current) clearInterval(timer.current);
+    timer.current = null;
+    setViewing(null);
+    if (ed.canEdit) ed.write({ [`${path}/${id}/opened`]: true }); // lâcher = vu, comme l'app
   };
+  const hold = (id: string, s: Snap) => {
+    if (s.opened || s.sent) return;
+    const n = Math.min(10, Math.max(1, Number(s.secs) || 5));
+    setViewing({ id, s }); setLeft(n);
+    timer.current = setInterval(() => setLeft((k) => { if (k <= 1) { close(id); return 0; } return k - 1; }), 1000);
+  };
+  const release = () => { if (viewing) close(viewing.id); };
+  const tap = (id: string) => {
+    const t = lastTap.current, now = Date.now();
+    lastTap.current = { id, at: now };
+    if (t && t.id === id && now - t.at < 350) nav(`/${pid}/camera`); // double-tap pour répondre
+  };
+  useEffect(() => () => { if (timer.current) clearInterval(timer.current); }, []);
+
   return (
     <div className="app sc">
       <StatusBar />
@@ -36,17 +57,28 @@ export function SnapchatApp({ pid }: { pid: string }) {
         <button onClick={() => nav(`/${pid}/camera`)} aria-label="Camera"><Icon name="camera" size={20} /></button>
       </div>
       <div className="sc-scroll">
-        {snaps.map(([id, s]) => (
-          <button key={id} className="sc-row" onClick={() => open(id, s)}
-            onContextMenu={(e) => { e.preventDefault(); ed.itemLong(path, id, { fields, label: s.contact, template: { contact: "", time: "", opened: false, sent: false } })?.(); }}>
-            <span className={`sc-ic ${s.sent ? "sent" : s.opened ? "opened" : "new"} ${s.video ? "video" : ""}`}>{s.sent ? <Glyph i={mdiSend} size={11} /> : ""}</span>
-            <span className="sc-txt"><b>{s.contact}</b><span>{s.time}{!s.opened && !s.sent ? " · Press and hold to view" : s.sent ? (s.opened ? " · Opened" : " · Delivered") : ""}</span></span>
-          </button>
-        ))}
+        {snaps.map(([id, s]) => {
+          const fresh = !s.opened && !s.sent;
+          const status = s.sent ? (s.opened ? "Opened" : "Delivered") : fresh ? "Press and hold to view" : "Opened";
+          return (
+            <button key={id} className="sc-row" onClick={() => tap(id)}
+              onPointerDown={(e) => { if (fresh && e.button === 0) hold(id, s); }} onPointerUp={release} onPointerLeave={release} onPointerCancel={release}
+              onContextMenu={(e) => { e.preventDefault(); if (timer.current) return; /* appui long tactile pendant qu'on regarde le snap */ ed.itemLong(path, id, { fields: SNAP_FIELDS, label: s.contact, template: { contact: "", time: "", opened: false, sent: false } })?.(); }}>
+              <span className={`sc-ic ${s.sent ? "sent" : s.opened ? "opened" : "new"} ${s.video ? "video" : ""}`}>{s.sent ? <Glyph i={mdiSend} size={11} /> : ""}</span>
+              <span className="sc-txt"><b>{s.contact}</b><span>{s.time} · {status}{s.screenshot && <em className="sc-shot"> · Screenshot!</em>}</span></span>
+            </button>
+          );
+        })}
         {snaps.length === 0 && <Empty>No snaps yet</Empty>}
       </div>
-      <div className="sc-foot">{ed.canEdit ? <button onClick={() => ed.add(path, { contact: "", time: "", opened: false, sent: false }, { atStart: true, title: "Snap", fields })}>+ Snap</button> : "Double-tap to reply"}</div>
-      {viewing && <div className="sc-view" onClick={() => setViewing(null)}><div className="sc-photo">{viewing.s.contact}</div><span className="sc-timer">{left}</span></div>}
+      <div className="sc-foot">{ed.canEdit ? <button onClick={() => ed.add(path, { contact: "", time: "", img: "", caption: "", secs: 5, opened: false, sent: false }, { atStart: true, title: "Snap", fields: SNAP_FIELDS })}>+ Snap</button> : "Double-tap to reply"}</div>
+      {viewing && (
+        <div className="sc-view" onPointerUp={release}>
+          {viewing.s.img ? <img className="sc-img" src={img(viewing.s.img)} alt="" draggable={false} /> : <div className="sc-photo">{viewing.s.contact}</div>}
+          {viewing.s.caption && <div className="sc-caption">{viewing.s.caption}</div>}
+          <span className="sc-timer">{left}</span>
+        </div>
+      )}
       {ed.ui}
     </div>
   );
