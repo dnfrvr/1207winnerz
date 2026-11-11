@@ -19,6 +19,7 @@ import { Sparkles } from "../site/Win";
 import { IncomingCall } from "./Call";
 import { NotifCenter } from "./NotifCenter";
 import { SystemSounds } from "./sounds";
+import { FitTitles } from "./fitTitles";
 import { LockNotifs, NotifBanner, SeenOnOpen, useNotifBadges, useOpenNotif, useUnseenNotifs } from "./Notifs";
 import "./android.css";
 
@@ -56,6 +57,7 @@ export function Phone() {
         <SystemSounds pid={pid} />
         <IncomingCall pid={pid} os={os} />
         <SeenOnOpen pid={pid} />
+        <FitTitles />
         {/* Luminosité (Réglages) : voile noir par-dessus tout l'écran */}
         {(profile.brightness ?? 1) < 1 && <div className="screen-dim" style={{ opacity: (1 - (profile.brightness ?? 1)) * 0.85 }} />}
         {canEdit && <LoreBump pid={pid} />}
