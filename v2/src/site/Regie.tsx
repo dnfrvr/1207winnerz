@@ -17,7 +17,7 @@ import { useIncomingNotifs } from "../phone/Notifs";
 import { PIDS } from "./Site";
 import { callPath, duration, endCallPatches, RING_MS, startCallPatches, type LiveCall } from "../data/call";
 import { CHANNELS, channelOf, INSTA_ACTIONS, type Channel, type Field, type LiveMsg } from "../data/channels";
-import { AlsoPick, Cues, Journal, NpcBook, NpcHint, NpcOptions, useFirstNames, useRegieWriter, useSendAlso } from "./RegieTools";
+import { AlsoPick, sortApps, Cues, Journal, NpcBook, NpcHint, NpcOptions, useFirstNames, useRegieWriter, useSendAlso } from "./RegieTools";
 import "./regie.css";
 
 type Profile = { name?: string; avatar?: string | { src?: string } };
@@ -236,11 +236,13 @@ function NewNotif({ onSent }: { onSent: (t: Tab) => void }) {
       <PlayerPick value={pid} onChange={setPid} /></>}
       <label className="lbl" htmlFor="regie-app">App</label>
       <select id="regie-app" value={app} onChange={(e) => setApp(e.target.value)}>
-        <option value="messages">Messages (SMS)</option>
-        {groups.map((g) => <option key={g.tid} value={`group:${g.tid}`}>Messages — groupe « {g.name} » (tous)</option>)}
-        <option value="group:new">Messages — nouveau groupe…</option>
-        {installed.has("phone") && <option value="call">Téléphone — appel entrant</option>}
-        {available.map((c) => <option key={c.app} value={c.app}>{c.label}</option>)}
+        {sortApps([
+          ["messages", "Messages (SMS)"],
+          ...groups.map((g): [string, string] => [`group:${g.tid}`, `Messages — groupe « ${g.name} » (tous)`]),
+          ["group:new", "Messages — nouveau groupe…"],
+          ...(installed.has("phone") ? [["call", "Téléphone — appel entrant"] as [string, string]] : []),
+          ...available.map((c): [string, string] => [c.app, c.label]),
+        ]).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
       </select>
       {(app === "messages" || ch) && <AlsoPick pid={pid} value={also} onChange={setAlso} />}
       {app === "call" ? <CallForm key={pid} pid={pid} onSent={onSent} /> : app === "group:new" ? <NewGroup onCreated={(tid) => setApp(`group:${tid}`)} /> : group ? <GroupForm key={group.tid} group={group} onSent={onSent} /> : ch ? <ChannelForm key={`${pid}-${app}`} pid={pid} ch={ch} also={also} onSent={onSent} /> : <form className="regie-sub" onSubmit={submit}>

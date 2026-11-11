@@ -181,7 +181,9 @@ export function useFirstNames() {
 }
 
 // ─── Scénarios ───────────────────────────────────────────────────────────────
-const APP_OPTIONS: [string, string][] = [["messages", "Messages (SMS)"], ["call", "Téléphone — appel entrant"], ...CHANNELS.map((c) => [c.app, c.label] as [string, string])];
+/** Listes d'apps de la régie : ordre alphabétique du libellé. */
+export const sortApps = (l: [string, string][]) => [...l].sort((a, b) => a[1].localeCompare(b[1], "fr", { sensitivity: "base" }));
+const APP_OPTIONS = sortApps([["messages", "Messages (SMS)"], ["call", "Téléphone — appel entrant"], ...CHANNELS.map((c) => [c.app, c.label] as [string, string])]);
 const appLabel = (app: string) => APP_OPTIONS.find(([a]) => a === app)?.[1].split(" (")[0] ?? app;
 
 export function Cues({ onSent }: { onSent: (t: Tab) => void }) {
