@@ -128,3 +128,12 @@
 
 .os-android .bubble.photo { padding: 3px; }
 .os-android .bubble.photo img { border-radius: 1px; }
+
+/* Accusé iMessage sous le dernier message envoyé (« Delivered » / « Read 2:02 PM ») */
+.receipt { padding: 1px 16px 4px; text-align: right; font: bold 11px var(--ios-font); color: #7f8da3; text-shadow: 0 1px 0 #fff; }
+/* « en train d'écrire » : bulle grise à trois points qui pulsent */
+.bubble.typing { display: flex; gap: 4px; align-items: center; padding: 9px 13px 10px; }
+.bubble.typing i { width: 7px; height: 7px; border-radius: 50%; background: #9a9a9a; animation: msg-typing 1.2s infinite ease-in-out; }
+.bubble.typing i:nth-child(2) { animation-delay: .2s; }
+.bubble.typing i:nth-child(3) { animation-delay: .4s; }
+@keyframes msg-typing { 0%, 60%, 100% { opacity: .35; } 30% { opacity: 1; } }
