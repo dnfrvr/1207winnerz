@@ -1,7 +1,7 @@
 // Téléphone complet (iOS 6 ou Android 4 selon le perso) : cadre, écran à proportions fixes,
 // couches accueil/app animées, boutons physiques.
 import { Glyph } from "../kit/glyph";
-import { mdiApplication, mdiChevronLeft, mdiChevronRight, mdiHelpCircleOutline, mdiHome, mdiSwapHorizontal } from "@mdi/js";
+import { mdiApplication, mdiArrowCollapseDown, mdiArrowCollapseUp, mdiChevronLeft, mdiChevronRight, mdiHelpCircleOutline, mdiHome, mdiSwapHorizontal } from "@mdi/js";
 import { Suspense, useEffect, useRef, useState, type CSSProperties } from "react";
 import { Link, Route, Routes, useLocation, useNavigate, useParams, type Location } from "react-router-dom";
 import { useCanEdit, useValue, useWriter } from "../data/hooks";
@@ -45,7 +45,8 @@ export function Phone() {
   const os: OS = profile.os === "android" ? "android" : "ios";
   const scr = SCREENS[os];
   const canEdit = useCanEdit(pid);
-  const fit = useFullscreenFit(scr);
+  const { fit, editing, push, togglePush } = useFullscreenFit(scr);
+  const squeezed = !!fit && editing && push;
   const hasChassis = os === "android" && !!profile.chassisPng?.startsWith("/");
 
   const screen = (scale: number | null) => (
@@ -69,14 +70,15 @@ export function Phone() {
   return (
     <OSCtx.Provider value={os}>
       {/* Sur ordinateur, le téléphone est posé sur le même bureau que l'accueil (dégradé, reflets, étoiles). */}
-      <div className={`stage-root ${fit ? "fullscreen" : "w7-desk"}`}>
+      <div className={`stage-root ${fit ? "fullscreen" : "w7-desk"} ${squeezed ? "kb-push" : ""}`}>
         {!fit && <><div className="w7-bloom" aria-hidden /><Sparkles /></>}
+        {fit && editing && <KeyboardModeToggle push={push} onToggle={togglePush} />}
         <PhoneSwitcher pid={pid} compact={!!fit} canEdit={canEdit} />
         <div className="stage">
           {fit ? (
             <div className="fs-wrap">
               {screen(fit)}
-              <HardwareKeys pid={pid} os={os} />
+              {!squeezed && <HardwareKeys pid={pid} os={os} />}
             </div>
           ) : hasChassis ? (
             <ChassisDevice pid={pid} profile={profile} render={screen} />
@@ -256,50 +258,71 @@ function scrollIntoBox(t: HTMLElement) {
   box.scrollTo({ top: Math.max(0, top - (visible - t.offsetHeight) / 2), behavior: "smooth" });
 }
 
-/** En plein écran : échelle qui fait tenir l'écran (+ la barre de boutons) sans déformer. */
-function useFullscreenFit(scr: { w: number; h: number }): number | null {
-  const compute = () => {
-    if (!window.matchMedia(FULLSCREEN_QUERY).matches) return null;
-    const vv = window.visualViewport;
-    const w = vv?.width ?? window.innerWidth, h = vv?.height ?? window.innerHeight;
-    return Math.min(w / scr.w, (h - KEYBAR) / scr.h);
-  };
-  const [fit, setFit] = useState(compute);
-  const last = useRef({ w: 0, h: 0 });
+const KB_KEY = "uma-v2-kb-push";
+const readPush = () => { try { return localStorage.getItem(KB_KEY) === "1"; } catch { return false; } };
+const isField = (el: Element | null) => !!el?.matches?.("input, textarea, [contenteditable]");
+
+/**
+ * En plein écran : échelle qui fait tenir l'écran (+ la barre de boutons) sans déformer.
+ * Clavier ouvert, deux modes au choix (mémorisé sur l'appareil) :
+ * - « par-dessus » (défaut) : l'écran garde sa taille, le clavier le recouvre (--kb sert de marge aux formulaires) ;
+ * - « au-dessus » (push) : l'écran rétrécit pour tenir entièrement entre le haut et le clavier.
+ */
+function useFullscreenFit(scr: { w: number; h: number }) {
+  const compute = (w: number, h: number, keys: boolean) =>
+    window.matchMedia(FULLSCREEN_QUERY).matches ? Math.min(w / scr.w, (h - (keys ? KEYBAR : 0)) / scr.h) : null;
+  const vvSize = () => ({ w: window.visualViewport?.width ?? window.innerWidth, h: window.visualViewport?.height ?? window.innerHeight });
+  const [fit, setFit] = useState(() => { const { w, h } = vvSize(); return compute(w, h, true); });
+  const [editing, setEditing] = useState(false);
+  const [push, setPush] = useState(readPush);
+  const last = useRef({ w: 0, h: 0 }); // taille sans clavier
   useEffect(() => {
     const on = () => {
-      const vv = window.visualViewport;
-      const w = vv?.width ?? window.innerWidth, h = vv?.height ?? window.innerHeight;
-      // Clavier virtuel ouvert : la hauteur baisse sans que la largeur change → on garde l'échelle,
-      // le clavier passe par-dessus l'écran au lieu de le rétrécir.
-      const el = document.activeElement as HTMLElement | null;
-      const editing = !!el && (el.tagName === "INPUT" || el.tagName === "TEXTAREA" || el.isContentEditable);
-      setKeyboardInset(editing);
-      if (editing && Math.abs(w - last.current.w) < 2 && h < last.current.h) return;
-      last.current = { w, h };
-      setFit(compute());
+      const vv = window.visualViewport, { w, h } = vvSize();
+      const ed = isField(document.activeElement);
+      // Clavier virtuel ouvert : la hauteur baisse sans que la largeur change.
+      const kbOpen = ed && Math.abs(w - last.current.w) < 2 && h < last.current.h;
+      if (!kbOpen) last.current = { w, h };
+      setEditing(ed);
+      setKeyboardInset(ed && !push);
+      const s = document.documentElement.style;
+      s.setProperty("--vvh", `${h}px`); s.setProperty("--vvtop", `${vv?.offsetTop ?? 0}px`);
+      setFit(push && kbOpen ? compute(w, h, false) : compute(last.current.w, last.current.h, true));
     };
     // Champ touché : une fois le clavier ouvert, on fait défiler son formulaire pour le garder visible.
     const onFocus = (e: FocusEvent) => {
       const t = e.target as HTMLElement;
-      if (t.matches?.("input, textarea, [contenteditable]")) setTimeout(() => { setKeyboardInset(true); scrollIntoBox(t); }, 350);
+      if (isField(t)) setTimeout(() => { on(); scrollIntoBox(t); }, 350);
     };
     const onBlur = () => setTimeout(() => {
-      const a = document.activeElement as HTMLElement | null;
-      if (!a?.matches?.("input, textarea, [contenteditable]")) setKeyboardInset(false);
+      if (!isField(document.activeElement)) { setEditing(false); setKeyboardInset(false); }
     }, 50);
     on();
     window.addEventListener("resize", on);
     window.visualViewport?.addEventListener("resize", on);
+    window.visualViewport?.addEventListener("scroll", on);
     document.addEventListener("focusin", onFocus);
     document.addEventListener("focusout", onBlur);
     return () => {
       window.removeEventListener("resize", on); window.visualViewport?.removeEventListener("resize", on);
+      window.visualViewport?.removeEventListener("scroll", on);
       document.removeEventListener("focusin", onFocus); document.removeEventListener("focusout", onBlur);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [scr.w, scr.h]);
-  return fit;
+  }, [scr.w, scr.h, push]);
+  const togglePush = () => setPush((p) => { try { localStorage.setItem(KB_KEY, p ? "0" : "1"); } catch { /* stockage bloqué */ } return !p; });
+  return { fit, editing, push, togglePush };
+}
+
+/** Pendant la frappe en plein écran : bascule « clavier par-dessus l'écran » / « écran au-dessus du clavier ».
+ *  mousedown annulé → le champ garde le focus et le clavier reste ouvert. */
+function KeyboardModeToggle({ push, onToggle }: { push: boolean; onToggle: () => void }) {
+  return (
+    <button className="kb-toggle" onMouseDown={(e) => e.preventDefault()} onClick={onToggle}
+      aria-label={push ? "Laisser le clavier passer par-dessus l'écran" : "Placer l'écran au-dessus du clavier"}>
+      <Glyph i={push ? mdiArrowCollapseDown : mdiArrowCollapseUp} size={16} />{push ? "Écran entier" : "Réduire"}
+    </button>
+  );
 }
 
 // ─── Couches & animations ──────────────────────────────────────────────────

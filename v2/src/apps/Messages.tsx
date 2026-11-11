@@ -11,6 +11,7 @@ import type { Json, Patches } from "../data/store";
 import { clockLabel, dayLabel, inboxLabel, loreBetween, loreNowMs, loreToMs, msToLore, parseDateField, stampLabel } from "../lib/loreTime";
 import { useOS } from "../phone/common";
 import { img } from "../lib/img";
+import { canUpload, uploadImage } from "../lib/upload";
 import { AppFrame, BackButton, LORE_DATE_DEFAULT } from "../phone/IOSChrome";
 import { ActionSheet, Callout, PromptAlert, useLongPress, type SheetAction } from "../phone/Sheets";
 import { Glyph } from "../kit/glyph";
@@ -284,7 +285,7 @@ function Conversation({ pid }: { pid: string }) {
   const base = `threadMessages/${tid}`;
   const senderOf = (m: Msg) => (m.from === "npc" ? (m.npcName || contact) : names[m.from]?.name ?? m.from);
 
-  const send = (text: string) => {
+  const send = (text: string, photo?: string) => {
     const idx = insertAfter ? msgs.findIndex(([id]) => id === insertAfter) : msgs.length - 1;
     const prev = msgs[idx]?.[1], next = insertAfter ? msgs[idx + 1]?.[1] : undefined;
     let time: string;
@@ -299,10 +300,11 @@ function Conversation({ pid }: { pid: string }) {
     // Groupe partagé : tous les membres sauf l'expéditeur (titre = nom du groupe, « Prénom: texte »).
     const told = !mdj || insertAfter ? [] : isGroup && thread?.members ? Object.keys(thread.members).filter((m) => m !== sender) : sender !== pid ? [pid] : [];
     const notif: Patches = {};
+    const body = notifBody(text) || "Photo";
     for (const m of told) Object.assign(notif, notifPatch(m, isGroup
-      ? { app: "messages", title: contact, body: `${senderLabel === "Me" ? names[pid]?.name ?? pid : senderLabel}: ${notifBody(text)}`, link: `messages/${tid}`, thread: tid, msg: id }
-      : { app: "messages", title: senderLabel, body: notifBody(text), link: `messages/${tid}`, thread: tid, msg: id }), { [`phones/${m}/inbox/${tid}/unread`]: true });
-    write({ [`${base}/${id}`]: { ...from, text, time, order: orderBetween(prev?.order, next?.order) } as Json, ...notif });
+      ? { app: "messages", title: contact, body: `${senderLabel === "Me" ? names[pid]?.name ?? pid : senderLabel}: ${body}`, link: `messages/${tid}`, thread: tid, msg: id }
+      : { app: "messages", title: senderLabel, body, link: `messages/${tid}`, thread: tid, msg: id }), { [`phones/${m}/inbox/${tid}/unread`]: true });
+    write({ [`${base}/${id}`]: { ...from, text, ...(photo ? { img: photo } : {}), time, order: orderBetween(prev?.order, next?.order) } as Json, ...notif });
     if (insertAfter) setInsertAfter(id);
   };
 
@@ -357,7 +359,7 @@ function Conversation({ pid }: { pid: string }) {
         </div>
       )}
       {canSend && (
-        <Composer sms={sms} onSend={send} onTyping={imsg ? setTyping : undefined}
+        <Composer pid={pid} sms={sms} onSend={send} onTyping={imsg ? setTyping : undefined}
           who={senders.length > 1 ? senderLabel : null} onToggleWho={() => setSenderIdx((i) => (i + 1) % senders.length)} />
       )}
       {callout && (() => {
@@ -403,9 +405,27 @@ function BubbleEditor({ initial, onSave, onCancel }: { initial: string; onSave: 
   );
 }
 
-function Composer({ sms, onSend, onTyping, who, onToggleWho }: {
-  sms: boolean; onSend: (t: string) => void; onTyping?: (on: boolean) => void; who: string | null; onToggleWho: () => void;
+/** Bouton appareil photo : choisir une image, l'envoyer en ligne, puis l'envoyer dans le fil. */
+function PhotoPicker({ pid, className, onPick, size }: { pid: string; className: string; onPick: (url: string) => void; size: number }) {
+  const [busy, setBusy] = useState(false);
+  if (!canUpload) return null;
+  return (
+    <label className={`${className} ${busy ? "busy" : ""}`} aria-label="Photo">
+      <Glyph i={mdiCamera} size={size} />
+      <input type="file" accept="image/*" hidden disabled={busy} onChange={async (e) => {
+        const f = e.target.files?.[0]; e.target.value = "";
+        if (!f) return;
+        setBusy(true);
+        try { onPick(await uploadImage(f, pid)); } catch { alert("Envoi de la photo impossible."); } finally { setBusy(false); }
+      }} />
+    </label>
+  );
+}
+
+function Composer({ pid, sms, onSend, onTyping, who, onToggleWho }: {
+  pid: string; sms: boolean; onSend: (t: string, photo?: string) => void; onTyping?: (on: boolean) => void; who: string | null; onToggleWho: () => void;
 }) {
+  const photo = (cls: string, size: number) => <PhotoPicker pid={pid} className={cls} size={size} onPick={(url) => onSend("", url)} />;
   const [text, setTextRaw] = useState("");
   const setText = (t: string) => { setTextRaw(t); onTyping?.(!!t.trim()); };
   const ref = useRef<HTMLTextAreaElement>(null);
@@ -415,6 +435,7 @@ function Composer({ sms, onSend, onTyping, who, onToggleWho }: {
   if (os === "android") return (
     <div className="composer">
       {who !== null && <button className="who-btn" onClick={onToggleWho} title="Changer l'expéditeur">{who} <Glyph i={mdiSwapHorizontal} size={13} /></button>}
+      {photo("attach-holo", 24)}
       <textarea ref={ref} rows={1} value={text} placeholder="Text message"
         onChange={(e) => setText(e.target.value)}
         onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); submit(); } }} />
@@ -424,7 +445,7 @@ function Composer({ sms, onSend, onTyping, who, onToggleWho }: {
   return (
     <div className="composer">
       {who !== null && <button className="who-btn" onClick={onToggleWho} title="Changer l'expéditeur">{who} <Glyph i={mdiSwapHorizontal} size={13} /></button>}
-      {who === null && <button className="cam-btn" aria-label="Photo"><Glyph i={mdiCamera} size={18} /></button>}
+      {photo("cam-btn", 18)}
       <textarea ref={ref} rows={1} value={text} placeholder={sms ? "Text Message" : "iMessage"}
         onChange={(e) => setText(e.target.value)}
         onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); submit(); } }} />

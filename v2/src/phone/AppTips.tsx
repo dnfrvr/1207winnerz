@@ -12,11 +12,18 @@ import { Win } from "../site/Win";
 type Step = [string, ...string[]];
 const ADD = '[aria-label="Ajouter"]';
 const TIPS: Record<string, Step[] | null> = {
-  messages: [["Touche ce bouton pour démarrer une conversation.", '[aria-label="New message"]'], ["Maintiens une conversation pour la modifier ou la supprimer.", ".msg-row"],
+  // Ordre = le chemin réel : créer → destinataire → écrire → expéditeur → modifier, puis retour à la liste.
+  messages: [["Touche ce bouton pour démarrer une conversation.", '[aria-label="New message"]'],
+    ["Choisis le destinataire : un autre téléphone joué, ou tape un nom pour un contact non joué.", "@.suggest button", "@.to-field input"],
+    ["Écris ton message ici, puis touche « Send ».", "@.composer textarea"],
+    ["Touche l'appareil photo pour envoyer une photo.", "@.composer .cam-btn", "@.composer .attach-holo"],
+    ["Sur téléphone, pendant que tu écris, le bouton « Réduire » en haut de l'écran le place au-dessus du clavier ; « Écran entier » laisse le clavier passer par-dessus. Ton choix est retenu."],
     ["Touche ce bouton pour changer qui envoie le message.", "@.who-btn"], ["Maintiens une de tes bulles pour la modifier ou la supprimer.", "@.bubble.me"],
     ["Pour un contact non joué, maintiens son dernier message et choisis « Lu » : « Read » s'affiche sous ta bulle (iMessage).", "@.bubble.them"],
+    ["De retour dans la liste, maintiens une conversation pour la modifier ou la supprimer.", "@.msg-row"],
     ["Tire la barre d'état (tout en haut) vers le bas pour ouvrir le centre de notifications."]],
-  notes: [["Touche « + » pour créer une note.", '[aria-label="New note"]', '[aria-label="New memo"]'], ["Touche une note pour l'écrire.", ".nt-list button", ".nt-memo"], ["Touche la corbeille pour supprimer la note.", '@[aria-label="Move to trash"]', '@[aria-label="Delete"]']],
+  notes: [["Touche « + » pour créer une note.", '[aria-label="New note"]', '[aria-label="New memo"]'], ["Écris ta note : titre, puis le texte en dessous.", "@.nt-title", "@textarea"],
+    ["Touche la corbeille pour supprimer la note.", '@[aria-label="Move to trash"]', '@[aria-label="Delete"]'], ["De retour dans la liste, touche une note pour la rouvrir.", "@.nt-list button", "@.nt-memo"]],
   photos: [["Touche « + » pour ajouter une photo.", ADD], ["Maintiens une photo pour la modifier ou la supprimer.", "@.ph-cell"]],
   music: [["Dans l'onglet Songs, touche « + » pour ajouter un morceau.", ADD], ["Maintiens un morceau ou une playlist pour le modifier.", ".k-cell"]],
   phone: [["Touche « + » pour ajouter un appel ou un contact, selon l'onglet.", ADD], ["Maintiens un appel, un message vocal ou un contact pour le modifier.", ".k-cell"],
@@ -24,8 +31,8 @@ const TIPS: Record<string, Step[] | null> = {
   calendar: [["Touche « + » pour ajouter un événement.", ADD], ["Maintiens un événement pour le modifier ou le supprimer.", ".k-cell"]],
   clock: [["Touche « + » pour ajouter une alarme ou une ville, selon l'onglet.", ADD], ["Maintiens une ville ou une alarme pour la modifier.", ".clk-row"]],
   weather: [["Touche le nom de la ville pour changer la température et le temps.", ".wx-top"], ["Touche un jour des prévisions pour le modifier.", ".wx-day"], ["Touche « i » pour ajouter des villes et passer en °F.", ".wx-info"]],
-  settings: [["Touche ici pour changer le fond d'écran.", ".k-cell|Wallpaper", ".k-cell|Display"], ["Touche ici pour changer la vidéo du viseur de l'appareil photo.", ".k-cell|Photos & Camera", ".k-cell|Camera"], ["Dans Wi-Fi et Bluetooth, touche « + » pour ajouter un réseau ou un appareil.", ".k-cell|Wi-Fi"],
-    ["Ici, l'écran verrouillé peut avoir son propre fond : touche son aperçu, ou « Camera Roll » pour choisir verrouillage, accueil ou les deux. Le curseur règle la luminosité.", ".k-cell|Wallpaper", ".k-cell|Display"],
+  settings: [["Touche ici pour changer le fond d'écran. L'écran verrouillé peut avoir son propre fond : touche son aperçu, ou « Camera Roll » pour choisir verrouillage, accueil ou les deux. Le curseur règle la luminosité.", ".k-cell|Wallpaper", ".k-cell|Display"],
+    ["Touche ici pour changer la vidéo du viseur de l'appareil photo.", ".k-cell|Photos & Camera", ".k-cell|Camera"], ["Dans Wi-Fi et Bluetooth, touche « + » pour ajouter un réseau ou un appareil.", ".k-cell|Wi-Fi"],
     ["Touche ici pour choisir ta sonnerie (n'importe quelle chanson Deezer) et les sons des SMS, du verrouillage et du clavier.", ".k-cell|Sounds", ".k-cell|Sound"]],
   insta: [["Maintiens une photo pour modifier ou supprimer la publication.", ".ig-photo"], ["Sur ton profil, touche ce bouton pour ajouter une photo.", '@[aria-label="New post"]']],
   twitter: [["Touche ce bouton pour écrire un tweet.", '[aria-label="Tweet"]'], ["Maintiens un tweet pour le modifier ou le supprimer.", ".tw-tweet"]],
@@ -39,8 +46,9 @@ const TIPS: Record<string, Step[] | null> = {
     ["Touche une épingle puis la flèche de sa bulle : fiche du lieu et itinéraire (« Directions To Here »).", ".mp-pin"]],
   snapchat: [["Touche « + Snap » pour ajouter un snap.", ".sc-foot button"], ["Maintiens un snap déjà ouvert pour le modifier ou le supprimer.", ".sc-row"],
     ["Maintiens le doigt sur un nouveau snap pour le voir (lâcher = ouvert) ; touche deux fois une ligne pour répondre.", ".sc-row"]],
-  groupme: [["Touche ce bouton pour créer un groupe.", '[aria-label="New group"]'], ["Maintiens un groupe pour le modifier ou le supprimer.", ".gm-row"],
-    ["Touche « + » pour ajouter le message de quelqu'un d'autre ; le champ en bas écrit en ton nom.", "@.gm-attach"], ["Maintiens un message pour le modifier ou le supprimer.", "@.gm-msg"]],
+  groupme: [["Touche ce bouton pour créer un groupe.", '[aria-label="New group"]'],
+    ["Touche « + » pour ajouter le message de quelqu'un d'autre ; le champ en bas écrit en ton nom.", "@.gm-attach"], ["Maintiens un message pour le modifier ou le supprimer.", "@.gm-msg"],
+    ["De retour dans la liste, maintiens un groupe pour le modifier ou le supprimer.", "@.gm-row"]],
   starbucks: [["Touche « Edit » pour changer les étoiles et le solde de la carte.", ".barbtn|Edit"], ["Maintiens un achat ou un café favori pour le modifier.", ".k-cell"]],
   files: [["Touche « + » pour ajouter un fichier.", ADD], ["Touche ici pour créer un dossier.", ".fl-add"], ["Maintiens un fichier ou un dossier pour le modifier.", ".k-cell"]],
   grindr: [["Touche ton profil pour le modifier.", ".gr-me"], ["Maintiens un profil pour le modifier ou le supprimer.", ".gr-cell"]],
@@ -61,8 +69,9 @@ const TIPS: Record<string, Step[] | null> = {
     ["Carte ouverte, touche « i » pour la retourner et voir son dos.", "@.pb-i"]],
   reminders: [["Touche « + » pour ajouter un rappel.", ADD], ["Touche la case pour cocher un rappel.", ".rm-check"], ["Maintiens un rappel pour le modifier.", ".rm-row"],
     ["Touche « Lists » pour créer d'autres listes ; une échéance dépassée s'affiche en rouge.", ".barbtn|Lists"]],
-  messenger: [["Touche ce bouton pour créer une conversation.", '[aria-label="New conversation"]'], ["Maintiens une conversation pour la modifier ; touche-la pour l'ouvrir.", ".msn-list button"],
-    ["Touche « + » pour ajouter un message reçu ; le champ en bas écrit en ton nom.", "@.msn-attach"], ["Maintiens une bulle pour la modifier ou la supprimer.", "@.msn-row"]],
+  messenger: [["Touche ce bouton pour créer une conversation.", '[aria-label="New conversation"]'],
+    ["Touche « + » pour ajouter un message reçu ; le champ en bas écrit en ton nom.", "@.msn-attach"], ["Maintiens une bulle pour la modifier ou la supprimer.", "@.msn-row"],
+    ["De retour dans la liste, maintiens une conversation pour la modifier.", "@.msn-list button"]],
   kik: [["Touche ce bouton pour démarrer une discussion.", '[aria-label="New chat"]'], ["Touche ce bouton pour changer qui envoie le message.", "@.kk-who"], ["Maintiens un message pour le modifier.", "@.kk-bubble"]],
   vine: [["Touche ce bouton pour ajouter une vidéo.", '[aria-label="Record"]'], ["Maintiens une vidéo pour la modifier.", ".vn-post"]],
   askfm: [["Maintiens le profil pour le modifier.", ".af2-prof"], ["Maintiens une question pour la modifier.", ".af2-qa"]],
@@ -92,13 +101,13 @@ const props = (el: Element) => { const k = Object.keys(el).find((x) => x.startsW
 function reacts(el: Element, hold: boolean): boolean {
   for (let e: Element | null = el, n = 0; e && n < 3; e = e.parentElement, n++) {
     const p = props(e);
-    if (hold ? p?.onContextMenu || p?.onPointerDown : p?.onClick || e.tagName === "A") return true;
+    if (hold ? p?.onContextMenu || p?.onPointerDown : p?.onClick || /^(A|INPUT|TEXTAREA|LABEL)$/.test(e.tagName)) return true;
   }
   return false;
 }
 const isHold = (s: Step) => s[0].startsWith("Maintiens");
 
-function locate(tour: HTMLElement, targets: string[], hold: boolean): Box | null {
+function locate(tour: HTMLElement, targets: string[], hold: boolean): (Box & { el: Element }) | null {
   const root = tour.parentElement; if (!root) return null;
   const R = tour.getBoundingClientRect(); const k = R.width / tour.offsetWidth || 1;
   for (const t of targets) {
@@ -110,7 +119,7 @@ function locate(tour: HTMLElement, targets: string[], hold: boolean): Box | null
       // Vraiment visible : au centre, le premier élément sous la visite doit être la cible (pas une barre qui la cache).
       const hit = document.elementsFromPoint(r.left + r.width / 2, r.top + r.height / 2).find((e) => !tour.contains(e));
       if (!hit || !el.contains(hit)) continue;
-      return { x: (r.left - R.left) / k, y: (r.top - R.top) / k, w: r.width / k, h: r.height / k, W: tour.offsetWidth, H: tour.offsetHeight };
+      return { el, x: (r.left - R.left) / k, y: (r.top - R.top) / k, w: r.width / k, h: r.height / k, W: tour.offsetWidth, H: tour.offsetHeight };
     }
   }
   return null;
@@ -134,22 +143,58 @@ export function AppTips({ pid, app }: { pid: string; app: string }) {
   const cardRef = useRef<HTMLDivElement>(null);
   const [cardH, setCardH] = useState(150); // hauteur réelle de la carte, mesurée, pour savoir où elle tient
   const step = canEdit && steps ? steps[i] : undefined;
-  const waits = !!step?.[1]?.startsWith("@");
+  const target = useRef<Element | null>(null);
+  // Juste après un geste réussi, l'étape suivante attend sa cible (le temps que l'écran change) au lieu de s'afficher dans le vide.
+  const [acted, setActed] = useState(false);
+  const [sheet, setSheet] = useState(false); // feuille d'actions / fenêtre ouverte par l'app : la visite s'efface
+  const [skipped, setSkipped] = useState<Set<number>>(() => new Set());
+  const shown = useRef(-1); // dernière étape réellement affichée (une étape vue garde son point)
+  const waits = !!step?.[1]?.startsWith("@") || acted;
 
   // L'app se charge et s'anime à l'ouverture : on suit la cible tant que l'étape est affichée.
+  // Pas de saut en avant : les étapes défilent toujours dans l'ordre, une par point.
   useLayoutEffect(() => {
     if (!step) return;
     const tick = () => {
       if (!ref.current) return;
       if (cardRef.current) { const h = cardRef.current.offsetHeight; setCardH((o) => (o === h ? o : h)); }
-      const b = locate(ref.current, step.slice(1), isHold(step));
-      // Cible absente (app ouverte dans un fil, fil sans bouton d'expéditeur…) : on saute à une étape suivante dont la cible est visible.
-      if (!b && step.length > 1 && steps) for (let j = i + 1; j < steps.length; j++) if (steps[j].length > 1 && locate(ref.current, steps[j].slice(1), isHold(steps[j]))) { setI(j); return; }
-      setBox((o) => (JSON.stringify(o) === JSON.stringify(b) ? o : b));
+      const open = !!ref.current.parentElement?.querySelector(".sheet-backdrop");
+      setSheet(open);
+      // Appui long réussi (la feuille d'actions ne peut venir que de la cible, seul endroit touchable) : étape suivante.
+      if (open && isHold(step) && target.current) { target.current = null; setActed(true); setI(i + 1); return; }
+      const b = open ? null : locate(ref.current, step.slice(1), isHold(step));
+      // Bouton absent sur cet écran (pas d'expéditeur à choisir, pas d'envoi de photo…) mais l'étape suivante est là :
+      // on passe juste à celle-ci, et l'étape sautée disparaît des points.
+      const next = steps?.[i + 1];
+      if (!b && !open && step[1]?.startsWith("@") && next && next.length > 1 && locate(ref.current, next.slice(1), isHold(next))) {
+        if (shown.current !== i) setSkipped((s) => new Set(s).add(i));
+        setI(i + 1); return;
+      }
+      if (b) shown.current = i;
+      target.current = b?.el ?? null;
+      const nb = b && { x: b.x, y: b.y, w: b.w, h: b.h, W: b.W, H: b.H };
+      if (nb) setActed(false);
+      setBox((o) => (JSON.stringify(o) === JSON.stringify(nb) ? o : nb));
     };
     tick(); const h = setInterval(tick, 250);
     return () => clearInterval(h);
-  }, [step, waits, steps, i]);
+  }, [step, steps, i]);
+  useEffect(() => { if (!acted) return; const t = setTimeout(() => setActed(false), 2500); return () => clearTimeout(t); }, [acted]);
+  // Le trou du voile laisse passer le doigt : faire le geste sur la cible passe à l'étape suivante
+  // (sauf un champ de texte : on y écrit, puis « Suivant »).
+  useEffect(() => {
+    const root = ref.current?.parentElement;
+    if (!step || !root) return;
+    const hold = isHold(step);
+    const on = (e: Event) => {
+      const el = target.current;
+      if (!el || !(e.target instanceof Node) || !el.contains(e.target) || /^(INPUT|TEXTAREA)$/.test(el.tagName)) return;
+      if ((e.type === "contextmenu") !== hold) return;
+      target.current = null; setActed(true); setI(i + 1);
+    };
+    root.addEventListener("click", on, true); root.addEventListener("contextmenu", on, true);
+    return () => { root.removeEventListener("click", on, true); root.removeEventListener("contextmenu", on, true); };
+  }, [step, i]);
   useEffect(() => { if (steps && i > 0) save(app, i); }, [i, steps, app]);
   useEffect(() => {
     const on = (e: Event) => { if ((e as CustomEvent).detail === app) setI(0); };
@@ -159,7 +204,7 @@ export function AppTips({ pid, app }: { pid: string; app: string }) {
 
   // Étape « @ » sans sa cible à l'écran : rien d'affiché, mais l'élément reste monté pour la guetter.
   if (!step || !steps) return null;
-  if (waits && !box) return <div className="at-tour waiting" ref={ref} aria-hidden />;
+  if ((waits && !box) || sheet) return <div className="at-tour waiting" ref={ref} aria-hidden />;
   const close = () => setI(steps.length);
   const hold = isHold(step);
   const last = i === steps.length - 1;
@@ -182,7 +227,7 @@ export function AppTips({ pid, app }: { pid: string; app: string }) {
         {/* Même fenêtre Windows 7 que la visite guidée de l'accueil. */}
         <Win title="Prise en main" icon={<Glyph i={mdiHelpCircleOutline} size={15} />}>
           <p className="at-text">{step[0]}</p>
-          {steps.length > 1 && <span className="tour-dots" aria-hidden>{steps.map((_, k) => <i key={k} className={k === i ? "on" : ""} />)}</span>}
+          {steps.length - skipped.size > 1 && <span className="tour-dots" aria-hidden>{steps.map((_, k) => !skipped.has(k) && <i key={k} className={k === i ? "on" : ""} />)}</span>}
           <div className="tour-btns">
             {!last && <button type="button" className="linkish" onClick={close}>Passer</button>}
             <button type="button" className="y2k-btn" onClick={() => setI(i + 1)}>{last ? "Compris" : "Suivant ›"}</button>

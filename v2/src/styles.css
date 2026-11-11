@@ -61,6 +61,11 @@ textarea, input { font: inherit; color: inherit; }
 .fullscreen .device { width: auto; padding: 0; border-radius: 0; background: transparent; box-shadow: none; }
 .fullscreen .device::before, .fullscreen .device-home { display: none; }
 .fullscreen .screen { box-shadow: none; }
+/* Écran au-dessus du clavier : la scène suit la partie visible de la page (visualViewport, iOS compris). */
+.fullscreen.kb-push .stage { position: fixed; left: 0; right: 0; top: var(--vvtop, 0px); height: var(--vvh, 100dvh); min-height: 0; }
+.fullscreen.kb-push .sw-btn, .fullscreen.kb-push .sw-pop { display: none; }
+.kb-toggle { position: fixed; z-index: 50; right: 8px; top: calc(var(--vvtop, 0px) + 6px); display: flex; align-items: center; gap: 4px;
+  padding: 5px 10px; border-radius: 14px; font: 600 12px var(--ios-font); color: #fff; background: rgba(40, 40, 44, .82); border: 1px solid rgba(255,255,255,.25); }
 
 /* ─── Barre d'état iOS 6 ─────────────────────────────────────────────────── */
 .ios-status {
@@ -159,7 +164,9 @@ textarea, input { font: inherit; color: inherit; }
 @keyframes homeIn { from { transform: scale(1.25); opacity: 0; } }
 .app-layer { position: absolute; inset: 0; overflow: hidden; will-change: transform, opacity; backface-visibility: hidden; }
 /* Visite guidée des apps (AppTips) : projecteur sur la cible, doigt fantôme, carte fléchée. */
-.at-tour { position: absolute; inset: 0; z-index: 60; overflow: hidden; font: 14px/1.4 var(--ios-font); -webkit-user-select: none; user-select: none; }
+/* Seuls le voile (hors trou, règle evenodd) et la carte captent le doigt : la cible reste touchable. */
+.at-tour { position: absolute; inset: 0; z-index: 60; overflow: hidden; font: 14px/1.4 var(--ios-font); -webkit-user-select: none; user-select: none; pointer-events: none; }
+.at-shade path, .at-card { pointer-events: auto; }
 .at-tour.waiting { pointer-events: none; visibility: hidden; }
 .at-shade { position: absolute; inset: 0; width: 100%; height: 100%; animation: atFade .35s ease-out both; }
 .at-shade path { fill: rgba(0, 0, 0, .62); fill-rule: evenodd; }
