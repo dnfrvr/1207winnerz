@@ -290,11 +290,15 @@ function StepForm({ onAdd }: { onAdd: (s: Step) => void }) {
         <select value={pid} onChange={(e) => setPid(e.target.value)} aria-label="Téléphone">{PIDS.map((p) => <option key={p} value={p}>{names[p]}</option>)}</select>
         <select value={app} onChange={(e) => setApp(e.target.value)} aria-label="App">{APP_OPTIONS.map(([a, l]) => <option key={a} value={a}>{l}</option>)}</select>
       </div>
-      <input list="regie-step-npcs" value={contact} onChange={(e) => setContact(e.target.value)} placeholder={ch ? `${ch.contactLabel} (${ch.contactHint})` : app === "call" ? "Qui appelle" : "De la part de"} aria-label="De la part de" autoComplete="off" required />
+      <label className="lbl" htmlFor="regie-step-contact">{ch?.contactLabel ?? (app === "call" ? "Qui appelle" : "De la part de")}</label>
+      <input id="regie-step-contact" list="regie-step-npcs" value={contact} onChange={(e) => setContact(e.target.value)} placeholder={ch ? `${ch.contactLabel} (${ch.contactHint})` : app === "call" ? "Qui appelle" : "De la part de"} aria-label="De la part de" autoComplete="off" required />
       <datalist id="regie-step-npcs"><NpcOptions /></datalist>
       {has("sender") && <input value={sender} onChange={(e) => setSender(e.target.value)} placeholder="Membre qui écrit" aria-label="Membre qui écrit" autoComplete="off" />}
       {has("subject") && <input value={subject} onChange={(e) => setSubject(e.target.value)} placeholder="Objet du mail" aria-label="Objet" autoComplete="off" />}
-      {(app === "messages" || has("text")) && <textarea rows={2} value={text} onChange={(e) => setText(e.target.value)} placeholder="Texte" aria-label="Texte" />}
+      {(app === "messages" || has("text"))
+        ? <><label className="lbl" htmlFor="regie-step-text">{app === "gmail" ? "Texte du mail" : app === "voicemail" ? "Ce que dit le message vocal" : "Contenu du message"}</label>
+          <textarea id="regie-step-text" rows={3} value={text} onChange={(e) => setText(e.target.value)} placeholder="Ce que le joueur recevra" /></>
+        : <small className="hint">{app === "call" ? "Appel entrant : le téléphone sonne 30 s, pas de texte." : "Cette app n'envoie pas de texte : seulement l'expéditeur."}</small>}
       <button className="y2k-btn" disabled={!ok}>Ajouter l'étape</button>
     </form>
   );

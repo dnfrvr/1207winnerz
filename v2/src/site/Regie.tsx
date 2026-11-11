@@ -2,7 +2,7 @@
 // écrit pour de vrai dans le téléphone (Messages, Messenger, GroupMe, Kik, Grindr, Mail, Snapchat,
 // appel manqué, activité Instagram) ; pour les apps de discussion, le joueur peut répondre et le MDJ
 // suit et alimente la conversation en direct depuis cette fenêtre (un onglet par conversation).
-import { mdiBullhorn, mdiCamera, mdiClose, mdiOpenInNew, mdiPlus, mdiWindowMaximize, mdiWindowMinimize } from "@mdi/js";
+import { mdiBullhorn, mdiCamera, mdiClose, mdiOpenInNew, mdiPlus, mdiWindowMaximize, mdiWindowMinimize, mdiWindowRestore } from "@mdi/js";
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useData, useValue } from "../data/hooks";
@@ -30,6 +30,7 @@ const LS_TABS = "uma-v2-regie-tabs";
 const TOOLS: [string, string][] = [["tool:cues", "Scénarios"], ["tool:players", "Joueurs"], ["tool:npcs", "PNJ"], ["tool:log", "Journal"]];
 const LS_OPEN = "uma-v2-regie-open";
 const LS_MIN = "uma-v2-regie-min";
+const LS_BIG = "uma-v2-regie-big";
 const readLS = <T,>(k: string, d: T): T => { try { const v = localStorage.getItem(k); return v ? (JSON.parse(v) as T) : d; } catch { return d; } };
 const writeLS = (k: string, v: unknown) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch { /* rien */ } };
 
@@ -57,6 +58,8 @@ export function Regie() {
   // Réduite : seule la barre de titre reste (sur téléphone, on voit l'écran du perso derrière).
   const [min, setMin] = useState(() => readLS(LS_MIN, false));
   useEffect(() => writeLS(LS_MIN, min), [min]);
+  const [big, setBig] = useState(() => readLS(LS_BIG, false));
+  useEffect(() => writeLS(LS_BIG, big), [big]);
   useEffect(() => writeLS(LS_TABS, tabs), [tabs]);
   useEffect(() => writeLS(LS_OPEN, open), [open]);
 
@@ -85,11 +88,13 @@ export function Regie() {
         <Glyph i={mdiBullhorn} size={16} /> Régie{anyUnread && <i className="dot" aria-label="Nouvelle réponse" />}
       </button>
       {open && (
-        <section className={`regie w7-win ${min ? "min" : ""}`} aria-label="Régie du MDJ">
+        <section className={`regie w7-win ${min ? "min" : big ? "big" : ""}`} aria-label="Régie du MDJ">
           <header className="w7-title"><span className="w7-ico" aria-hidden><Glyph i={mdiBullhorn} size={15} /></span>
             <h2 onClick={() => min && setMin(false)}>Régie MDJ{anyUnread && min ? " — nouvelle réponse" : ""}</h2>
             <button className="regie-min" onClick={() => setMin((m) => !m)} aria-label={min ? "Agrandir la régie" : "Réduire la régie"} aria-expanded={!min}>
-              <Glyph i={min ? mdiWindowMaximize : mdiWindowMinimize} size={13} /></button>
+              <Glyph i={min ? mdiWindowRestore : mdiWindowMinimize} size={13} /></button>
+            {!min && <button className="regie-min regie-big" onClick={() => setBig((b) => !b)} aria-label={big ? "Rétablir la taille de la régie" : "Agrandir la régie"} aria-pressed={big} title={big ? "Rétablir" : "Agrandir"}>
+              <Glyph i={big ? mdiWindowRestore : mdiWindowMaximize} size={13} /></button>}
             <button className="regie-x" onClick={() => setOpen(false)} aria-label="Fermer la régie"><Glyph i={mdiClose} size={14} /></button></header>
           {!min && <div className="w7-body">
             <nav className="regie-tabs" role="tablist">

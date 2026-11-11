@@ -7,8 +7,15 @@
 .regie-fab.ping { animation: regie-ping 1s ease-in-out 3; }
 @keyframes regie-ping { 50% { transform: translateY(-4px); } }
 
-.regie.w7-win { position: fixed; z-index: 61; right: 12px; bottom: 92px; width: min(380px, calc(100vw - 24px)); font-family: var(--w7-font); }
-.regie .w7-body { display: flex; flex-direction: column; max-height: min(560px, calc(100dvh - 150px)); }
+.regie.w7-win { position: fixed; z-index: 61; right: 12px; bottom: 92px; width: min(430px, calc(100vw - 24px)); font-family: var(--w7-font); }
+.regie .w7-body { display: flex; flex-direction: column; max-height: min(680px, calc(100dvh - 150px)); }
+/* Les champs ne s'écrasent pas quand le contenu dépasse : c'est le panneau qui défile. */
+.regie-form > *, .regie-sub > * { flex-shrink: 0; }
+/* Grande fenêtre (bouton « Agrandir ») */
+.regie.w7-win.big { width: min(780px, calc(100vw - 24px)); bottom: 60px; }
+.regie.big .w7-body { height: calc(100dvh - 120px); max-height: none; }
+.regie.big .regie-msgs { max-height: none; }
+.regie-big { border-radius: 0 !important; border-right: 0 !important; }
 .regie-x { width: 30px; height: 20px; align-self: flex-start; display: flex; align-items: center; justify-content: center; color: #fff; cursor: pointer;
   border: 1px solid rgba(0,0,0,.55); border-top: 0; border-radius: 0 0 4px 4px; background: linear-gradient(#e8a493, #d0573c 50%, #b5310f 51%, #d96d4f); }
 
@@ -73,6 +80,8 @@
   .regie-fab { right: 10px; padding: 5px 9px; }
   .regie.w7-win { left: 6px; right: 6px; bottom: 6px; width: auto; }
   .regie .w7-body { max-height: 52dvh; }
+  .regie.w7-win.big { width: auto; bottom: 6px; }
+  .regie.big .w7-body { height: calc(100dvh - 60px); }
   .regie .regie-msgs { min-height: 90px; max-height: 24dvh; }
   /* Réduite : coin bas droit, hors du bouton principal (au centre) */
   .regie.w7-win.min { left: auto; width: 150px; }
@@ -146,3 +155,5 @@
 .regie-player select { flex: 1; min-width: 0; }
 .regie-log li { display: flex; flex-direction: column; gap: 1px; padding: 4px 0; border-bottom: 1px dotted #d5e3f1; font: 12px/1.3 var(--w7-font); overflow-wrap: anywhere; }
 .regie-log li small { font: 10px var(--w7-font); color: #6b7f96; }
+.regie-stepform textarea { font: 13px var(--w7-font); padding: 5px 7px; border: 1px solid #abadb3; border-top-color: #e3e9ef; border-radius: 2px; background: #fff; resize: vertical; }
+.regie-stepform textarea:focus { outline: 0; border-color: #3d7bad; box-shadow: 0 0 0 1px #c7e0f4; }
