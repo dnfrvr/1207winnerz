@@ -68,3 +68,10 @@
 .os-android .ct-head b { font: 400 22px var(--and-font); text-shadow: none; }
 .os-android .ct-photo { box-shadow: none; padding: 0; }
 .os-android .ct-actions button { border-radius: 2px; border: 0; background: #e0e0e0; color: #222; font: 500 13px var(--and-font); text-transform: uppercase; }
+
+/* Récents iOS 6 : « (2) » pour les appels regroupés, bouton bleu « i » (détail) à droite */
+.ph-count { font-weight: normal; }
+.ph-info {
+  flex: none; display: grid; place-items: center; width: 27px; height: 27px; margin-left: 8px; border-radius: 50%; color: #fff;
+  background: linear-gradient(#5aa5f5, #2a6fd6 50%, #1d5fc7 51%, #2a74dc); border: 2px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,.45);
+}

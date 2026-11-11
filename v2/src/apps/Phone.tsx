@@ -2,14 +2,14 @@
 // contact, écran d'appel simulé.
 import { useEffect, useState } from "react";
 import { Route, Routes, useNavigate, useParams } from "react-router-dom";
-import { useList, useValue } from "../data/hooks";
-import { inboxLabel, loreNowMs, loreToMs } from "../lib/loreTime";
+import { useCanEdit, useList, useValue, useWriter } from "../data/hooks";
+import { clockLabel, dayLabel, inboxLabel, loreNowMs, loreToMs } from "../lib/loreTime";
 import { AppFrame, BackButton, StatusBar } from "../phone/IOSChrome";
 import { LORE_DATE_DEFAULT, useLoreStamp, useOS } from "../phone/common";
 import { AddButton, Avatar, Cell, Empty, Grouped, Plain, PlainHeader, Section, Segmented, TabBar, useEditor, type Tab } from "../kit/kit";
 import { Glyph } from "../kit/glyph";
 import {
-  mdiAccountBox, mdiAccountPlus, mdiBackspace, mdiCallMade, mdiCallMissed, mdiCallReceived, mdiDialpad, mdiMicrophoneOff, mdiPencil, mdiPhone,
+  mdiAccountBox, mdiAccountPlus, mdiBackspace, mdiCallMade, mdiChevronRight, mdiCallMissed, mdiCallReceived, mdiDialpad, mdiMicrophoneOff, mdiPencil, mdiPhone,
   mdiPhoneHangup, mdiPhoneOutgoing, mdiPlus, mdiVideo, mdiVolumeHigh,
 } from "@mdi/js";
 import { balloons } from "../phone/balloons";
@@ -20,7 +20,7 @@ type Contact = { name?: string; phone?: string; photo?: string; order?: number; 
 type Voicemail = { contact?: string; duration?: string; time?: string; transcript?: string; order?: number; deleted?: boolean };
 
 // ── écran d'appel (partagé) ──────────────────────────────────────────────────
-function CallScreen({ name, onEnd }: { name: string; onEnd: () => void }) {
+function CallScreen({ name, onEnd }: { name: string; onEnd: (secs: number) => void }) {
   const os = useOS();
   const [t, setT] = useState(0);
   useEffect(() => { const h = setInterval(() => setT((n) => n + 1), 1000); return () => clearInterval(h); }, []);
@@ -34,15 +34,32 @@ function CallScreen({ name, onEnd }: { name: string; onEnd: () => void }) {
           <div className="ph-call-grid">{([["mute", mdiMicrophoneOff], ["keypad", mdiDialpad], ["speaker", mdiVolumeHigh], ["add call", mdiPlus], ["FaceTime", mdiVideo], ["contacts", mdiAccountBox]] as const).map(([l, g]) => <button key={l} onClick={(e) => balloons(e.currentTarget)}><Glyph i={g} size={34} />{l}</button>)}</div>
         ) : <Avatar name={name} size={140} round={false} />}
       </div>
-      <button className="ph-end" onClick={onEnd}><Glyph i={mdiPhoneHangup} size={os === "ios" ? 30 : 32} />{os === "ios" ? "End" : ""}</button>
+      <button className="ph-end" onClick={() => onEnd(Math.max(0, t - 3))}><Glyph i={mdiPhoneHangup} size={os === "ios" ? 30 : 32} />{os === "ios" ? "End" : ""}</button>
     </div>
   );
 }
 
-function useCalling() {
+/** Appel simulé ; à la fin, il s'ajoute au journal (« Recents ») du téléphone, comme un vrai appel sortant. */
+function useCalling(pid: string) {
   const [calling, setCalling] = useState<string | null>(null);
-  return { calling, call: (n: string) => setCalling(n), ui: calling ? <CallScreen name={calling} onEnd={() => setCalling(null)} /> : null };
+  const canEdit = useCanEdit(pid);
+  const { insert } = useWriter(pid);
+  const stamp = useLoreStamp();
+  const end = (secs: number) => {
+    if (canEdit && calling) insert(`phones/${pid}/data/calls`, { contact: calling, type: "outgoing", time: stamp, duration: `${Math.floor(secs / 60)} min ${String(secs % 60).padStart(2, "0")} s` }, { atStart: true });
+    setCalling(null);
+  };
+  return { calling, call: (n: string) => setCalling(n), ui: calling ? <CallScreen name={calling} onEnd={end} /> : null };
 }
+
+/** Durée « 2 min 18 s » → « 2 minutes » (fiche iOS 6). */
+const minutesLabel = (d?: string) => {
+  const [m, sec] = ((d ?? "").match(/\d+/g) ?? []).map(Number);
+  if (m === undefined) return d ?? "";
+  const n = Math.max(1, Math.round(m + (sec || 0) / 60));
+  return `${n} minute${n > 1 ? "s" : ""}`;
+};
+const CALL_LABEL = { missed: "Missed Call", incoming: "Incoming Call", outgoing: "Outgoing Call" } as const;
 
 // ── Téléphone ────────────────────────────────────────────────────────────────
 const TABS: Tab[] = [
@@ -63,6 +80,7 @@ export default function PhoneApp({ pid }: { pid: string }) {
     <Routes>
       <Route index element={<PhoneHome pid={pid} />} />
       <Route path="contact/:id" element={<ContactCard pid={pid} back="phone" />} />
+      <Route path="recent/:id" element={<RecentInfo pid={pid} />} />
     </Routes>
   );
 }
@@ -71,7 +89,7 @@ function PhoneHome({ pid }: { pid: string }) {
   const os = useOS();
   const [tab, setTab] = useState(() => sessionStorage.getItem("phone-tab") ?? "recents");
   useEffect(() => { try { sessionStorage.setItem("phone-tab", tab); } catch { /* rien */ } }, [tab]);
-  const c = useCalling();
+  const c = useCalling(pid);
   const ed = useEditor(pid);
   const stamp = useLoreStamp();
   const titles: Record<string, string> = { favorites: "Favorites", recents: "Recents", contacts: "All Contacts", keypad: os === "ios" ? "Keypad" : "Téléphone", voicemail: "Voicemail" };
@@ -99,24 +117,62 @@ function Recents({ pid, onCall, ed }: { pid: string; onCall: (n: string) => void
   const calls = useList<Call>(`phones/${pid}/data/calls`, { newest: "time" });
   const lore = useValue<string>("meta/loreDate") || LORE_DATE_DEFAULT;
   const [filter, setFilter] = useState("all");
-  const rows = calls.filter(([, c]) => filter === "all" || c.type === "missed");
+  const nav = useNavigate();
+  // Comme en 2012 : appels consécutifs du même contact et du même type regroupés, « Eoghan (3) ».
+  const rows: [string, Call, number][] = [];
+  for (const [id, c] of calls) {
+    if (filter !== "all" && c.type !== "missed") continue;
+    const prev = rows[rows.length - 1];
+    if (prev && prev[1].contact === c.contact && prev[1].type === c.type) prev[2]++;
+    else rows.push([id, c, 1]);
+  }
   return (
     <>
       <Segmented items={[{ id: "all", label: os === "ios" ? "All" : "Tous" }, { id: "missed", label: os === "ios" ? "Missed" : "Manqués" }]} value={filter} onChange={setFilter} />
       <Plain>
-        {rows.map(([id, c]) => (
+        {rows.map(([id, c, n]) => (
           <Cell key={id} className={c.type === "missed" ? "missed" : ""}
             icon={os === "android"
               ? <span className={`ph-dir ${c.type}`}><Glyph i={c.type === "missed" ? mdiCallMissed : c.type === "incoming" ? mdiCallReceived : mdiCallMade} size={20} /></span>
               : c.type === "outgoing" ? <span className="ph-out"><Glyph i={mdiPhoneOutgoing} size={14} /></span> : <span className="ph-out" />}
-            title={c.contact || "Unknown"} subtitle={c.duration ? (os === "ios" ? "mobile" : c.duration) : (os === "ios" ? "mobile" : "")}
+            title={<>{c.contact || "Unknown"}{n > 1 && <span className="ph-count"> ({n})</span>}</>} subtitle={c.duration ? (os === "ios" ? "mobile" : c.duration) : (os === "ios" ? "mobile" : "")}
             detail={inboxLabel(loreToMs(c.time), loreNowMs(lore))}
+            accessory={os === "ios" ? <span role="button" className="ph-info" aria-label="Infos" onClick={(e) => { e.stopPropagation(); nav(`recent/${id}`); }}><Glyph i={mdiChevronRight} size={18} /></span> : undefined}
             onClick={() => c.contact && onCall(c.contact)}
             onLong={ed.itemLong(`phones/${pid}/data/calls`, id, { label: c.contact, fields: ["contact", "type", "time", "duration"] })} />
         ))}
         {rows.length === 0 && <Empty>No Recents</Empty>}
       </Plain>
     </>
+  );
+}
+
+/** Fiche « Info » d'un appel récent (iOS 6) : les derniers appels avec ce contact, puis Rappeler / Message. */
+function RecentInfo({ pid }: { pid: string }) {
+  const { id = "" } = useParams();
+  const calls = useList<Call>(`phones/${pid}/data/calls`, { newest: "time" });
+  const nav = useNavigate();
+  const call = useCalling(pid);
+  const who = calls.find(([cid]) => cid === id)?.[1].contact ?? "";
+  const same = calls.filter(([, c]) => c.contact === who).slice(0, 8);
+  return (
+    <AppFrame title="Info" left={<BackButton to={`/${pid}/phone`} label="Recents" />}>
+      <Grouped className="ct-card">
+        <div className="ct-head"><span className="ct-photo"><Avatar name={who} size={64} round={false} /></span><b>{who || "Unknown"}</b></div>
+        <Section>
+          {same.map(([cid, c]) => {
+            const ms = loreToMs(c.time);
+            return <Cell key={cid} className={c.type === "missed" ? "missed" : ""} title={CALL_LABEL[c.type ?? "incoming"]}
+              subtitle={ms ? `${dayLabel(ms)} · ${clockLabel(ms)}` : c.time} detail={c.type === "missed" ? undefined : minutesLabel(c.duration)} />;
+          })}
+        </Section>
+        <div className="ct-actions">
+          <button onClick={() => nav(`/${pid}/messages/new`)}>Send Message</button>
+          <button onClick={() => who && call.call(who)}>Call Back</button>
+        </div>
+      </Grouped>
+      {call.ui}
+    </AppFrame>
   );
 }
 
@@ -207,7 +263,7 @@ function ContactCard({ pid, back }: { pid: string; back: string }) {
   const os = useOS();
   const nav = useNavigate();
   const ed = useEditor(pid);
-  const call = useCalling();
+  const call = useCalling(pid);
   return (
     <AppFrame title={os === "ios" ? "Info" : (c.name ?? "")} left={<BackButton to={`/${pid}/${back}`} label={back === "phone" ? "Contacts" : "All Contacts"} />}
       right={ed.canEdit ? <button className="barbtn" onClick={() => ed.edit({ path: `phones/${pid}/data/contacts/${id}`, fields: ["name", "phone", "photo"], title: "Modifier" })}>{os === "ios" ? "Edit" : <Glyph i={mdiPencil} size={22} />}</button> : undefined}>
