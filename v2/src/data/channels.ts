@@ -90,7 +90,7 @@ const withNotif = (pid: string, r: { patches: Patches; key: string; mid: string 
 
 export const CHANNELS: Channel[] = [
   {
-    app: "messenger", label: "Messenger (Facebook)", fields: ["contact", "text", "img"], contactLabel: "De la part de", contactHint: "ex. Cynthia",
+    app: "messenger", label: "Messenger", fields: ["contact", "text", "img"], contactLabel: "De la part de", contactHint: "ex. Cynthia",
     listPath: (pid) => `phones/${pid}/data/messenger`,
     names: (list) => alive(list).map(([, c]) => String(c.name ?? "")).filter(Boolean),
     send: (pid, i, list, lore) => {
@@ -194,7 +194,7 @@ export const CHANNELS: Channel[] = [
     titleOf: (s) => `Snap de ${s?.contact ?? "?"}`,
   },
   {
-    app: "phone", label: "Téléphone (appel manqué)", fields: ["contact"], contactLabel: "Qui appelle", contactHint: "ex. Maman",
+    app: "phone", label: "Téléphone — appel manqué", fields: ["contact"], contactLabel: "Qui appelle", contactHint: "ex. Maman",
     listPath: (pid) => `phones/${pid}/data/calls`,
     names: (list) => [...new Set(alive(list).map(([, c]) => String(c.contact ?? "")).filter(Boolean))],
     send: (pid, i, list, lore) => {
@@ -208,7 +208,7 @@ export const CHANNELS: Channel[] = [
     titleOf: (c) => `Appel manqué · ${c?.contact ?? "?"}`,
   },
   {
-    app: "insta", label: "Instagram (activité)", fields: ["contact", "action"], contactLabel: "Compte", contactHint: "ex. jungkook97",
+    app: "insta", label: "Instagram — activité", fields: ["contact", "action"], contactLabel: "Compte", contactHint: "ex. jungkook97",
     listPath: (pid) => `phones/${pid}/data/notifications`,
     names: (list) => [...new Set(alive(list).filter(([, n]) => n.app === "insta").map(([, n]) => String(n.title ?? "")).filter(Boolean))],
     send: (pid, i, list, lore) => {
@@ -254,14 +254,14 @@ function postChannel(app: "twitter" | "facebook" | "tumblr", label: string, cont
 }
 
 CHANNELS.push(
-  postChannel("twitter", "Twitter (tweet d'un compte)", "Compte", "ex. Taylor Swift",
+  postChannel("twitter", "Twitter — tweet d'un compte", "Compte", "ex. Taylor Swift",
     (i, lore) => ({ text: i.text.trim(), time: msToLore(loreNowMs(lore)), rp: 0, rt: 0, fav: 0 }), (p) => String(p?.text ?? "")),
-  postChannel("facebook", "Facebook (publication d'une page)", "Page", "ex. Sephora Augusta",
+  postChannel("facebook", "Facebook — publication d'une page", "Page", "ex. Sephora Augusta",
     (i, lore) => ({ text: i.text.trim(), img: i.img ?? "", time: msToLore(loreNowMs(lore)), likes: 0, comments: 0 }), (p) => String(p?.text || "📷")),
-  postChannel("tumblr", "Tumblr (post d'un blog)", "Blog", "ex. fuckyeah-1d",
+  postChannel("tumblr", "Tumblr — post d'un blog", "Blog", "ex. fuckyeah-1d",
     (i, lore) => ({ title: "", body: i.text.trim(), img: i.img ?? "", date: msToLore(loreNowMs(lore)).split(",")[0], notes: 0, tags: "" }), (p) => String(p?.body || p?.title || "📷")),
   {
-    app: "voicemail", needs: "phone", notifApp: "phone", label: "Téléphone (message vocal)", fields: ["contact", "text"],
+    app: "voicemail", needs: "phone", notifApp: "phone", label: "Téléphone — message vocal", fields: ["contact", "text"],
     contactLabel: "De la part de", contactHint: "ex. Maman",
     listPath: (pid) => `phones/${pid}/data/voicemails`,
     names: (list) => [...new Set(alive(list).map(([, v]) => String(v.contact ?? "")).filter(Boolean))],

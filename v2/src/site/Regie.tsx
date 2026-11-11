@@ -237,8 +237,8 @@ function NewNotif({ onSent }: { onSent: (t: Tab) => void }) {
       <label className="lbl" htmlFor="regie-app">App</label>
       <select id="regie-app" value={app} onChange={(e) => setApp(e.target.value)}>
         {sortApps([
-          ["messages", "Messages (SMS)"],
-          ...groups.map((g): [string, string] => [`group:${g.tid}`, `Messages — groupe « ${g.name} » (tous)`]),
+          ["messages", "Messages — SMS"],
+          ...groups.map((g): [string, string] => [`group:${g.tid}`, `Messages — groupe « ${g.name} »`]),
           ["group:new", "Messages — nouveau groupe…"],
           ...(installed.has("phone") ? [["call", "Téléphone — appel entrant"] as [string, string]] : []),
           ...available.map((c): [string, string] => [c.app, c.label]),
