@@ -2,8 +2,9 @@
 // / Paramètres Android 4.1 (sections holo).
 import { useState } from "react";
 import { Route, Routes, useNavigate } from "react-router-dom";
-import { useList, useValue } from "../data/hooks";
+import { useList, useValue, useWriter } from "../data/hooks";
 import { AppFrame, BackButton } from "../phone/IOSChrome";
+import { ActionSheet } from "../phone/Sheets";
 import { useOS } from "../phone/common";
 import { AddButton, Cell, Grouped, Section, Switch, useEditor } from "../kit/kit";
 import { Glyph } from "../kit/glyph";
@@ -29,30 +30,83 @@ export default function SettingsApp({ pid }: { pid: string }) {
       <Route path="bluetooth" element={<Bluetooth pid={pid} />} />
       <Route path="about" element={<About pid={pid} />} />
       <Route path="wallpaper" element={<Wallpaper pid={pid} />} />
+      <Route path="wallpaper/pick" element={<WallpaperPick pid={pid} />} />
       <Route path="camera" element={<CameraSettings pid={pid} />} />
     </Routes>
   );
 }
 
-/** Luminosité et fond d'écran (iOS 6) / Affichage (Android). */
+/** Luminosité et fond d'écran (iOS 6) / Affichage (Android). Toucher un aperçu change ce fond-là ;
+ *  « Camera Roll » / « Galerie » : on choisit une photo du téléphone, puis écran verrouillé, accueil ou les deux. */
+type WpProfile = { wallpaper?: string; lockWallpaper?: string; brightness?: number };
 function Wallpaper({ pid }: { pid: string }) {
   const os = useOS();
+  const nav = useNavigate();
   const ed = useEditor(pid);
-  const prof = useValue<{ wallpaper?: string }>(`phones/${pid}/profile`) ?? {};
-  const edit = (field: string, title: string) => ed.edit({ path: `phones/${pid}/profile`, fields: [field], title });
-  const wp = prof.wallpaper ? img(prof.wallpaper) : undefined;
+  const prof = useValue<WpProfile>(`phones/${pid}/profile`) ?? {};
+  const edit = (field: string, title: string) => ed.canEdit && ed.edit({ path: `phones/${pid}/profile`, fields: [field], title });
+  const home = prof.wallpaper ? img(prof.wallpaper) : undefined;
+  const lock = prof.lockWallpaper ? img(prof.lockWallpaper) : home;
+  const ios = os === "ios";
   return (
-    <AppFrame title={os === "ios" ? "Brightness & Wallpaper" : "Affichage"} left={<BackButton to={`/${pid}/settings`} label={os === "ios" ? "Settings" : "Paramètres"} />} bodyClass={`st ${os}`}>
+    <AppFrame title={ios ? "Brightness & Wallpaper" : "Affichage"} left={<BackButton to={`/${pid}/settings`} label={ios ? "Settings" : "Paramètres"} />} bodyClass={`st ${os}`}>
       <Grouped>
-        <Section title={os === "ios" ? undefined : "Fond d'écran"}>
+        <Section title={ios ? undefined : "Luminosité"}>
+          <Brightness pid={pid} value={prof.brightness ?? 1} canEdit={ed.canEdit} />
+        </Section>
+        <Section title={ios ? undefined : "Fond d'écran"}>
           <div className="st-wp">
-            <span className="st-wp-prev lock" style={{ backgroundImage: wp && `url(${wp})` }}><i /></span>
-            <span className="st-wp-prev" style={{ backgroundImage: wp && `url(${wp})` }}><b /></span>
+            <button className="st-wp-prev lock" style={{ backgroundImage: lock && `url(${lock})` }} aria-label="Fond de l'écran verrouillé"
+              onClick={() => edit("lockWallpaper", "Fond de l'écran verrouillé")}><i /></button>
+            <button className="st-wp-prev" style={{ backgroundImage: home && `url(${home})` }} aria-label="Fond de l'écran d'accueil"
+              onClick={() => edit("wallpaper", "Fond d'écran")}><b /></button>
           </div>
-          {ed.canEdit && <Cell title={os === "ios" ? "Wallpaper" : "Fond d'écran"} detail="Modifier" chevron onClick={() => edit("wallpaper", "Fond d'écran")} />}
+          {ed.canEdit && <Cell title={ios ? "Camera Roll" : "Galerie"} chevron onClick={() => nav("pick")} />}
         </Section>
       </Grouped>
       {ed.ui}
+    </AppFrame>
+  );
+}
+
+/** Curseur de luminosité ; enregistré au relâchement (une seule entrée d'historique). */
+function Brightness({ pid, value, canEdit }: { pid: string; value: number; canEdit: boolean }) {
+  const { set } = useWriter(pid);
+  const [v, setV] = useState<number | null>(null);
+  const save = () => { if (v !== null && v !== value) set(`phones/${pid}/profile/brightness`, v); setV(null); };
+  return (
+    <div className="st-bright">
+      <Glyph i={mdiBrightness6} size={16} />
+      <input type="range" min={0.25} max={1} step={0.01} value={v ?? value} disabled={!canEdit} aria-label="Luminosité"
+        onChange={(e) => setV(Number(e.target.value))} onPointerUp={save} onKeyUp={save} onBlur={save} />
+      <Glyph i={mdiBrightness7} size={22} />
+    </div>
+  );
+}
+
+/** Pellicule du téléphone → « Set Lock Screen / Set Home Screen / Set Both ». */
+function WallpaperPick({ pid }: { pid: string }) {
+  const os = useOS();
+  const nav = useNavigate();
+  const photos = useList<{ src?: string }>(`phones/${pid}/data/gallery`).filter(([, p]) => p.src);
+  const { write } = useWriter(pid);
+  const [pick, setPick] = useState<string | null>(null);
+  const ios = os === "ios";
+  const apply = (fields: string[]) => { if (!pick) return; write(Object.fromEntries(fields.map((f) => [`phones/${pid}/profile/${f}`, pick]))); nav(`/${pid}/settings/wallpaper`); };
+  return (
+    <AppFrame title={ios ? "Camera Roll" : "Galerie"} left={<BackButton to={`/${pid}/settings/wallpaper`} label={ios ? "Wallpaper" : "Affichage"} />} bodyClass={`st ${os}`}>
+      <div className="st-pick">
+        {photos.map(([id, p]) => <button key={id} style={{ backgroundImage: `url(${img(p.src!)})` }} onClick={() => setPick(p.src!)} aria-label="Choisir cette photo" />)}
+        {photos.length === 0 && <p className="st-pick-empty">{ios ? "No Photos" : "Aucune photo"}</p>}
+      </div>
+      {pick && (
+        <ActionSheet onClose={() => setPick(null)} actions={[
+          { label: ios ? "Set Lock Screen" : "Écran de verrouillage", onPress: () => apply(["lockWallpaper"]) },
+          { label: ios ? "Set Home Screen" : "Écran d'accueil", onPress: () => apply(["wallpaper"]) },
+          // « Les deux » : le fond verrouillé suit l'accueil (champ vidé).
+          { label: ios ? "Set Both" : "Les deux", onPress: () => { apply(["wallpaper"]); write({ [`phones/${pid}/profile/lockWallpaper`]: null }); } },
+        ]} />
+      )}
     </AppFrame>
   );
 }
