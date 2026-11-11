@@ -1,7 +1,7 @@
 // Outils de la régie du MDJ, à côté des envois : fiches PNJ, scénarios (envois préparés lancés étape
 // par étape) et journal de séance. Tout ce que la régie écrit dans un téléphone
 // passe par `useRegieWriter`, qui ajoute une ligne au journal. Données de la régie sous `meta/regie/` (écriture réservée au MDJ).
-import { mdiDelete, mdiDownload, mdiPlay, mdiRestore } from "@mdi/js";
+import { mdiChevronDown, mdiChevronUp, mdiDelete, mdiDownload, mdiPlay, mdiRestore } from "@mdi/js";
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { useData, useValue, withHistory } from "../data/hooks";
 import type { Json, Patches, Store } from "../data/store";
@@ -214,6 +214,11 @@ export function Cues({ onSent }: { onSent: (t: Tab) => void }) {
       onSent(tab);
     } catch { alert("Envoi impossible."); } finally { setBusy(false); }
   };
+  /** Échange la place de deux étapes (leurs `order`). */
+  const swap = (a: number, b: number) => {
+    const [ia, sa] = steps[a], [ib, sb] = steps[b];
+    put({ [`${REGIE}/cues/${curId}/steps/${ia}/order`]: sb.order ?? b, [`${REGIE}/cues/${curId}/steps/${ib}/order`]: sa.order ?? a });
+  };
   const reset = () => { const p: Patches = {}; for (const [sid] of steps) p[`${REGIE}/cues/${curId}/steps/${sid}/done`] = null; put(p); };
 
   return (
@@ -226,11 +231,15 @@ export function Cues({ onSent }: { onSent: (t: Tab) => void }) {
       {cur && <>
         <ol className="regie-steps">
           {steps.length === 0 && <li className="hint">Aucune étape : ajoute-en ci-dessous.</li>}
-          {steps.map(([sid, s]) => (
+          {steps.map(([sid, s], i) => (
             <li key={sid} className={s.done ? "done" : sid === next?.[0] ? "next" : ""}>
-              <span className="what"><b>{names[s.pid] ?? s.pid}</b> · {appLabel(s.app)} · {s.contact}{s.sender ? ` (${s.sender})` : ""}{s.text ? ` : « ${s.text.slice(0, 80)} »` : ""}</span>
-              {s.done ? <small className="seen">Envoyé à {hhmm(s.done)}</small> : null}
+              <span className="what">
+                <span><b>{names[s.pid] ?? s.pid}</b> · {appLabel(s.app)} · {s.contact}{s.sender ? ` (${s.sender})` : ""}{s.text ? ` : « ${s.text.slice(0, 80)} »` : ""}</span>
+                {s.done ? <small className="seen">Envoyé à {hhmm(s.done)}</small> : null}
+              </span>
               <span className="btns">
+                <button className="icon-btn" disabled={i === 0} onClick={() => swap(i, i - 1)} aria-label="Monter l'étape" title="Monter"><Glyph i={mdiChevronUp} size={16} /></button>
+                <button className="icon-btn" disabled={i === steps.length - 1} onClick={() => swap(i, i + 1)} aria-label="Descendre l'étape" title="Descendre"><Glyph i={mdiChevronDown} size={16} /></button>
                 <button className="icon-btn" disabled={busy} onClick={() => fire(sid, s)} aria-label={s.done ? "Renvoyer cette étape" : "Envoyer cette étape"} title={s.done ? "Renvoyer" : "Envoyer"}><Glyph i={mdiPlay} size={15} /></button>
                 <button className="icon-btn" onClick={() => put({ [`${REGIE}/cues/${curId}/steps/${sid}`]: null })} aria-label="Supprimer l'étape"><Glyph i={mdiDelete} size={15} /></button>
               </span>
@@ -281,7 +290,7 @@ function StepForm({ onAdd }: { onAdd: (s: Step) => void }) {
         <select value={app} onChange={(e) => setApp(e.target.value)} aria-label="App">{APP_OPTIONS.map(([a, l]) => <option key={a} value={a}>{l}</option>)}</select>
       </div>
       <label className="lbl" htmlFor="regie-step-contact">{ch?.contactLabel ?? (app === "call" ? "Qui appelle" : "De la part de")}</label>
-      <input id="regie-step-contact" list="regie-step-npcs" value={contact} onChange={(e) => setContact(e.target.value)} placeholder={ch ? `${ch.contactLabel} (${ch.contactHint})` : app === "call" ? "Qui appelle" : "De la part de"} aria-label="De la part de" autoComplete="off" required />
+      <input id="regie-step-contact" list="regie-step-npcs" value={contact} onChange={(e) => setContact(e.target.value)} placeholder={ch?.contactHint ?? (app === "call" ? "ex. Maman" : "ex. Jeongguk")} aria-label="De la part de" autoComplete="off" required />
       <datalist id="regie-step-npcs"><NpcOptions /></datalist>
       {has("sender") && <input value={sender} onChange={(e) => setSender(e.target.value)} placeholder="Membre qui écrit" aria-label="Membre qui écrit" autoComplete="off" />}
       {has("subject") && <input value={subject} onChange={(e) => setSubject(e.target.value)} placeholder="Objet du mail" aria-label="Objet" autoComplete="off" />}

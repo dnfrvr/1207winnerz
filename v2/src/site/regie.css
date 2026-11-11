@@ -19,7 +19,7 @@
 .regie-x { width: 30px; height: 20px; align-self: flex-start; display: flex; align-items: center; justify-content: center; color: #fff; cursor: pointer;
   border: 1px solid rgba(0,0,0,.55); border-top: 0; border-radius: 0 0 4px 4px; background: linear-gradient(#e8a493, #d0573c 50%, #b5310f 51%, #d96d4f); }
 
-.regie-tabs { display: flex; gap: 2px; padding: 6px 6px 0; overflow-x: auto; flex: 0 0 auto; border-bottom: 1px solid #a9c6e4; background: linear-gradient(#e4eefa, #f4f8fd); }
+.regie-tabs { display: flex; flex-wrap: wrap; row-gap: 3px; gap: 2px; padding: 6px 6px 0; overflow: visible; flex: 0 0 auto; border-bottom: 1px solid #a9c6e4; background: linear-gradient(#e4eefa, #f4f8fd); }
 .regie-tabs > button, .regie-tab { flex: 0 0 auto; display: flex; align-items: center; gap: 4px; padding: 4px 8px; font: 12px var(--w7-font); color: var(--w7-ink);
   border: 1px solid #a9c6e4; border-bottom: 0; border-radius: 3px 3px 0 0; background: linear-gradient(#f4f8fd, #dde9f6); cursor: pointer; white-space: nowrap; }
 .regie-tab { padding: 0 2px 0 0; }
@@ -35,7 +35,12 @@
 .regie-form > .y2k-btn { margin-top: 10px; }
 .regie .hint { font: 11px var(--w7-font); color: #5a6f89; margin: 0; }
 
+.regie-players { display: flex; gap: 6px; flex-wrap: wrap; }
+.regie-players button { display: flex; align-items: center; gap: 6px; padding: 3px 9px 3px 3px; border-radius: 20px; font: 12px var(--w7-font); color: var(--w7-ink);
   border: 1px solid #b7cde3; background: #fff; cursor: pointer; }
+.regie-players button.on { border-color: #3c7fb1; background: linear-gradient(#e5f3fd, #c4e1f7); font-weight: 600; }
+.regie-players .dp.sm { width: 26px; height: 26px; padding: 2px; border-radius: 50%; }
+.regie-players .dp.sm img, .regie-players .dp.sm > span { border-radius: 50%; font-size: 12px; }
 
 .regie-compose { display: flex; gap: 6px; align-items: stretch; }
 .regie-compose textarea { flex: 1; min-width: 0; resize: vertical; }
@@ -130,16 +135,18 @@
 .regie-also { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 4px; }
 .regie-also .lbl { margin: 0 4px 0 0; }
 .regie-steps { counter-reset: step; }
-.regie-steps li { counter-increment: step; display: grid; grid-template-columns: auto 1fr auto; gap: 2px 6px; align-items: center; padding: 5px 6px; border: 1px solid #d5e3f1; border-radius: 3px; background: #fff; font: 12px/1.3 var(--w7-font); }
-.regie-steps li::before { content: counter(step) "."; font-weight: 600; color: #3c6a96; }
+.regie-steps li { counter-increment: step; display: flex; gap: 6px; align-items: flex-start; padding: 5px 6px; border: 1px solid #d5e3f1; border-radius: 3px; background: #fff; font: 12px/1.3 var(--w7-font); }
+.regie-steps li::before { content: counter(step) "."; flex: 0 0 18px; font-weight: 600; color: #3c6a96; padding-top: 3px; }
 .regie-steps li.next { border-color: #3c7fb1; background: #eef6fd; }
 .regie-steps li.done { opacity: .65; }
-.regie-steps li .what { overflow-wrap: anywhere; }
-.regie-steps li .btns { display: flex; }
-.regie-steps li .seen { grid-column: 2 / 4; font: 10px var(--w7-font); }
-.regie-stepform select { flex: 1; min-width: 0; }
+.regie-steps li .what { flex: 1; min-width: 0; overflow-wrap: anywhere; padding-top: 3px; display: flex; flex-direction: column; gap: 2px; }
+.regie-steps li .btns { display: flex; flex: 0 0 auto; }
+.regie-steps li .seen { font: 10px var(--w7-font); }
+.regie-stepform select { flex: 1 1 0; min-width: 0; }
+.regie-stepform select:first-child { flex: 0 1 110px; }
 .regie-log li { display: flex; flex-direction: column; gap: 1px; padding: 4px 0; border-bottom: 1px dotted #d5e3f1; font: 12px/1.3 var(--w7-font); overflow-wrap: anywhere; }
 .regie-log li small { font: 10px var(--w7-font); color: #6b7f96; }
 .regie-stepform textarea { font: 13px var(--w7-font); padding: 5px 7px; border: 1px solid #abadb3; border-top-color: #e3e9ef; border-radius: 2px; background: #fff; resize: vertical; }
 .regie-stepform textarea:focus { outline: 0; border-color: #3d7bad; box-shadow: 0 0 0 1px #c7e0f4; }
 #regie-cue-new { flex: 1; min-width: 0; }
+.regie-tab > button:first-child { max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: block; }
