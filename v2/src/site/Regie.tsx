@@ -17,7 +17,7 @@ import { useIncomingNotifs } from "../phone/Notifs";
 import { PIDS } from "./Site";
 import { callPath, duration, endCallPatches, RING_MS, startCallPatches, type LiveCall } from "../data/call";
 import { CHANNELS, channelOf, INSTA_ACTIONS, type Channel, type Field, type LiveMsg } from "../data/channels";
-import { AlsoPick, Cues, Journal, NpcBook, NpcHint, NpcOptions, StatusForm, useFirstNames, useRegieWriter, useSendAlso } from "./RegieTools";
+import { AlsoPick, Cues, Journal, NpcBook, NpcHint, NpcOptions, useFirstNames, useRegieWriter, useSendAlso } from "./RegieTools";
 import "./regie.css";
 
 type Profile = { name?: string; avatar?: string | { src?: string } };
@@ -240,11 +240,10 @@ function NewNotif({ onSent }: { onSent: (t: Tab) => void }) {
         {groups.map((g) => <option key={g.tid} value={`group:${g.tid}`}>Messages — groupe « {g.name} » (tous)</option>)}
         <option value="group:new">Messages — nouveau groupe…</option>
         {installed.has("phone") && <option value="call">Téléphone — appel entrant</option>}
-        <option value="status">Réseau / batterie du téléphone</option>
         {available.map((c) => <option key={c.app} value={c.app}>{c.label}</option>)}
       </select>
       {(app === "messages" || ch) && <AlsoPick pid={pid} value={also} onChange={setAlso} />}
-      {app === "status" ? <StatusForm pid={pid} /> : app === "call" ? <CallForm key={pid} pid={pid} onSent={onSent} /> : app === "group:new" ? <NewGroup onCreated={(tid) => setApp(`group:${tid}`)} /> : group ? <GroupForm key={group.tid} group={group} onSent={onSent} /> : ch ? <ChannelForm key={`${pid}-${app}`} pid={pid} ch={ch} also={also} onSent={onSent} /> : <form className="regie-sub" onSubmit={submit}>
+      {app === "call" ? <CallForm key={pid} pid={pid} onSent={onSent} /> : app === "group:new" ? <NewGroup onCreated={(tid) => setApp(`group:${tid}`)} /> : group ? <GroupForm key={group.tid} group={group} onSent={onSent} /> : ch ? <ChannelForm key={`${pid}-${app}`} pid={pid} ch={ch} also={also} onSent={onSent} /> : <form className="regie-sub" onSubmit={submit}>
       <label className="lbl" htmlFor="regie-contact">De la part de</label>
       <input id="regie-contact" list="regie-contacts" value={contact} onChange={(e) => setContact(e.target.value)} placeholder="ex. Jeongguk" autoComplete="off" required />
       <datalist id="regie-contacts">{contacts.map((c) => <option key={c.tid} value={c.contact} />)}<NpcOptions known={contacts.map((c) => c.contact)} /></datalist>

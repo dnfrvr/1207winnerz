@@ -1,5 +1,5 @@
 // Outils de la régie du MDJ, à côté des envois : fiches PNJ, scénarios (envois préparés lancés étape
-// par étape), journal de séance, réseau / batterie. Tout ce que la régie écrit dans un téléphone
+// par étape) et journal de séance. Tout ce que la régie écrit dans un téléphone
 // passe par `useRegieWriter`, qui ajoute une ligne au journal. Données de la régie sous `meta/regie/` (écriture réservée au MDJ).
 import { mdiDelete, mdiDownload, mdiPlay, mdiRestore } from "@mdi/js";
 import { useEffect, useMemo, useState, type FormEvent } from "react";
@@ -10,7 +10,6 @@ import { startCallPatches } from "../data/call";
 import { CHANNELS, channelOf } from "../data/channels";
 import { Glyph } from "../kit/glyph";
 import { LORE_DATE_DEFAULT } from "../phone/common";
-import type { PhoneStatus } from "../phone/IOSChrome";
 import { PIDS } from "./Site";
 
 export const REGIE = "meta/regie";
@@ -37,10 +36,8 @@ const once = (store: Store, path: string) => new Promise<Json | undefined>((res)
 // ─── Journal ─────────────────────────────────────────────────────────────────
 const NOTIF_RE = /^phones\/([^/]+)\/notifs\/[^/]+$/;
 const CALL_RE = /^phones\/([^/]+)\/call$/;
-const STATUS_RE = /^phones\/([^/]+)\/status\/(net|battery)$/;
-const NET_LABEL: Record<string, string> = { wifi: "Wi-Fi", "3g": "3G", e: "EDGE (E)", none: "Pas de service", airplane: "Mode avion" };
 
-/** Lignes du journal pour une écriture de la régie : une par notif (regroupées entre joueurs), appel, réseau. */
+/** Lignes du journal pour une écriture de la régie : une par notif (regroupées entre joueurs) et par appel. */
 export function logPatches(store: Store, patches: Patches): Patches {
   const lore = store.peek("meta/loreDate") as string | undefined;
   const by = new Map<string, LogEntry>();
@@ -49,7 +46,6 @@ export function logPatches(store: Store, patches: Patches): Patches {
     let m: RegExpMatchArray | null, e: Pick<LogEntry, "app" | "title" | "body"> | null = null;
     if ((m = path.match(NOTIF_RE)) && o) e = { app: String(o.app ?? ""), title: String(o.title ?? ""), body: String(o.body || (o.attach ? "📷 photo" : "")) };
     else if ((m = path.match(CALL_RE)) && o?.contact) e = { app: "call", title: String(o.contact), body: "Appel entrant" };
-    else if ((m = path.match(STATUS_RE))) e = { app: "status", title: m[2] === "net" ? "Réseau" : "Batterie", body: v == null ? "par défaut" : m[2] === "net" ? NET_LABEL[String(v)] ?? String(v) : `${v} %` };
     if (!m || !e) continue;
     const k = `${e.app}|${e.title}|${e.body}`;
     const cur = by.get(k);
@@ -298,29 +294,6 @@ function StepForm({ onAdd }: { onAdd: (s: Step) => void }) {
   );
 }
 
-// ─── Réseau et batterie ──────────────────────────────────────────────────────
-/** Réseau / batterie affichés dans la barre d'état du téléphone (`phones/{pid}/status`). */
-export function StatusForm({ pid }: { pid: string }) {
-  const p = useValue<Profile>(`phones/${pid}/profile`);
-  const st = useValue<PhoneStatus>(`phones/${pid}/status`) ?? {};
-  const { write } = useRegieWriter(pid);
-  return (
-    <div className="regie-sub">
-      <label className="lbl" htmlFor="regie-net">Réseau</label>
-      <select id="regie-net" value={st.net ?? ""} onChange={(e) => write({ [`phones/${pid}/status/net`]: e.target.value || null })}>
-        <option value="">D'origine</option>
-        {Object.entries(NET_LABEL).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
-      </select>
-      <label className="lbl" htmlFor="regie-bat">Batterie</label>
-      <select id="regie-bat" value={st.battery ?? ""} onChange={(e) => write({ [`phones/${pid}/status/battery`]: e.target.value ? Number(e.target.value) : null })}>
-        <option value="">D'origine</option>
-        {[100, 80, 50, 30, 20, 10, 5, 1].map((b) => <option key={b} value={b}>{b} %</option>)}
-      </select>
-      <small className="hint">S'applique tout de suite à la barre d'état du téléphone de {first(p, pid)}.</small>
-    </div>
-  );
-}
-
 // ─── Journal de séance ───────────────────────────────────────────────────────
 export function Journal() {
   const log = useValue<Record<string, LogEntry>>(`${REGIE}/log`);
@@ -328,7 +301,7 @@ export function Journal() {
   const names = useFirstNames();
   const [who, setWho] = useState("");
   const rows = useMemo(() => Object.values(log ?? {}).filter((e) => e && (!who || e.pids?.includes(who))).sort((a, b) => b.at - a.at), [log, who]);
-  const line = (e: LogEntry) => `${new Date(e.at).toLocaleString("fr-FR")}${e.lore ? ` (lore ${loreFr(e.lore)})` : ""} — ${e.app === "status" ? "Réglage" : appLabel(e.app)} →${e.pids.map((p) => names[p] ?? p).join(", ")} — ${e.title}${e.body ? ` : ${e.body}` : ""}`;
+  const line = (e: LogEntry) => `${new Date(e.at).toLocaleString("fr-FR")}${e.lore ? ` (lore ${loreFr(e.lore)})` : ""} — ${appLabel(e.app)} → ${e.pids.map((p) => names[p] ?? p).join(", ")} — ${e.title}${e.body ? ` : ${e.body}` : ""}`;
   const exportTxt = () => {
     const blob = new Blob([[...rows].reverse().map(line).join("\n") + "\n"], { type: "text/plain;charset=utf-8" });
     const a = document.createElement("a");
@@ -350,7 +323,7 @@ export function Journal() {
         {rows.length === 0 && <li className="hint">Rien d'envoyé depuis la régie pour l'instant.</li>}
         {rows.slice(0, 300).map((e, i) => (
           <li key={`${e.at}-${i}`}>
-            <small>{hhmm(e.at)}{e.lore ? ` · ${loreFr(e.lore)}` : ""} · {e.app === "status" ? "Réglage" : appLabel(e.app)} → {e.pids.map((p) => names[p] ?? p).join(", ")}</small>
+            <small>{hhmm(e.at)}{e.lore ? ` · ${loreFr(e.lore)}` : ""} · {appLabel(e.app)} → {e.pids.map((p) => names[p] ?? p).join(", ")}</small>
             <span><b>{e.title}</b>{e.body ? ` : ${e.body}` : ""}</span>
           </li>
         ))}
