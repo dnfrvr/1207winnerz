@@ -124,20 +124,20 @@ function Inbox({ pid, trash }: { pid: string; trash: boolean }) {
   };
 
   const actions = (s: NonNullable<typeof sheet>): SheetAction[] => trash
-    ? [{ label: "Restaurer", onPress: () => write(entryPatch(s.tid, s.e, "deleted", null)) }]
+    ? [{ label: "Restore", onPress: () => write(entryPatch(s.tid, s.e, "deleted", null)) }]
     : [
-        { label: s.e.unread ? "Marquer comme lue" : "Marquer comme non lue", onPress: () => write(entryPatch(s.tid, s.e, "unread", !s.e.unread)) },
-        { label: "Supprimer la conversation", destructive: true, onPress: () => write(entryPatch(s.tid, s.e, "deleted", true)) },
+        { label: s.e.unread ? "Mark as read" : "Mark as unread", onPress: () => write(entryPatch(s.tid, s.e, "unread", !s.e.unread)) },
+        { label: "Delete conversation", destructive: true, onPress: () => write(entryPatch(s.tid, s.e, "deleted", true)) },
       ];
 
   return (
     <AppFrame
-      title={trash ? "Supprimées" : "Messages"}
-      left={<BackButton to={trash ? `/${pid}/messages` : `/${pid}/home`} label={trash ? "Messages" : "Accueil"} />}
+      title={trash ? "Deleted" : "Messages"}
+      left={<BackButton to={trash ? `/${pid}/messages` : `/${pid}/home`} label={trash ? "Messages" : "Home"} />}
       right={canEdit && !trash ? <NewButton onClick={() => nav("new")} /> : undefined}
     >
       {!trash && trashCount > 0 && (
-        <button className="msg-trash-row" onClick={() => nav("trash")}><Glyph i={mdiTrashCan} size={18} /> <span style={{ flex: 1 }}>Conversations supprimées</span>{trashCount} ›</button>
+        <button className="msg-trash-row" onClick={() => nav("trash")}><Glyph i={mdiTrashCan} size={18} /> <span style={{ flex: 1 }}>Deleted conversations</span>{trashCount} ›</button>
       )}
       <ul className="msg-list">
         {visible.map(([tid, e]) => {
@@ -151,7 +151,7 @@ function Inbox({ pid, trash }: { pid: string; trash: boolean }) {
               onLong={canEdit ? () => setSheet({ tid, e, contact }) : undefined} />
           );
         })}
-        {visible.length === 0 && <li className="msg-empty">{trash ? "Aucune conversation supprimée." : "Aucun message."}</li>}
+        {visible.length === 0 && <li className="msg-empty">{trash ? "No deleted conversations." : "No messages."}</li>}
       </ul>
       {sheet && <ActionSheet title={sheet.contact} actions={actions(sheet)} onClose={() => setSheet(null)} />}
     </AppFrame>
@@ -162,7 +162,7 @@ function Inbox({ pid, trash }: { pid: string; trash: boolean }) {
 function NewButton({ onClick }: { onClick: () => void }) {
   const os = useOS();
   return (
-    <button className="barbtn icon-btn" aria-label="Nouveau message" onClick={onClick}>
+    <button className="barbtn icon-btn" aria-label="New message" onClick={onClick}>
       <Glyph i={os === "ios" ? mdiSquareEditOutline : mdiMessagePlus} size={os === "ios" ? 20 : 24} />
     </button>
   );
@@ -215,7 +215,7 @@ function Conversation({ pid }: { pid: string }) {
   const senders = isLocal ? [pid, "npc"] : mdj ? [pid, ...Object.keys(thread?.members ?? {}).filter((m) => m !== pid)] : [pid];
   const [senderIdx, setSenderIdx] = useState(0);
   const sender = senders[senderIdx % senders.length];
-  const senderLabel = sender === "npc" ? contact : sender === pid ? "Moi" : names[sender]?.name ?? sender;
+  const senderLabel = sender === "npc" ? contact : sender === pid ? "Me" : names[sender]?.name ?? sender;
   const [insertAfter, setInsertAfter] = useState<string | null>(null);
   const [callout, setCallout] = useState<{ id: string; x: number; y: number } | null>(null);
   const [editing, setEditing] = useState<string | null>(null);
@@ -244,7 +244,7 @@ function Conversation({ pid }: { pid: string }) {
     const told = !mdj || insertAfter ? [] : isGroup && thread?.members ? Object.keys(thread.members).filter((m) => m !== sender) : sender !== pid ? [pid] : [];
     const notif: Patches = {};
     for (const m of told) Object.assign(notif, notifPatch(m, isGroup
-      ? { app: "messages", title: contact, body: `${senderLabel === "Moi" ? names[pid]?.name ?? pid : senderLabel}: ${notifBody(text)}`, link: `messages/${tid}`, thread: tid, msg: id }
+      ? { app: "messages", title: contact, body: `${senderLabel === "Me" ? names[pid]?.name ?? pid : senderLabel}: ${notifBody(text)}`, link: `messages/${tid}`, thread: tid, msg: id }
       : { app: "messages", title: senderLabel, body: notifBody(text), link: `messages/${tid}`, thread: tid, msg: id }), { [`phones/${m}/inbox/${tid}/unread`]: true });
     write({ [`${base}/${id}`]: { ...from, text, time, order: orderBetween(prev?.order, next?.order) } as Json, ...notif });
     if (insertAfter) setInsertAfter(id);
@@ -286,7 +286,7 @@ function Conversation({ pid }: { pid: string }) {
             </div>
           );
         })}
-        {msgs.length === 0 && <div className="msg-empty">Aucun message</div>}
+        {msgs.length === 0 && <div className="msg-empty">No messages</div>}
       </div>
       {insertAfter && (
         <div className="insert-banner">
@@ -336,7 +336,7 @@ function BubbleEditor({ initial, onSave, onCancel }: { initial: string; onSave: 
   return (
     <>
       <div className="bubble editing"><textarea ref={ref} value={v} onChange={(e) => setV(e.target.value)} /></div>
-      <div className="edit-actions"><button onClick={onCancel}>Annuler</button><button className="ok" onClick={() => onSave(v)}>OK</button></div>
+      <div className="edit-actions"><button onClick={onCancel}>Cancel</button><button className="ok" onClick={() => onSave(v)}>OK</button></div>
     </>
   );
 }
@@ -353,7 +353,7 @@ function Composer({ sms, onSend, who, onToggleWho }: { sms: boolean; onSend: (t:
       <textarea ref={ref} rows={1} value={text} placeholder="Text message"
         onChange={(e) => setText(e.target.value)}
         onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); submit(); } }} />
-      <button className="send-holo" disabled={!text.trim()} onClick={submit} aria-label="Envoyer"><Glyph i={mdiSend} size={26} /></button>
+      <button className="send-holo" disabled={!text.trim()} onClick={submit} aria-label="Send"><Glyph i={mdiSend} size={26} /></button>
     </div>
   );
   return (
@@ -399,9 +399,9 @@ function NewConversation({ pid }: { pid: string }) {
   const q = to.trim().toLowerCase();
   const mains = PIDS.filter((p) => p !== pid && (!q || (names[p]?.name ?? p).toLowerCase().includes(q)));
   return (
-    <AppFrame title="Nouveau message" left={<BackButton to={`/${pid}/messages`} label="Annuler" />}>
+    <AppFrame title="New message" left={<BackButton to={`/${pid}/messages`} label="Cancel" />}>
       <form className="to-field" onSubmit={(e) => { e.preventDefault(); if (to.trim()) openLocal(to.trim()); }}>
-        À : <input autoFocus value={to} onChange={(e) => setTo(e.target.value)} placeholder="Nom du contact" />
+        To: <input autoFocus value={to} onChange={(e) => setTo(e.target.value)} placeholder="Contact name" />
       </form>
       <ul className="suggest">
         {mains.map((p) => (

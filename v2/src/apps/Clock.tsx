@@ -20,7 +20,7 @@ const CITIES: City[] = [
   { name: "Augusta", off: -4 }, { name: "Chicago", off: -5 }, { name: "Cupertino", off: -7 }, { name: "Paris", off: 2 }, { name: "Tokyo", off: 9 },
 ];
 type Alarm = { time?: string; label?: string; on?: boolean; order?: number; deleted?: boolean };
-const DEFAULT_ALARMS: Alarm[] = [{ time: "07:30", label: "Class", on: true }, { time: "09:00", label: "Biblio", on: false }, { time: "23:00", label: "Rappel", on: true }];
+const DEFAULT_ALARMS: Alarm[] = [{ time: "07:30", label: "Class", on: true }, { time: "09:00", label: "Library", on: false }, { time: "23:00", label: "Reminder", on: true }];
 
 export default function ClockApp({ pid }: { pid: string }) {
   const os = useOS();
@@ -28,7 +28,7 @@ export default function ClockApp({ pid }: { pid: string }) {
   useEffect(() => { try { sessionStorage.setItem("clock-tab", tab); } catch { /* rien */ } }, [tab]);
   const ed = useEditor(pid);
   return (
-    <AppFrame title={TABS.find((t) => t.id === tab)?.label} left={<BackButton to={`/${pid}/home`} label="Accueil" />}
+    <AppFrame title={TABS.find((t) => t.id === tab)?.label} left={<BackButton to={`/${pid}/home`} label="Home" />}
       right={tab === "alarm" ? <AddButton show={ed.canEdit} onClick={() => ed.add(`phones/${pid}/data/alarms`, { time: "08:00", label: "Alarm", on: true }, { title: "Nouvelle alarme", fields: ["time", "label", "on"] })} />
         : tab === "world" ? <AddButton show={ed.canEdit} onClick={() => ed.add(`phones/${pid}/data/worldClocks`, { name: "", off: 0 }, { title: "Nouvelle ville", fields: CITY_FIELDS })} /> : undefined}
       bodyClass={`k-body-tabbed clk ${os}`}>
@@ -84,7 +84,7 @@ function World({ pid, ed }: { pid: string; ed: ReturnType<typeof useEditor> }) {
           <Press key={id} className="clk-row" onLong={ed.canEdit ? () => edit(id, c.name) : undefined}>
             <Face h={h} m={m} night={night} />
             <div className="clk-city"><b>{c.name}</b><span>{dayDiff === 0 ? "Today" : dayDiff > 0 ? "Tomorrow" : "Yesterday"}</span></div>
-            <div className="clk-time">{t.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}</div>
+            <div className="clk-time">{t.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })}</div>
           </Press>
         );
       })}

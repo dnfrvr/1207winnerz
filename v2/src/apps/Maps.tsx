@@ -50,9 +50,9 @@ export default function MapsApp({ pid }: { pid: string }) {
     <div className={`app mp ${os}`}>
       <StatusBar />
       <div className="mp-bar">
-        <BarBack onClick={() => nav(`/${pid}/home`)} label="Accueil" />
-        <div className="mp-search"><Icon name="search" size={13} /><input value={q} onChange={(e) => setQ(e.target.value)} placeholder={os === "ios" ? "Search or Address" : "Rechercher dans Maps"} /></div>
-        <button className="mp-btn" aria-label="Itinéraire"><Icon name="map" size={18} /></button>
+        <BarBack onClick={() => nav(`/${pid}/home`)} label="Home" />
+        <div className="mp-search"><Icon name="search" size={13} /><input value={q} onChange={(e) => setQ(e.target.value)} placeholder={os === "ios" ? "Search or Address" : "Search Maps"} /></div>
+        <button className="mp-btn" aria-label="Directions"><Icon name="map" size={18} /></button>
       </div>
       <div className="mp-map" onClick={() => setSel(null)}>
         <MapArt android={os === "android"} />
@@ -66,8 +66,8 @@ export default function MapsApp({ pid }: { pid: string }) {
         <div className="mp-me" style={{ left: "52%", top: "44%" }} />
       </div>
       <div className="mp-foot">
-        <button className="mp-btn" aria-label="Ma position"><Icon name="compass" size={16} /></button>
-        {ed.canEdit && <button className="mp-btn add" onClick={() => ed.add(path, { title: "Nouveau lieu", subtitle: "", x: 160, y: 260 }, { title: "Lieu", fields: ["title", "subtitle", "x", "y"] })}>+ Lieu</button>}
+        <button className="mp-btn" aria-label="My location"><Icon name="compass" size={16} /></button>
+        {ed.canEdit && <button className="mp-btn add" onClick={() => ed.add(path, { title: "New place", subtitle: "", x: 160, y: 260 }, { title: "Lieu", fields: ["title", "subtitle", "x", "y"] })}>+ Lieu</button>}
         <span className="mp-curl" />
       </div>
       {ed.ui}

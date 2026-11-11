@@ -42,14 +42,14 @@ function Wallpaper({ pid }: { pid: string }) {
   const edit = (field: string, title: string) => ed.edit({ path: `phones/${pid}/profile`, fields: [field], title });
   const wp = prof.wallpaper ? img(prof.wallpaper) : undefined;
   return (
-    <AppFrame title={os === "ios" ? "Brightness & Wallpaper" : "Affichage"} left={<BackButton to={`/${pid}/settings`} label={os === "ios" ? "Settings" : "Paramètres"} />} bodyClass={`st ${os}`}>
+    <AppFrame title={os === "ios" ? "Brightness & Wallpaper" : "Display"} left={<BackButton to={`/${pid}/settings`} label={os === "ios" ? "Settings" : "Settings"} />} bodyClass={`st ${os}`}>
       <Grouped>
-        <Section title={os === "ios" ? undefined : "Fond d'écran"}>
+        <Section title={os === "ios" ? undefined : "Wallpaper"}>
           <div className="st-wp">
             <span className="st-wp-prev lock" style={{ backgroundImage: wp && `url(${wp})` }}><i /></span>
             <span className="st-wp-prev" style={{ backgroundImage: wp && `url(${wp})` }}><b /></span>
           </div>
-          {ed.canEdit && <Cell title={os === "ios" ? "Wallpaper" : "Fond d'écran"} detail="Modifier" chevron onClick={() => edit("wallpaper", "Fond d'écran")} />}
+          {ed.canEdit && <Cell title={os === "ios" ? "Wallpaper" : "Wallpaper"} detail="Modifier" chevron onClick={() => edit("wallpaper", "Fond d'écran")} />}
         </Section>
       </Grouped>
       {ed.ui}
@@ -70,15 +70,15 @@ function CameraSettings({ pid }: { pid: string }) {
   const prof = useValue<{ cameraVideo?: string }>(`phones/${pid}/profile`) ?? {};
   const edit = (field: string, title: string) => ed.edit({ path: `phones/${pid}/profile`, fields: [field], title });
   return (
-    <AppFrame title={os === "ios" ? "Photos & Camera" : "Appareil photo"} left={<BackButton to={`/${pid}/settings`} label={os === "ios" ? "Settings" : "Paramètres"} />} bodyClass={`st ${os}`}>
+    <AppFrame title={os === "ios" ? "Photos & Camera" : "Camera"} left={<BackButton to={`/${pid}/settings`} label={os === "ios" ? "Settings" : "Settings"} />} bodyClass={`st ${os}`}>
       <Grouped>
         <Section footer="Vidéo qui tourne dans le viseur de l'appareil photo (courte, sans son).">
           <div className="st-wp">
             {prof.cameraVideo
               ? <VideoPreview src={prof.cameraVideo} />
-              : <span className="st-wp-vid empty">Aucune vidéo</span>}
+              : <span className="st-wp-vid empty">No video</span>}
           </div>
-          {ed.canEdit && <Cell title={os === "ios" ? "Camera Video" : "Vidéo du viseur"} detail={prof.cameraVideo ? "Modifier" : "Ajouter"} chevron onClick={() => edit("cameraVideo", "Vidéo de l'appareil photo")} />}
+          {ed.canEdit && <Cell title={os === "ios" ? "Camera Video" : "Viewfinder video"} detail={prof.cameraVideo ? "Modifier" : "Ajouter"} chevron onClick={() => edit("cameraVideo", "Vidéo de l'appareil photo")} />}
         </Section>
       </Grouped>
       {ed.ui}
@@ -103,31 +103,31 @@ function Root({ pid }: { pid: string }) {
   const appTile = (id: string, bg: string, glyph: string) => appIcons[id]
     ? <span className="st-tile st-app"><img src={img(appIcons[id])} alt="" /></span> : tile(bg, glyph);
   if (os === "android") return (
-    <AppFrame title="Paramètres" left={<BackButton to={`/${pid}/home`} label="Accueil" />} bodyClass="st android">
+    <AppFrame title="Settings" left={<BackButton to={`/${pid}/home`} label="Home" />} bodyClass="st android">
       <Grouped>
-        <Section title="Sans fil et réseaux">
+        <Section title="Wireless & networks">
           <Cell icon={ic(mdiWifi)} title="Wi-Fi" onClick={() => nav("wifi")} accessory={<Switch on={p.wifi} onChange={set && ((v) => set("wifi", v))} />} />
           <Cell icon={ic(mdiBluetooth)} title="Bluetooth" onClick={() => nav("bluetooth")} accessory={<Switch on={p.bt} onChange={set && ((v) => set("bt", v))} />} />
-          <Cell icon={ic(mdiChartPie)} title="Consommation des données" />
-          <Cell icon={ic(mdiDotsHorizontal)} title="Plus…" />
+          <Cell icon={ic(mdiChartPie)} title="Data usage" />
+          <Cell icon={ic(mdiDotsHorizontal)} title="More…" />
         </Section>
-        <Section title="Appareil">
-          <Cell icon={ic(mdiVolumeHigh)} title="Son" /><Cell icon={ic(mdiBrightness6)} title="Affichage" onClick={() => nav("wallpaper")} />
-          <Cell icon={ic(mdiCamera)} title="Appareil photo" onClick={() => nav("camera")} />
-          <Cell icon={ic(mdiDatabase)} title="Stockage" /><Cell icon={ic(mdiBattery)} title="Batterie" /><Cell icon={ic(mdiApps)} title="Applications" />
+        <Section title="Device">
+          <Cell icon={ic(mdiVolumeHigh)} title="Sound" /><Cell icon={ic(mdiBrightness6)} title="Display" onClick={() => nav("wallpaper")} />
+          <Cell icon={ic(mdiCamera)} title="Camera" onClick={() => nav("camera")} />
+          <Cell icon={ic(mdiDatabase)} title="Storage" /><Cell icon={ic(mdiBattery)} title="Battery" /><Cell icon={ic(mdiApps)} title="Apps" />
         </Section>
-        <Section title="Personnel">
-          <Cell icon={ic(mdiMapMarker)} title="Services de localisation" /><Cell icon={ic(mdiLock)} title="Sécurité" />
-          <Cell icon={ic(mdiTranslate)} title="Langue et saisie" /><Cell icon={ic(mdiBackupRestore)} title="Sauvegarder et réinitialiser" />
+        <Section title="Personal">
+          <Cell icon={ic(mdiMapMarker)} title="Location services" /><Cell icon={ic(mdiLock)} title="Security" />
+          <Cell icon={ic(mdiTranslate)} title="Language & input" /><Cell icon={ic(mdiBackupRestore)} title="Backup & reset" />
         </Section>
-        <Section title="Système">
-          <Cell icon={ic(mdiClockOutline)} title="Date et heure" /><Cell icon={ic(mdiInformationOutline)} title="À propos du téléphone" onClick={() => nav("about")} />
+        <Section title="System">
+          <Cell icon={ic(mdiClockOutline)} title="Date & time" /><Cell icon={ic(mdiInformationOutline)} title="About phone" onClick={() => nav("about")} />
         </Section>
       </Grouped>
     </AppFrame>
   );
   return (
-    <AppFrame title="Settings" left={<BackButton to={`/${pid}/home`} label="Accueil" />} bodyClass="st">
+    <AppFrame title="Settings" left={<BackButton to={`/${pid}/home`} label="Home" />} bodyClass="st">
       <Grouped>
         <Section>
           <Cell icon={tile(ORANGE, mdiAirplane)} title="Airplane Mode" accessory={<Switch on={p.airplane} onChange={set && ((v) => set("airplane", v))} />} />
@@ -172,20 +172,20 @@ function Wifi({ pid }: { pid: string }) {
       <Grouped>
         <Section><Cell title="Wi-Fi" accessory={<Switch on={p.wifi} onChange={set && ((v) => set("wifi", v))} />} /></Section>
         {p.wifi && (
-          <Section title={os === "ios" ? "Choose a Network…" : "Réseaux"}>
+          <Section title={os === "ios" ? "Choose a Network…" : "Networks"}>
             {nets.map(([id, n]) => (
               <Cell key={id} className={n.current ? "st-cur" : ""} title={n.name}
                 icon={os === "ios" ? <span className="st-check">{n.current ? <Glyph i={mdiCheck} size={18} /> : ""}</span> : ic(n.secured ? mdiWifiStrength3Lock : mdiWifiStrength3)}
-                subtitle={os === "android" ? (n.current ? "Connecté" : n.secured ? "Sécurisé par WPA2" : "Ouvert") : undefined}
+                subtitle={os === "android" ? (n.current ? "Connected" : n.secured ? "Secured with WPA2" : "Ouvert") : undefined}
                 accessory={os === "ios" ? <span className="st-wifi">{n.secured && <Glyph i={mdiLockOutline} size={14} />}<Glyph i={mdiWifi} size={18} /><i className="st-disclose">›</i></span> : undefined}
                 onClick={ed.canEdit ? () => { const patches: Record<string, boolean> = {}; for (const [k, x] of nets) if (x.current !== (k === id)) patches[`${path}/${k}/current`] = k === id; ed.write(patches); } : undefined}
                 onLong={ed.itemLong(path, id, { label: n.name, fields })} />
             ))}
-            <Cell title={os === "ios" ? "Other…" : "Ajouter un réseau"} chevron />
+            <Cell title={os === "ios" ? "Other…" : "Add network"} chevron />
           </Section>
         )}
         <Section footer={os === "ios" ? "Known networks will be joined automatically. If no known networks are available, you will be asked before joining a new network." : undefined}>
-          <Cell title={os === "ios" ? "Ask to Join Networks" : "Notification de réseau"} accessory={<Switch on={true} />} />
+          <Cell title={os === "ios" ? "Ask to Join Networks" : "Network notification"} accessory={<Switch on={true} />} />
         </Section>
       </Grouped>
       {ed.ui}
@@ -207,9 +207,9 @@ function Bluetooth({ pid }: { pid: string }) {
           <Cell title="Bluetooth" accessory={<Switch on={p.bt} onChange={set && ((v) => set("bt", v))} />} />
         </Section>
         {p.bt && (
-          <Section title={os === "ios" ? "Devices" : "Appareils associés"}>
+          <Section title={os === "ios" ? "Devices" : "Paired devices"}>
             {devs.map(([id, d]) => (
-              <Cell key={id} title={d.name} detail={os === "ios" ? (d.connected ? "Connected" : "Not Connected") : undefined} subtitle={os === "android" ? (d.connected ? "Connecté" : "Associé") : undefined} chevron={os === "ios"}
+              <Cell key={id} title={d.name} detail={os === "ios" ? (d.connected ? "Connected" : "Not Connected") : undefined} subtitle={os === "android" ? (d.connected ? "Connected" : "Paired") : undefined} chevron={os === "ios"}
                 onLong={ed.itemLong(path, id, { label: d.name, fields: ["name", "connected"] })} />
             ))}
           </Section>
@@ -227,7 +227,7 @@ function About({ pid }: { pid: string }) {
   const photos = useList(`phones/${pid}/data/gallery`).length;
   const first = name.split(" ")[0];
   return (
-    <AppFrame title={os === "ios" ? "About" : "À propos du téléphone"} left={<BackButton to={`/${pid}/settings`} label={os === "ios" ? "General" : "Paramètres"} />} bodyClass={`st ${os}`}>
+    <AppFrame title={os === "ios" ? "About" : "About phone"} left={<BackButton to={`/${pid}/settings`} label={os === "ios" ? "General" : "Settings"} />} bodyClass={`st ${os}`}>
       <Grouped>
         <Section>
           <Cell title="Name" detail={`${first}'s ${os === "ios" ? "iPhone" : "Galaxy S"}`} />

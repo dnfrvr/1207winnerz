@@ -299,12 +299,12 @@ export function FollowList({ pid, net }: { pid: string; net: Net }) {
                 { label: "Ne plus suivre", destructive: true, onPress: () => adopt(e, { unfollow: true }) },
               ] }) : undefined}>
               <Avatar src={who.avatar} name={who.name} size={44} round={false} color={who.color} />
-              <span className="fo-txt"><b>{who.name || "Sans nom"}</b><small>{net === "twitter" ? twHandle(who.handle) : net === "facebook" ? `${count} publication${count > 1 ? "s" : ""}` : who.handle}</small></span>
+              <span className="fo-txt"><b>{who.name || "Unnamed"}</b><small>{net === "twitter" ? twHandle(who.handle) : net === "facebook" ? `${count} publication${count > 1 ? "s" : ""}` : who.handle}</small></span>
               <Glyph i={mdiChevronRight} size={20} className="fo-chev" />
             </Press>
           );
         })}
-        {f.entries.length === 0 && <Empty>Aucun abonnement</Empty>}
+        {f.entries.length === 0 && <Empty>Not following anyone</Empty>}
       </div>
       {ed.ui}
     </div>
@@ -358,7 +358,7 @@ export function AccountPage({ pid, net }: { pid: string; net: Net }) {
   const newPost = async () => {
     if (busy) return;
     setBusy(true);
-    try { const p = await ensure(); if (p) ed.add(`${p}/posts`, cfg.post(now), { atStart: true, title: "Nouveau post", fields: cfg.postFields }); }
+    try { const p = await ensure(); if (p) ed.add(`${p}/posts`, cfg.post(now), { atStart: true, title: "New post", fields: cfg.postFields }); }
     finally { setBusy(false); }
   };
 
@@ -387,19 +387,19 @@ export function AccountPage({ pid, net }: { pid: string; net: Net }) {
     <div className={`app ${APP_CLASS[net]} fo ${os}`}>
       <StatusBar />
       <NetBar net={net} title={net === "instagram" ? who.handle || who.name : who.name || cfg.accLabel} onBack={() => nav(-1)} backLabel="Back"
-        action={ed.canEdit ? { label: "Nouveau post", icon: net === "twitter" || net === "tumblr" ? mdiPencil : mdiPlus, onClick: newPost } : undefined} />
+        action={ed.canEdit ? { label: "New post", icon: net === "twitter" || net === "tumblr" ? mdiPencil : mdiPlus, onClick: newPost } : undefined} />
       <div className="fo-scroll">
         <Press className={`fo-head ${net}`} onLong={ed.canEdit ? editProfile : undefined}>
           <Cover src={e.acc.bannerImg} color={who.color ?? (net === "facebook" ? "#3b5998" : net === "tumblr" ? "#36465d" : net === "instagram" ? "#517fa4" : "#3a6d99")} className="fo-cover">
             <Avatar src={pickLocal(who.avatar)} name={who.name} size={64} round={false} color={who.color ?? (net === "facebook" ? "#3b5998" : undefined)} />
-            <b>{who.name || "Sans nom"}</b>
+            <b>{who.name || "Unnamed"}</b>
             {handleLine && <span>{handleLine}</span>}
           </Cover>
           {e.acc.bio && <p className="fo-bio">{e.acc.bio}</p>}
           <div className="fo-stats">{stats.map(([n, l]) => <span key={l as string}><b>{compact(n as number)}</b>{l}</span>)}</div>
           {ed.canEdit && <div className="fo-tools">
             <button onClick={editProfile}><Glyph i={mdiPencil} size={14} />Modifier le profil</button>
-            <button className="main" onClick={newPost} disabled={busy}><Glyph i={mdiPlus} size={14} />Nouveau post</button>
+            <button className="main" onClick={newPost} disabled={busy}><Glyph i={mdiPlus} size={14} />New post</button>
           </div>}
         </Press>
         <div className={net === "tumblr" ? "fo-tb-list" : ""}>
@@ -410,7 +410,7 @@ export function AccountPage({ pid, net }: { pid: string; net: Net }) {
                 template: x.k.startsWith("o") ? tpl : undefined })} />
           ))}
         </div>
-        {posts.length === 0 && <Empty>Aucun post pour l'instant</Empty>}
+        {posts.length === 0 && <Empty>No posts yet</Empty>}
       </div>
       {ed.ui}
     </div>

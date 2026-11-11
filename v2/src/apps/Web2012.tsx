@@ -27,7 +27,7 @@ function Bar({ pid, color, gradient, title, right, light = false }: { pid: strin
   if (os === "android") return <HoloBar color={color} dark={!light} onUp={home} title={title} actions={right} />;
   return (
     <div className={`w12-bar ${light ? "light" : ""}`} style={{ background: gradient }}>
-      <BarBack onClick={home} label="Accueil" tone={light ? "light" : "dark"} />
+      <BarBack onClick={home} label="Home" tone={light ? "light" : "dark"} />
       <h1>{title}</h1>
       <span className="w12-side">{right}</span>
     </div>
@@ -64,7 +64,7 @@ export function AskFmApp({ pid }: { pid: string }) {
     <div className={`app af2 ${os}`}>
       <StatusBar />
       <Bar pid={pid} color="#e1325b" gradient="linear-gradient(#f05a7e, #c8234a)" title={<span className="af2-logo">ask<i>.fm</i></span>}
-        right={<AddBtn ed={ed} label="Nouvelle réponse" onClick={() => ed.add(path, { q: "", a: "", from: "Anonymous", time: "just now", likes: 0 }, { atStart: true, title: "Question", fields: QA_FIELDS })} />} />
+        right={<AddBtn ed={ed} label="New reply" onClick={() => ed.add(path, { q: "", a: "", from: "Anonymous", time: "just now", likes: 0 }, { atStart: true, title: "Question", fields: QA_FIELDS })} />} />
       <div className="w12-scroll af2-bg">
         <Press className="af2-prof" onLong={ed.canEdit ? () => ed.edit({ path: profPath, fields: ["name", "user", "bio", "avatar"], title: "Profil ask.fm" }) : undefined}>
           <Avatar src={pickLocal(prof.avatar, me?.avatar)} name={name} size={64} round={false} />
@@ -79,7 +79,7 @@ export function AskFmApp({ pid }: { pid: string }) {
         {list.map(([id, x]) => (
           <Press key={id} className="af2-qa" onLong={ed.itemLong(path, id, { fields: QA_FIELDS, label: x.q })}>
             <b>{x.q}</b>
-            {x.a ? <p>{x.a}</p> : <p className="af2-unans">Pas encore de réponse</p>}
+            {x.a ? <p>{x.a}</p> : <p className="af2-unans">No replies yet</p>}
             <small>{x.time}{x.from && x.from !== "Anonymous" ? ` · ${x.from}` : ""}<span><Glyph i={mdiHeart} size={12} /> {x.likes ?? 0}</span></small>
           </Press>
         ))}
@@ -113,7 +113,7 @@ export function EspnApp({ pid }: { pid: string }) {
     <div className={`app es2 ${os}`}>
       <StatusBar />
       <Bar pid={pid} color="#cc0000" gradient="linear-gradient(#e11, #900)" title={<span className="es2-logo">ESPN <small>ScoreCenter</small></span>}
-        right={<AddBtn ed={ed} label="Nouveau score" onClick={() => ed.add(path, { league: league || "NCAA Football", away: "", as: "", home: "", hs: "", status: "Final" }, { title: "Score", fields: SCORE_FIELDS })} />} />
+        right={<AddBtn ed={ed} label="New score" onClick={() => ed.add(path, { league: league || "NCAA Football", away: "", as: "", home: "", hs: "", status: "Final" }, { title: "Score", fields: SCORE_FIELDS })} />} />
       <div className="es2-tabs">
         <button className={!league ? "on" : ""} onClick={() => setLeague("")}>My Scores</button>
         {leagues.map((l) => <button key={l} className={league === l ? "on" : ""} onClick={() => setLeague(l)}>{l}</button>)}
@@ -164,7 +164,7 @@ export function PolyvoreApp({ pid }: { pid: string }) {
     <div className={`app pv ${os}`}>
       <StatusBar />
       <Bar pid={pid} color="#ffffff" gradient="linear-gradient(#fff, #e9e9e9)" light title={<span className="pv-logo">polyvore</span>}
-        right={<AddBtn ed={ed} label="Nouveau set" onClick={() => ed.add(path, { title: "", src: "", author: "", likes: 0, time: "now" }, { atStart: true, title: "Set", fields: SET_FIELDS })} />} />
+        right={<AddBtn ed={ed} label="New set" onClick={() => ed.add(path, { title: "", src: "", author: "", likes: 0, time: "now" }, { atStart: true, title: "Set", fields: SET_FIELDS })} />} />
       <div className="pv-tabs">
         <button className={tab === "mine" ? "on" : ""} onClick={() => setTab("mine")}>My Sets</button>
         <button className={tab === "liked" ? "on" : ""} onClick={() => setTab("liked")}>Likes</button>

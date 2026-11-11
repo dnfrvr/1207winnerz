@@ -1,4 +1,4 @@
-// Heures « lore » (fiction en 2012) : format stocké "6 oct, 2:30pm" (année implicite 2012).
+// Heures « lore » (fiction en 2012) : format stocké "6 oct, 14:30" (les anciens "2:30pm" restent lisibles) (année implicite 2012).
 // Repris de src/shared/lore-date.js (sans dépendance React) pour la v2.
 
 export type LoreParts = { day: number; month: number; hour: number | null; min: number; year: number };
@@ -6,6 +6,7 @@ export type LoreParts = { day: number; month: number; hour: number | null; min: 
 const MONTHS: Record<string, number> = { jan: 1, "fév": 2, feb: 2, mar: 3, avr: 4, apr: 4, mai: 5, may: 5, juin: 6, jun: 6, juil: 7, jul: 7, "aoû": 8, aug: 8, sep: 9, oct: 10, nov: 11, "déc": 12, dec: 12 };
 const SHORT = ["", "jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"];
 const FULL_EN = ["", "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+const p2 = (n: number) => String(n).padStart(2, "0");
 const DAYS_EN = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
 const parseClock = (s: string): { hour: number | null; min: number } => {
@@ -70,7 +71,7 @@ export const newestFirst = <T,>(list: T[], when: (x: T) => string | null | undef
 export const msToLore = (ms: number): string => {
   const d = new Date(ms);
   const h = d.getHours(), m = d.getMinutes();
-  return `${d.getDate()} ${SHORT[d.getMonth() + 1]}, ${h % 12 === 0 ? 12 : h % 12}:${String(m).padStart(2, "0")}${h < 12 ? "am" : "pm"}`;
+  return `${d.getDate()} ${SHORT[d.getMonth() + 1]}, ${p2(h)}:${p2(m)}`;
 };
 
 /** Heure médiane entre deux voisins (insertion d'un message entre deux autres). */
@@ -90,8 +91,8 @@ export const loreNowMs = (loreDate: string) => {
 };
 
 export const clockLabel = (ms: number) => {
-  const d = new Date(ms), h = d.getHours();
-  return `${h % 12 === 0 ? 12 : h % 12}:${String(d.getMinutes()).padStart(2, "0")} ${h < 12 ? "AM" : "PM"}`;
+  const d = new Date(ms);
+  return `${p2(d.getHours())}:${p2(d.getMinutes())}`;
 };
 
 const sameDay = (a: Date, b: Date) => a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
@@ -114,7 +115,7 @@ export const dayLabel = (ms: number) => {
   return `${d.getDate()} ${FULL_EN[d.getMonth() + 1]}`;
 };
 
-/** En-tête horodaté au-dessus des bulles, comme iOS 6 : "6 Oct 2012 2:30 PM". */
+/** En-tête horodaté au-dessus des bulles, comme iOS 6 : "6 Oct 2012 14:30". */
 export const stampLabel = (ms: number) => {
   const d = new Date(ms);
   return `${d.getDate()} ${FULL_EN[d.getMonth() + 1].slice(0, 3)} ${d.getFullYear()} ${clockLabel(ms)}`;
@@ -134,7 +135,6 @@ export type DateField = {
   type: "date" | "datetime-local"; value: string; tpl: string; orig: string; tok: string; mo: number;
   fr: boolean; cap: boolean; dPad: boolean; hPad: boolean; ampm: "" | "am" | "AM"; sp: boolean;
 };
-const p2 = (n: number) => String(n).padStart(2, "0");
 
 /** Lit une date texte (null si ce n'est pas une date avec un jour ou un mois). "" = date vide au format lore. */
 export function parseDateField(s: string): DateField | null {
@@ -182,15 +182,12 @@ export function formatDateField(f: DateField, input: string): string {
   const [y, mo, d] = [+m[1], +m[2], +m[3]];
   const h = m[4] === undefined ? 0 : +m[4], mi = m[5] ?? "00";
   const name = mo === f.mo ? f.tok : f.fr ? MON_FR[mo - 1] : MON_EN[mo - 1]; // même mois : même orthographe
-  const h12 = h % 12 === 0 ? 12 : h % 12;
-  const clock = f.ampm
-    ? `${f.hPad ? p2(h12) : h12}:${mi}${f.sp ? " " : ""}${h < 12 ? "am" : "pm"}`
-    : `${f.hPad ? p2(h) : h}:${mi}`;
+  const clock = `${f.ampm || f.hPad ? p2(h) : h}:${mi}`; // toujours 24 h (format européen)
   return f.tpl
     .replace("{D}", f.dPad ? p2(d) : String(d))
     .replace("{MO}", p2(mo))
     .replace("{M}", mo === f.mo ? name : f.cap ? name[0].toUpperCase() + name.slice(1) : name.toLowerCase())
     .replace("{YY}", p2(y % 100))
     .replace("{Y}", String(y))
-    .replace("{T}", f.ampm === "AM" ? clock.toUpperCase() : clock);
+    .replace("{T}", clock);
 }

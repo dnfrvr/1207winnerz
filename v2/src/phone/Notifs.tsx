@@ -7,7 +7,7 @@ import { useData, useValue, useWriter } from "../data/hooks";
 import { notifLines, type Notif } from "../data/notify";
 import type { Patches } from "../data/store";
 import { img } from "../lib/img";
-import { ANDROID_ICON_DEFAULTS, type OS } from "./common";
+import { ANDROID_ICON_DEFAULTS, iosIcon, type OS } from "./common";
 import "./notifs.css";
 
 type Profile = { appIcons?: Record<string, string> };
@@ -51,7 +51,7 @@ export function useIncomingNotifs(pid: string | null) {
 function useAppIcon(pid: string, os: OS) {
   const profile = useValue<Profile>(`phones/${pid}/profile`);
   const droid = useValue<Record<string, string>>("shared/androidIcons");
-  return (app: string) => (os === "android" ? droid?.[app] ?? ANDROID_ICON_DEFAULTS[app] : profile?.appIcons?.[app]);
+  return (app: string) => (os === "android" ? droid?.[app] ?? ANDROID_ICON_DEFAULTS[app] : iosIcon(app, profile?.appIcons));
 }
 
 /** Écrit « vu » (seulement le ou la propriétaire du téléphone : le MDJ qui regarde ne consomme pas la notif). */
@@ -137,7 +137,7 @@ const ago = (at: number, now: number) => {
   const m = Math.floor((now - at) / 60_000);
   if (m < 1) return "now";
   if (m < 60) return `${m}m ago`;
-  return new Date(at).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
+  return new Date(at).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
 };
 
 /** Écran verrouillé. iOS 6 : carte sombre au centre (bande grise en haut, icône à gauche, texte sur plusieurs lignes).
@@ -170,7 +170,6 @@ export function LockNotifs({ pid, os }: { pid: string; os: OS }) {
   return (
     <div className="lock-alert-wrap">
       <div className="lock-alert">
-        <div className="lock-alert-top" aria-hidden />
         <ul>
           {list.map(([id, n]) => {
             const src = icon(n.app);

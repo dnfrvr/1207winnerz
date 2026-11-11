@@ -91,9 +91,9 @@ export function IncomingCall({ pid, os }: { pid: string; os: OS }) {
 
   const answer = () => canEdit && write(answerPatches(pid));
   const active = call.state === "active";
-  const status = call.state === "ended" ? (os === "ios" ? "call ended" : "Appel terminé")
+  const status = call.state === "ended" ? (os === "ios" ? "call ended" : "Call ended")
     : active ? duration(now - (call.answeredAt ?? now))
-    : os === "ios" ? "mobile" : "Appel entrant";
+    : os === "ios" ? "mobile" : "Incoming call";
 
   if (os === "android") return (
     <div className="incall and">
@@ -102,12 +102,12 @@ export function IncomingCall({ pid, os }: { pid: string; os: OS }) {
       <div className="incall-photo"><span>{call.contact.trim()[0]?.toUpperCase() ?? "?"}</span></div>
       {ringing ? (
         <div className="incall-ring">
-          <button className="no" onClick={() => end("declined")} disabled={!canEdit} aria-label="Refuser"><Glyph i={mdiPhoneHangup} size={30} /></button>
-          <span className="hint">‹ refuser · décrocher ›</span>
-          <button className="yes" onClick={answer} disabled={!canEdit} aria-label="Décrocher"><Glyph i={mdiPhone} size={30} /></button>
+          <button className="no" onClick={() => end("declined")} disabled={!canEdit} aria-label="Decline"><Glyph i={mdiPhoneHangup} size={30} /></button>
+          <span className="hint">‹ decline · answer ›</span>
+          <button className="yes" onClick={answer} disabled={!canEdit} aria-label="Answer"><Glyph i={mdiPhone} size={30} /></button>
         </div>
       ) : (
-        <button className="incall-end" onClick={() => end("ended")} disabled={!canEdit || !active} aria-label="Raccrocher"><Glyph i={mdiPhoneHangup} size={32} /></button>
+        <button className="incall-end" onClick={() => end("ended")} disabled={!canEdit || !active} aria-label="Hang up"><Glyph i={mdiPhoneHangup} size={32} /></button>
       )}
     </div>
   );

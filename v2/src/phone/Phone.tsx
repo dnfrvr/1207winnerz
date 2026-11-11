@@ -11,7 +11,7 @@ import { PromptAlert } from "./Sheets";
 import { LORE_BUMP, loreToMs, msToLore } from "../lib/loreTime";
 import { LORE_DATE_DEFAULT } from "./common";
 import { AppFrame, BackButton, NavDirCtx, RingUnlock, SlideToUnlock, StatusBar, useClock, useLoreDate, type NavDir } from "./IOSChrome";
-import { ANDROID_ICON_DEFAULTS, OSCtx, useNow, type OS } from "./common";
+import { ANDROID_ICON_DEFAULTS, iosIcon, OSCtx, useNow, type OS } from "./common";
 import { APP_META } from "../../../src/shared/app-meta.js";
 import { APPS, preloadApps } from "../apps/registry";
 import { img } from "../lib/img";
@@ -133,7 +133,7 @@ function PhoneSwitcher({ pid, compact, canEdit }: { pid: string; compact: boolea
   const tips = canEdit && !!app && !!APPS[app];
   const list = (
     <nav className="sw-list" aria-label="Changer de téléphone">
-      <Link to="/" className="sw-home" title="Accueil du site"><Glyph i={mdiHome} size={26} /><small>Accueil</small></Link>
+      <Link to="/" className="sw-home" title="Accueil du site"><Glyph i={mdiHome} size={26} /><small>Home</small></Link>
       {ALL_PIDS.map((p) => <SwitchAvatar key={p} pid={p} current={p === pid} />)}
       {tips && !compact && <button type="button" className="sw-home sw-tip" title="Revoir la prise en main de cette app" onClick={() => { setOpen(false); replayTips(app); }}>
         <Glyph i={mdiHelpCircleOutline} size={26} /><small>Tuto</small></button>}
@@ -170,8 +170,8 @@ function ChassisDevice({ pid, profile, render }: { pid: string; profile: Profile
         backgroundImage: `url(${profile.chassisPng})`,
         padding: `${inset.top * k}px ${inset.right * k}px ${inset.bottom * k}px ${inset.left * k}px`,
       }} />
-      <button className="hotspot" aria-label="Accueil" style={{ left: "39.7%", top: "88.2%", width: "20.6%", height: "6.9%", borderRadius: "50%" }} onClick={keys.home} />
-      <button className="hotspot" aria-label="Retour" style={{ left: "70%", top: "89.3%", width: "14%", height: "4.6%" }} onClick={keys.back} />
+      <button className="hotspot" aria-label="Home" style={{ left: "39.7%", top: "88.2%", width: "20.6%", height: "6.9%", borderRadius: "50%" }} onClick={keys.home} />
+      <button className="hotspot" aria-label="Back" style={{ left: "70%", top: "89.3%", width: "14%", height: "4.6%" }} onClick={keys.back} />
       <button className="hotspot" aria-label="Menu" style={{ left: "16%", top: "89.3%", width: "14%", height: "4.6%" }} onClick={() => {}} />
     </div>
   );
@@ -211,12 +211,12 @@ function useKeys(pid: string, os: OS) {
 /** Boutons physiques : bouton rond (iOS) ou retour / accueil / récents (Android). */
 function HardwareKeys({ pid, os, inline = false }: { pid: string; os: OS; inline?: boolean }) {
   const keys = useKeys(pid, os);
-  if (os === "ios") return <div className="fs-keys"><button className="fs-home" aria-label="Bouton principal" onClick={keys.home} /></div>;
+  if (os === "ios") return <div className="fs-keys"><button className="fs-home" aria-label="Main button" onClick={keys.home} /></div>;
   return (
     <div className={inline ? "softkeys" : "fs-keys and"}>
-      <button aria-label="Retour" onClick={keys.back}><svg width="20" height="16" viewBox="0 0 18 16" fill="none"><path d="M6 1 L1 8 L6 15 M1 8 L17 8" stroke="#9a9a9a" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" /></svg></button>
-      <button aria-label="Accueil" onClick={keys.home}><svg width="20" height="18" viewBox="0 0 20 18" fill="none"><path d="M2 9 L10 2 L18 9 M5 7 V16 H15 V7" stroke="#9a9a9a" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" /></svg></button>
-      <button aria-label="Récents"><svg width="18" height="16" viewBox="0 0 18 16" fill="none"><rect x="1" y="4" width="12" height="11" rx="1" stroke="#9a9a9a" strokeWidth="1.4" /><path d="M5 1 H17 V12" stroke="#9a9a9a" strokeWidth="1.4" /></svg></button>
+      <button aria-label="Back" onClick={keys.back}><svg width="20" height="16" viewBox="0 0 18 16" fill="none"><path d="M6 1 L1 8 L6 15 M1 8 L17 8" stroke="#9a9a9a" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" /></svg></button>
+      <button aria-label="Home" onClick={keys.home}><svg width="20" height="18" viewBox="0 0 20 18" fill="none"><path d="M2 9 L10 2 L18 9 M5 7 V16 H15 V7" stroke="#9a9a9a" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" /></svg></button>
+      <button aria-label="Recents"><svg width="18" height="16" viewBox="0 0 18 16" fill="none"><rect x="1" y="4" width="12" height="11" rx="1" stroke="#9a9a9a" strokeWidth="1.4" /><path d="M5 1 H17 V12" stroke="#9a9a9a" strokeWidth="1.4" /></svg></button>
     </div>
   );
 }
@@ -365,7 +365,7 @@ function AppStack({ pid }: { pid: string }) {
 
 function HomeButton({ pid }: { pid: string }) {
   const nav = useNavigate();
-  return <button className="device-home" aria-label="Bouton principal" onClick={() => nav(`/${pid}/home`)} />;
+  return <button className="device-home" aria-label="Main button" onClick={() => nav(`/${pid}/home`)} />;
 }
 
 const bg = (wallpaper?: string): CSSProperties | undefined => {
@@ -390,7 +390,7 @@ function Lock({ pid, profile }: { pid: string; profile: Profile }) {
       <div className="lock-bottom">
         <SlideToUnlock label={pending ? (pending[1].app === "messages" ? "slide to reply" : "slide to view") : undefined}
           onUnlock={() => (pending ? openNotif(pending[0], pending[1]) : nav(`/${pid}/home`))} />
-        <button className="lock-cam" aria-label="Appareil photo" onClick={() => nav(`/${pid}/camera`)}>
+        <button className="lock-cam" aria-label="Camera" onClick={() => nav(`/${pid}/camera`)}>
           <svg width="22" height="17" viewBox="0 0 22 17" aria-hidden><path d="M7 1h8l1.6 2.4H20a1.5 1.5 0 0 1 1.5 1.5v9.6A1.5 1.5 0 0 1 20 16H2A1.5 1.5 0 0 1 .5 14.5V4.9A1.5 1.5 0 0 1 2 3.4h3.4z" fill="#d8d8d8" /><circle cx="11" cy="9.4" r="4" fill="#3a3a3a" /><circle cx="11" cy="9.4" r="2.6" fill="#777" /></svg>
         </button>
       </div>
@@ -423,10 +423,6 @@ function AppIcon({ pid, id, src, label, badge }: { pid: string; id: string; src?
 }
 
 const PER_PAGE = { ios: 20, android: 20 };
-// Fichiers sur iOS : icône iCloud alu, la même sur les quatre iPhone.
-const IOS_FILES_ICON = "/assets/icons/files-ios.png";
-// Icônes iOS de repli quand le profil n'en définit pas (Passbook ajouté à Elias par le code).
-const IOS_ICON_DEFAULTS: Record<string, string> = { passbook: "/assets/seed/86c9eafcd0c35d63f68d13737a04ac4c.jpg" };
 
 // Apps ajoutées par le code (pas d'éditeur d'écran d'accueil) : Passbook / Wallet pour la carte étudiante.
 const EXTRA_APPS: Record<string, string[]> = { elias: ["passbook"], drew: ["passbook"] };
@@ -459,7 +455,7 @@ function Springboard({ pid, profile }: { pid: string; profile: Profile }) {
   const live = useNotifBadges(pid);
   useEffect(preloadApps, []);
   const icon = (id: string) => (
-    <AppIcon key={id} pid={pid} id={id} src={id === "files" ? IOS_FILES_ICON : profile.appIcons?.[id] ?? IOS_ICON_DEFAULTS[id]} badge={(profile.badges?.[id] ?? 0) + (live[id] ?? 0)}
+    <AppIcon key={id} pid={pid} id={id} src={iosIcon(id, profile.appIcons)} badge={(profile.badges?.[id] ?? 0) + (live[id] ?? 0)}
       label={profile.appNames?.[id] || META[id]?.label || id} />
   );
   return (
@@ -493,7 +489,7 @@ function AndroidLock({ pid, profile }: { pid: string; profile: Profile }) {
   const nav = useNavigate();
   const now = useNow();
   const lore = useLoreDate();
-  const time = now.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
+  const time = now.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
   const day = lore.toLocaleDateString("en-GB", { weekday: "long", month: "long", day: "numeric" });
   return (
     <div className="and-lock" style={bg(profile.wallpaper)}>
@@ -530,7 +526,7 @@ function AppRoute({ pid }: { pid: string }) {
   if (Impl) return <><Impl pid={pid} /><AppTips pid={pid} app={app} /></>;
   const label = META[app]?.droidLabel ?? META[app]?.label ?? app;
   return (
-    <AppFrame title={label} left={<BackButton to={`/${pid}/home`} label="Accueil" />} bodyClass="pinstripe">
+    <AppFrame title={label} left={<BackButton to={`/${pid}/home`} label="Home" />} bodyClass="pinstripe">
       <div className="soon"><Glyph i={mdiApplication} size={48} /><br />{label}<small>Cette app n'est pas encore portée dans la v2.</small></div>
     </AppFrame>
   );

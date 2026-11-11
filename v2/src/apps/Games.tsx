@@ -48,7 +48,7 @@ export default function GameApp({ pid }: { pid: string }) {
   return (
     <div className="app gm-app">
       <StatusBar variant="translucent" />
-      <button className="gm-x" onClick={() => nav(`/${pid}/home`)} aria-label="Quitter"><Glyph i={mdiClose} size={18} /></button>
+      <button className="gm-x" onClick={() => nav(`/${pid}/home`)} aria-label="Quit"><Glyph i={mdiClose} size={18} /></button>
       {stage === "splash" && app !== "shazam" ? (
         <Splash title={cfg.title} subtitle={cfg.sub} background={cfg.bg} color={cfg.color} logo={logo} onTap={() => setStage("in")} />
       ) : app === "shazam" ? <Shazam pid={pid} /> : (

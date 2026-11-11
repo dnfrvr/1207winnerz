@@ -63,13 +63,13 @@ function KikList({ pid }: { pid: string }) {
   const chats = useList<KikChat>(path, { newest: "time" });
   const ed = useEditor(pid);
   const template = { name: "", avatar: "", time: "", unread: 0 };
-  const newChat = () => ed.add(path, template, { atStart: true, title: "Nouvelle discussion", fields: CHAT_FIELDS });
+  const newChat = () => ed.add(path, template, { atStart: true, title: "New chat", fields: CHAT_FIELDS });
   const rows: [string, KikChat][] = chats.length ? chats : [["__team", KIK_TEAM]];
   return (
     <div className={`app kk ${os}`}>
       <StatusBar />
       <KikBar onBack={() => nav(`/${pid}/home`)} backLabel="Home"
-        right={ed.canEdit ? <button className="kk-btn icon" aria-label="Nouvelle discussion" onClick={newChat}><Glyph i={mdiPencil} size={os === "android" ? 22 : 17} /></button> : undefined} />
+        right={ed.canEdit ? <button className="kk-btn icon" aria-label="New chat" onClick={newChat}><Glyph i={mdiPencil} size={os === "android" ? 22 : 17} /></button> : undefined} />
       {os === "ios" && <div className="kk-search"><span>Search</span></div>}
       <div className="kk-scroll">
         {rows.map(([id, c]) => {
@@ -80,7 +80,7 @@ function KikList({ pid }: { pid: string }) {
               onLong={id === "__team" ? undefined : ed.itemLong(path, id, { fields: CHAT_FIELDS, label: c.name, template })}>
               <Avatar src={c.avatar} name={c.name} size={46} color={id === "__team" ? KIK_GREEN : undefined} />
               <span className="kk-txt">
-                <span className="kk-top"><b>{c.name || "Nouvelle discussion"}</b><i>{c.time ?? last?.time}</i></span>
+                <span className="kk-top"><b>{c.name || "New chat"}</b><i>{c.time ?? last?.time}</i></span>
                 <span className="kk-prev">{last?.from === "me" && last.status && <em className={`kk-st ${last.status}`}>{last.status}</em>}{preview}</span>
               </span>
               {!!c.unread && <span className="kk-unread">{c.unread}</span>}
@@ -121,7 +121,7 @@ function KikChatView({ pid }: { pid: string }) {
     <div className={`app kk ${os}`}>
       <StatusBar />
       <KikBar title={chat.name || "Kik"} onBack={() => nav(`/${pid}/kik`)} backLabel="Chats"
-        right={editable ? <button className="kk-btn icon" aria-label="Modifier la discussion" onClick={() => ed.edit({ path: base, fields: CHAT_FIELDS, title: "Discussion" })}><Glyph i={mdiDotsHorizontal} size={20} /></button> : undefined} />
+        right={editable ? <button className="kk-btn icon" aria-label="Edit chat" onClick={() => ed.edit({ path: base, fields: CHAT_FIELDS, title: "Discussion" })}><Glyph i={mdiDotsHorizontal} size={20} /></button> : undefined} />
       <div className="kk-scroll kk-thread">
         {shown.map(([mid, m], i) => {
           const me = m.from === "me";
@@ -172,7 +172,7 @@ export function VineApp({ pid }: { pid: string }) {
   const myName = prof.name ?? me?.name ?? pid;
   const myAvatar = pickLocal(prof.avatar, me?.avatar);
   const template = { author: pid, caption: "", src: "", time: "now", likes: 0, revines: 0, comments: 0 };
-  const newPost = () => ed.add(path, template, { atStart: true, title: "Nouveau post", fields: ["caption", "src", "time", "location", "likes", "revines", "comments"] });
+  const newPost = () => ed.add(path, template, { atStart: true, title: "New post", fields: ["caption", "src", "time", "location", "likes", "revines", "comments"] });
   const mine = posts.filter(([, p]) => p.author === pid);
   const list = tab === "profile" ? mine : tab === "popular" ? [...posts].sort((a, b) => (b[1].likes ?? 0) - (a[1].likes ?? 0)) : posts;
   const title = tab === "home" ? undefined : tab === "popular" ? "Popular Now" : myName;
@@ -185,14 +185,14 @@ export function VineApp({ pid }: { pid: string }) {
         <HoloBar color={VINE_GREEN} onUp={() => nav(`/${pid}/home`)} icon={<span className="vn-word sm">Vine</span>} title={title}
           actions={<>
             <button aria-label="Menu" onClick={() => setMenu((m) => !m)}><Glyph i={mdiMenu} size={24} /></button>
-            <button aria-label="Filmer" disabled={!ed.canEdit} onClick={newPost}><Glyph i={mdiCamera} size={24} /></button>
+            <button aria-label="Record" disabled={!ed.canEdit} onClick={newPost}><Glyph i={mdiCamera} size={24} /></button>
           </>} />
       ) : (
         <div className="vn-bar">
-          <BarBack onClick={() => (tab === "home" ? nav(`/${pid}/home`) : go("home"))} label={tab === "home" ? "Accueil" : "Vine"} />
+          <BarBack onClick={() => (tab === "home" ? nav(`/${pid}/home`) : go("home"))} label={tab === "home" ? "Home" : "Vine"} />
           <button className="vn-ic" onClick={() => setMenu((m) => !m)} aria-label="Menu"><Glyph i={mdiMenu} size={22} /></button>
           <h1>{title ?? <span className="vn-word">Vine</span>}</h1>
-          <button className="vn-ic cam" onClick={newPost} disabled={!ed.canEdit} aria-label="Filmer"><Glyph i={mdiCamera} size={22} /></button>
+          <button className="vn-ic cam" onClick={newPost} disabled={!ed.canEdit} aria-label="Record"><Glyph i={mdiCamera} size={22} /></button>
         </div>
       )}
       {menu && (
@@ -264,7 +264,7 @@ function VineCard({ p, name, avatar, onLong }: { p: VinePost; name: string; avat
         <button className={liked ? "on" : ""} onClick={() => setLiked((l) => !l)}><Glyph i={liked ? mdiHeart : mdiHeartOutline} size={18} />Like</button>
         <button><Glyph i={mdiCommentOutline} size={18} />Comment</button>
         <button><Glyph i={mdiRepeat} size={18} />Revine</button>
-        <button className="more" aria-label="Plus"><Glyph i={mdiDotsHorizontal} size={20} /></button>
+        <button className="more" aria-label="More"><Glyph i={mdiDotsHorizontal} size={20} /></button>
       </div>
       <div className="vn-counts">
         <span><Glyph i={mdiHeart} size={12} />{compact((p.likes ?? 0) + (liked ? 1 : 0))} likes</span>

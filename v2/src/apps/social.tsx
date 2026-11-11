@@ -96,7 +96,7 @@ export function HoloBar({ color, icon, title, onUp, actions, dark = true, classN
 }) {
   return (
     <div className={`so-holo ${dark ? "dark" : "light"} ${className}`} style={{ background: color }}>
-      <button className="so-holo-up" onClick={onUp} aria-label="Retour" disabled={!onUp}>
+      <button className="so-holo-up" onClick={onUp} aria-label="Back" disabled={!onUp}>
         {onUp && <svg width="10" height="16" viewBox="0 0 10 16" aria-hidden><path d="M8 2L2 8l6 6" fill="none" stroke="currentColor" strokeWidth="2" /></svg>}
         {icon && <span className="so-holo-icon">{icon}</span>}
       </button>

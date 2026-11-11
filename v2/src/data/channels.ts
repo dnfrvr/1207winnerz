@@ -39,10 +39,8 @@ export type Channel = {
 
 const norm = (s?: unknown) => String(s ?? "").trim().toLowerCase().normalize("NFKC");
 const now = (lore: string) => new Date(loreNowMs(lore));
-/** « 7:21pm » (Messenger, GroupMe, Kik). */
-const clock12 = (d: Date) => `${d.getHours() % 12 || 12}:${String(d.getMinutes()).padStart(2, "0")}${d.getHours() < 12 ? "am" : "pm"}`;
-/** « 7:21 PM » (Mail, Grindr). */
-const clockAP = (d: Date) => `${d.getHours() % 12 || 12}:${String(d.getMinutes()).padStart(2, "0")} ${d.getHours() < 12 ? "AM" : "PM"}`;
+/** « 19:21 » (24 h, format européen). */
+const clock24 = (d: Date) => `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
 const alive = (list: List) => Object.entries(list ?? {}).filter(([, it]) => it && typeof it === "object" && !it.deleted);
@@ -94,7 +92,7 @@ export const CHANNELS: Channel[] = [
     listPath: (pid) => `phones/${pid}/data/messenger`,
     names: (list) => alive(list).map(([, c]) => String(c.name ?? "")).filter(Boolean),
     send: (pid, i, list, lore) => {
-      const t = clock12(now(lore));
+      const t = clock24(now(lore));
       const text = i.text.trim();
       const r = threadSend({ pid, list, base: `phones/${pid}/data/messenger`, nameField: "name", name: i.contact, msgsField: "messages",
         msg: { from: i.contact, me: false, text, time: t, ...(i.img ? { img: i.img } : {}) },
@@ -113,7 +111,7 @@ export const CHANNELS: Channel[] = [
     listPath: (pid) => `phones/${pid}/data/groupmeGroups`,
     names: (list) => alive(list).map(([, g]) => String(g.name ?? "")).filter(Boolean),
     send: (pid, i, list, lore) => {
-      const t = clock12(now(lore));
+      const t = clock24(now(lore));
       const who = i.sender?.trim() || "?";
       const last = `${who.split(" ")[0]}: ${i.text.trim()}`;
       const r = threadSend({ pid, list, base: `phones/${pid}/data/groupmeGroups`, nameField: "name", name: i.contact, msgsField: "messages",
@@ -133,7 +131,7 @@ export const CHANNELS: Channel[] = [
     listPath: (pid) => `phones/${pid}/data/kik`,
     names: (list) => alive(list).map(([, c]) => String(c.name ?? "")).filter(Boolean),
     send: (pid, i, list, lore) => {
-      const t = clock12(now(lore));
+      const t = clock24(now(lore));
       const r = threadSend({ pid, list, base: `phones/${pid}/data/kik`, nameField: "name", name: i.contact, msgsField: "messages",
         msg: { from: "them", text: i.text.trim(), time: t },
         newConv: { last: i.text.trim(), time: t, unread: 1 },
@@ -151,7 +149,7 @@ export const CHANNELS: Channel[] = [
     names: (list) => alive(list).map(([, c]) => String(c.name ?? "")).filter(Boolean),
     send: (pid, i, list, lore) => {
       const r = threadSend({ pid, list, base: `phones/${pid}/data/grindrDms`, nameField: "name", name: i.contact, msgsField: "thread",
-        msg: { from: "them", text: i.text.trim(), time: clockAP(now(lore)) },
+        msg: { from: "them", text: i.text.trim(), time: clock24(now(lore)) },
         newConv: { distance: "", online: true },
         update: () => ({ online: true }) });
       return withNotif(pid, r, { app: "grindr", title: i.contact, body: i.text.trim(), link: `grindr/chat/${r.key}` });
@@ -169,8 +167,8 @@ export const CHANNELS: Channel[] = [
       const key = makeId("l");
       const body = i.text.trim();
       const patches: Patches = {
-        [`phones/${pid}/data/mail/inbox/${key}`]: { from: i.contact, subj: i.subject?.trim() || "(sans objet)", preview: body.slice(0, 90), body,
-          time: clockAP(now(lore)), unread: true, order: minOrder(list) },
+        [`phones/${pid}/data/mail/inbox/${key}`]: { from: i.contact, subj: i.subject?.trim() || "(no subject)", preview: body.slice(0, 90), body,
+          time: clock24(now(lore)), unread: true, order: minOrder(list) },
       };
       return { patches: { ...patches, ...notifPatch(pid, { app: "gmail", title: i.contact, body: [i.subject?.trim(), body].filter(Boolean).join(" — "), link: `gmail/inbox/${key}`, msg: key }) }, key };
     },
@@ -184,10 +182,10 @@ export const CHANNELS: Channel[] = [
     send: (pid, i, list, lore) => {
       const key = makeId("s");
       const d = now(lore);
-      const time = `${MONTHS[d.getMonth()]} ${d.getDate()} at ${clockAP(d).replace(" ", "")}`;
+      const time = `${d.getDate()} ${MONTHS[d.getMonth()]} at ${clock24(d)}`;
       return { key, patches: {
         [`phones/${pid}/data/snaps/${key}`]: { contact: i.contact, opened: false, sent: false, time, order: minOrder(list) },
-        ...notifPatch(pid, { app: "snapchat", title: i.contact, body: "vous a envoyé un Snap 👻", link: "snapchat", msg: key }),
+        ...notifPatch(pid, { app: "snapchat", title: i.contact, body: "sent you a Snap 👻", link: "snapchat", msg: key }),
       } };
     },
     link: () => "snapchat",
@@ -205,7 +203,7 @@ export const CHANNELS: Channel[] = [
       } };
     },
     link: () => "phone",
-    titleOf: (c) => `Appel manqué · ${c?.contact ?? "?"}`,
+    titleOf: (c) => `Missed call · ${c?.contact ?? "?"}`,
   },
   {
     app: "insta", label: "Instagram — activité", fields: ["contact", "action"], contactLabel: "Compte", contactHint: "ex. jungkook97",
@@ -276,7 +274,7 @@ CHANNELS.push(
       } };
     },
     link: () => "phone?tab=voicemail",
-    titleOf: (v) => `Message vocal · ${v?.contact ?? "?"}`,
+    titleOf: (v) => `Voicemail · ${v?.contact ?? "?"}`,
   },
 );
 

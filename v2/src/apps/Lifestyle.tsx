@@ -31,9 +31,9 @@ export function SnapchatApp({ pid }: { pid: string }) {
     <div className="app sc">
       <StatusBar />
       <div className="sc-bar">
-        <BarBack onClick={() => nav(`/${pid}/home`)} label="Accueil" />
+        <BarBack onClick={() => nav(`/${pid}/home`)} label="Home" />
         <h1>Snapchat</h1>
-        <button onClick={() => nav(`/${pid}/camera`)} aria-label="Appareil photo"><Icon name="camera" size={20} /></button>
+        <button onClick={() => nav(`/${pid}/camera`)} aria-label="Camera"><Icon name="camera" size={20} /></button>
       </div>
       <div className="sc-scroll">
         {snaps.map(([id, s]) => (
@@ -58,7 +58,7 @@ type GmMsg = { from?: string; text?: string; time?: string; likes?: number; me?:
 const GM_BLUE = "#00aff0";
 const GM_GROUP_FIELDS = ["name", "avatar", "last", "time", "n", "members"];
 const GM_MSG_FIELDS = ["from", "text", "img", "time", "likes", "me"];
-const clock12 = (d: Date) => `${d.getHours() % 12 || 12}:${String(d.getMinutes()).padStart(2, "0")}${d.getHours() < 12 ? "am" : "pm"}`;
+const clock24 = (d: Date) => `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
 
 export function GroupMeApp({ pid }: { pid: string }) {
   return (
@@ -80,9 +80,9 @@ function GroupMeList({ pid }: { pid: string }) {
   return (
     <>
       <div className="gm-bar">
-        <BarBack onClick={() => nav(`/${pid}/home`)} label="Accueil" />
+        <BarBack onClick={() => nav(`/${pid}/home`)} label="Home" />
         <h1>GroupMe</h1>
-        <button aria-label="Nouveau groupe" disabled={!ed.canEdit} onClick={() => ed.add(path, { name: "", last: "", time: "", n: 0, members: 2 }, { atStart: true, title: "Groupe", fields: GM_GROUP_FIELDS })}><Icon name="plus" size={20} /></button>
+        <button aria-label="New group" disabled={!ed.canEdit} onClick={() => ed.add(path, { name: "", last: "", time: "", n: 0, members: 2 }, { atStart: true, title: "Groupe", fields: GM_GROUP_FIELDS })}><Icon name="plus" size={20} /></button>
       </div>
       <div className="gm-scroll">
         {groups.map(([id, g]) => (
@@ -121,7 +121,7 @@ function GroupMeChat({ pid }: { pid: string }) {
   const shown: [string, GmMsg][] = msgs.length ? msgs : g.last ? [["last", (() => { const m = g.last.match(/^([^:]{1,30}):\s*(.+)$/); return { from: m?.[1] ?? "", text: m?.[2] ?? g.last, time: g.time }; })()]] : [];
   const send = () => {
     const text = draft.trim(); if (!text || !ed.canEdit) return;
-    const order = (msgs[msgs.length - 1]?.[1].order ?? 0) + 1000, time = clock12(new Date()), first = me.split(" ")[0];
+    const order = (msgs[msgs.length - 1]?.[1].order ?? 0) + 1000, time = clock24(new Date()), first = me.split(" ")[0];
     // 1er envoi dans un groupe sans fil : on enregistre d'abord le dernier message connu, pour ne pas le perdre.
     const keep = !msgs.length && shown[0] ? { [`${mpath}/m0`]: { ...shown[0][1], likes: 0, me: false, order: 1000 } } : {};
     ed.write({ ...keep, [`${mpath}/m${Date.now().toString(36)}`]: { from: me, me: true, text, time, likes: 0, order: keep[`${mpath}/m0`] ? 2000 : order }, [`${gpath}/last`]: `${first}: ${text}`, [`${gpath}/time`]: time });
@@ -144,7 +144,7 @@ function GroupMeChat({ pid }: { pid: string }) {
               {m.text && <p>{m.text}</p>}
               {m.img && <img className="gm-img" src={img(m.img)} alt="" loading="lazy" />}
             </div>
-            <button className={`gm-like ${m.likes ? "on" : ""}`} aria-label="J'aime" disabled={!ed.canEdit || id === "last"}
+            <button className={`gm-like ${m.likes ? "on" : ""}`} aria-label="Like" disabled={!ed.canEdit || id === "last"}
               onClick={() => ed.write({ [`${mpath}/${id}/likes`]: (m.likes ?? 0) + 1 })}>
               <Glyph i={m.likes ? mdiHeart : mdiHeartOutline} size={16} />{m.likes ? <span>{m.likes}</span> : null}
             </button>
@@ -153,8 +153,8 @@ function GroupMeChat({ pid }: { pid: string }) {
         {shown.length === 0 && <Empty>No messages yet</Empty>}
       </div>
       <form className="gm-compose" onSubmit={(e) => { e.preventDefault(); send(); }}>
-        <button type="button" className="gm-attach" aria-label="Ajouter un message" disabled={!ed.canEdit}
-          onClick={() => ed.add(mpath, { from: "", text: "", time: clock12(new Date()), likes: 0, me: false }, { title: "Message", fields: GM_MSG_FIELDS })}><Glyph i={mdiPlus} size={18} /></button>
+        <button type="button" className="gm-attach" aria-label="Add message" disabled={!ed.canEdit}
+          onClick={() => ed.add(mpath, { from: "", text: "", time: clock24(new Date()), likes: 0, me: false }, { title: "Message", fields: GM_MSG_FIELDS })}><Glyph i={mdiPlus} size={18} /></button>
         <input value={draft} onChange={(e) => setDraft(e.target.value)} placeholder="Send a message..." disabled={!ed.canEdit} />
         <button type="submit" className="gm-send" disabled={!ed.canEdit || !draft.trim()}>Send</button>
       </form>
@@ -183,7 +183,7 @@ export function StarbucksApp({ pid }: { pid: string }) {
   const stars = sb.stars ?? 0;
   const level = stars >= 30 ? "Gold" : stars >= 5 ? "Green" : "Welcome";
   return (
-    <AppFrame title={<span className="sb-logo"><Brand name="starbucks" size={22} color="#fff" /> STARBUCKS</span>} left={<BackButton to={`/${pid}/home`} label="Accueil" />}
+    <AppFrame title={<span className="sb-logo"><Brand name="starbucks" size={22} color="#fff" /> STARBUCKS</span>} left={<BackButton to={`/${pid}/home`} label="Home" />}
       right={ed.canEdit ? <button className="barbtn" onClick={() => ed.edit({ path: base, fields: ["stars", "balance"], title: "Carte" })}>Edit</button> : undefined}
       navStyle={{ background: "linear-gradient(#2a8a61, #00704a 50%, #006241 51%, #05683f)", borderBottomColor: "#00341f" }} bodyClass="k-body-tabbed sb">
       <TabBar tabs={SB_TABS} active={tab} onChange={setTab} />
@@ -257,21 +257,21 @@ function FilesList({ pid }: { pid: string }) {
   const filesPath = folder ? `${root}/folders/${folder}/files` : `${root}/rootFiles`;
   const files = useList<FileItem>(filesPath, { newest: "date" });
   const stamp = useLoreStamp().split(",")[0];
-  const title = folder ? (folders.find(([id]) => id === folder)?.[1].name ?? "Dossier") : (os === "ios" ? "Fichiers" : "Mes fichiers");
+  const title = folder ? (folders.find(([id]) => id === folder)?.[1].name ?? "Folder") : (os === "ios" ? "Files" : "My files");
   return (
-    <AppFrame title={title} left={<BackButton to={folder ? `/${pid}/files` : `/${pid}/home`} label={folder ? "Fichiers" : "Accueil"} />}
-      right={<AddButton show={ed.canEdit} onClick={() => ed.add(filesPath, { name: "Nouveau.pdf", ext: "pdf", size: "1 MB", date: stamp }, { title: "Fichier", fields: FILE_FIELDS })} />}>
+    <AppFrame title={title} left={<BackButton to={folder ? `/${pid}/files` : `/${pid}/home`} label={folder ? "Files" : "Home"} />}
+      right={<AddButton show={ed.canEdit} onClick={() => ed.add(filesPath, { name: "New.pdf", ext: "pdf", size: "1 MB", date: stamp }, { title: "Fichier", fields: FILE_FIELDS })} />}>
       <Plain>
         {!folder && folders.map(([id, f]) => (
-          <Cell key={id} icon={<span className="fl-folder"><Glyph i={mdiFolder} size={28} /></span>} title={f.name} subtitle={`${Object.keys(f.files ?? {}).length} éléments`} chevron onClick={() => nav(id)}
+          <Cell key={id} icon={<span className="fl-folder"><Glyph i={mdiFolder} size={28} /></span>} title={f.name} subtitle={`${Object.keys(f.files ?? {}).length} items`} chevron onClick={() => nav(id)}
             onLong={ed.itemLong(`${root}/folders`, id, { fields: ["name"], label: f.name })} />
         ))}
         {files.map(([id, f]) => (
           <Cell key={id} icon={<FileIcon ext={f.ext} />} title={f.name} subtitle={[f.size, f.date].filter(Boolean).join(" · ")}
             onLong={ed.itemLong(filesPath, id, { fields: FILE_FIELDS, label: f.name })} />
         ))}
-        {!folder && ed.canEdit && <Cell title={<span className="fl-add">+ Nouveau dossier</span>} onClick={() => ed.add(`${root}/folders`, { name: "Nouveau dossier" }, { title: "Dossier", fields: ["name"] })} />}
-        {files.length === 0 && (folder || folders.length === 0) && <Empty>Dossier vide</Empty>}
+        {!folder && ed.canEdit && <Cell title={<span className="fl-add">+ Nouveau dossier</span>} onClick={() => ed.add(`${root}/folders`, { name: "New folder" }, { title: "Dossier", fields: ["name"] })} />}
+        {files.length === 0 && (folder || folders.length === 0) && <Empty>Empty folder</Empty>}
       </Plain>
       {ed.ui}
     </AppFrame>

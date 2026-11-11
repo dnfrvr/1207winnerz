@@ -21,9 +21,9 @@ type City = { name?: string; current?: number; condition?: string; condIcon?: st
 
 // [valeur stockée, libellé, icône, couleur]
 const CONDS: [string, string, string, string][] = [
-  ["☀️", "Ensoleillé", mdiWeatherSunny, "#ffd34d"],
-  ["🌤️", "Éclaircies", mdiWeatherPartlyCloudy, "#fff"],
-  ["🌥️", "Plutôt nuageux", mdiWeatherPartlyCloudy, "#e8eef5"],
+  ["☀️", "Sunny", mdiWeatherSunny, "#ffd34d"],
+  ["🌤️", "Partly cloudy", mdiWeatherPartlyCloudy, "#fff"],
+  ["🌥️", "Mostly cloudy", mdiWeatherPartlyCloudy, "#e8eef5"],
   ["☁️", "Nuageux", mdiWeatherCloudy, "#e8eef5"],
   ["🌦️", "Averses", mdiWeatherPartlyRainy, "#fff"],
   ["🌧️", "Pluie", mdiWeatherRainy, "#d9e9ff"],
@@ -49,7 +49,7 @@ function hourly(c: City, now: Date, hi?: number, lo?: number) {
   const h0 = now.getHours(), base = curve(h0);
   return Array.from({ length: 6 }, (_, k) => {
     const h = (h0 + k) % 24;
-    const label = k === 0 ? "Now" : `${h % 12 || 12}${h < 12 ? "AM" : "PM"}`;
+    const label = k === 0 ? "Now" : `${String(h).padStart(2, "0")}:00`;
     return { label, t: k === 0 ? cur : Math.round(cur + curve(h) - base), night: h < 7 || h >= 19 };
   });
 }
@@ -68,7 +68,7 @@ export default function WeatherApp({ pid }: { pid: string }) {
   const night = now.getHours() < 7 || now.getHours() >= 19;
   const deg = (c?: number) => (c === undefined ? "–" : `${unit === "F" ? Math.round((c * 9) / 5 + 32) : c}°`);
   const editCity = (id: string, c: City) => ed.edit({ path: `${path}/${id}`, fields: ["name", "current", "condition", "condIcon", "updated"], title: c.name, choices: { condIcon: CHOICES } });
-  const addCity = () => ed.add(path, { name: "", current: 15, condition: "Sunny", condIcon: "☀️", updated: "10/6/12 3:00 PM" }, { title: "Nouvelle ville", fields: ["name", "current", "condition", "condIcon"], choices: { condIcon: CHOICES } });
+  const addCity = () => ed.add(path, { name: "", current: 15, condition: "Sunny", condIcon: "☀️", updated: "6/10/12 15:00" }, { title: "Nouvelle ville", fields: ["name", "current", "condition", "condIcon"], choices: { condIcon: CHOICES } });
 
   const pages = (
     <div className="wx-pages" {...drag} onScroll={(e) => setPage(Math.round(e.currentTarget.scrollLeft / e.currentTarget.clientWidth))}>
@@ -106,7 +106,7 @@ export default function WeatherApp({ pid }: { pid: string }) {
   const back = (
     <div className="wx-back">
       <div className="wx-back-head">
-        {ed.canEdit ? <button className="wx-add" onClick={addCity} aria-label="Ajouter une ville"><Glyph i={mdiPlus} size={20} /></button> : <span />}
+        {ed.canEdit ? <button className="wx-add" onClick={addCity} aria-label="Add city"><Glyph i={mdiPlus} size={20} /></button> : <span />}
         <b>Weather</b><span />
       </div>
       <ul className="wx-list">
@@ -119,7 +119,7 @@ export default function WeatherApp({ pid }: { pid: string }) {
           </li>
         ))}
       </ul>
-      <div className="wx-unit" role="group" aria-label="Unité">
+      <div className="wx-unit" role="group" aria-label="Unit">
         {(["F", "C"] as const).map((u) => (
           <button key={u} className={unit === u ? "on" : ""} disabled={!ed.canEdit} onClick={() => ed.write({ [`phones/${pid}/data/weather/unit`]: u })}>°{u}</button>
         ))}
@@ -129,8 +129,8 @@ export default function WeatherApp({ pid }: { pid: string }) {
   );
 
   if (os === "android") return (
-    <AppFrame title="Weather" left={<BackButton to={`/${pid}/home`} label="Accueil" />} bodyClass="wx android"
-      right={ed.canEdit ? <button className="barbtn" onClick={addCity} aria-label="Ajouter une ville"><Glyph i={mdiPlus} size={24} /></button> : undefined}>
+    <AppFrame title="Weather" left={<BackButton to={`/${pid}/home`} label="Home" />} bodyClass="wx android"
+      right={ed.canEdit ? <button className="barbtn" onClick={addCity} aria-label="Add city"><Glyph i={mdiPlus} size={24} /></button> : undefined}>
       {pages}{ed.ui}
     </AppFrame>
   );
@@ -142,9 +142,9 @@ export default function WeatherApp({ pid }: { pid: string }) {
         <div className="wx-face rear">{back}</div>
       </div>
       {!flipped && <>
-        <button className="wx-home" onClick={() => nav(`/${pid}/home`)} aria-label="Retour">‹</button>
+        <button className="wx-home" onClick={() => nav(`/${pid}/home`)} aria-label="Back">‹</button>
         <div className="wx-dots">{cities.map(([id], i) => <i key={id} className={i === page ? "on" : ""} />)}</div>
-        <button className="wx-info" onClick={() => setFlipped(true)} aria-label="Réglages météo"><Glyph i={mdiInformationVariant} size={14} /></button>
+        <button className="wx-info" onClick={() => setFlipped(true)} aria-label="Weather settings"><Glyph i={mdiInformationVariant} size={14} /></button>
       </>}
       {ed.ui}
     </div>

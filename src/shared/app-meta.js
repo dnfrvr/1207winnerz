@@ -47,7 +47,7 @@ export const APP_META = {
   subwaysurf: {label:"Subway Surfers",  iosIcon:"🛹", droidLabel:"Subway Surfers"},
   wordswfriends: {label:"Words w Friends", iosIcon:"📝", droidLabel:"Words w Friends"},
 
-  files:      {label:"Fichiers",   iosIcon:"📁", droidLabel:"Fichiers"},
+  files:      {label:"Files",   iosIcon:"📁", droidLabel:"Files"},
   polyvore: {label:"Polyvore",        iosIcon:"👗"},
   kik: {label:"Kik",             iosIcon:"💬"},
   runkeeper: {label:"RunKeeper",       iosIcon:"🏃"},

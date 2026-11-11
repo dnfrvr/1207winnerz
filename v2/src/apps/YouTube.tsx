@@ -29,12 +29,12 @@ const Logo = () => <span className="yt-logo"><span className="yt-you">You</span>
 function Bar({ back, guide, right }: { back: string; guide?: boolean; right?: React.ReactNode }) {
   const nav = useNavigate();
   const os = useOS();
-  if (os === "android") return <HoloBar color="#262626" onUp={() => nav(back)} icon={<Logo />} actions={<><button aria-label="Rechercher"><Glyph i={mdiMagnify} size={24} /></button>{right}</>} />;
+  if (os === "android") return <HoloBar color="#262626" onUp={() => nav(back)} icon={<Logo />} actions={<><button aria-label="Search"><Glyph i={mdiMagnify} size={24} /></button>{right}</>} />;
   return (
     <div className="yt-bar">
-      <BarBack onClick={() => nav(back)} label={guide ? "Accueil" : "Vidéos"} />
+      <BarBack onClick={() => nav(back)} label={guide ? "Home" : "Videos"} />
       <h1><Logo /></h1>
-      <span className="yt-r">{right ?? <button className="yt-bbtn" aria-label="Rechercher"><Glyph i={mdiMagnify} size={20} /></button>}</span>
+      <span className="yt-r">{right ?? <button className="yt-bbtn" aria-label="Search"><Glyph i={mdiMagnify} size={20} /></button>}</span>
     </div>
   );
 }
@@ -49,16 +49,16 @@ function List({ pid }: { pid: string }) {
   return (
     <div className={`app yt ${os}`}>
       <StatusBar />
-      <Bar back={`/${pid}/home`} guide right={ed.canEdit ? <button className="yt-bbtn" aria-label="Ajouter" onClick={() => ed.add(path, template, { atStart: true, title: "Nouvelle vidéo", fields })}><Glyph i={mdiPlus} size={22} /></button> : undefined} />
+      <Bar back={`/${pid}/home`} guide right={ed.canEdit ? <button className="yt-bbtn" aria-label="Ajouter" onClick={() => ed.add(path, template, { atStart: true, title: "New video", fields })}><Glyph i={mdiPlus} size={22} /></button> : undefined} />
       <div className="yt-scroll">
-        <div className="yt-section">Recommandé pour vous</div>
+        <div className="yt-section">Recommended for you</div>
         {vids.map(([id, v]) => (
           <Press as="button" key={id} className="yt-row" onClick={() => nav(`v/${id}`)} onLong={ed.itemLong(path, id, { fields, label: v.title, template })}>
             <span className="yt-thumb" style={{ background: v.thumb }}>{v.thumbImg && <img src={img(v.thumbImg)} alt="" loading="lazy" />}<i>{v.dur}</i></span>
             <span className="yt-info"><b>{v.title}</b><span>{v.ch}</span><span>{v.views} · {v.age}</span></span>
           </Press>
         ))}
-        {vids.length === 0 && <Empty>Aucune vidéo</Empty>}
+        {vids.length === 0 && <Empty>No video</Empty>}
       </div>
       {ed.ui}
     </div>

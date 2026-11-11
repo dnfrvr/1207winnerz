@@ -27,14 +27,14 @@ export default function NotesApp({ pid }: { pid: string }) {
   );
 }
 
-const firstLine = (n: Note) => n.title?.trim() || n.body?.split("\n")[0]?.trim() || "Nouvelle note";
+const firstLine = (n: Note) => n.title?.trim() || n.body?.split("\n")[0]?.trim() || "New note";
 
 function useAdd(pid: string) {
   const { insert } = useWriter(pid);
   const nav = useNavigate();
   const lore = useValue<string>("meta/loreDate");
   return () => {
-    const date = new Date(`${lore || LORE_DATE_DEFAULT}T12:00:00`).toLocaleDateString("fr-FR", { day: "numeric", month: "short" }).replace(".", "");
+    const date = new Date(`${lore || LORE_DATE_DEFAULT}T12:00:00`).toLocaleDateString("en-GB", { day: "numeric", month: "short" }).replace(".", "");
     const id = insert(`phones/${pid}/data/notes`, { title: "", body: "", date }, { atStart: true });
     nav(`/${pid}/notes/${id}`);
   };
@@ -54,10 +54,10 @@ function NoteList({ pid }: { pid: string }) {
   const shown = q ? notes.filter(([, n]) => `${n.title ?? ""}\n${n.body ?? ""}`.toLowerCase().includes(q.toLowerCase())) : notes;
 
   if (os === "android") return (
-    <AppFrame title="Notes" left={<BackButton to={`/${pid}/home`} label="Accueil" />}
+    <AppFrame title="Notes" left={<BackButton to={`/${pid}/home`} label="Home" />}
       right={<>
-        <button className="barbtn" aria-label="Rechercher"><Glyph i={mdiMagnify} size={24} /></button>
-        {canEdit && <button className="barbtn" onClick={add} aria-label="Nouveau mémo"><Glyph i={mdiPlus} size={26} /></button>}
+        <button className="barbtn" aria-label="Search"><Glyph i={mdiMagnify} size={24} /></button>
+        {canEdit && <button className="barbtn" onClick={add} aria-label="New memo"><Glyph i={mdiPlus} size={26} /></button>}
       </>}
       bodyClass="nt-and">
       <div className="nt-memos">
@@ -69,7 +69,7 @@ function NoteList({ pid }: { pid: string }) {
           </button>
         ))}
       </div>
-      {notes.length === 0 && <div className="nt-and-empty">Aucun mémo</div>}
+      {notes.length === 0 && <div className="nt-and-empty">No memos</div>}
     </AppFrame>
   );
 
@@ -77,8 +77,8 @@ function NoteList({ pid }: { pid: string }) {
     <AppFrame
       title={`Notes (${notes.length})`}
       navStyle={leather}
-      left={<BackButton to={`/${pid}/home`} label="Accueil" style={leatherBtn} />}
-      right={canEdit ? <button className="barbtn plus" style={leatherBtn} onClick={add} aria-label="Nouvelle note">+</button> : undefined}
+      left={<BackButton to={`/${pid}/home`} label="Home" style={leatherBtn} />}
+      right={canEdit ? <button className="barbtn plus" style={leatherBtn} onClick={add} aria-label="New note">+</button> : undefined}
       bodyClass="nt nt-ios"
     >
       <div className="nt-search">
@@ -95,7 +95,7 @@ function NoteList({ pid }: { pid: string }) {
             </button>
           </li>
         ))}
-        {notes.length === 0 && <li className="empty">Aucune note</li>}
+        {notes.length === 0 && <li className="empty">No notes</li>}
       </ul>
     </AppFrame>
   );
@@ -124,21 +124,21 @@ function NoteView({ pid }: { pid: string }) {
   if (!note) return <AppFrame title="Notes" navStyle={leather} left={back} bodyClass="nt nt-ios"><Torn /></AppFrame>;
 
   // « Today » si la note date du jour de la fiction (comme l'en-tête d'iOS 6).
-  const loreDay = new Date(`${lore}T12:00:00`).toLocaleDateString("fr-FR", { day: "numeric", month: "short" }).replace(".", "").toLowerCase();
+  const loreDay = new Date(`${lore}T12:00:00`).toLocaleDateString("en-GB", { day: "numeric", month: "short" }).replace(".", "").toLowerCase();
   const isToday = (note.date ?? "").toLowerCase().replace(".", "") === loreDay;
   const label = firstLine({ ...note, title: title.value, body: body.value });
 
   const paper = (
     <div className="nt-sheet">
       <div className="nt-date">
-        <span>{isToday ? (os === "ios" ? "Today" : "Aujourd'hui") : ""}</span>
+        <span>{isToday ? (os === "ios" ? "Today" : "Today") : ""}</span>
         {canEdit
           ? <input value={date.value} onChange={(e) => date.onChange(e.target.value)} onBlur={date.onBlur} aria-label="Date" />
           : <span>{note.date}</span>}
       </div>
       {canEdit ? (
         <>
-          <input className="nt-line nt-title" placeholder="Titre" value={title.value} onChange={(e) => title.onChange(e.target.value)} onBlur={title.onBlur} />
+          <input className="nt-line nt-title" placeholder="Title" value={title.value} onChange={(e) => title.onChange(e.target.value)} onBlur={title.onBlur} />
           <AutoGrow className="nt-line nt-body" placeholder="Écris ici…" value={body.value} onChange={body.onChange} onBlur={body.onBlur} />
         </>
       ) : (
@@ -151,14 +151,14 @@ function NoteView({ pid }: { pid: string }) {
   );
 
   const sheet = confirmDel && (
-    <ActionSheet actions={[{ label: os === "ios" ? "Delete Note" : "Supprimer", destructive: true, onPress: remove }]} onClose={() => setConfirmDel(false)} />
+    <ActionSheet actions={[{ label: os === "ios" ? "Delete Note" : "Delete", destructive: true, onPress: remove }]} onClose={() => setConfirmDel(false)} />
   );
 
   if (os === "android") return (
     <AppFrame title={label} left={<BackButton to={`/${pid}/notes`} label="Notes" />}
       right={<>
-        <button className="barbtn" aria-label="Partager"><Glyph i={mdiShareVariant} size={22} /></button>
-        {canEdit && <button className="barbtn" aria-label="Supprimer" onClick={() => setConfirmDel(true)}><Glyph i={mdiDelete} size={24} /></button>}
+        <button className="barbtn" aria-label="Share"><Glyph i={mdiShareVariant} size={22} /></button>
+        {canEdit && <button className="barbtn" aria-label="Delete" onClick={() => setConfirmDel(true)}><Glyph i={mdiDelete} size={24} /></button>}
       </>}
       bodyClass="nt nt-and-note">
       {paper}
@@ -173,10 +173,10 @@ function NoteView({ pid }: { pid: string }) {
         {paper}
       </div>
       <div className="nt-toolbar">
-        <button aria-label="Note précédente" disabled={idx <= 0} onClick={() => go(-1)}><Glyph i={mdiMenuLeft} size={40} /></button>
-        <button aria-label="Partager"><Glyph i={IOS_ACTION} size={24} /></button>
-        <button aria-label="Mettre à la corbeille" disabled={!canEdit} onClick={() => setConfirmDel(true)}><Glyph i={mdiTrashCan} size={24} /></button>
-        <button aria-label="Note suivante" disabled={idx < 0 || idx >= notes.length - 1} onClick={() => go(1)}><Glyph i={mdiMenuRight} size={40} /></button>
+        <button aria-label="Previous note" disabled={idx <= 0} onClick={() => go(-1)}><Glyph i={mdiMenuLeft} size={40} /></button>
+        <button aria-label="Share"><Glyph i={IOS_ACTION} size={24} /></button>
+        <button aria-label="Move to trash" disabled={!canEdit} onClick={() => setConfirmDel(true)}><Glyph i={mdiTrashCan} size={24} /></button>
+        <button aria-label="Next note" disabled={idx < 0 || idx >= notes.length - 1} onClick={() => go(1)}><Glyph i={mdiMenuRight} size={40} /></button>
       </div>
       {sheet}
     </AppFrame>

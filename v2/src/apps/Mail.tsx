@@ -13,9 +13,9 @@ import "./mail.css";
 
 type MailItem = { from?: string; to?: string; subj?: string; preview?: string; body?: string; time?: string; unread?: boolean; order?: number; deleted?: boolean };
 const BOXES: { id: string; ios: string; and: string; icon: string }[] = [
-  { id: "inbox", ios: "Inbox", and: "Boîte de réception", icon: mdiInboxArrowDown },
+  { id: "inbox", ios: "Inbox", and: "Inbox", icon: mdiInboxArrowDown },
   { id: "drafts", ios: "Drafts", and: "Brouillons", icon: mdiFileDocumentEditOutline },
-  { id: "sent", ios: "Sent", and: "Envoyés", icon: mdiSend },
+  { id: "sent", ios: "Sent", and: "Sent", icon: mdiSend },
   { id: "trash", ios: "Trash", and: "Corbeille", icon: mdiTrashCan },
 ];
 const FIELDS = ["from", "to", "subj", "preview", "body", "time", "unread"];
@@ -37,7 +37,7 @@ function Mailboxes({ pid }: { pid: string }) {
   const email = useValue<string>(`phones/${pid}/data/mailEmail`);
   if (os === "android") return <Box pid={pid} forced="inbox" />;
   return (
-    <AppFrame title="Mailboxes" left={<BackButton to={`/${pid}/home`} label="Accueil" />}>
+    <AppFrame title="Mailboxes" left={<BackButton to={`/${pid}/home`} label="Home" />}>
       <Grouped>
         <Section title={email ?? "UMA"}>
           {BOXES.map((b, i) => {
@@ -63,8 +63,8 @@ function Box({ pid, forced }: { pid: string; forced?: string }) {
   const unread = list.filter(([, m]) => m.unread).length;
   return (
     <AppFrame title={os === "ios" ? `${meta.ios}${box === "inbox" && unread ? ` (${unread})` : ""}` : meta.and}
-      left={<BackButton to={os === "ios" ? `/${pid}/gmail` : `/${pid}/home`} label={os === "ios" ? "Mailboxes" : "Accueil"} />}
-      right={<AddButton show={ed.canEdit} onClick={() => ed.add(path, { from: "", subj: "", preview: "", body: "", time: "8:00 AM", unread: true }, { atStart: true, title: "Nouveau mail", fields: FIELDS })} />}
+      left={<BackButton to={os === "ios" ? `/${pid}/gmail` : `/${pid}/home`} label={os === "ios" ? "Mailboxes" : "Home"} />}
+      right={<AddButton show={ed.canEdit} onClick={() => ed.add(path, { from: "", subj: "", preview: "", body: "", time: "08:00", unread: true }, { atStart: true, title: "Nouveau mail", fields: FIELDS })} />}
       bodyClass={`ml ${os} k-body-tabbed`}>
       <div className="k-tab-scroll">
         <Plain>
@@ -84,8 +84,8 @@ function Box({ pid, forced }: { pid: string; forced?: string }) {
         </Plain>
       </div>
       {os === "ios"
-        ? <Toolbar><button aria-label="Relever"><Glyph i={mdiRefresh} size={22} /></button><span className="ml-upd">Updated Just Now</span><button aria-label="Nouveau message"><Glyph i={mdiSquareEditOutline} size={22} /></button></Toolbar>
-        : <Toolbar><button aria-label="Nouveau message"><Glyph i={mdiEmailPlusOutline} size={24} /></button><button aria-label="Rechercher"><Glyph i={mdiMagnify} size={24} /></button><button aria-label="Libellés"><Glyph i={mdiTagOutline} size={24} /></button><button aria-label="Actualiser"><Glyph i={mdiRefresh} size={24} /></button></Toolbar>}
+        ? <Toolbar><button aria-label="Check mail"><Glyph i={mdiRefresh} size={22} /></button><span className="ml-upd">Updated Just Now</span><button aria-label="New message"><Glyph i={mdiSquareEditOutline} size={22} /></button></Toolbar>
+        : <Toolbar><button aria-label="New message"><Glyph i={mdiEmailPlusOutline} size={24} /></button><button aria-label="Search"><Glyph i={mdiMagnify} size={24} /></button><button aria-label="Labels"><Glyph i={mdiTagOutline} size={24} /></button><button aria-label="Refresh"><Glyph i={mdiRefresh} size={24} /></button></Toolbar>}
       {ed.ui}
     </AppFrame>
   );
@@ -99,7 +99,7 @@ function Message({ pid }: { pid: string }) {
   const ed = useEditor(pid);
   return (
     <AppFrame title={os === "ios" ? "" : m.subj} left={<BackButton to={`/${pid}/gmail/${box}`} label={BOXES.find((b) => b.id === box)?.ios ?? "Inbox"} />}
-      right={ed.canEdit ? <button className="barbtn" aria-label="Modifier" onClick={() => ed.edit({ path: `phones/${pid}/data/mail/${box}/${id}`, fields: FIELDS, title: "Mail" })}>{os === "ios" ? "Edit" : <Glyph i={mdiPencil} size={22} />}</button> : undefined}
+      right={ed.canEdit ? <button className="barbtn" aria-label="Edit" onClick={() => ed.edit({ path: `phones/${pid}/data/mail/${box}/${id}`, fields: FIELDS, title: "Mail" })}>{os === "ios" ? "Edit" : <Glyph i={mdiPencil} size={22} />}</button> : undefined}
       bodyClass={`ml-msg ${os} k-body-tabbed`}>
       <div className="k-tab-scroll">
         <div className="ml-head">
@@ -111,8 +111,8 @@ function Message({ pid }: { pid: string }) {
         <div className="ml-body">{m.body || m.preview}</div>
       </div>
       {os === "ios"
-        ? <Toolbar><button aria-label="Déplacer"><Glyph i={mdiFolderMove} size={22} /></button><button aria-label="Supprimer"><Glyph i={mdiTrashCan} size={22} /></button><button aria-label="Répondre"><Glyph i={mdiReply} size={24} /></button><button aria-label="Nouveau message"><Glyph i={mdiSquareEditOutline} size={22} /></button></Toolbar>
-        : <Toolbar><button aria-label="Archiver"><Glyph i={mdiArchiveArrowDownOutline} size={24} /></button><button aria-label="Supprimer"><Glyph i={mdiDeleteOutline} size={24} /></button><button aria-label="Libellés"><Glyph i={mdiTagOutline} size={24} /></button><button aria-label="Marquer comme non lu"><Glyph i={mdiEmailOutline} size={24} /></button></Toolbar>}
+        ? <Toolbar><button aria-label="Move"><Glyph i={mdiFolderMove} size={22} /></button><button aria-label="Delete"><Glyph i={mdiTrashCan} size={22} /></button><button aria-label="Reply"><Glyph i={mdiReply} size={24} /></button><button aria-label="New message"><Glyph i={mdiSquareEditOutline} size={22} /></button></Toolbar>
+        : <Toolbar><button aria-label="Archive"><Glyph i={mdiArchiveArrowDownOutline} size={24} /></button><button aria-label="Delete"><Glyph i={mdiDeleteOutline} size={24} /></button><button aria-label="Labels"><Glyph i={mdiTagOutline} size={24} /></button><button aria-label="Mark as unread"><Glyph i={mdiEmailOutline} size={24} /></button></Toolbar>}
       {ed.ui}
     </AppFrame>
   );

@@ -116,11 +116,11 @@ function Library({ pid }: { pid: string }) {
   const ed = useEditor(pid);
   const start = (key: string, list: [string, Track][] = sortedSongs) => { play(key, list); nav("now"); };
   const songRow = ([id, t]: [string, Track]) => (
-    <Cell key={id} title={t.title ?? "Sans titre"} subtitle={`${t.artist ?? ""}${t.album ? ` — ${t.album}` : ""}`}
+    <Cell key={id} title={t.title ?? "Untitled"} subtitle={`${t.artist ?? ""}${t.album ? ` — ${t.album}` : ""}`}
       image={os === "android" ? (t.cover ?? null) : undefined} detail={os === "ios" ? undefined : t.duration}
       onClick={() => start(id)}
       onLong={ed.itemLong(`phones/${pid}/data/music`, id, { label: t.title, fields: TRACK_FIELDS,
-        template: { title: "Nouveau morceau", artist: "", album: "", duration: "3:00", cover: "" } })} />
+        template: { title: "New song", artist: "", album: "", duration: "3:00", cover: "" } })} />
   );
   const byKey = (k: "artist" | "album") => {
     const g = new Map<string, [string, Track][]>();
@@ -132,7 +132,7 @@ function Library({ pid }: { pid: string }) {
   for (const e of sortedSongs) { const l = (e[1].title ?? "#")[0].toUpperCase().replace(/[^A-Z]/, "#"); letters.set(l, [...(letters.get(l) ?? []), e]); }
 
   return (
-    <AppFrame title={TABS.find((t) => t.id === tab)?.label ?? "Music"} left={<BackButton to={`/${pid}/home`} label="Accueil" />}
+    <AppFrame title={TABS.find((t) => t.id === tab)?.label ?? "Music"} left={<BackButton to={`/${pid}/home`} label="Home" />}
       right={tab === "songs" && ed.canEdit ? <AddButton onClick={() => nav("add")} /> : <NowButton />}
       bodyClass="mu-body">
       <TabBar tabs={TABS} active={tab} onChange={setTab} />
@@ -175,7 +175,7 @@ function AddFromDeezer({ pid }: { pid: string }) {
   // La preview n'est pas enregistrée (URL signée qui expire) : elle est recherchée à la lecture.
   const pick = (d: DzTrack) => ed.add(path, { title: d.title, artist: d.artist, album: d.album, duration: d.duration, cover: d.cover }, { title: "Nouveau morceau", fields: TRACK_FIELDS });
   return (
-    <AppFrame title="Ajouter" left={<BackButton to={`/${pid}/music`} label="Songs" />} bodyClass="mu-body">
+    <AppFrame title="Add" left={<BackButton to={`/${pid}/music`} label="Songs" />} bodyClass="mu-body">
       <div className="mu-search"><Icon name="search" size={14} /><input autoFocus value={q} onChange={(e) => setQ(e.target.value)} placeholder="Titre, artiste… (catalogue Deezer)" /></div>
       <div className="mu-scroll"><Plain>
         {res?.map((d, i) => (
@@ -184,7 +184,7 @@ function AddFromDeezer({ pid }: { pid: string }) {
         {busy && !res?.length && <Empty>Recherche…</Empty>}
         {res && !res.length && !busy && <Empty>Aucun résultat</Empty>}
         {!q.trim() && <Empty>Cherche une chanson : elle sera ajoutée avec sa pochette.</Empty>}
-        <Cell title="Saisie manuelle…" onClick={() => ed.add(path, { title: q || "Nouveau morceau", artist: "", album: "", duration: "3:00", cover: "" }, { fields: TRACK_FIELDS })} />
+        <Cell title="Saisie manuelle…" onClick={() => ed.add(path, { title: q || "New song", artist: "", album: "", duration: "3:00", cover: "" }, { fields: TRACK_FIELDS })} />
       </Plain></div>
       {ed.ui}
     </AppFrame>
@@ -204,7 +204,7 @@ function PlaylistView({ pid }: { pid: string }) {
         {rows.map(([k, t], i) => (
           <Cell key={k} icon={<span className="mu-num">{i + 1}</span>} title={t.title} subtitle={t.artist} detail={t.duration} onClick={() => { play(k, rows); nav(`/${pid}/music/now`); }} />
         ))}
-        {rows.length === 0 && <Empty>Playlist vide</Empty>}
+        {rows.length === 0 && <Empty>Empty playlist</Empty>}
       </Plain></div>
     </AppFrame>
   );
@@ -234,7 +234,7 @@ function MiniPlayer({ pid }: { pid: string }) {
       {t.cover ? <img src={img(t.cover)} alt="" /> : <span className="mu-mini-noart"><Icon name="note" size={18} /></span>}
       <span className="mu-mini-txt"><b>{t.title}</b><small>{t.artist}{p.real ? "" : " · aperçu indisponible"}</small></span>
       <button onClick={(e) => { e.stopPropagation(); toggle(); }} aria-label={p.playing ? "Pause" : "Lecture"}><Icon name={p.playing ? "pause" : "play"} size={20} /></button>
-      <button onClick={(e) => { e.stopPropagation(); step(1); }} aria-label="Suivant"><Icon name="next" size={20} /></button>
+      <button onClick={(e) => { e.stopPropagation(); step(1); }} aria-label="Next"><Icon name="next" size={20} /></button>
     </div>
   );
 }
@@ -257,9 +257,9 @@ function NowPlaying({ pid }: { pid: string }) {
         {os === "ios" && <div className="mu-reflect" />}
       </div>
       <div className="mu-controls">
-        <button onClick={() => step(-1)} aria-label="Précédent"><Icon name="prev" size={30} /></button>
+        <button onClick={() => step(-1)} aria-label="Previous"><Icon name="prev" size={30} /></button>
         <button onClick={toggle} aria-label={p.playing ? "Pause" : "Lecture"}><Icon name={p.playing ? "pause" : "play"} size={36} /></button>
-        <button onClick={() => step(1)} aria-label="Suivant"><Icon name="next" size={30} /></button>
+        <button onClick={() => step(1)} aria-label="Next"><Icon name="next" size={30} /></button>
       </div>
       {os === "ios" && <div className="mu-volume"><div className="mu-vtrack"><i /></div></div>}
     </div>

@@ -20,10 +20,10 @@ export function StatusBar({ variant = "opaque", locked = false }: { variant?: "o
       <div className="left">
         <span className="bars">{[4, 6, 8, 10].map((h) => <i key={h} style={{ height: h }} />)}</span>
         <span>AT&amp;T</span>
-        {saving > 0 && <span className="spinner" title="Enregistrement…" />}
+        {saving > 0 && <span className="spinner" title="Recording…" />}
       </div>
       <div className="time">{locked
-        ? <svg width="9" height="12" viewBox="0 0 9 12" aria-label="Verrouillé"><path d="M2 5V3.5a2.5 2.5 0 0 1 5 0V5" fill="none" stroke="#fff" strokeWidth="1.4" /><rect x=".5" y="5" width="8" height="6.5" rx="1" fill="#fff" /></svg>
+        ? <svg width="9" height="12" viewBox="0 0 9 12" aria-label="Locked"><path d="M2 5V3.5a2.5 2.5 0 0 1 5 0V5" fill="none" stroke="#fff" strokeWidth="1.4" /><rect x=".5" y="5" width="8" height="6.5" rx="1" fill="#fff" /></svg>
         : time}</div>
       <div className="right"><span className="battery"><b style={{ width: "80%" }} /></span></div>
     </div>
@@ -33,7 +33,7 @@ export function StatusBar({ variant = "opaque", locked = false }: { variant?: "o
 function AndroidStatusBar({ variant, saving, time }: { variant: string; saving: boolean; time: string }) {
   return (
     <div className={`and-status ${variant}`}>
-      <div className="left">{saving && <span className="and-sync" title="Synchronisation…" />}</div>
+      <div className="left">{saving && <span className="and-sync" title="Syncing…" />}</div>
       <div className="right">
         <svg width="15" height="12" viewBox="0 0 20 16" aria-hidden><path d="M0.5 6.5 Q10 -1.5 19.5 6.5 L17 9 Q10 3.5 3 9 Z M4 10 Q10 5.5 16 10 L13.5 12.5 Q10 9 6.5 12.5 Z M7 13 Q10 10.5 13 13 L11.2 14.8 Q10 13.5 8.8 14.8 Z" fill="#33b5e5" /><circle cx="10" cy="16" r="1.8" fill="#33b5e5" /></svg>
         <svg width="14" height="12" viewBox="0 0 16 13" aria-hidden><rect x="0" y="10" width="3.2" height="3" fill="#33b5e5" /><rect x="4.3" y="7" width="3.2" height="6" fill="#33b5e5" /><rect x="8.5" y="4" width="3.2" height="9" fill="#33b5e5" /><rect x="12.8" y="1" width="3.2" height="12" fill="rgba(255,255,255,.3)" /></svg>
@@ -104,7 +104,7 @@ export function BackButton({ to, label, style }: { to: string; label: string; st
  * iOS 6 : bouton en flèche bordé avec libellé, teinté pour s'accorder à la couleur de la barre
  * (`tone="light"` sur barre claire : texte sombre). Android 4.1 : affordance « Up » Holo.
  */
-export function BarBack({ onClick, label = "Retour", tone = "dark" }: { onClick: () => void; label?: string; tone?: "dark" | "light" }) {
+export function BarBack({ onClick, label = "Back", tone = "dark" }: { onClick: () => void; label?: string; tone?: "dark" | "light" }) {
   const os = useOS();
   const { app = "" } = useParams();
   if (os === "android") return (

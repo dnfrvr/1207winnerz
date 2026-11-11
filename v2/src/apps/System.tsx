@@ -31,10 +31,10 @@ export function CameraApp({ pid }: { pid: string }) {
     <div className={`app cam ${os}`}>
       <StatusBar variant="translucent" />
       <div className="cam-top">
-        <button className="cam-pill" onClick={() => nav(`/${pid}/home`)} aria-label="Fermer"><Glyph i={mdiClose} size={16} /></button>
+        <button className="cam-pill" onClick={() => nav(`/${pid}/home`)} aria-label="Close"><Glyph i={mdiClose} size={16} /></button>
         <button className="cam-pill"><Glyph i={mdiFlashAuto} size={16} /> Auto</button>
         {os === "ios" && <button className="cam-pill">HDR Off</button>}
-        <button className="cam-pill" aria-label="Changer de caméra"><Glyph i={mdiCameraFlip} size={16} /></button>
+        <button className="cam-pill" aria-label="Switch camera"><Glyph i={mdiCameraFlip} size={16} /></button>
       </div>
       <div className="cam-view" style={{ backgroundImage: wallpaper && !playVideo ? `url(${img(wallpaper)})` : undefined }}>
         {playVideo && <video className="cam-video" src={img(video)} autoPlay muted loop playsInline onError={() => setVideoBroken(video!)} />}
@@ -45,7 +45,7 @@ export function CameraApp({ pid }: { pid: string }) {
       </div>
       <div className="cam-bottom">
         <button className="cam-thumb" onClick={() => nav(`/${pid}/${os === "ios" ? "photos" : "gallery"}/camera-roll`)}>{last && <img src={img(last)} alt="" />}</button>
-        <button className={`cam-shutter ${mode}`} onClick={() => mode === "photo" ? setShot((n) => n + 1) : setRec((r) => !r)} aria-label="Déclencher">
+        <button className={`cam-shutter ${mode}`} onClick={() => mode === "photo" ? setShot((n) => n + 1) : setRec((r) => !r)} aria-label="Shutter">
           <span>{mode === "photo" ? <Icon name="camera" size={26} /> : <i className={rec ? "on" : ""} />}</span>
         </button>
         <button className="cam-switch" onClick={() => setMode((m) => (m === "photo" ? "video" : "photo"))}>
@@ -92,12 +92,12 @@ export function FaceTimeApp({ pid }: { pid: string }) {
   const [t, setT] = useState(0);
   useEffect(() => { if (!calling) return; setT(0); const h = setInterval(() => setT((n) => n + 1), 1000); return () => clearInterval(h); }, [calling]);
   return (
-    <AppFrame title="FaceTime" left={<BackButton to={`/${pid}/home`} label="Accueil" />} bodyClass="ft">
+    <AppFrame title="FaceTime" left={<BackButton to={`/${pid}/home`} label="Home" />} bodyClass="ft">
       {calling ? (
         <div className="ft-call">
           <div className="ft-remote"><Avatar name={calling} size={110} round={false} /><b>{calling}</b><span>{t < 4 ? "FaceTime…" : "Connecting…"}</span></div>
           <div className="ft-pip" />
-          <div className="ft-bar"><button aria-label="Muet" onClick={(e) => balloons(e.currentTarget)}><Glyph i={mdiMicrophoneOff} size={20} /></button><button className="end" onClick={() => setCalling(null)}>End</button><button aria-label="Changer de caméra" onClick={(e) => balloons(e.currentTarget)}><Glyph i={mdiCameraFlip} size={20} /></button></div>
+          <div className="ft-bar"><button aria-label="Mute" onClick={(e) => balloons(e.currentTarget)}><Glyph i={mdiMicrophoneOff} size={20} /></button><button className="end" onClick={() => setCalling(null)}>End</button><button aria-label="Switch camera" onClick={(e) => balloons(e.currentTarget)}><Glyph i={mdiCameraFlip} size={20} /></button></div>
         </div>
       ) : (
         <div className="ft-list">
@@ -113,7 +113,7 @@ export function FaceTimeApp({ pid }: { pid: string }) {
 type Pass = { glyph?: string; title?: string; subtitle?: string; detail?: string; color?: string; logo?: string; order?: number; deleted?: boolean };
 const DEFAULT_PASSES: Pass[] = [
   { title: "Starbucks Card", subtitle: "Balance", detail: "$14.30", color: "#00704a", logo: "" },
-  { title: "AMC Theatres", subtitle: "Breaking Dawn – Part 2", detail: "Nov 16 · 10:00 PM", color: "#b71c1c", logo: "" },
+  { title: "AMC Theatres", subtitle: "Breaking Dawn – Part 2", detail: "16 Nov · 22:00", color: "#b71c1c", logo: "" },
 ];
 // Carte étudiante UMA de chaque personnage : toujours en tête de pile, non modifiable.
 const ID_CARDS: Record<string, string> = {
@@ -173,7 +173,7 @@ export function PassbookApp({ pid }: { pid: string }) {
   );
   // Android : l'équivalent de 2012 est Google Wallet (cartes en liste sous une barre d'action Holo).
   if (os === "android") return (
-    <AppFrame title="Wallet" left={<BackButton to={`/${pid}/home`} label="Accueil" />}
+    <AppFrame title="Wallet" left={<BackButton to={`/${pid}/home`} label="Home" />}
       right={<AddButton show={ed.canEdit} onClick={add} />} bodyClass="pb pb-wallet">
       {stack}
       {ed.ui}
@@ -182,7 +182,7 @@ export function PassbookApp({ pid }: { pid: string }) {
   return (
     <div className="app pb">
       <StatusBar />
-      <div className="pb-top"><BarBack onClick={() => nav(`/${pid}/home`)} label="Accueil" /><span>Passbook</span>
+      <div className="pb-top"><BarBack onClick={() => nav(`/${pid}/home`)} label="Home" /><span>Passbook</span>
         {ed.canEdit ? <button onClick={add}>+</button> : <span />}</div>
       {stack}
       {ed.ui}
@@ -198,7 +198,7 @@ export function RemindersApp({ pid }: { pid: string }) {
   const ed = useEditor(pid);
   const fields = ["title", "due", "done"];
   return (
-    <AppFrame title="Reminders" left={<BackButton to={`/${pid}/home`} label="Accueil" />}
+    <AppFrame title="Reminders" left={<BackButton to={`/${pid}/home`} label="Home" />}
       right={<AddButton show={ed.canEdit} onClick={() => ed.add(path, { title: "", due: "", done: false }, { title: "Rappel", fields })} />}
       navStyle={{ background: "linear-gradient(#8a8f96, #5d636b)", borderBottomColor: "#3a3e44" }} bodyClass="rm">
       <div className="rm-paper">
@@ -240,8 +240,8 @@ function MessengerList({ pid }: { pid: string }) {
   const ed = useEditor(pid);
   return (
     <>
-      <div className="msn-bar"><BarBack onClick={() => nav(`/${pid}/home`)} label="Accueil" /><h1>Messenger</h1>
-        <button aria-label="Nouvelle conversation" disabled={!ed.canEdit} onClick={() => ed.add(path, { name: "", last: "", time: "", unread: true }, { atStart: true, title: "Conversation", fields: MSN_FIELDS })}><Glyph i={mdiSquareEditOutline} size={20} /></button></div>
+      <div className="msn-bar"><BarBack onClick={() => nav(`/${pid}/home`)} label="Home" /><h1>Messenger</h1>
+        <button aria-label="New conversation" disabled={!ed.canEdit} onClick={() => ed.add(path, { name: "", last: "", time: "", unread: true }, { atStart: true, title: "Conversation", fields: MSN_FIELDS })}><Glyph i={mdiSquareEditOutline} size={20} /></button></div>
       <div className="msn-list">
         {list.map(([id, c]) => (
           <button key={id} className={c.unread ? "unread" : ""} onClick={() => nav(`c/${id}`)}
@@ -274,7 +274,7 @@ function MessengerChat({ pid }: { pid: string }) {
   const shown: [string, MsnMsg][] = msgs.length ? msgs : c.last ? [["last", { text: c.last, time: c.time }]] : [];
   const send = () => {
     const text = draft.trim(); if (!text || !ed.canEdit) return;
-    const d = new Date(), time = `${d.getHours() % 12 || 12}:${String(d.getMinutes()).padStart(2, "0")}${d.getHours() < 12 ? "am" : "pm"}`;
+    const d = new Date(), time = `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
     const keep = !msgs.length && shown[0] ? { [`${mpath}/m0`]: { ...shown[0][1], me: false, order: 1000 } } : {};
     const order = keep[`${mpath}/m0`] ? 2000 : (msgs[msgs.length - 1]?.[1].order ?? 0) + 1000;
     ed.write({ ...keep, [`${mpath}/m${Date.now().toString(36)}`]: { from: me, me: true, text, time, order }, [`${cpath}/last`]: text, [`${cpath}/time`]: time });
@@ -304,7 +304,7 @@ function MessengerChat({ pid }: { pid: string }) {
         {shown.length === 0 && <Empty>No messages yet</Empty>}
       </div>
       <form className="msn-compose" onSubmit={(e) => { e.preventDefault(); send(); }}>
-        <button type="button" className="msn-attach" aria-label="Ajouter un message reçu" disabled={!ed.canEdit}
+        <button type="button" className="msn-attach" aria-label="Add received message" disabled={!ed.canEdit}
           onClick={() => ed.add(mpath, { text: "", time: "", me: false }, { title: `Message de ${c.name ?? ""}`, fields: MSN_MSG_FIELDS })}><Glyph i={mdiPlus} size={18} /></button>
         <input value={draft} onChange={(e) => setDraft(e.target.value)} placeholder="Write a message..." disabled={!ed.canEdit} />
         <button type="submit" className="msn-send" disabled={!ed.canEdit || !draft.trim()}>Send</button>

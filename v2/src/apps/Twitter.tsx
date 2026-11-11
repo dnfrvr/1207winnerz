@@ -80,16 +80,16 @@ function TwitterMain({ pid }: { pid: string }) {
         <>
           <HoloBar color="#f3f3f3" dark={false} onUp={() => nav(`/${pid}/home`)} icon={<Brand name="twitter" size={30} color />} title={title}
             actions={<>
-              <button aria-label="Rechercher" onClick={() => setTab("discover")}><Glyph i={mdiMagnify} size={24} /></button>
-              <button aria-label="Tweeter" disabled={!ed.canEdit} onClick={() => setCompose(true)}><Glyph i={mdiFeather} size={24} /></button>
+              <button aria-label="Search" onClick={() => setTab("discover")}><Glyph i={mdiMagnify} size={24} /></button>
+              <button aria-label="Tweet" disabled={!ed.canEdit} onClick={() => setCompose(true)}><Glyph i={mdiFeather} size={24} /></button>
             </>} />
           <HoloTabs tabs={TABS.map((t) => ({ id: t.id, icon: <Glyph i={t.icon} size={24} /> }))} active={tab} onChange={setTab} />
         </>
       ) : (
         <div className="tw-bar">
-          <BarBack onClick={() => nav(`/${pid}/home`)} label="Accueil" tone="light" />
+          <BarBack onClick={() => nav(`/${pid}/home`)} label="Home" tone="light" />
           <h1>{title}</h1>
-          <button className="tw-ic" onClick={() => setCompose(true)} aria-label="Tweeter" disabled={!ed.canEdit}><Glyph i={mdiFeather} size={18} /></button>
+          <button className="tw-ic" onClick={() => setCompose(true)} aria-label="Tweet" disabled={!ed.canEdit}><Glyph i={mdiFeather} size={18} /></button>
         </div>
       )}
       <div className="tw-scroll">

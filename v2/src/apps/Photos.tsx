@@ -50,7 +50,7 @@ function Albums({ pid }: { pid: string }) {
   ];
   const cover = (id: string) => { const l = pick(id); return l[l.length - 1]?.[1].src; };
   return (
-    <AppFrame title={os === "ios" ? "Albums" : "Gallery"} left={<BackButton to={`/${pid}/home`} label="Accueil" />}
+    <AppFrame title={os === "ios" ? "Albums" : "Gallery"} left={<BackButton to={`/${pid}/home`} label="Home" />}
       right={<AddButton show={ed.canEdit} onClick={() => ed.add(`phones/${pid}/data/gallery`, { src: "", date: stamp, album: null, deleted: false }, { title: "Nouvelle photo", fields: ["src", "date", "album"] })} />}
       bodyClass={os === "ios" ? "ph-albums" : "ph-albums and"}>
       {os === "ios" ? (
@@ -88,12 +88,12 @@ function Grid({ pid }: { pid: string }) {
   return (
     <AppFrame title={name} left={<BackButton to={`/${pid}/${app}`} label="Albums" />}
       bodyClass={`ph-grid-wrap ${os}`}>
-      {album === DELETED && <div className="ph-note">{os === "ios" ? "These photos will be deleted after 30 days." : "Les éléments seront supprimés définitivement après 30 jours."}</div>}
+      {album === DELETED && <div className="ph-note">{os === "ios" ? "These photos will be deleted after 30 days." : "Items will be permanently deleted after 30 days."}</div>}
       <div className="ph-grid">
         {list.map(([id, p], i) => (
           <PhotoThumb key={id} p={p} onClick={() => nav(String(i))}
             onLong={ed.itemLong(`phones/${pid}/data/gallery`, id, { fields: ["src", "date", "album", "deleted"],
-              extra: p.deleted ? [{ label: "Restaurer", onPress: () => ed.write({ [`phones/${pid}/data/gallery/${id}/deleted`]: false }) }] : [] })} />
+              extra: p.deleted ? [{ label: "Restore", onPress: () => ed.write({ [`phones/${pid}/data/gallery/${id}/deleted`]: false }) }] : [] })} />
         ))}
       </div>
       {list.length === 0 ? <Empty>No Photos</Empty> : <div className="ph-count">{list.length} Photo{list.length > 1 ? "s" : ""}</div>}
@@ -129,7 +129,7 @@ function Viewer({ pid }: { pid: string }) {
     <div className={`app ph-viewer ${chrome ? "" : "bare"}`}>
       <StatusBar variant="translucent" />
       <div className="ph-vbar">
-        <button onClick={() => nav(`/${pid}/${appId}/${album}`)}>{os === "ios" ? "‹ Retour" : <Icon name="back" size={22} />}</button>
+        <button onClick={() => nav(`/${pid}/${appId}/${album}`)}>{os === "ios" ? "‹ Back" : <Icon name="back" size={22} />}</button>
         <h1>{i + 1} of {list.length}</h1>
         <span />
       </div>

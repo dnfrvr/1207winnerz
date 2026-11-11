@@ -152,7 +152,7 @@ export function Splash({ title, subtitle, background, logo, color = "#fff", onTa
       {subtitle && <div className="k-splash-sub">{subtitle}</div>}
       {children}
       <div className="k-splash-foot">
-        {ready ? <span className="blink">{onTap ? "Touchez pour jouer" : ""}</span> : <span className="bar"><i /></span>}
+        {ready ? <span className="blink">{onTap ? "Tap to play" : ""}</span> : <span className="bar"><i /></span>}
       </div>
     </div>
   );

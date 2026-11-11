@@ -66,14 +66,14 @@ function TumblrMain({ pid }: { pid: string }) {
       {os === "android" ? (
         <>
           <HoloBar color="#2c4762" onUp={() => nav(`/${pid}/home`)} icon={<Brand name="tumblr" size={26} color="#fff" />} title={title ?? "Dashboard"}
-            actions={<button aria-label="Publier" disabled={!ed.canEdit} onClick={compose}><Glyph i={mdiPencil} size={22} /></button>} />
+            actions={<button aria-label="Post" disabled={!ed.canEdit} onClick={compose}><Glyph i={mdiPencil} size={22} /></button>} />
           <HoloTabs dark color="#fff" tabs={[{ id: "dash", label: "DASHBOARD" }, { id: "blog", label: "MY BLOG" }]} active={tab} onChange={setTab} />
         </>
       ) : (
         <div className="tb-bar">
-          <BarBack onClick={() => nav(`/${pid}/home`)} label="Accueil" />
+          <BarBack onClick={() => nav(`/${pid}/home`)} label="Home" />
           <h1>{title ?? <span className="tb-logo">tumblr.</span>}</h1>
-          <button className="tb-ic" aria-label="Publier" disabled={!ed.canEdit} onClick={compose}><Glyph i={mdiPencil} size={17} /></button>
+          <button className="tb-ic" aria-label="Post" disabled={!ed.canEdit} onClick={compose}><Glyph i={mdiPencil} size={17} /></button>
         </div>
       )}
       <div className="tb-scroll">
@@ -114,7 +114,7 @@ function TumblrMain({ pid }: { pid: string }) {
             </Press>
           );
         })}
-        {list.length === 0 && <Empty>Rien ici pour l'instant</Empty>}
+        {list.length === 0 && <Empty>Nothing here yet</Empty>}
       </div>
       {os === "ios" && (
         <div className="tb-tabs">

@@ -23,14 +23,14 @@ export default function PinterestApp({ pid }: { pid: string }) {
   const template = { img: "", desc: "", board: "", pinner: "", repins: 0, tall: false };
   const cols: [string, Pin][][] = [[], []];
   pins.forEach((p, i) => cols[i % 2].push(p));
-  const add = () => ed.add(path, template, { atStart: true, title: "Nouvelle épingle", fields });
+  const add = () => ed.add(path, template, { atStart: true, title: "New pin", fields });
   return (
     <div className="app pi">
       <StatusBar />
       <div className="pi-bar">
-        <BarBack onClick={() => nav(`/${pid}/home`)} label="Accueil" tone="light" />
+        <BarBack onClick={() => nav(`/${pid}/home`)} label="Home" tone="light" />
         <h1>Pinterest</h1>
-        <button aria-label="Épingler" disabled={!ed.canEdit} onClick={add}><Glyph i={mdiPlus} size={22} /></button>
+        <button aria-label="Pin it" disabled={!ed.canEdit} onClick={add}><Glyph i={mdiPlus} size={22} /></button>
       </div>
       <div className="pi-scroll">
         <div className="pi-cols">
@@ -47,7 +47,7 @@ export default function PinterestApp({ pid }: { pid: string }) {
             </div>
           ))}
         </div>
-        {pins.length === 0 && <Empty>Aucune épingle</Empty>}
+        {pins.length === 0 && <Empty>No pins</Empty>}
       </div>
       <div className="pi-tabs">
         <button className={tab === "home" ? "on" : ""} onClick={() => setTab("home")}><Glyph i={mdiHome} size={24} /><span>Home</span></button>

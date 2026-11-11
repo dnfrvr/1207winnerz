@@ -55,14 +55,14 @@ export default function BrowserApp({ pid }: { pid: string }) {
         ) : (
           <div className="br-and">
             <span className="br-globe"><Glyph i={mdiEarth} size={20} /></span>
-            <div className="br-url">{page?.url ?? "Rechercher ou saisir une URL"}</div>
-            <button aria-label="Onglets"><span className="br-tabs-ic">1</span></button>
-            <button onClick={() => setSheet(true)} aria-label="Favoris"><Glyph i={mdiBookmarkOutline} size={22} /></button>
+            <div className="br-url">{page?.url ?? "Search or enter address"}</div>
+            <button aria-label="Tabs"><span className="br-tabs-ic">1</span></button>
+            <button onClick={() => setSheet(true)} aria-label="Favorites"><Glyph i={mdiBookmarkOutline} size={22} /></button>
           </div>
         )}
       </div>
       <div className="br-page">
-        {!page ? <Empty>Aucune page ouverte</Empty> : isSearch ? (
+        {!page ? <Empty>No open pages</Empty> : isSearch ? (
           <div className="br-google">
             <div className="br-glogo"><b style={{ color: "#4285f4" }}>G</b><b style={{ color: "#ea4335" }}>o</b><b style={{ color: "#fbbc05" }}>o</b><b style={{ color: "#4285f4" }}>g</b><b style={{ color: "#34a853" }}>l</b><b style={{ color: "#ea4335" }}>e</b></div>
             <div className="br-gq">{page.title}</div>
@@ -83,11 +83,11 @@ export default function BrowserApp({ pid }: { pid: string }) {
       {/* Safari iOS 6 : ◀ ▶ action signets onglets. Le navigateur Jelly Bean n'a pas de barre du bas. */}
       {os === "ios" && (
         <div className="br-tools">
-          <button onClick={() => nav(`/${pid}/home`)} aria-label="Retour"><Glyph i={mdiMenuLeft} size={38} /></button>
-          <button disabled aria-label="Suivant"><Glyph i={mdiMenuRight} size={38} /></button>
-          <button aria-label="Partager"><Glyph i={IOS_ACTION} size={24} /></button>
-          <button onClick={() => setSheet(true)} aria-label="Signets"><Glyph i={mdiBookOpenVariant} size={24} /></button>
-          <button aria-label="Onglets"><span className="br-tabs-ic">1</span></button>
+          <button onClick={() => nav(`/${pid}/home`)} aria-label="Back"><Glyph i={mdiMenuLeft} size={38} /></button>
+          <button disabled aria-label="Next"><Glyph i={mdiMenuRight} size={38} /></button>
+          <button aria-label="Share"><Glyph i={IOS_ACTION} size={24} /></button>
+          <button onClick={() => setSheet(true)} aria-label="Bookmarks"><Glyph i={mdiBookOpenVariant} size={24} /></button>
+          <button aria-label="Tabs"><span className="br-tabs-ic">1</span></button>
         </div>
       )}
       {sheet && (
@@ -101,10 +101,10 @@ export default function BrowserApp({ pid }: { pid: string }) {
           ) : (
             <>
               <div className="actionbar" style={{ background: "#222" }}>
-                <button className="ab-up" aria-label="Retour" onClick={() => setSheet(false)}><Glyph i={mdiChevronLeft} size={22} /><span className="ab-icon"><Glyph i={mdiEarth} size={26} color="#33b5e5" /></span></button>
-                <h1>Favoris</h1>
+                <button className="ab-up" aria-label="Back" onClick={() => setSheet(false)}><Glyph i={mdiChevronLeft} size={22} /><span className="ab-icon"><Glyph i={mdiEarth} size={26} color="#33b5e5" /></span></button>
+                <h1>Favorites</h1>
               </div>
-              <Segmented items={[{ id: "bookmarks", label: "Favoris" }, { id: "history", label: "Historique" }]} value={tab} onChange={setTab} />
+              <Segmented items={[{ id: "bookmarks", label: "Favorites" }, { id: "history", label: "History" }]} value={tab} onChange={setTab} />
             </>
           )}
           <div className="br-list"><Plain>
@@ -119,8 +119,8 @@ export default function BrowserApp({ pid }: { pid: string }) {
                 </div>
               );
             })}
-            {(tab === "bookmarks" ? bookmarks : history).length === 0 && <Empty>Vide</Empty>}
-            {ed.canEdit && <Cell title={<span className="br-add">+ Ajouter</span>} onClick={() => ed.add(`phones/${pid}/data/browser/${tab}`, { title: "", url: "", time: "Aujourd'hui, 12:00pm" }, { atStart: tab === "history", title: tab === "bookmarks" ? "Signet" : "Historique", fields })} />}
+            {(tab === "bookmarks" ? bookmarks : history).length === 0 && <Empty>Empty</Empty>}
+            {ed.canEdit && <Cell title={<span className="br-add">+ Ajouter</span>} onClick={() => ed.add(`phones/${pid}/data/browser/${tab}`, { title: "", url: "", time: "Today, 12:00" }, { atStart: tab === "history", title: tab === "bookmarks" ? "Signet" : "Historique", fields })} />}
           </Plain></div>
           {ed.ui}
         </div>

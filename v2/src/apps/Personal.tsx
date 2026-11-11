@@ -13,7 +13,7 @@ import { Brand, Glyph } from "../kit/glyph";
 import { Press, compact, pickLocal, useChars } from "./social";
 import "./personal.css";
 
-const Bar = ({ cls, title, onBack, right, backLabel = "Accueil", tone }: { cls: string; title: React.ReactNode; onBack: () => void; right?: React.ReactNode; backLabel?: string; tone?: "dark" | "light" }) => (
+const Bar = ({ cls, title, onBack, right, backLabel = "Home", tone }: { cls: string; title: React.ReactNode; onBack: () => void; right?: React.ReactNode; backLabel?: string; tone?: "dark" | "light" }) => (
   <div className={`pb-bar ${cls}`}>
     <BarBack onClick={onBack} label={backLabel} tone={tone} />
     <h1>{title}</h1>
@@ -77,7 +77,7 @@ function GrindrHome({ pid }: { pid: string }) {
             <div className="gr-photos">{(me.photos ?? []).map((p, i) => <img key={i} src={img(p)} alt="" />)}</div>
           </div>
         )}
-        {tab === "grid" && users.length === 0 && <Empty>Personne à proximité</Empty>}
+        {tab === "grid" && users.length === 0 && <Empty>No one nearby</Empty>}
       </div>
       <div className="gr-tabs">
         {[["grid", "grid", "Grid"], ["chats", "chat", "Chats"], ["me", "person", "Profile"]].map(([id, ic, l]) => (
@@ -112,7 +112,7 @@ function GrindrChat({ pid }: { pid: string }) {
       </div>
       {ed.canEdit && (
         <div className="gr-compose">
-          <button onClick={() => setAsThem((v) => !v)}>{asThem ? dm.name : "Moi"} <Glyph i={mdiSwapHorizontal} size={14} /></button>
+          <button onClick={() => setAsThem((v) => !v)}>{asThem ? dm.name : "Me"} <Glyph i={mdiSwapHorizontal} size={14} /></button>
           <input value={text} onChange={(e) => setText(e.target.value)} onKeyDown={(e) => e.key === "Enter" && send()} placeholder="Message" />
           <button className="send" onClick={send}>Send</button>
         </div>
@@ -195,7 +195,7 @@ export function SoundCloudApp({ pid }: { pid: string }) {
     <div className={`app sd ${os}`}>
       <StatusBar />
       <Bar cls="sd-bar" title={<span className="sd-logo"><Brand name="soundcloud" size={30} color="#fff" /></span>} onBack={() => nav(`/${pid}/home`)}
-        right={ed.canEdit ? <button aria-label="Nouveau son" onClick={() => newTrack("Nouveau son", "3:00", "")}><Glyph i={mdiPlus} size={22} /></button> : undefined} />
+        right={ed.canEdit ? <button aria-label="New sound" onClick={() => newTrack("New sound", "3:00", "")}><Glyph i={mdiPlus} size={22} /></button> : undefined} />
       <div className="sd-scroll">
         {tab === "you" && (
           <Press className="sd-me" onLong={editMe}>
@@ -290,8 +290,8 @@ export function INaturalistApp({ pid }: { pid: string }) {
   return (
     <div className={`app inat ${os}`}>
       <StatusBar />
-      <Bar cls="inat-bar" title={cur ? cur[1].common : <span className="inat-logo">iNaturalist</span>} onBack={() => (cur ? setOpen(null) : nav(`/${pid}/home`))} backLabel={cur ? "Back" : "Accueil"}
-        right={ed.canEdit && !cur ? <button aria-label="Nouvelle observation" onClick={add}><Glyph i={mdiCamera} size={22} /></button> : undefined} />
+      <Bar cls="inat-bar" title={cur ? cur[1].common : <span className="inat-logo">iNaturalist</span>} onBack={() => (cur ? setOpen(null) : nav(`/${pid}/home`))} backLabel={cur ? "Back" : "Home"}
+        right={ed.canEdit && !cur ? <button aria-label="New observation" onClick={add}><Glyph i={mdiCamera} size={22} /></button> : undefined} />
       {cur ? (
         <Press className="inat-scroll inat-detail" onLong={ed.itemLong(`${base}/list`, cur[0], { fields: of, label: cur[1].common })}>
           <div className="inat-hero">{cur[1].photo ? <img src={img(cur[1].photo)} alt="" /> : <span>{cur[1].emoji || <Glyph i={mdiLeaf} size={90} />}</span>}</div>
@@ -475,7 +475,7 @@ function RedditPost({ pid }: { pid: string }) {
   return (
     <>
       <Bar cls="rd-bar" title={p.sub ?? "Post"} backLabel="Back" onBack={() => nav(`/${pid}/reddit`)}
-        right={ed.canEdit ? <button aria-label="Ajouter un commentaire" onClick={() => ed.add(cpath, { author: "", text: "", pts: "1", age: "1h", depth: 0 }, { title: "Commentaire", fields: RD_C_FIELDS })}>＋</button> : undefined} />
+        right={ed.canEdit ? <button aria-label="Add comment" onClick={() => ed.add(cpath, { author: "", text: "", pts: "1", age: "1h", depth: 0 }, { title: "Commentaire", fields: RD_C_FIELDS })}>＋</button> : undefined} />
       <div className="rd-scroll">
         <article className="rd-op" onContextMenu={(e) => { e.preventDefault(); ed.edit({ path: ppath, fields: RD_FIELDS, title: "Post" }); }}>
           <div className="rd-op-head">

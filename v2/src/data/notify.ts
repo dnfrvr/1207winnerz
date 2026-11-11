@@ -11,7 +11,7 @@ export type Notif = {
   attach?: number;    // nombre de photos jointes (« Attachment: 1 Image »)
   link: string;       // route dans le téléphone, sans le pid (« messages/t_… »)
   thread?: string;
-  msg?: string;       // message qui a déclenché la notif (pour « Annuler l'envoi »)
+  msg?: string;       // message qui a déclenché la notif (pour « Unsend »)
   at: number;         // horodatage réel (ms)
   seen?: boolean;
 };

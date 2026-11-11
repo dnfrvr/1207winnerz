@@ -24,7 +24,7 @@ function CallScreen({ name, onEnd }: { name: string; onEnd: () => void }) {
   const os = useOS();
   const [t, setT] = useState(0);
   useEffect(() => { const h = setInterval(() => setT((n) => n + 1), 1000); return () => clearInterval(h); }, []);
-  const status = t < 3 ? (os === "ios" ? "calling…" : "Appel en cours…") : `${Math.floor((t - 3) / 60)}:${String((t - 3) % 60).padStart(2, "0")}`;
+  const status = t < 3 ? (os === "ios" ? "calling…" : "Calling…") : `${Math.floor((t - 3) / 60)}:${String((t - 3) % 60).padStart(2, "0")}`;
   return (
     <div className={`ph-call ${os}`}>
       <StatusBar variant="translucent" />
@@ -53,8 +53,8 @@ const TABS: Tab[] = [
   { id: "voicemail", label: "Voicemail", icon: "voicemail" },
 ];
 const ANDROID_TABS: Tab[] = [
-  { id: "keypad", label: "Téléphone", icon: "keypad" },
-  { id: "recents", label: "Journal", icon: "clock" },
+  { id: "keypad", label: "Phone", icon: "keypad" },
+  { id: "recents", label: "Log", icon: "clock" },
   { id: "contacts", label: "Contacts", icon: "person" },
 ];
 
@@ -74,10 +74,10 @@ function PhoneHome({ pid }: { pid: string }) {
   const c = useCalling();
   const ed = useEditor(pid);
   const stamp = useLoreStamp();
-  const titles: Record<string, string> = { favorites: "Favorites", recents: "Recents", contacts: "All Contacts", keypad: os === "ios" ? "Keypad" : "Téléphone", voicemail: "Voicemail" };
+  const titles: Record<string, string> = { favorites: "Favorites", recents: "Recents", contacts: "All Contacts", keypad: os === "ios" ? "Keypad" : "Phone", voicemail: "Voicemail" };
   const addCall = () => ed.add(`phones/${pid}/data/calls`, { contact: "", type: "missed", time: stamp, duration: "" }, { atStart: true, title: "Nouvel appel", fields: ["contact", "type", "time", "duration"] });
   return (
-    <AppFrame title={titles[tab]} left={<BackButton to={`/${pid}/home`} label="Accueil" />}
+    <AppFrame title={titles[tab]} left={<BackButton to={`/${pid}/home`} label="Home" />}
       right={tab === "recents" ? <AddButton show={ed.canEdit} onClick={addCall} /> : tab === "contacts" ? <AddButton show={ed.canEdit} onClick={() => ed.add(`phones/${pid}/data/contacts`, { name: "", phone: "", photo: "" }, { title: "Nouveau contact", fields: ["name", "phone", "photo"] })} /> : undefined}
       bodyClass="k-body-tabbed">
       <TabBar tabs={os === "ios" ? TABS : ANDROID_TABS} active={tab} onChange={setTab} />
@@ -102,7 +102,7 @@ function Recents({ pid, onCall, ed }: { pid: string; onCall: (n: string) => void
   const rows = calls.filter(([, c]) => filter === "all" || c.type === "missed");
   return (
     <>
-      <Segmented items={[{ id: "all", label: os === "ios" ? "All" : "Tous" }, { id: "missed", label: os === "ios" ? "Missed" : "Manqués" }]} value={filter} onChange={setFilter} />
+      <Segmented items={[{ id: "all", label: os === "ios" ? "All" : "All" }, { id: "missed", label: os === "ios" ? "Missed" : "Missed" }]} value={filter} onChange={setFilter} />
       <Plain>
         {rows.map(([id, c]) => (
           <Cell key={id} className={c.type === "missed" ? "missed" : ""}
@@ -141,7 +141,7 @@ function Voicemails({ pid, ed }: { pid: string; ed: ReturnType<typeof useEditor>
           {open === id && (
             <div className="ph-vm-player">
               <div className="ph-vm-track"><i /></div>
-              {v.transcript ? <p>« {v.transcript} »</p> : <p className="muted">Transcription non disponible</p>}
+              {v.transcript ? <p>“{v.transcript}”</p> : <p className="muted">Transcription not available</p>}
             </div>
           )}
         </div>
@@ -162,9 +162,9 @@ function Keypad({ onCall }: { onCall: (n: string) => void }) {
         {keys.map(([k, l]) => <button key={k} onClick={() => setNum((n) => (n + k).slice(0, 16))}><b>{k}</b><small>{l}</small></button>)}
       </div>
       <div className="ph-keyrow">
-        <button className="ph-addc" aria-label="Ajouter un contact"><Glyph i={mdiAccountPlus} size={26} /></button>
+        <button className="ph-addc" aria-label="Add contact"><Glyph i={mdiAccountPlus} size={26} /></button>
         <button className="ph-callbtn" onClick={(e) => { balloons(e.currentTarget); if (num) onCall(num); }}><Glyph i={mdiPhone} size={26} />{os === "ios" && <span>Call</span>}</button>
-        <button className="ph-del" onClick={() => setNum((n) => n.slice(0, -1))} aria-label="Effacer"><Glyph i={mdiBackspace} size={26} /></button>
+        <button className="ph-del" onClick={() => setNum((n) => n.slice(0, -1))} aria-label="Clear"><Glyph i={mdiBackspace} size={26} /></button>
       </div>
     </div>
   );
@@ -239,7 +239,7 @@ function ContactsHome({ pid }: { pid: string }) {
   const os = useOS();
   const ed = useEditor(pid);
   return (
-    <AppFrame title={os === "ios" ? "All Contacts" : "Contacts"} left={<BackButton to={`/${pid}/home`} label="Accueil" />}
+    <AppFrame title={os === "ios" ? "All Contacts" : "Contacts"} left={<BackButton to={`/${pid}/home`} label="Home" />}
       right={<AddButton show={ed.canEdit} onClick={() => ed.add(`phones/${pid}/data/contacts`, { name: "", phone: "", photo: "" }, { title: "Nouveau contact", fields: ["name", "phone", "photo"] })} />}>
       <ContactList pid={pid} base="contacts" />
       {ed.ui}

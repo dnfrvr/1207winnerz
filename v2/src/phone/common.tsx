@@ -24,7 +24,7 @@ export function useNow(intervalMs = 15_000) {
 }
 
 export function useClock() {
-  return useNow().toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
+  return useNow().toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
 }
 
 export function useLoreDate() {
@@ -51,6 +51,11 @@ export const ANDROID_APP_COLORS: Record<string, string> = {
 
 /** Icônes Android fournies par le code, quand la base n'en définit pas (shared/androidIcons). */
 export const ANDROID_ICON_DEFAULTS: Record<string, string> = { passbook: "/assets/icons/wallet-android.png" };
+// Icônes iOS de repli quand le profil n'en définit pas (Passbook ajouté à Elias par le code).
+const IOS_ICON_DEFAULTS: Record<string, string> = { passbook: "/assets/seed/86c9eafcd0c35d63f68d13737a04ac4c.jpg" };
+/** Icône d'une app iOS (springboard, notifs). Fichiers : icône iCloud alu, la même sur les quatre iPhone. */
+export const iosIcon = (id: string, appIcons?: Record<string, string>) =>
+  id === "files" ? "/assets/icons/files-ios.png" : appIcons?.[id] ?? IOS_ICON_DEFAULTS[id];
 
 /** Apps dont la barre d'action est claire (Holo Light : Gmail, Google Maps) → texte et icônes sombres. */
 export const ANDROID_LIGHT_BARS = new Set(["gmail", "maps", "passbook"]);

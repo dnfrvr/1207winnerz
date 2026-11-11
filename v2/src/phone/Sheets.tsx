@@ -13,7 +13,7 @@ export function ActionSheet({ title, actions, onClose }: { title?: string; actio
         {actions.map((a) => (
           <button key={a.label} className={`sheet-btn ${a.destructive ? "red" : ""}`} onClick={() => { onClose(); a.onPress(); }}>{a.label}</button>
         ))}
-        <button className="sheet-btn cancel" onClick={onClose}>Annuler</button>
+        <button className="sheet-btn cancel" onClick={onClose}>Cancel</button>
       </div>
     </div>
   );
@@ -61,7 +61,7 @@ export function PromptAlert({ title, message, initial, placeholder, onOk, onClos
         {message && <div className="alert-msg">{message}</div>}
         <input ref={input} type={type} min={min} max={max} defaultValue={initial} placeholder={placeholder} onInput={(e) => e.currentTarget.classList.remove("bad")} />
         <div className="alert-btns">
-          <button type="button" onClick={onClose}>Annuler</button>
+          <button type="button" onClick={onClose}>Cancel</button>
           <button type="submit" className="ok">OK</button>
         </div>
       </form>
