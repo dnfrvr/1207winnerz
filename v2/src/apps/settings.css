@@ -43,3 +43,6 @@ button.st-wp-prev { border: 0; padding: 0; cursor: pointer; }
 .st-pick { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; padding: 4px; }
 .st-pick button { aspect-ratio: 1; border: 0; padding: 0; background: #222 center / cover; cursor: pointer; }
 .st-pick-empty { grid-column: 1 / -1; padding: 30px; text-align: center; color: #8e8e93; }
+.st-dz { display: flex; align-items: center; gap: 8px; padding: 9px 12px; color: #8e8e93; }
+.st-dz input { flex: 1; min-width: 0; border: 0; background: transparent; font: 15px var(--ios-font); outline: none; }
+.st.android .st-dz input { color: #fff; font-family: var(--and-font); }

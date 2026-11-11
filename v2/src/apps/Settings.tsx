@@ -1,8 +1,10 @@
 // Réglages iOS 6 (tableau groupé avec icônes, Wi-Fi, Bluetooth, Général › Informations)
 // / Paramètres Android 4.1 (sections holo).
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Route, Routes, useNavigate } from "react-router-dom";
-import { useList, useValue, useWriter } from "../data/hooks";
+import { useCanEdit, useList, useValue, useWriter } from "../data/hooks";
+import { deezerSearch, type DzTrack } from "../lib/deezer";
+import { soundOn, type Ringtone, type SoundPrefs } from "../phone/sounds";
 import { AppFrame, BackButton } from "../phone/IOSChrome";
 import { ActionSheet } from "../phone/Sheets";
 import { useOS } from "../phone/common";
@@ -31,6 +33,8 @@ export default function SettingsApp({ pid }: { pid: string }) {
       <Route path="about" element={<About pid={pid} />} />
       <Route path="wallpaper" element={<Wallpaper pid={pid} />} />
       <Route path="wallpaper/pick" element={<WallpaperPick pid={pid} />} />
+      <Route path="sounds" element={<Sounds pid={pid} />} />
+      <Route path="sounds/ringtone" element={<RingtonePick pid={pid} />} />
       <Route path="camera" element={<CameraSettings pid={pid} />} />
     </Routes>
   );
@@ -111,6 +115,70 @@ function WallpaperPick({ pid }: { pid: string }) {
   );
 }
 
+/** Sounds (iOS 6) / Son (Android) : sonnerie (extrait Deezer), son des SMS, verrouillage, clavier. */
+function Sounds({ pid }: { pid: string }) {
+  const os = useOS();
+  const nav = useNavigate();
+  const { set } = useWriter(pid);
+  const canEdit = useCanEdit(pid);
+  const prof = useValue<{ sounds?: SoundPrefs; ringtone?: Ringtone }>(`phones/${pid}/profile`) ?? {};
+  const ios = os === "ios";
+  const sw = (k: keyof SoundPrefs, title: string) => (
+    <Cell title={title} accessory={<Switch on={soundOn(prof.sounds, k)} onChange={canEdit ? (v) => set(`phones/${pid}/profile/sounds/${k}`, v) : undefined} />} />
+  );
+  return (
+    <AppFrame title={ios ? "Sounds" : "Son"} left={<BackButton to={`/${pid}/settings`} label={ios ? "Settings" : "Paramètres"} />} bodyClass={`st ${os}`}>
+      <Grouped>
+        <Section title={ios ? "Sounds and Vibration Patterns" : "Sonnerie et notifications"}>
+          <Cell title={ios ? "Ringtone" : "Sonnerie du téléphone"} detail={prof.ringtone?.title || (ios ? "Marimba" : "Défaut")} chevron onClick={() => nav("ringtone")} />
+          {sw("sms", ios ? "Text Tone" : "Son des notifications")}
+        </Section>
+        <Section title={ios ? undefined : "Système"}>
+          {sw("lock", ios ? "Lock Sounds" : "Son du verrouillage")}
+          {sw("keys", ios ? "Keyboard Clicks" : "Sons des touches")}
+        </Section>
+      </Grouped>
+    </AppFrame>
+  );
+}
+
+/** Choix de la sonnerie : sonnerie d'origine ou n'importe quelle chanson du catalogue Deezer (extrait de 30 s). */
+function RingtonePick({ pid }: { pid: string }) {
+  const os = useOS();
+  const ios = os === "ios";
+  const { set } = useWriter(pid);
+  const canEdit = useCanEdit(pid);
+  const cur = useValue<Ringtone>(`phones/${pid}/profile/ringtone`);
+  const [q, setQ] = useState("");
+  const [res, setRes] = useState<DzTrack[] | null>(null);
+  const audio = useRef<HTMLAudioElement | null>(null);
+  useEffect(() => {
+    if (!q.trim()) { setRes(null); return; }
+    const h = setTimeout(() => { void deezerSearch(q, 15).then(setRes); }, 350);
+    return () => clearTimeout(h);
+  }, [q]);
+  useEffect(() => () => audio.current?.pause(), []);
+  const listen = (url: string) => { audio.current?.pause(); if (url) { audio.current = new Audio(url); void audio.current.play().catch(() => {}); } };
+  // Seuls titre et artiste sont enregistrés : l'URL de l'extrait est signée et expire.
+  const pick = (d: DzTrack | null) => { listen(d?.preview ?? ""); if (canEdit) set(`phones/${pid}/profile/ringtone`, d ? { title: d.title, artist: d.artist } : null); };
+  const check = <Glyph i={mdiCheck} size={18} />;
+  return (
+    <AppFrame title={ios ? "Ringtone" : "Sonnerie"} left={<BackButton to={`/${pid}/settings/sounds`} label={ios ? "Sounds" : "Son"} />} bodyClass={`st ${os}`}>
+      <Grouped>
+        <Section>
+          <Cell title={ios ? "Marimba (Default)" : "Sonnerie par défaut"} accessory={!cur?.title ? check : undefined} onClick={() => pick(null)} />
+          {cur?.title && <Cell title={cur.title} subtitle={cur.artist} accessory={check} />}
+        </Section>
+        <Section title="Deezer">
+          <div className="st-dz"><Glyph i={mdiMusic} size={16} /><input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Chercher une chanson…" disabled={!canEdit} /></div>
+          {res?.map((d, i) => <Cell key={i} title={d.title} subtitle={d.artist} image={d.cover || null} detail={d.duration} onClick={() => pick(d)} />)}
+          {res && !res.length && <Cell title="Aucun résultat" dim />}
+        </Section>
+      </Grouped>
+    </AppFrame>
+  );
+}
+
 function VideoPreview({ src }: { src: string }) {
   const [broken, setBroken] = useState<string | null>(null);
   if (broken === src) return <span className="st-wp-vid empty">Vidéo illisible ici (format HEVC d'iPhone ?) — renvoie-la en H.264</span>;
@@ -166,7 +234,7 @@ function Root({ pid }: { pid: string }) {
           <Cell icon={ic(mdiDotsHorizontal)} title="Plus…" />
         </Section>
         <Section title="Appareil">
-          <Cell icon={ic(mdiVolumeHigh)} title="Son" /><Cell icon={ic(mdiBrightness6)} title="Affichage" onClick={() => nav("wallpaper")} />
+          <Cell icon={ic(mdiVolumeHigh)} title="Son" onClick={() => nav("sounds")} /><Cell icon={ic(mdiBrightness6)} title="Affichage" onClick={() => nav("wallpaper")} />
           <Cell icon={ic(mdiCamera)} title="Appareil photo" onClick={() => nav("camera")} />
           <Cell icon={ic(mdiDatabase)} title="Stockage" /><Cell icon={ic(mdiBattery)} title="Batterie" /><Cell icon={ic(mdiApps)} title="Applications" />
         </Section>
@@ -194,7 +262,7 @@ function Root({ pid }: { pid: string }) {
         <Section>
           <Cell icon={tile(RED, mdiFormatListBulleted)} title="Notifications" chevron />
           <Cell icon={tile(GREY, mdiCog)} title="General" chevron onClick={() => nav("about")} />
-          <Cell icon={tile(RED, mdiVolumeHigh)} title="Sounds" chevron />
+          <Cell icon={tile(RED, mdiVolumeHigh)} title="Sounds" chevron onClick={() => nav("sounds")} />
           <Cell icon={tile(BLUE, mdiBrightness7)} title="Brightness & Wallpaper" chevron onClick={() => nav("wallpaper")} />
           <Cell icon={tile(GREY, mdiHandBackRight)} title="Privacy" chevron />
         </Section>

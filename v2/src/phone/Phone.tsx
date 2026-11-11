@@ -18,6 +18,7 @@ import { img } from "../lib/img";
 import { Sparkles } from "../site/Win";
 import { IncomingCall } from "./Call";
 import { NotifCenter } from "./NotifCenter";
+import { SystemSounds } from "./sounds";
 import { LockNotifs, NotifBanner, SeenOnOpen, useNotifBadges, useOpenNotif, useUnseenNotifs } from "./Notifs";
 import "./android.css";
 
@@ -52,6 +53,7 @@ export function Phone() {
         <PhoneScreen pid={pid} profile={profile} os={os} />
         <NotifBanner pid={pid} os={os} />
         <NotifCenter pid={pid} os={os} />
+        <SystemSounds pid={pid} />
         <IncomingCall pid={pid} os={os} />
         <SeenOnOpen pid={pid} />
         {/* Luminosité (Réglages) : voile noir par-dessus tout l'écran */}

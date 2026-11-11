@@ -11,14 +11,21 @@ import { Glyph } from "../kit/glyph";
 import { img } from "../lib/img";
 import { LORE_DATE_DEFAULT, type OS } from "./common";
 import { SlideToUnlock, StatusBar } from "./IOSChrome";
+import { playRingtone, type Ringtone } from "./sounds";
 import "./call.css";
 
-type Profile = { wallpaper?: string };
+type Profile = { wallpaper?: string; ringtone?: Ringtone };
 
 /** Sonnerie synthétisée (aucun fichier) : « Marimba » (iOS) / deux tons (Android), en boucle. */
-function useRingtone(on: boolean, os: OS) {
+function useRingtone(on: boolean, os: OS, rt?: Ringtone) {
+  const song = rt?.title ? rt : null;
   useEffect(() => {
     if (!on) return;
+    if (song) { // sonnerie choisie dans Réglages (extrait Deezer)
+      const stop = playRingtone(song);
+      try { navigator.vibrate?.([400, 200, 400, 200, 400]); } catch { /* rien */ }
+      return () => { stop(); try { navigator.vibrate?.(0); } catch { /* rien */ } };
+    }
     let ctx: AudioContext | null = null;
     try { ctx = new AudioContext(); } catch { return; }
     const notes = os === "android" ? [[880, 0], [660, 0.18], [880, 0.36], [660, 0.54]] : [[1047, 0], [1319, 0.12], [1568, 0.24], [1319, 0.36], [1047, 0.6], [1319, 0.72], [1568, 0.84], [2093, 0.96]];
@@ -35,7 +42,7 @@ function useRingtone(on: boolean, os: OS) {
     ring();
     const h = setInterval(ring, 2200);
     return () => { clearInterval(h); try { navigator.vibrate?.(0); } catch { /* rien */ } ctx?.close(); };
-  }, [on, os]);
+  }, [on, os, song?.title, song?.artist]); // eslint-disable-line react-hooks/exhaustive-deps
 }
 
 /** Chrono qui avance chaque seconde. */
@@ -62,7 +69,7 @@ export function IncomingCall({ pid, os }: { pid: string; os: OS }) {
   const ended = useRef<string | null>(null);
 
   // Sonne chez le ou la propriétaire du téléphone (et le MDJ qui le regarde).
-  useRingtone(ringing && (session.phone === pid || session.role === "mdj"), os);
+  useRingtone(ringing && (session.phone === pid || session.role === "mdj"), os, profile?.ringtone);
 
   const end = (result: CallResult) => {
     if (!call || !canEdit || ended.current === call.id) return;
