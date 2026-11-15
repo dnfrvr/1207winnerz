@@ -4,8 +4,8 @@
 // Le fil mêle les tweets des 4 persos (partagés) et le fil « décor » propre au téléphone.
 // Chaque tweet se retweete, se met en favori et reçoit des réponses (cf. tweetActions.tsx) ;
 // toucher un tweet l'ouvre avec ses réponses.
-import { useState } from "react";
-import { Route, Routes, useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { Route, Routes, useNavigate, useSearchParams } from "react-router-dom";
 import { mdiAccount, mdiAt, mdiFeather, mdiHome, mdiMagnify, mdiPound, mdiRepeat } from "@mdi/js";
 import { useList, useValue } from "../data/hooks";
 import { loreNowMs, loreToMs, msToLore } from "../lib/loreTime";
@@ -52,6 +52,10 @@ function TwitterMain({ pid }: { pid: string }) {
   const openAcc = (key: string) => nav(`/${pid}/twitter/f/${encodeURIComponent(key)}`);
   const [compose, setCompose] = useState(false);
   const [detail, setDetail] = useState<string | null>(null);
+  // Notif « X replied / retweeted… » : ?t=chemin du tweet → on l'ouvre (avec ses réponses).
+  const [params, setParams] = useSearchParams();
+  const fromNotif = params.get("t");
+  useEffect(() => { if (fromNotif) { setDetail(fromNotif); setParams({}, { replace: true }); } }, [fromNotif, setParams]);
   const ed = useEditor(pid);
   const acts = useTweetActions(pid);
   const me = chars[pid];

@@ -64,26 +64,27 @@ export function useTweetActions(pid: string) {
   const me = chars[pid];
   const myName = me?.twName ?? me?.name ?? pid;
   /** Notif Twitter au perso auteur du tweet (pas à soi-même, pas aux comptes PNJ). */
-  const tell = (t: Tweet, body: string): Patches =>
+  /** `path` = tweet à ouvrir en touchant la notif (le tweet d'origine, où s'affichent les réponses). */
+  const tell = (t: Tweet, body: string, path: string): Patches =>
     t.author && t.author !== pid && (PIDS as readonly string[]).includes(t.author)
-      ? notifPatch(t.author, { app: "twitter", title: "Twitter", body, link: "twitter" }) : {};
+      ? notifPatch(t.author, { app: "twitter", title: "Twitter", body, link: `twitter?t=${encodeURIComponent(path)}` }) : {};
   const now = () => msToLore(loreNowMs(lore));
   const newId = () => `t_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 5)}`;
 
   const toggleFav = (x: Target) => {
     const on = !faved(x.path);
-    write({ [`phones/${pid}/data/twFavs/${favKey(x.path)}`]: on ? true : null, ...(on ? tell(x.t, `${myName} favorited your Tweet: ${x.t.text ?? ""}`) : {}) });
+    write({ [`phones/${pid}/data/twFavs/${favKey(x.path)}`]: on ? true : null, ...(on ? tell(x.t, `${myName} favorited your Tweet: ${x.t.text ?? ""}`, x.path) : {}) });
   };
   const toggleRt = (x: Target) => {
     const mine = myRt(x.path);
     if (mine) { write({ [`feeds/tweets/${mine}/deleted`]: true }); return; }
     if (x.t.author === pid) return; // on ne retweete pas ses propres tweets
     const snap: RtSnap = { name: x.who.name, h: x.who.h, ...(x.who.av ? { av: x.who.av } : {}), text: x.t.text ?? "", time: x.t.time ?? "" };
-    write({ [`feeds/tweets/${newId()}`]: { author: pid, rtOf: x.path, rtSnap: snap as Json, time: now(), order: Date.now() }, ...tell(x.t, `${myName} retweeted your Tweet: ${x.t.text ?? ""}`) });
+    write({ [`feeds/tweets/${newId()}`]: { author: pid, rtOf: x.path, rtSnap: snap as Json, time: now(), order: Date.now() }, ...tell(x.t, `${myName} retweeted your Tweet: ${x.t.text ?? ""}`, x.path) });
   };
   const sendReply = (x: Target, text: string) => {
     write({ [`feeds/tweets/${newId()}`]: { author: pid, text, replyTo: x.path, replyToH: x.who.h, time: now(), rp: 0, rt: 0, fav: 0, order: Date.now() },
-      ...tell(x.t, `${myName}: ${text}`) });
+      ...tell(x.t, `${myName}: ${text}`, x.path) });
   };
 
   return { counts, faved, rtd: (path: string) => !!myRt(path), repliesOf, toggleFav, toggleRt, reply: setReplying, replying, sendReply, closeReply: () => setReplying(null) };
