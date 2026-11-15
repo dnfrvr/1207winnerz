@@ -23,8 +23,11 @@ export type Channel = {
   /** Liste où vivent les conversations / éléments de l'app. */
   listPath: (pid: string) => string;
   /** Noms existants proposés dans le champ « De la part de ». */
-  names: (list: List) => string[];
-  send: (pid: string, input: SendInput, list: List, lore: string) => { patches: Patches; key: string };
+  names: (list: List, shared?: List) => string[];
+  /** `shared` = contenu de `sharedPath` (profils communs aux 4 téléphones), si le canal en a. */
+  send: (pid: string, input: SendInput, list: List, lore: string, shared?: List) => { patches: Patches; key: string };
+  /** Profils partagés entre tous les téléphones (comptes créés depuis la régie). */
+  sharedPath?: string;
   /** Lien de la notif / du bouton « Voir dans le téléphone ». */
   link: (key: string) => string;
   /** Conversation suivie en direct (sinon : simple élément, sans réponse). */
@@ -224,26 +227,52 @@ export const CHANNELS: Channel[] = [
 
 /**
  * Publication d'un compte suivi (Twitter, page Facebook, blog Tumblr) : l'élément est le post,
- * clé « {compte}/posts/{id} » sous `phones/{pid}/data/follows/{net}`. Compte inconnu → créé, avec
- * `match` = le nom tapé, pour récupérer les anciens posts « décor » du même nom.
+ * clé « {compte}/posts/{id} » sous `phones/{pid}/data/follows/{net}`.
+ * Compte inconnu du téléphone → il est suivi avec le profil PARTAGÉ du même nom
+ * (`shared/follows/{net}/{id}`, créé au besoin) : même id, même photo, même bio sur les 4 téléphones,
+ * et une modification du profil se voit partout. L'entrée du téléphone ne garde que `shared` (id du
+ * profil), `match` (le nom tapé, pour récupérer les anciens posts « décor » du même nom), l'ordre et les posts.
  */
+export const sharedFollowsPath = (net: string) => `shared/follows/${net}`;
+
+/** Nom / pseudo d'un compte suivi, profil partagé compris. */
+const accIdentity = (it: Item, shared: List) => {
+  const prof = it.shared ? shared?.[String(it.shared)] : undefined;
+  return { name: String(prof?.name ?? it.name ?? ""), handle: String(prof?.handle ?? it.handle ?? "") };
+};
+
 function postChannel(app: "twitter" | "facebook" | "tumblr", label: string, contactLabel: string, contactHint: string,
   post: (i: SendInput, lore: string) => Item, title: (p: Item | undefined) => string): Channel {
   const base = (pid: string) => `phones/${pid}/data/follows/${app}`;
+  const sharedBase = sharedFollowsPath(app);
+  const same = (id: { name: string; handle: string }, typed: string) => norm(id.name) === norm(typed) || (!!id.handle && norm(id.handle) === norm(typed));
   return {
     app, label, fields: app === "twitter" ? ["contact", "text"] : ["contact", "text", "img"], contactLabel, contactHint,
     listPath: base,
-    names: (list) => [...new Set(alive(list).map(([, a]) => String(a.name || a.handle || "")).filter(Boolean))],
-    send: (pid, i, list, lore) => {
-      const found = alive(list).find(([, a]) => norm(a.name) === norm(i.contact) || norm(a.handle) === norm(i.contact))?.[0];
-      const acc = found ?? makeId("f");
+    sharedPath: sharedBase,
+    names: (list, shared) => [...new Set([
+      ...alive(list).map(([, a]) => { const id = accIdentity(a, shared); return id.name || id.handle; }),
+      ...alive(shared).map(([, a]) => String(a.name || a.handle || "")),
+    ].filter(Boolean))],
+    send: (pid, i, list, lore, shared) => {
       const pidKey = makeId("p");
-      const key = `${acc}/posts/${pidKey}`;
       const p = post(i, lore);
-      const patches: Patches = found ? { [`${base(pid)}/${key}`]: p as Json }
-        : { [`${base(pid)}/${acc}`]: { name: i.contact, handle: app === "facebook" ? "" : i.contact.replace(/\s+/g, "").toLowerCase(), avatar: "", bio: "", followers: 0,
-            match: i.contact, order: minOrder(list), posts: { [pidKey]: p } } as Json };
-      const name = found ? String(list![found].name || list![found].handle) : i.contact;
+      const patches: Patches = {};
+      // 1. Compte déjà suivi par ce téléphone (local ou partagé).
+      let acc = alive(list).find(([, a]) => same(accIdentity(a, shared), i.contact))?.[0];
+      let name = acc ? (() => { const id = accIdentity(list![acc!], shared); return id.name || id.handle; })() : "";
+      if (acc) patches[`${base(pid)}/${acc}/posts/${pidKey}`] = p as Json;
+      else {
+        // 2. Profil partagé existant (créé pour un autre téléphone) ; 3. sinon, nouveau profil partagé.
+        const found = alive(shared).find(([, a]) => same({ name: String(a.name ?? ""), handle: String(a.handle ?? "") }, i.contact));
+        acc = found?.[0] ?? makeId("f");
+        name = found ? String(found[1].name || found[1].handle) : i.contact;
+        if (!found) patches[`${sharedBase}/${acc}`] = { name: i.contact, handle: app === "facebook" ? "" : i.contact.replace(/\s+/g, "").toLowerCase(),
+          avatar: "", bannerImg: "", bio: "", followers: 0, ...(app === "twitter" ? { following: 0 } : {}), ...(app === "tumblr" ? { color: "#36465d" } : {}) };
+        // Un ancien abonnement « désabonné » sous le même id est réactivé (on écrase l'entrée).
+        patches[`${base(pid)}/${acc}`] = { shared: acc, match: i.contact, order: minOrder(list), posts: { [pidKey]: p } } as Json;
+      }
+      const key = `${acc}/posts/${pidKey}`;
       return { key, patches: { ...patches, ...notifPatch(pid, { app, title: name, body: title(p), ...(i.img ? { attach: 1 } : {}), link: `${app}/f/${acc}`, msg: key }) } };
     },
     link: (key) => `${app}/f/${key.split("/")[0]}`,

@@ -17,7 +17,22 @@
     "phones": {
       "$pid": {
         ".write": "root.child('users/' + auth.uid + '/phone').val() === $pid || root.child('users/' + auth.uid + '/role').val() === 'mdj'",
-        ".validate": "newData.exists() || root.child('users/' + auth.uid + '/role').val() === 'mdj'"
+        ".validate": "newData.exists() || root.child('users/' + auth.uid + '/role').val() === 'mdj'",
+        "notifs": {
+          "$nid": {
+            ".write": "!data.exists() && newData.exists() && root.child('users/' + auth.uid + '/phone').exists()"
+          }
+        },
+        "inbox": {
+          "$tid": {
+            "unread": {
+              ".write": "newData.val() === true && root.child('threads/' + $tid + '/members/' + root.child('users/' + auth.uid + '/phone').val()).val() === true"
+            },
+            "deleted": {
+              ".write": "!newData.exists() && root.child('threads/' + $tid + '/members/' + root.child('users/' + auth.uid + '/phone').val()).val() === true"
+            }
+          }
+        }
       }
     },
 
@@ -48,6 +63,9 @@
 
     "shared": {
       "$name": { ".write": "root.child('users/' + auth.uid + '/role').val() === 'mdj'" },
+      "follows": {
+        ".write": "root.child('users/' + auth.uid + '/role').val() === 'mdj' || root.child('users/' + auth.uid + '/phone').exists()"
+      },
       "twitterUsers": {
         "$key": {
           ".write": "root.child('users/' + auth.uid + '/role').val() === 'mdj' || (data.child('char').val() === root.child('users/' + auth.uid + '/phone').val() && newData.child('char').val() === root.child('users/' + auth.uid + '/phone').val())"

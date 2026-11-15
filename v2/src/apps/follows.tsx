@@ -2,6 +2,10 @@
 // Augusta », Taylor Swift… Chaque téléphone a ses propres abonnements, éditables par son joueur :
 //   phones/{pid}/data/follows/{net}/{acc}              { name, handle, avatar, bio, bannerImg, color, followers, following, match?, order, deleted? }
 //   phones/{pid}/data/follows/{net}/{acc}/posts/{id}   post au format du réseau (tweet, publication, photo, post tumblr)
+// Comptes créés par la régie : le profil est commun aux 4 téléphones, sous
+//   shared/follows/{net}/{acc}                         { name, handle, avatar, bio, … }
+// et l'entrée du téléphone ne porte que { shared: acc, match, order, posts } : modifier le profil
+// (photo, nom, bio) le change pour tout le monde.
 // Les anciens posts « décor » (homeBaseTweets, facebookPages, tumblr/feedPosts) portent l'identité
 // de leur compte dans chaque post. Un compte décor devient un vrai compte la première fois qu'on le
 // modifie (« adoption ») : `match` garde la clé d'origine (pseudo / nom), pour que ses anciens posts
@@ -19,6 +23,7 @@ import { Avatar, Empty, useEditor } from "../kit/kit";
 import { Brand, Glyph } from "../kit/glyph";
 import { Icon } from "../kit/icons";
 import { compact, Cover, HoloBar, num, pickLocal, Press } from "./social";
+import { ReplyUI, TweetActs, useTweetActions } from "./tweetActions";
 import "./social.css";
 import "./instagram.css";
 import "./follows.css";
@@ -31,7 +36,7 @@ export type FPost = {
   author?: string; name?: string; h?: string; av?: string; username?: string; avatarBg?: string;
 };
 export type Acc = { name?: string; handle?: string; avatar?: string; bio?: string; bannerImg?: string; color?: string; followers?: number; following?: number;
-  match?: string; order?: number; deleted?: boolean; posts?: Record<string, FPost> };
+  match?: string; order?: number; deleted?: boolean; posts?: Record<string, FPost>; shared?: string };
 /** Identité affichée d'un auteur. */
 export type Who = { key: string; name: string; handle: string; avatar?: string; color?: string };
 
@@ -100,10 +105,12 @@ const ACC_TEMPLATE: Record<Net, Record<string, Json>> = {
 
 const norm = (s?: string) => (s ?? "").trim().toLowerCase();
 export const followsPath = (pid: string, net: Net) => `phones/${pid}/data/follows/${net}`;
+export const sharedFollowsPath = (net: Net) => `shared/follows/${net}`;
 /** Clé d'URL d'un compte : son id, ou « m~clé » pour un compte décor pas encore adopté. */
 const implicitKey = (match: string) => `m~${match}`;
 
-export type Entry = { key: string; id?: string; path?: string; match?: string; acc: Acc; decorPosts: [string, FPost][] };
+/** `profilePath` : où s'écrit le profil (partagé ou propre au téléphone). */
+export type Entry = { key: string; id?: string; path?: string; profilePath?: string; match?: string; acc: Acc; decorPosts: [string, FPost][] };
 export type FollowPostItem = { key: string; path: string; post: FPost; who: Who; entry: Entry };
 
 /** Tous les comptes suivis d'un réseau (vrais + décor), leurs posts, et l'identité des posts décor. */
@@ -111,12 +118,16 @@ export function useFollows(pid: string, net: Net) {
   const cfg = NETS[net];
   const base = followsPath(pid, net);
   const accs = useList<Acc>(base, { withDeleted: true });
+  const shared = useValue<Record<string, Acc>>(sharedFollowsPath(net));
   const decor = useList<FPost>(cfg.decor ? cfg.decor.path(pid) : null);
   return useMemo(() => {
     const byMatch = new Map<string, Entry>();
     const entries: Entry[] = [];
-    for (const [id, acc] of accs) {
-      const e: Entry = { key: id, id, path: `${base}/${id}`, match: acc.match, acc, decorPosts: [] };
+    for (const [id, local] of accs) {
+      // Profil partagé : identité commune, mais abonnement, ordre et posts propres au téléphone.
+      const prof = local.shared ? shared?.[local.shared] : undefined;
+      const acc: Acc = prof ? { ...ACC_TEMPLATE[net], ...prof, posts: local.posts, order: local.order, deleted: local.deleted, match: local.match, shared: local.shared } : local;
+      const e: Entry = { key: id, id, path: `${base}/${id}`, profilePath: local.shared ? `${sharedFollowsPath(net)}/${local.shared}` : `${base}/${id}`, match: acc.match, acc, decorPosts: [] };
       // Un compte décor adopté (match) garde sa place d'origine dans la liste : on le range
       // au moment où son premier post décor apparaît, plus bas.
       if (acc.match && cfg.decor) byMatch.set(norm(acc.match), e);
@@ -158,7 +169,7 @@ export function useFollows(pid: string, net: Net) {
     const find = (key: string) => entries.find((e) => e.key === key)
       ?? (key.startsWith("m~") ? entries.find((e) => e.match && norm(e.match) === norm(key.slice(2))) : undefined);
     return { cfg, base, entries, posts, whoOf, decorOwner, find };
-  }, [accs, decor, base, cfg]);
+  }, [accs, shared, decor, base, cfg, net]);
 }
 
 /** Ouvre la page d'un compte depuis une app (chemin relatif à la racine de l'app). */
@@ -179,7 +190,9 @@ export const ago = (time: string | undefined, now: number) => {
 
 // ─── Rendu d'un post (même dessin que le fil de chaque réseau) ───────────────
 
-export function FollowPost({ net, who, post, now, onLong, onWho }: { net: Net; who: Who; post: FPost; now: number; onLong?: () => void; onWho?: () => void }) {
+export function FollowPost({ net, who, post, now, onLong, onWho, acts }: { net: Net; who: Who; post: FPost; now: number; onLong?: () => void; onWho?: () => void;
+  /** Twitter : barre Répondre / Retweeter / Favori fonctionnelle (sinon, simples compteurs). */
+  acts?: React.ReactNode }) {
   const [liked, setLiked] = useState(false);
   const whoBtn = (child: React.ReactNode, cls = "") => onWho
     ? <button type="button" className={`fo-who ${cls}`} onClick={(e) => { e.stopPropagation(); onWho(); }}>{child}</button>
@@ -190,11 +203,11 @@ export function FollowPost({ net, who, post, now, onLong, onWho }: { net: Net; w
       <div className="tw-body">
         <div className="tw-head">{whoBtn(<b>{who.name}</b>, "inline")}<span>{twHandle(who.handle)}</span><i>{ago(post.time, now)}</i></div>
         <p>{post.text}</p>
-        <div className="tw-acts">
+        {acts ?? <div className="tw-acts">
           <span><Glyph i={mdiReply} size={15} />{post.rp || ""}</span>
           <span><Glyph i={mdiRepeat} size={15} />{post.rt || ""}</span>
           <span className={post.fav ? "fav" : ""}><Glyph i={mdiStar} size={15} />{post.fav || ""}</span>
-        </div>
+        </div>}
       </div>
     </Press>
   );
@@ -323,7 +336,7 @@ function useAdopt(pid: string, net: Net) {
       path = `${followsPath(pid, net)}/${id}`;
       await ed.write({ [path]: { ...ACC_TEMPLATE[net], ...e.acc, match: e.match ?? "", order: Date.now(), ...(opts.unfollow ? { deleted: true } : {}) } as Json });
     } else if (opts.unfollow) await ed.write({ [`${path}/deleted`]: true });
-    if (opts.edit) ed.edit({ path, fields: cfg.accFields, title: `Profil · ${cfg.label}` });
+    if (opts.edit) ed.edit({ path: e.profilePath ?? path, fields: cfg.accFields, title: `Profil · ${cfg.label}${e.acc.shared ? " (commun aux 4 téléphones)" : ""}` });
     return path.slice(path.lastIndexOf("/") + 1);
   };
 }
@@ -343,6 +356,7 @@ export function AccountPage({ pid, net }: { pid: string; net: Net }) {
   const now = loreNowMs(lore);
   const { cfg } = f;
   const [busy, setBusy] = useState(false);
+  const acts = useTweetActions(pid);
 
   // Même composant d'édition pour le profil et les posts : l'adoption se fait avant d'écrire.
   const ensure = async (): Promise<string | undefined> => {
@@ -354,7 +368,10 @@ export function AccountPage({ pid, net }: { pid: string; net: Net }) {
     nav(`${root}/f/${id}`, { replace: true });
     return path;
   };
-  const editProfile = async () => { const p = await ensure(); if (p) ed.edit({ path: p, fields: cfg.accFields, title: `Profil · ${cfg.label}` }); };
+  const editProfile = async () => {
+    const p = await ensure();
+    if (p) ed.edit({ path: e?.profilePath ?? p, fields: cfg.accFields, title: `Profil · ${cfg.label}${e?.acc.shared ? " (commun aux 4 téléphones)" : ""}` });
+  };
   const newPost = async () => {
     if (busy) return;
     setBusy(true);
@@ -405,6 +422,7 @@ export function AccountPage({ pid, net }: { pid: string; net: Net }) {
         <div className={net === "tumblr" ? "fo-tb-list" : ""}>
           {posts.map((x) => (
             <FollowPost key={x.k} net={net} who={who} post={x.post} now={now}
+              acts={net === "twitter" ? <TweetActs x={{ path: `${x.list}/${x.id}`, t: x.post, who: { name: who.name, h: twHandle(who.handle), av: who.avatar } }} acts={acts} canAct={ed.canEdit} /> : undefined}
               // Les anciens posts décor restent à leur place (« Ajouter après » seulement pour les posts du compte).
               onLong={ed.itemLong(x.list, x.id, { fields: x.fields, label: x.post.title || x.post.text?.slice(0, 40) || x.post.caption?.slice(0, 40) || who.name,
                 template: x.k.startsWith("o") ? tpl : undefined })} />
@@ -412,6 +430,7 @@ export function AccountPage({ pid, net }: { pid: string; net: Net }) {
         </div>
         {posts.length === 0 && <Empty>No posts yet</Empty>}
       </div>
+      {net === "twitter" && <ReplyUI acts={acts} os={os} />}
       {ed.ui}
     </div>
   );

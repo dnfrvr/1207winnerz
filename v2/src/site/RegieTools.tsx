@@ -82,7 +82,8 @@ export async function stepPatches(store: Store, s: Step): Promise<{ patches: Pat
   const ch = channelOf(s.app);
   if (!ch) throw new Error(`App inconnue : ${s.app}`);
   const list = (await once(store, ch.listPath(s.pid))) as never;
-  const { patches, key } = ch.send(s.pid, { contact: s.contact, text: s.text ?? "", img: s.img, sender: s.sender, subject: s.subject, action: s.action }, list, lore);
+  const shared = ch.sharedPath ? ((await once(store, ch.sharedPath)) as never) : undefined;
+  const { patches, key } = ch.send(s.pid, { contact: s.contact, text: s.text ?? "", img: s.img, sender: s.sender, subject: s.subject, action: s.action }, list, lore, shared);
   return { patches, tab: { pid: s.pid, tid: key, app: ch.app } };
 }
 
@@ -168,10 +169,15 @@ export function AlsoPick({ pid, value, onChange }: { pid: string; value: string[
 export function useSendAlso() {
   const { store } = useData();
   const { write } = useRegieWriter(PIDS[0]);
-  return (also: string[], s: Omit<Step, "pid">) => Promise.all(also.map(async (pid) => {
-    const { patches } = await stepPatches(store, { ...s, pid });
-    return write(patches, pid);
-  })).catch(() => alert("Un des envois aux autres joueurs a échoué."));
+  // L'un après l'autre : un compte créé pour le premier (profil partagé) est retrouvé par les suivants.
+  return async (also: string[], s: Omit<Step, "pid">) => {
+    try {
+      for (const pid of also) {
+        const { patches } = await stepPatches(store, { ...s, pid });
+        await write(patches, pid);
+      }
+    } catch { alert("Un des envois aux autres joueurs a échoué."); }
+  };
 }
 
 export function useFirstNames() {

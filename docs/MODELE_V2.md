@@ -44,11 +44,17 @@ phones/{pid}/
   data/follows/{net}/{acc}    comptes/pages suivis (net = twitter | facebook | instagram | tumblr) :
                               { name, handle, avatar, bio, bannerImg, followers, match?, posts/{id} }
                               `match` = pseudo/nom d'un ancien compte « décor » repris (ses vieux posts suivent)
+                              compte créé par la régie : { shared: acc, match, order, posts } → profil dans
+                              shared/follows/{net}/{acc} (même id, même photo/bio sur les 4 téléphones)
+  data/twFavs/{chemin|du|tweet}  true = tweet mis en favori par ce perso
+  notifs/{id}                 { app, title, body, link, thread?, msg?, at, seen? } (bannières, pastilles)
 threads/{threadId}            { kind: "pair" | "group" | "local", members: {pid:true}, name?, contact? }
 threadMessages/{threadId}/{msgId}
                               { from: pid | "npc", npcName?, text, time, ts, order }
 feeds/{feed}/{id}             posts partagés (tweets, tumblr, facebook, insta…), champ author
-shared/{name}                 données partagées non-listes (follows, avatars, icônes Android)
+                              tweets : replyTo/replyToH (réponse), rtOf/rtSnap (retweet)
+shared/{name}                 données partagées non-listes (avatars, icônes Android, twitterUsers)
+shared/follows/{net}/{acc}    profils de comptes suivis communs aux 4 téléphones
 legacy/{key}                  toute clé racine inconnue (jamais supprimée en silence)
 ```
 
@@ -65,6 +71,10 @@ legacy/{key}                  toute clé racine inconnue (jamais supprimée en s
 - `phones/{pid}` : écriture par le joueur de ce téléphone (ou le MJ).
 - `threads` / `threadMessages` : écriture par les membres du fil.
 - `feeds/{feed}/{id}` : création par n'importe quel joueur, modification par l'auteur.
+- `phones/{pid}/notifs/{id}` : création (pas modification) par n'importe quel joueur — notif d'un
+  message envoyé dans un fil partagé, d'un retweet, d'une réponse… ; `phones/{pid}/inbox/{tid}/unread`
+  (passage à « non lu ») et `…/deleted` (remise en boîte) : par les membres du fil.
+- `shared/follows` : écriture par n'importe quel joueur (profils communs) ; le reste de `shared` : MJ.
 - Suppressions : on marque `deleted: true` (corbeille). La suppression définitive reste réservée au MJ.
 
 ## Historique

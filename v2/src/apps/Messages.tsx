@@ -296,14 +296,22 @@ function Conversation({ pid }: { pid: string }) {
     }
     const from = sender === "npc" ? { from: "npc", npcName: contact } : { from: sender };
     const id = `m_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
-    // MDJ qui écrit au nom du contact, à la fin du fil : le joueur reçoit aussi une notif (bannière, écran verrouillé).
-    // Groupe partagé : tous les membres sauf l'expéditeur (titre = nom du groupe, « Prénom: texte »).
-    const told = !mdj || insertAfter ? [] : isGroup && thread?.members ? Object.keys(thread.members).filter((m) => m !== sender) : sender !== pid ? [pid] : [];
+    // Nouveau message à la fin du fil → notif (bannière, écran verrouillé, pastille) et « non lu » chez
+    // chaque destinataire :
+    // - fil partagé (à deux ou groupe des Winnerz) : tous les membres sauf l'expéditeur, que le message
+    //   vienne d'un joueur ou du MDJ ;
+    // - fil avec un PNJ : seulement quand le MDJ écrit au nom du contact.
+    // Une insertion au milieu du fil (correction du passé) ne notifie personne.
+    const told = insertAfter ? [] : !isLocal && thread?.members ? Object.keys(thread.members).filter((m) => m !== sender)
+      : mdj && sender !== pid ? [pid] : [];
     const notif: Patches = {};
-    const body = notifBody(text) || "Photo";
+    const body = notifBody(text);
+    const who = sender === "npc" ? contact : names[sender]?.name ?? sender;
+    // Titre vu par chaque destinataire : nom du groupe (sa propre boîte peut le renommer), sinon l'expéditeur.
     for (const m of told) Object.assign(notif, notifPatch(m, isGroup
-      ? { app: "messages", title: contact, body: `${senderLabel === "Me" ? names[pid]?.name ?? pid : senderLabel}: ${body}`, link: `messages/${tid}`, thread: tid, msg: id }
-      : { app: "messages", title: senderLabel, body, link: `messages/${tid}`, thread: tid, msg: id }), { [`phones/${m}/inbox/${tid}/unread`]: true });
+      ? { app: "messages", title: String(store.peek(`phones/${m}/inbox/${tid}/contact`) ?? "") || thread?.name || contact, body: body ? `${who}: ${body}` : `${who}:`, ...(photo ? { attach: 1 } : {}), link: `messages/${tid}`, thread: tid, msg: id }
+      : { app: "messages", title: who, body, ...(photo ? { attach: 1 } : {}), link: `messages/${tid}`, thread: tid, msg: id }),
+      { [`phones/${m}/inbox/${tid}/unread`]: true, [`phones/${m}/inbox/${tid}/deleted`]: null });
     write({ [`${base}/${id}`]: { ...from, text, ...(photo ? { img: photo } : {}), time, order: orderBetween(prev?.order, next?.order) } as Json, ...notif });
     if (insertAfter) setInsertAfter(id);
   };

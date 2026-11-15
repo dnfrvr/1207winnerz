@@ -19,8 +19,21 @@
 .tw-head i { color: #999; font-style: normal; font-size: 12px; }
 .tw-body p { margin-top: 2px; font: 15px/1.3 var(--ios-font); color: #333; white-space: pre-wrap; word-wrap: break-word; }
 .tw-acts { display: flex; gap: 26px; margin-top: 6px; font: 12px var(--ios-font); color: #aab4bd; }
-.tw-acts span { display: flex; align-items: center; gap: 3px; min-width: 30px; }
+.tw-acts span, .tw-acts button { display: flex; align-items: center; gap: 3px; min-width: 30px; }
+.tw-acts button { background: none; border: 0; padding: 4px 6px 4px 0; margin: -4px 0; color: inherit; font: inherit; cursor: pointer; }
+.tw-acts button:disabled { cursor: default; }
 .tw-acts .fav { color: #e8a83a; }
+.tw-acts .rt { color: #609928; }
+.tw-tweet { cursor: pointer; }
+.tw-tweet.big { cursor: default; background: #fff; }
+.tw-tweet.big .tw-body p { font-size: 18px; }
+.tw-rtby { display: flex; align-items: center; gap: 4px; margin-bottom: 2px; font: 11px var(--ios-font); color: #999; }
+.tw-inreply { font: 12px var(--ios-font); color: #8899a6; }
+.tw-when { margin-top: 6px; font: 12px var(--ios-font); color: #999; }
+.tw-replybtn { display: block; width: calc(100% - 20px); margin: 10px; padding: 10px; border: 1px solid #ccd6dd; border-radius: 6px; background: #f5f8fa; color: #8899a6; font: 14px var(--ios-font); text-align: left; cursor: text; }
+.tw-replyto { padding: 8px 12px; border-bottom: 1px solid #eee; background: #f7f9fa; font: 12px var(--ios-font); color: #999; }
+.tw-replyto b { color: #333; }
+.tw-replyto p { margin-top: 2px; color: #666; font-size: 13px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .tw-tabs { flex: 0 0 49px; display: flex; background: linear-gradient(#f4f5f6, #d9dde1); border-top: 1px solid #a7b1ba; }
 .tw-tabs button { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; color: #9aa6b1; font: bold 10px var(--ios-font); }
 .tw-tabs button.on { color: #2b8be0; background: linear-gradient(#e2e7ec, #f3f5f7); box-shadow: inset 0 1px 3px rgba(0,0,0,.15); }
@@ -44,7 +57,7 @@
 .tw-trends { background: #fff; }
 .tw-search { display: flex; align-items: center; gap: 6px; height: 40px; padding: 0 12px; color: #999; font: 14px var(--ios-font); background: linear-gradient(#e9ecef, #d9dee3); border-bottom: 1px solid #b9c2ca; }
 .tw-search span { flex: 1; height: 28px; line-height: 28px; padding-left: 8px; background: #fff; border-radius: 14px; border: 1px solid #b9c2ca; box-shadow: inset 0 1px 2px rgba(0,0,0,.12); }
-.tw-trends .tw-th { padding: 8px 10px; font: bold 13px var(--ios-font); color: #666; background: #f0f2f4; border-bottom: 1px solid #dde1e5; }
+.tw-trends .tw-th, .tw-scroll > .tw-th { padding: 8px 10px; font: bold 13px var(--ios-font); color: #666; background: #f0f2f4; border-bottom: 1px solid #dde1e5; }
 .tw-trend { padding: 12px 10px; font: bold 15px var(--ios-font); color: #2b8be0; border-bottom: 1px solid #e3e6e9; }
 .tw-compose { position: absolute; inset: 0; z-index: 30; display: flex; flex-direction: column; background: #fff; animation: up .25s ease-out; padding-top: 20px; }
 .tw-compose.android { padding-top: 24px; }

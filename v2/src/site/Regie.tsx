@@ -406,6 +406,7 @@ const enterSends = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
 function ChannelForm({ pid, ch, also, onSent }: { pid: string; ch: Channel; also: string[]; onSent: (t: Tab) => void }) {
   const sendAlso = useSendAlso();
   const list = useValue<Record<string, Record<string, never>>>(ch.listPath(pid));
+  const shared = useValue<Record<string, Record<string, never>>>(ch.sharedPath ?? null);
   const lore = useValue<string>("meta/loreDate") || LORE_DATE_DEFAULT;
   const p = useValue<Profile>(`phones/${pid}/profile`);
   const { write } = useRegieWriter(pid);
@@ -415,7 +416,7 @@ function ChannelForm({ pid, ch, also, onSent }: { pid: string; ch: Channel; also
   const [text, setText] = useState("");
   const [action, setAction] = useState(INSTA_ACTIONS[0]);
   const [photo, setPhoto] = useState<string | null>(null);
-  const names = useMemo(() => ch.names(list), [ch, list]);
+  const names = useMemo(() => ch.names(list, shared), [ch, list, shared]);
   const has = (f: Field) => ch.fields.includes(f);
   const exists = names.some((n) => n.trim().toLowerCase() === contact.trim().toLowerCase());
   const needsText = has("text") && ch.app !== "gmail";
@@ -424,7 +425,7 @@ function ChannelForm({ pid, ch, also, onSent }: { pid: string; ch: Channel; also
   const submit = (e: FormEvent) => {
     e.preventDefault();
     if (!ok) return;
-    const { patches, key } = ch.send(pid, { contact: contact.trim(), text, img: photo ?? undefined, sender, subject, action }, list, lore);
+    const { patches, key } = ch.send(pid, { contact: contact.trim(), text, img: photo ?? undefined, sender, subject, action }, list, lore, shared);
     write(patches);
     if (also.length) sendAlso(also, { app: ch.app, contact: contact.trim(), text, img: photo ?? undefined, sender, subject, action });
     setText(""); setPhoto(null); setSubject("");
@@ -463,7 +464,7 @@ function ChannelForm({ pid, ch, also, onSent }: { pid: string; ch: Channel; also
       {ch.app === "snapchat" && <small className="hint">Un snap non ouvert apparaît dans Snapchat, avec la notif « vous a envoyé un Snap 👻 ».</small>}
       {ch.app === "phone" && <small className="hint">Un appel manqué s'ajoute aux récents, avec la notif « Missed Call ».</small>}
       {ch.app === "voicemail" && <small className="hint">Le texte devient la transcription du message vocal (onglet Voicemail), avec la notif « Voicemail ».</small>}
-      {ch.listPath(pid).includes("/follows/") && <small className="hint">Le post s'ajoute à la page du compte et au fil d'actualité ; compte inconnu : il est créé et suivi.</small>}
+      {ch.listPath(pid).includes("/follows/") && <small className="hint">Le post s'ajoute à la page du compte et au fil d'actualité ; compte inconnu : il est suivi avec un profil commun aux 4 téléphones (même photo, modifiable partout).</small>}
       <button className="y2k-btn" disabled={!ok}>Envoyer la notif à {first(p, pid)}{also.length ? ` (+${also.length})` : ""}</button>
     </form>
   );
@@ -492,6 +493,7 @@ function ChannelLive({ tab, ch, onGone }: { tab: Tab; ch: Channel; onGone: () =>
   const { pid, tid } = tab;
   const listPath = ch.listPath(pid);
   const list = useValue<Record<string, Record<string, never>>>(listPath);
+  const shared = useValue<Record<string, Record<string, never>>>(ch.sharedPath ?? null);
   const item = useValue<Record<string, never>>(`${listPath}/${tid}`); // clé imbriquée possible (posts)
   const notifs = useValue<Record<string, Notif>>(`phones/${pid}/notifs`);
   const lore = useValue<string>("meta/loreDate") || LORE_DATE_DEFAULT;
@@ -516,7 +518,7 @@ function ChannelLive({ tab, ch, onGone }: { tab: Tab; ch: Channel; onGone: () =>
   const send = (e: FormEvent) => {
     e.preventDefault();
     if (!text.trim() && !photo) return;
-    const { patches } = ch.send(pid, { contact: name, text, img: photo ?? undefined, sender: sender || lastNpcWho }, list, lore);
+    const { patches } = ch.send(pid, { contact: name, text, img: photo ?? undefined, sender: sender || lastNpcWho }, list, lore, shared);
     write(patches);
     setText(""); setPhoto(null);
   };
