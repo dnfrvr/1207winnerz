@@ -11,6 +11,8 @@ import { CHANNELS, channelOf } from "../data/channels";
 import { Glyph } from "../kit/glyph";
 import { LORE_DATE_DEFAULT } from "../phone/common";
 import { PIDS } from "./Site";
+import { NETS, type Acc, type FPost, type Net } from "../apps/follows";
+import { DEDUPE_NETS, findGroups, mergePatches, type Group, type Src } from "./dedupe";
 
 export const REGIE = "meta/regie";
 type Profile = { name?: string; avatar?: string | { src?: string } };
@@ -83,7 +85,8 @@ export async function stepPatches(store: Store, s: Step): Promise<{ patches: Pat
   if (!ch) throw new Error(`App inconnue : ${s.app}`);
   const list = (await once(store, ch.listPath(s.pid))) as never;
   const shared = ch.sharedPath ? ((await once(store, ch.sharedPath)) as never) : undefined;
-  const { patches, key } = ch.send(s.pid, { contact: s.contact, text: s.text ?? "", img: s.img, sender: s.sender, subject: s.subject, action: s.action }, list, lore, shared);
+  const decor = ch.decorPath ? ((await once(store, ch.decorPath(s.pid))) as never) : undefined;
+  const { patches, key } = ch.send(s.pid, { contact: s.contact, text: s.text ?? "", img: s.img, sender: s.sender, subject: s.subject, action: s.action }, list, lore, shared, decor);
   return { patches, tab: { pid: s.pid, tid: key, app: ch.app } };
 }
 
@@ -346,6 +349,79 @@ export function Journal() {
         ))}
       </ul>
       {rows.length > 0 && !who && <button className="linkish danger" onClick={() => confirm("Vider tout le journal de la régie ? Pense à l'exporter avant. Impossible d'annuler.") && put({ [`${REGIE}/log`]: null })}>Vider le journal</button>}
+    </div>
+  );
+}
+
+// ─── Doublons de comptes suivis ──────────────────────────────────────────────
+const NET_LABEL: Record<Net, string> = { twitter: "Twitter", facebook: "Facebook", instagram: "Instagram", tumblr: "Tumblr" };
+
+/** Valeurs de plusieurs chemins, tenues à jour. */
+function usePaths(paths: string[]) {
+  const { store } = useData();
+  const [vals, setVals] = useState<Record<string, Json | undefined>>({});
+  const key = paths.join("|");
+  useEffect(() => {
+    const offs = paths.map((p) => store.subscribe(p, (v) => setVals((x) => (p in x && x[p] === v ? x : { ...x, [p]: v }))));
+    return () => offs.forEach((o) => o());
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [store, key]);
+  return vals;
+}
+
+export function Doublons() {
+  const decorPath = (net: Net, pid: string) => NETS[net].decor?.path(pid) ?? null;
+  const paths = useMemo(() => ["shared/follows", ...PIDS.flatMap((p) => [`phones/${p}/data/follows`, `phones/${p}/notifs`,
+    ...DEDUPE_NETS.map((n) => decorPath(n, p)).filter((x): x is string => !!x)])], []);
+  const vals = usePaths(paths);
+  const names = useFirstNames();
+  const { write } = useRegieWriter(PIDS[0]);
+  const [busy, setBusy] = useState(false);
+
+  const srcOf = (net: Net): Src => ({
+    shared: (vals["shared/follows"] as Record<string, Record<string, Acc>> | undefined)?.[net],
+    phones: Object.fromEntries(PIDS.map((p) => {
+      const dp = decorPath(net, p);
+      return [p, {
+        follows: (vals[`phones/${p}/data/follows`] as Record<string, Record<string, Acc>> | undefined)?.[net],
+        decor: dp ? (vals[dp] as Record<string, FPost> | undefined) : undefined,
+        notifs: vals[`phones/${p}/notifs`] as Record<string, { link?: string }> | undefined,
+      }];
+    })),
+  });
+  const loaded = paths.every((p) => p in vals);
+  const groups = loaded ? DEDUPE_NETS.flatMap((net) => findGroups(net, srcOf(net)))
+    .sort((a, b) => Number(Math.max(...Object.values(b.perPhone)) > 1 || b.dupPosts > 0) - Number(Math.max(...Object.values(a.perPhone)) > 1 || a.dupPosts > 0)) : [];
+
+  const merge = async (gs: Group[]) => {
+    setBusy(true);
+    try {
+      for (const g of gs) {
+        // Relu à chaque groupe : deux groupes peuvent toucher la même liste.
+        const fresh = findGroups(g.net, srcOf(g.net)).find((x) => x.label === g.label) ?? g;
+        await write(mergePatches(fresh, srcOf(g.net), (pid) => decorPath(g.net, pid)), Object.keys(g.perPhone)[0] ?? PIDS[0]);
+      }
+    } catch { alert("La fusion a échoué (connexion ?)."); } finally { setBusy(false); }
+  };
+
+  const describe = (g: Group) => Object.entries(g.perPhone).map(([p, n]) => `${names[p] ?? p}${n > 1 ? ` ×${n}` : ""}`).join(", ");
+  return (
+    <div className="regie-form">
+      <p className="hint">Comptes suivis présents en plusieurs exemplaires (même nom ou même pseudo). Fusionner = un seul profil commun aux téléphones concernés, tous les posts réunis, et les posts au texte identique mis à la corbeille (sauf le plus ancien). Annulable via l'historique.</p>
+      {!loaded ? <p className="hint">Chargement…</p> : groups.length === 0 ? <p className="hint">Aucun doublon.</p> : (
+        <ul className="regie-list">
+          {groups.map((g) => {
+            const samePhone = Math.max(...Object.values(g.perPhone)) > 1;
+            return (
+              <li key={`${g.net}:${g.label}`}>
+                <b title={g.label}>{g.label}</b>
+                <span className="hint" style={{ flex: 1 }}>{NET_LABEL[g.net]} · {describe(g)}{samePhone ? " · en double sur un téléphone" : " · profils différents selon les téléphones"}{g.dupPosts ? ` · ${g.dupPosts} post${g.dupPosts > 1 ? "s" : ""} en double` : ""}</span>
+                <button className="y2k-btn" disabled={busy} onClick={() => confirm(`Fusionner « ${g.label} » (${NET_LABEL[g.net]}) ?`) && merge([g])}>Fusionner</button>
+              </li>
+            );
+          })}
+        </ul>
+      )}
     </div>
   );
 }

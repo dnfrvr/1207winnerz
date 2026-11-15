@@ -17,7 +17,7 @@ import { useIncomingNotifs } from "../phone/Notifs";
 import { PIDS } from "./Site";
 import { callPath, duration, endCallPatches, RING_MS, startCallPatches, type LiveCall } from "../data/call";
 import { CHANNELS, channelOf, INSTA_ACTIONS, type Channel, type Field, type LiveMsg } from "../data/channels";
-import { AlsoPick, sortApps, Cues, Journal, NpcBook, NpcHint, NpcOptions, useFirstNames, useRegieWriter, useSendAlso } from "./RegieTools";
+import { AlsoPick, sortApps, Cues, Doublons, Journal, NpcBook, NpcHint, NpcOptions, useFirstNames, useRegieWriter, useSendAlso } from "./RegieTools";
 import "./regie.css";
 
 type Profile = { name?: string; avatar?: string | { src?: string } };
@@ -27,7 +27,7 @@ const tkey = (t: Tab) => `${t.app ?? "messages"}:${t.pid}:${t.tid}`;
 
 const LS_TABS = "uma-v2-regie-tabs";
 /** Onglets fixes de la régie, après « Nouvelle ». */
-const TOOLS: [string, string][] = [["tool:cues", "Scénarios"], ["tool:npcs", "PNJ"], ["tool:log", "Journal"]];
+const TOOLS: [string, string][] = [["tool:cues", "Scénarios"], ["tool:npcs", "PNJ"], ["tool:log", "Journal"], ["tool:dups", "Doublons"]];
 const LS_OPEN = "uma-v2-regie-open";
 const LS_MIN = "uma-v2-regie-min";
 const LS_BIG = "uma-v2-regie-big";
@@ -107,6 +107,7 @@ export function Regie() {
               : active === "tool:npcs" ? <NpcBook />
               : active === "tool:cues" ? <Cues onSent={(t) => openTab(t, false)} />
               : active === "tool:log" ? <Journal />
+              : active === "tool:dups" ? <Doublons />
               : (() => { const t = tabs.find((x) => tkey(x) === active); if (!t) return null;
                   if (t.app === "group") return <GroupLive key={tkey(t)} tab={t} />;
                   if (t.app === "call") return <CallLive key={tkey(t)} tab={t} onSent={openTab} />;
@@ -407,6 +408,7 @@ function ChannelForm({ pid, ch, also, onSent }: { pid: string; ch: Channel; also
   const sendAlso = useSendAlso();
   const list = useValue<Record<string, Record<string, never>>>(ch.listPath(pid));
   const shared = useValue<Record<string, Record<string, never>>>(ch.sharedPath ?? null);
+  const decor = useValue<Record<string, Record<string, never>>>(ch.decorPath?.(pid) ?? null);
   const lore = useValue<string>("meta/loreDate") || LORE_DATE_DEFAULT;
   const p = useValue<Profile>(`phones/${pid}/profile`);
   const { write } = useRegieWriter(pid);
@@ -425,7 +427,7 @@ function ChannelForm({ pid, ch, also, onSent }: { pid: string; ch: Channel; also
   const submit = (e: FormEvent) => {
     e.preventDefault();
     if (!ok) return;
-    const { patches, key } = ch.send(pid, { contact: contact.trim(), text, img: photo ?? undefined, sender, subject, action }, list, lore, shared);
+    const { patches, key } = ch.send(pid, { contact: contact.trim(), text, img: photo ?? undefined, sender, subject, action }, list, lore, shared, decor);
     write(patches);
     if (also.length) sendAlso(also, { app: ch.app, contact: contact.trim(), text, img: photo ?? undefined, sender, subject, action });
     setText(""); setPhoto(null); setSubject("");
@@ -494,6 +496,7 @@ function ChannelLive({ tab, ch, onGone }: { tab: Tab; ch: Channel; onGone: () =>
   const listPath = ch.listPath(pid);
   const list = useValue<Record<string, Record<string, never>>>(listPath);
   const shared = useValue<Record<string, Record<string, never>>>(ch.sharedPath ?? null);
+  const decor = useValue<Record<string, Record<string, never>>>(ch.decorPath?.(pid) ?? null);
   const item = useValue<Record<string, never>>(`${listPath}/${tid}`); // clé imbriquée possible (posts)
   const notifs = useValue<Record<string, Notif>>(`phones/${pid}/notifs`);
   const lore = useValue<string>("meta/loreDate") || LORE_DATE_DEFAULT;
@@ -518,7 +521,7 @@ function ChannelLive({ tab, ch, onGone }: { tab: Tab; ch: Channel; onGone: () =>
   const send = (e: FormEvent) => {
     e.preventDefault();
     if (!text.trim() && !photo) return;
-    const { patches } = ch.send(pid, { contact: name, text, img: photo ?? undefined, sender: sender || lastNpcWho }, list, lore, shared);
+    const { patches } = ch.send(pid, { contact: name, text, img: photo ?? undefined, sender: sender || lastNpcWho }, list, lore, shared, decor);
     write(patches);
     setText(""); setPhoto(null);
   };

@@ -25,7 +25,9 @@ export type Channel = {
   /** Noms existants proposés dans le champ « De la part de ». */
   names: (list: List, shared?: List) => string[];
   /** `shared` = contenu de `sharedPath` (profils communs aux 4 téléphones), si le canal en a. */
-  send: (pid: string, input: SendInput, list: List, lore: string, shared?: List) => { patches: Patches; key: string };
+  send: (pid: string, input: SendInput, list: List, lore: string, shared?: List, decor?: List) => { patches: Patches; key: string };
+  /** Anciens posts « décor » du téléphone (comptes non encore repris), passés à `send`. */
+  decorPath?: (pid: string) => string;
   /** Profils partagés entre tous les téléphones (comptes créés depuis la régie). */
   sharedPath?: string;
   /** Lien de la notif / du bouton « Voir dans le téléphone ». */
@@ -241,6 +243,14 @@ const accIdentity = (it: Item, shared: List) => {
   return { name: String(prof?.name ?? it.name ?? ""), handle: String(prof?.handle ?? it.handle ?? "") };
 };
 
+/** Posts décor : où ils sont, et la clé de compte qu'ils portent (comme `NETS[net].decor` dans follows.tsx). */
+const DECOR = {
+  twitter: { path: (pid: string) => `phones/${pid}/data/homeBaseTweets`, key: (p: Item) => (p.author ? "" : String(p.h || p.name || "")), names: (p: Item) => [p.h, p.name] },
+  facebook: { path: (pid: string) => `phones/${pid}/data/facebookPages/${pid}`, key: (p: Item) => (p.author ? "" : String(p.name || "")), names: (p: Item) => [p.name] },
+  tumblr: { path: (pid: string) => `phones/${pid}/data/tumblr/feedPosts`, key: (p: Item) => (p.author ? "" : String(p.username || "")), names: (p: Item) => [p.username] },
+};
+const loose = (s?: unknown) => norm(s).replace(/^@/, "").replace(/[\s_.-]+/g, "");
+
 function postChannel(app: "twitter" | "facebook" | "tumblr", label: string, contactLabel: string, contactHint: string,
   post: (i: SendInput, lore: string) => Item, title: (p: Item | undefined) => string): Channel {
   const base = (pid: string) => `phones/${pid}/data/follows/${app}`;
@@ -250,11 +260,12 @@ function postChannel(app: "twitter" | "facebook" | "tumblr", label: string, cont
     app, label, fields: app === "twitter" ? ["contact", "text"] : ["contact", "text", "img"], contactLabel, contactHint,
     listPath: base,
     sharedPath: sharedBase,
+    decorPath: DECOR[app].path,
     names: (list, shared) => [...new Set([
       ...alive(list).map(([, a]) => { const id = accIdentity(a, shared); return id.name || id.handle; }),
       ...alive(shared).map(([, a]) => String(a.name || a.handle || "")),
     ].filter(Boolean))],
-    send: (pid, i, list, lore, shared) => {
+    send: (pid, i, list, lore, shared, decor) => {
       const pidKey = makeId("p");
       const p = post(i, lore);
       const patches: Patches = {};
@@ -270,7 +281,9 @@ function postChannel(app: "twitter" | "facebook" | "tumblr", label: string, cont
         if (!found) patches[`${sharedBase}/${acc}`] = { name: i.contact, handle: app === "facebook" ? "" : i.contact.replace(/\s+/g, "").toLowerCase(),
           avatar: "", bannerImg: "", bio: "", followers: 0, ...(app === "twitter" ? { following: 0 } : {}), ...(app === "tumblr" ? { color: "#36465d" } : {}) };
         // Un ancien abonnement « désabonné » sous le même id est réactivé (on écrase l'entrée).
-        patches[`${base(pid)}/${acc}`] = { shared: acc, match: i.contact, order: minOrder(list), posts: { [pidKey]: p } } as Json;
+        // Anciens posts décor du même compte (« Harry Styles » / « @Harry_Styles ») : repris par `match`.
+        const old = alive(decor).find(([, d]) => DECOR[app].key(d) && DECOR[app].names(d).some((n) => n && loose(n) === loose(i.contact)))?.[1];
+        patches[`${base(pid)}/${acc}`] = { shared: acc, match: old ? DECOR[app].key(old) : i.contact, order: minOrder(list), posts: { [pidKey]: p } } as Json;
       }
       const key = `${acc}/posts/${pidKey}`;
       return { key, patches: { ...patches, ...notifPatch(pid, { app, title: name, body: title(p), ...(i.img ? { attach: 1 } : {}), link: `${app}/f/${acc}`, msg: key }) } };
