@@ -98,7 +98,10 @@ function TwitterMain({ pid }: { pid: string }) {
     const editable = ed.canEdit && !x.t.rtOf && (t.author === pid || path.startsWith("phones/"));
     const open = acc ? () => openAcc(acc.key) : undefined;
     const whoBtn = (child: React.ReactNode, cls = "") => open ? <button type="button" className={`fo-who ${cls}`} onClick={(e) => { e.stopPropagation(); open(); }}>{child}</button> : child;
-    const onLong = editable ? () => ed.edit({ path, fields: t.author || adopted ? ["text", "time", "rp", "rt", "fav"] : ["name", "h", "av", "text", "time", "rp", "rt", "fav"], title: "Tweet" })
+    const onLong = editable ? () => ed.sheet({ title: (t.text ?? "").slice(0, 40) || "Tweet", actions: [
+        { label: "Modifier", onPress: () => ed.edit({ path, fields: t.author || adopted ? ["text", "time", "rp", "rt", "fav"] : ["name", "h", "av", "text", "time", "rp", "rt", "fav"], title: "Tweet" }) },
+        { label: "Supprimer", destructive: true, onPress: () => { ed.write({ [`${path}/deleted`]: true }); if (detail === path) setDetail(null); } },
+      ] })
       : ed.canEdit && x.t.rtOf && x.t.author === pid ? () => ed.sheet({ title: "Retweet", actions: [{ label: "Undo Retweet", destructive: true, onPress: () => acts.toggleRt(target) }] }) : undefined;
     return (
       <Press key={x.path} className={`tw-tweet ${opts.big ? "big" : ""}`} onClick={opts.big ? undefined : () => setDetail(path)} onLong={onLong}>
