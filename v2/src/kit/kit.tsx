@@ -2,7 +2,6 @@
 // dessinent selon le téléphone affiché, + l'édition universelle des contenus.
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { useCanEdit, useData, useList, useWriter } from "../data/hooks";
-import { orderBetween, byOrder, type Ordered } from "../data/order";
 import type { Json } from "../data/store";
 import { img } from "../lib/img";
 import { formatDateField, parseDateField } from "../lib/loreTime";
@@ -324,23 +323,14 @@ function ItemForm({ pid, target, onClose }: { pid: string; target: EditTarget; o
 export function useEditor(pid: string) {
   const canEdit = useCanEdit(pid);
   const { store } = useData();
-  const { write } = useWriter(pid);
+  const { write, insert } = useWriter(pid);
   const [form, setForm] = useState<EditTarget | null>(null);
   const [sheet, setSheet] = useState<{ title?: string; actions: SheetAction[] } | null>(null);
-  const latest = useRef({ store, write });
-  latest.current = { store, write };
+  const latest = useRef({ store, write, insert });
+  latest.current = { store, write, insert };
 
   const add = (listPath: string, template: Record<string, Json>, opts: { afterId?: string; atStart?: boolean; title?: string; fields?: string[]; choices?: EditTarget["choices"] } = {}) => {
-    const { store: s, write: w } = latest.current;
-    const list = Object.entries((s.peek(listPath) as Record<string, Ordered> | undefined) ?? {}).filter(([, v]) => v).sort(byOrder);
-    let order: number;
-    if (opts.atStart) order = orderBetween(undefined, list[0]?.[1].order);
-    else {
-      const idx = opts.afterId ? list.findIndex(([k]) => k === opts.afterId) : list.length - 1;
-      order = orderBetween(list[idx]?.[1].order, list[idx + 1]?.[1].order);
-    }
-    const id = s.newId("i");
-    w({ [`${listPath}/${id}`]: { ...template, order } });
+    const id = latest.current.insert(listPath, template, opts);
     setForm({ path: `${listPath}/${id}`, title: opts.title ?? "Nouvel élément", fields: opts.fields, choices: opts.choices });
     return id;
   };

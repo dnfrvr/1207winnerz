@@ -2,7 +2,7 @@
 // sens de navigation.
 import { createContext, useContext, useEffect, useState } from "react";
 import { useValue } from "../data/hooks";
-import { loreNowMs, msToLore } from "../lib/loreTime";
+import { LORE_DATE_DEFAULT, loreNowMs, msToLore } from "../lib/loreTime";
 
 export type OS = "ios" | "android";
 export const OSCtx = createContext<OS>("ios");
@@ -12,7 +12,7 @@ export type NavDir = "push" | "pop" | "none";
 /** Sens de la dernière navigation dans l'app (pour l'animation de glissement). */
 export const NavDirCtx = createContext<NavDir>("none");
 
-export const LORE_DATE_DEFAULT = "2012-10-06";
+export { LORE_DATE_DEFAULT };
 
 export function useNow(intervalMs = 15_000) {
   const [now, setNow] = useState(() => new Date());

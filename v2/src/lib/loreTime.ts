@@ -46,6 +46,8 @@ export const loreToMs = (str?: string | null): number | null => {
 // Champs de date d'un élément (pas « due » : un rappel dans le futur est normal).
 const LORE_DATE_KEY = /(^|\/)(date|time|posted|when)$/;
 export const LORE_BUMP = "uma-lore-bump";
+/** Date de lore par défaut, tant que meta/loreDate n'est pas définie. */
+export const LORE_DATE_DEFAULT = "2012-10-06";
 
 /** Jour (YYYY-MM-DD) de la date la plus tardive écrite dans `patches`, si elle dépasse le jour de lore ; sinon null. */
 export function dateAfterLore(patches: Record<string, unknown>, lore: string): string | null {

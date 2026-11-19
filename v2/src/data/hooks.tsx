@@ -1,7 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { byOrder, orderBetween, type Ordered } from "./order";
-import { dateAfterLore, LORE_BUMP, newestFirst } from "../lib/loreTime";
-import { LORE_DATE_DEFAULT } from "../phone/common";
+import { byOrder, orderAt, type Ordered } from "./order";
+import { dateAfterLore, LORE_BUMP, LORE_DATE_DEFAULT, newestFirst } from "../lib/loreTime";
 import { join, type Json, type Patches, type Store } from "./store";
 
 // ─── Contexte : store + identité du joueur ───────────────────────────────────
@@ -82,22 +81,19 @@ export function useWriter(pid: string) {
     set: (path: string, value: Json | undefined, burst?: Burst) => write({ [path]: value }, burst),
     /** Insère un élément dans une liste, après `afterId` (ou à la fin). Renvoie son id. */
     insert: (listPath: string, item: Record<string, Json>, opts: { afterId?: string; atStart?: boolean } = {}) => {
-      const list = Object.entries((store.peek(listPath) as Record<string, Ordered> | undefined) ?? {}).sort(byOrder);
-      let order: number;
-      if (opts.atStart) order = orderBetween(undefined, list[0]?.[1].order);
-      else {
-        const idx = opts.afterId ? list.findIndex(([id]) => id === opts.afterId) : list.length - 1;
-        order = orderBetween(list[idx]?.[1].order, list[idx + 1]?.[1].order);
-      }
+      const list = Object.entries((store.peek(listPath) as Record<string, Ordered> | undefined) ?? {}).filter(([, v]) => v).sort(byOrder);
+      // afterId introuvable → findIndex = -1 → en tête, comme avant.
+      const i = opts.atStart ? 0 : (opts.afterId ? list.findIndex(([id]) => id === opts.afterId) : list.length - 1) + 1;
+      const { order, renumber } = orderAt(list, i);
       const id = store.newId("i");
-      write({ [join(listPath, id)]: { ...item, order } });
+      const patches: Patches = { [join(listPath, id)]: { ...item, order } };
+      for (const [k, o] of Object.entries(renumber)) patches[join(listPath, k, "order")] = o;
+      write(patches);
       return id;
     },
     /** Corbeille : on ne supprime jamais vraiment, on marque. */
     trash: (itemPath: string) => write({ [join(itemPath, "deleted")]: true }),
     restore: (itemPath: string) => write({ [join(itemPath, "deleted")]: null }),
-    move: (listPath: string, id: string, beforeOrder?: number, afterOrder?: number) =>
-      write({ [join(listPath, id, "order")]: orderBetween(beforeOrder, afterOrder) }),
   }), [write, store]);
 }
 

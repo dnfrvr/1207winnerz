@@ -2,7 +2,7 @@
 // Lancer : node scripts/check-store.mjs   (ou npm test)
 import assert from "node:assert/strict";
 import { getIn, setIn, split, related, makeId } from "../src/data/store.ts";
-import { orderBetween, byOrder, ORDER_STEP } from "../src/data/order.ts";
+import { orderBetween, orderAt, byOrder, ORDER_STEP } from "../src/data/order.ts";
 
 // getIn : lecture par chemin, undefined si un maillon manque ou n'est pas un objet.
 const tree = { phones: { glinda: { name: "Glinda", tags: ["a"] } } };
@@ -48,5 +48,21 @@ const mid = orderBetween(1000, 2000);
 assert.ok(mid > 1000 && mid < 2000);
 const list = [["b", { order: 2000 }], ["c", {}], ["a", { order: 2000 }], ["d", { order: mid }]];
 assert.deepEqual(list.sort(byOrder).map(([id]) => id), ["c", "d", "a", "b"]);
+
+// orderAt : insérer 200 fois juste après « a » (avec orderBetween seul, le milieu finit égal à « a »
+// et l'ordre se casse) ; la renumérotation n'arrive que quand c'est nécessaire.
+let items = [["a", { order: 1000 }], ["z", { order: 2000 }]];
+let renumbered = 0;
+for (let n = 0; n < 200; n++) {
+  const { order, renumber } = orderAt(items, 1);
+  if (Object.keys(renumber).length) renumbered++;
+  items = items.map(([id, it]) => [id, id in renumber ? { order: renumber[id] } : it]);
+  items = [...items, [`n${String(n).padStart(3, "0")}`, { order }]].sort(byOrder);
+}
+const expected = ["a", ...Array.from({ length: 200 }, (_, k) => `n${String(199 - k).padStart(3, "0")}`), "z"];
+assert.deepEqual(items.map(([id]) => id), expected);
+assert.ok(renumbered > 0 && renumbered < 10, `renumérotations : ${renumbered}`);
+assert.deepEqual(orderAt([["a", { order: 1000 }], ["b", { order: 2000 }]], 1), { order: 1500, renumber: {} });
+assert.deepEqual(orderAt([["a", {}], ["b", {}]], 1).renumber, { a: 1000, b: 3000 }); // ordres absents (0 et 0)
 
 console.log("stockage : ok");
