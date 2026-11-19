@@ -17,9 +17,10 @@ const oct = parseDateField("Oct 2012");
 assert.equal(formatDateField(oct, "2012-10-14"), "14 Oct 2012");
 const lore = parseDateField("18 sep, 5:10pm");
 assert.equal(lore.value, "2012-09-18T17:10");
-assert.equal(formatDateField(lore, "2012-12-03T09:05"), "3 dec, 9:05am");
+// Une date modifiée est réécrite en 24 h, même si l'originale était en am/pm.
+assert.equal(formatDateField(lore, "2012-12-03T09:05"), "3 dec, 09:05");
 assert.equal(formatDateField(parseDateField("1 fév"), "2012-08-20"), "20 août");
-assert.equal(formatDateField(parseDateField("14 janv, 12:11am"), "2012-01-20T12:11"), "20 janv, 12:11pm");
+assert.equal(formatDateField(parseDateField("14 janv, 12:11am"), "2012-01-20T12:11"), "20 janv, 12:11");
 assert.equal(formatDateField(parseDateField(""), "2012-10-06"), "6 oct");
 // Tri du plus récent au plus ancien (formats variés, sans date à la fin) et détection d'une date après la lore.
 assert.deepEqual(newestFirst(["1 oct", "Hier", "27 oct", "Jul 13, 8:00pm"], (x) => x), ["27 oct", "1 oct", "Jul 13, 8:00pm", "Hier"]);

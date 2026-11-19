@@ -59,5 +59,6 @@ export const makeId = (prefix = "x") => {
   seq = now === lastTs ? seq + 1 : 0;
   lastTs = now;
   const rnd = Math.random().toString(36).slice(2, 7);
-  return `${prefix}_${now.toString(36)}${seq.toString(36)}${rnd}`;
+  // seq sur largeur fixe : sinon « 10 » se trierait avant « 2 » (aléa collé derrière).
+  return `${prefix}_${now.toString(36)}${seq.toString(36).padStart(3, "0")}${rnd}`;
 };

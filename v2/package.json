@@ -10,6 +10,7 @@
     "prebuild": "npm run dev-seed",
     "build": "tsc --noEmit && vite build",
     "typecheck": "tsc --noEmit",
+    "test": "node scripts/check-store.mjs && node scripts/check-dates.mjs",
     "dev:demo": "npm run dev-seed && vite --mode demo",
     "optimize-images": "node scripts/optimize-images.mjs"
   },
