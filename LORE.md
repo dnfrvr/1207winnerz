@@ -1,7 +1,7 @@
 # LORE — IT: Welcome to UMA
 
 > Synthèse de l'univers narratif encodé dans les données seed du simulateur.
-> Pour la partie technique, voir `CONTEXTE.md`.
+> Pour la partie technique, voir `docs/MODELE_V2.md`.
 
 ## Le pitch
 

@@ -12,7 +12,7 @@ import { LORE_BUMP, loreToMs, msToLore } from "../lib/loreTime";
 import { LORE_DATE_DEFAULT } from "./common";
 import { AppFrame, BackButton, NavDirCtx, RingUnlock, SlideToUnlock, StatusBar, useClock, useLoreDate, type NavDir } from "./IOSChrome";
 import { ANDROID_ICON_DEFAULTS, iosIcon, OSCtx, useNow, type OS } from "./common";
-import { APP_META } from "../../../src/shared/app-meta.js";
+import { APP_META } from "../lib/app-meta.js";
 import { APPS, preloadApps } from "../apps/registry";
 import { img } from "../lib/img";
 import { Sparkles } from "../site/Win";

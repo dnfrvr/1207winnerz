@@ -54,11 +54,14 @@ export function useList<T extends object = Record<string, unknown>>(path: string
 
 // ─── Écriture (toujours champ par champ, avec historique) ────────────────────
 /** Ajoute aux écritures leur trace dans `history/{pid}` (valeur avant / après). */
-export function withHistory(store: Store, uid: string, pid: string, patches: Patches): Patches {
+/** `burst` (champ texte en cours de saisie) : une seule entrée, réécrite à chaque envoi, avec la valeur d'avant la frappe. */
+export type Burst = { id: string; before: Json | undefined };
+export function withHistory(store: Store, uid: string, pid: string, patches: Patches, burst?: Burst): Patches {
   const at = Date.now();
   const all: Patches = { ...patches };
   for (const [path, after] of Object.entries(patches)) {
-    all[join("history", pid, store.newId("h"))] = { path, before: store.peek(path) ?? null, after: after ?? null, at, uid };
+    const before = burst ? burst.before : store.peek(path);
+    all[join("history", pid, burst?.id ?? store.newId("h"))] = { path, before: before ?? null, after: after ?? null, at, uid };
   }
   return all;
 }
@@ -66,8 +69,8 @@ export function withHistory(store: Store, uid: string, pid: string, patches: Pat
 export function useWriter(pid: string) {
   const { store, session, track } = useData();
 
-  const write = useCallback((patches: Patches) => {
-    const all = withHistory(store, session.uid, pid, patches);
+  const write = useCallback((patches: Patches, burst?: Burst) => {
+    const all = withHistory(store, session.uid, pid, patches, burst);
     // Date saisie après « aujourd'hui » dans la fiction → proposer d'avancer la date de lore (popup dans le téléphone).
     const later = dateAfterLore(patches, (store.peek("meta/loreDate") as string | undefined) || LORE_DATE_DEFAULT);
     if (later) window.dispatchEvent(new CustomEvent(LORE_BUMP, { detail: later }));
@@ -76,7 +79,7 @@ export function useWriter(pid: string) {
 
   return useMemo(() => ({
     write,
-    set: (path: string, value: Json | undefined) => write({ [path]: value }),
+    set: (path: string, value: Json | undefined, burst?: Burst) => write({ [path]: value }, burst),
     /** Insère un élément dans une liste, après `afterId` (ou à la fin). Renvoie son id. */
     insert: (listPath: string, item: Record<string, Json>, opts: { afterId?: string; atStart?: boolean } = {}) => {
       const list = Object.entries((store.peek(listPath) as Record<string, Ordered> | undefined) ?? {}).sort(byOrder);
@@ -104,10 +107,13 @@ export function useWriter(pid: string) {
 // que si l'utilisateur n'est pas en train de taper.
 export function useEditableField(pid: string, path: string) {
   const remote = useValue<string>(path);
+  const { store } = useData();
   const { set } = useWriter(pid);
   const [local, setLocal] = useState<string | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pending = useRef<string | null>(null);
+  // Une saisie (du premier caractère à la perte de focus) = une seule entrée d'historique.
+  const burst = useRef<Burst | null>(null);
 
   const flush = useCallback(() => {
     if (timer.current) clearTimeout(timer.current);
@@ -115,18 +121,23 @@ export function useEditableField(pid: string, path: string) {
     if (pending.current !== null) {
       const v = pending.current;
       pending.current = null;
-      set(path, v).then(() => setLocal((cur) => (cur === v ? null : cur)));
+      set(path, v, burst.current ?? undefined).then(
+        () => setLocal((cur) => (cur === v ? null : cur)),
+        () => setLocal((cur) => (cur === v ? null : cur)), // refusé (alerte déjà affichée) : on réaffiche la valeur enregistrée
+      );
     }
   }, [set, path]);
 
-  useEffect(() => flush, [flush]);
+  const end = useCallback(() => { flush(); burst.current = null; }, [flush]);
+  useEffect(() => end, [end]);
 
   const onChange = (v: string) => {
+    burst.current ??= { id: store.newId("h"), before: store.peek(path) };
     setLocal(v);
     pending.current = v;
     if (timer.current) clearTimeout(timer.current);
     timer.current = setTimeout(flush, 500);
   };
 
-  return { value: local ?? remote ?? "", onChange, onBlur: flush, dirty: local !== null };
+  return { value: local ?? remote ?? "", onChange, onBlur: end, dirty: local !== null };
 }

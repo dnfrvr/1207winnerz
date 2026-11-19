@@ -8,7 +8,7 @@ import type { Patches } from "../data/store";
 import { img } from "../lib/img";
 import { Glyph } from "../kit/glyph";
 import { mdiClose, mdiNotificationClearAll } from "@mdi/js";
-import { APP_META } from "../../../src/shared/app-meta.js";
+import { APP_META } from "../lib/app-meta.js";
 import { useAppIcon, useOpenNotif } from "./Notifs";
 import { useClock, useLoreDate, useNow, type OS } from "./common";
 import "./notifcenter.css";

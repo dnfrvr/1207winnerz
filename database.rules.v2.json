@@ -76,7 +76,7 @@
     "history": {
       "$pid": {
         "$hid": {
-          ".write": "!data.exists() && newData.child('uid').val() === auth.uid"
+          ".write": "newData.child('uid').val() === auth.uid && (!data.exists() || data.child('uid').val() === auth.uid)"
         }
       }
     }

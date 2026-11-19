@@ -81,11 +81,14 @@ legacy/{key}                  toute clé racine inconnue (jamais supprimée en s
 
 Chaque écriture client ajoute aussi une entrée `history/{pid}/{autoId}` = `{path, before, after,
 at, uid}`. On peut donc annuler élément par élément et revenir en arrière sans limite de temps.
+Un champ texte en cours de saisie n'écrit qu'une entrée (réécrite à chaque envoi, `before` = valeur
+d'avant la frappe), créée au premier caractère et close à la perte de focus.
 C'est complété par la sauvegarde quotidienne GitHub Actions.
 
 ## Migration
 
-`node migration/migrate-v1-to-v2.mjs <export-v1.json> <sortie-v2.json>`
+Faite (novembre 2026). La v1 et le script `migration/migrate-v1-to-v2.mjs` ont été supprimés du
+dépôt ; ils restent dans l'historique git (commit d'avant la suppression) si besoin.
 
 - Fonction pure : aucune écriture en base, l'import se fait à part, une fois validé.
 - Un rapport donne les comptes par section, les avertissements, et une **vérification de

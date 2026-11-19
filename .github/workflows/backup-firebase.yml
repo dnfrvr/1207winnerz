@@ -4,7 +4,9 @@ name: Backup Firebase
 # comme artefact du workflow : Actions → Backup Firebase → un run → « Artifacts ».
 #
 # Secrets à définir (GitHub → Settings → Secrets and variables → Actions) :
-#   FIREBASE_DATABASE_URL  = https://<projet>-default-rtdb.europe-west1.firebasedatabase.app  (obligatoire)
+#   FIREBASE_V2_DATABASE_URL     = URL de la base v2 (https://<projet>-default-rtdb.<région>.firebasedatabase.app)
+#   FIREBASE_V2_DATABASE_SECRET  = secret de la base v2 (console Firebase du projet v2 → Paramètres du
+#                                  projet → Comptes de service → Codes secrets de la base de données)
 #   BACKUP_PASSPHRASE      = une phrase secrète (recommandé : le dépôt est public, l'artefact est
 #                            alors chiffré en AES-256 ; déchiffrer avec
 #                            gpg --decrypt backup-XXXX.json.gz.gpg > backup.json.gz)
@@ -20,13 +22,14 @@ jobs:
     steps:
       - name: Export de la base
         env:
-          DB_URL: ${{ secrets.FIREBASE_DATABASE_URL }}
+          DB_URL: ${{ secrets.FIREBASE_V2_DATABASE_URL }}
+          DB_SECRET: ${{ secrets.FIREBASE_V2_DATABASE_SECRET }}
         run: |
           set -euo pipefail
-          if [ -z "${DB_URL}" ]; then echo "Secret FIREBASE_DATABASE_URL manquant"; exit 1; fi
+          if [ -z "${DB_URL}" ] || [ -z "${DB_SECRET}" ]; then echo "Secrets FIREBASE_V2_DATABASE_URL / FIREBASE_V2_DATABASE_SECRET manquants"; exit 1; fi
           STAMP=$(date -u +%Y-%m-%dT%H-%M)
           echo "STAMP=${STAMP}" >> "$GITHUB_ENV"
-          curl -sf "${DB_URL%/}/.json" -o backup.json
+          curl -sSf "${DB_URL%/}/.json?auth=${DB_SECRET}" -o backup.json
           SIZE=$(stat -c %s backup.json)
           echo "Taille de l'export : ${SIZE} octets"
           # Garde-fou : une base vide ou « null » n'est pas une sauvegarde valable.
