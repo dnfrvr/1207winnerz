@@ -50,7 +50,7 @@ jobs:
             echo "::warning::BACKUP_PASSPHRASE non défini : sauvegarde NON chiffrée (dépôt public)."
           fi
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: firebase-backup-${{ env.STAMP }}
           path: backup-*
